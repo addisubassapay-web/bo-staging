@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Search, ShoppingCart, Heart, User, Menu, LogOut, Package, Settings, Store, X, Wallet, Link as LinkIcon, Users } from "lucide-react";
+import { Search, ShoppingCart, Heart, User, Menu, LogOut, Package, Settings, Store, X, Wallet, Link as LinkIcon, Users, MessageSquare, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/context/AuthContext";
 import api from "@/lib/api";
+import NotificationsBell from "@/components/NotificationsBell";
 
 const Header = () => {
   const { user, logout } = useAuth();
@@ -58,6 +59,7 @@ const Header = () => {
         </form>
 
         <nav className="hidden md:flex items-center gap-1">
+          <NotificationsBell />
           <Link to="/favorites">
             <Button variant="ghost" size="sm" className="relative">
               <Heart className="h-5 w-5" />
@@ -113,6 +115,12 @@ const Header = () => {
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate("/my/store")}>
                   <Store className="h-4 w-4 mr-2" /> My store
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/store/analytics")}>
+                  <BarChart3 className="h-4 w-4 mr-2" /> Analytics
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/chat")}>
+                  <MessageSquare className="h-4 w-4 mr-2" /> Messages
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate("/affiliate")}>
                   <LinkIcon className="h-4 w-4 mr-2" /> Affiliate

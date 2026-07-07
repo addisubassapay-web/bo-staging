@@ -22,6 +22,8 @@ import Referrals from "@/pages/Referrals";
 import StoreManage from "@/pages/StoreManage";
 import StorePage from "@/pages/StorePage";
 import AffiliateRedirect from "@/pages/AffiliateRedirect";
+import { ChatThreads, ChatRoom } from "@/pages/Chat";
+import StoreAnalytics from "@/pages/StoreAnalytics";
 
 function App() {
   return (
@@ -45,7 +47,10 @@ function App() {
               <Route path="/affiliate" element={<Affiliate />} />
               <Route path="/referrals" element={<Referrals />} />
               <Route path="/my/store" element={<StoreManage />} />
+              <Route path="/store/analytics" element={<StoreAnalytics />} />
               <Route path="/store/:slug" element={<StorePage />} />
+              <Route path="/chat" element={<ChatThreads />} />
+              <Route path="/chat/:listingId/:otherId" element={<ChatRoom />} />
               <Route path="/r/:code" element={<AffiliateRedirect />} />
               <Route path="/admin/*" element={<Admin />} />
             </Routes>

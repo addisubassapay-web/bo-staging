@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogT
 import { Heart, ShoppingCart, MessageCircle, Truck, Shield, ChevronLeft, Share2, Star, LinkIcon, Copy, PackagePlus } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { ListingReviews } from "@/components/Reviews";
 
 const AffiliateShareButton = ({ listingId }) => {
   const { user } = useAuth();
@@ -89,7 +90,7 @@ const DropshipImportButton = ({ listing, onImported }) => {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="h-11">
+        <Button type="button" variant="outline" className="h-11">
           <PackagePlus className="h-4 w-4 mr-2" /> Import & resell
         </Button>
       </DialogTrigger>
@@ -108,8 +109,8 @@ const DropshipImportButton = ({ listing, onImported }) => {
           <div className="flex justify-between text-green-600"><span>You earn per sale</span><span className="font-semibold">${earn}</span></div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-          <Button className="bg-[#FF211F] hover:bg-[#e01d1b]" onClick={doImport} disabled={loading}>
+          <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+          <Button type="button" className="bg-[#FF211F] hover:bg-[#e01d1b]" onClick={doImport} disabled={loading}>
             {loading ? "Importing…" : "Import"}
           </Button>
         </DialogFooter>
@@ -286,7 +287,7 @@ const ListingDetail = () => {
                 <AffiliateShareButton listingId={listing.id} />
                 <DropshipImportButton listing={listing} onImported={(id) => navigate(`/listing/${id}`)} />
               </div>
-              <Button variant="ghost" className="w-full h-11" onClick={() => toast({ title: "Chat coming soon", description: "Message the seller feature is available in-app." })}>
+              <Button variant="ghost" className="w-full h-11" onClick={() => { if (!user) { navigate("/login"); return; } navigate(`/chat/${listing.id}/${listing.seller_id}`); }}>
                 <MessageCircle className="h-4 w-4 mr-2" /> Message seller
               </Button>
             </div>
@@ -321,6 +322,8 @@ const ListingDetail = () => {
               </div>
             </div>
           </div>
+
+          <ListingReviews listingId={listing.id} />
         </div>
       </div>
     </div>

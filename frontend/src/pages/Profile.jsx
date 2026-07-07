@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { Star, Edit, Trash2, Package as PackageIcon } from "lucide-react";
+import { ReviewOrderCard } from "@/components/Reviews";
 
 const Profile = () => {
   const { user, loading: authLoading } = useAuth();
@@ -109,16 +110,21 @@ const Profile = () => {
           ) : (
             <div className="space-y-3">
               {orders.map((o) => (
-                <div key={o.id} className="flex gap-4 border border-neutral-200 rounded-lg p-4">
-                  <img src={o.listing_image} alt="" className="h-20 w-20 rounded object-cover bg-neutral-100" />
-                  <div className="flex-1">
-                    <Link to={`/listing/${o.listing_id}`} className="font-medium hover:text-[#FF211F]">{o.listing_title}</Link>
-                    <div className="text-sm text-neutral-500">Seller: {o.seller_name} · {new Date(o.created_at).toLocaleDateString()}</div>
-                    <Badge variant="secondary" className="mt-1 capitalize">{o.status}</Badge>
+                <div key={o.id} className="border border-neutral-200 rounded-lg">
+                  <div className="flex gap-4 p-4">
+                    <img src={o.listing_image} alt="" className="h-20 w-20 rounded object-cover bg-neutral-100" />
+                    <div className="flex-1">
+                      <Link to={`/listing/${o.listing_id}`} className="font-medium hover:text-[#FF211F]">{o.listing_title}</Link>
+                      <div className="text-sm text-neutral-500">Seller: {o.seller_name} · {new Date(o.created_at).toLocaleDateString()}</div>
+                      <Badge variant="secondary" className="mt-1 capitalize">{o.status}</Badge>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-semibold">{formatPrice(o.amount + o.shipping_fee)}</div>
+                      <div className="text-xs text-neutral-500 font-mono">#{o.id.slice(0, 8)}</div>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <div className="font-semibold">{formatPrice(o.amount + o.shipping_fee)}</div>
-                    <div className="text-xs text-neutral-500 font-mono">#{o.id.slice(0, 8)}</div>
+                  <div className="px-4 pb-4">
+                    <ReviewOrderCard order={o} />
                   </div>
                 </div>
               ))}

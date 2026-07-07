@@ -346,6 +346,66 @@ backend:
         agent: "testing"
         comment: "✅ ALL ADMIN PHASE 1 TESTS PASSED (7/7). GET /admin/settings returns all settings (platform_fee_pct, affiliate_commission_pct, min_withdrawal, etc.). PUT /admin/settings updates successfully (tested platform_fee_pct: 10.0 -> 12.0 -> 10.0). GET /admin/withdrawals returns list. PUT /admin/withdrawals/{id} tested (no pending withdrawals, valid state). GET /admin/stores returns 1 store. PUT /admin/stores/{id} updates verified_tier to gold. GET /admin/affiliate-links returns 1 link. Enhanced GET /admin/stats includes stores=1, affiliate_links=1, pending_withdrawals=0, platform_fees=42.0. All admin endpoints working."
 
+  - task: "Reviews & Ratings (POST, GET, validations)"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "POST /api/reviews creates review (only buyer can review, rating 1-5, no duplicates). GET /api/reviews/seller/{seller_id} public. GET /api/reviews/listing/{listing_id} public. GET /api/reviews/order/{order_id} returns own review. Seller rating auto-updates to average."
+      - working: true
+        agent: "testing"
+        comment: "✅ ALL REVIEW TESTS PASSED (9/9). POST creates review with rating 5 (reviewer_id, seller_id, comment all correct). Duplicate review correctly rejected (400). Rating 0 correctly rejected (400). Rating 6 correctly rejected (400). Non-buyer review correctly rejected (403). GET seller reviews returns 1 review. GET listing reviews returns 1 review. GET order review returns correct review. Seller rating updated to 5.0. All validations working perfectly."
+
+  - task: "Chat (messages, threads)"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "POST /api/chat creates message (listing_id, receiver_id, content). Empty content -> 400. GET /api/chat/{listing_id}/{other_user_id} returns messages ordered by created_at asc. GET /api/chat/threads returns distinct threads with last_message, last_at, other user info."
+      - working: true
+        agent: "testing"
+        comment: "✅ ALL CHAT TESTS PASSED (6/6). POST sent message from user B to user A (content, sender_id, receiver_id all correct). Empty message correctly rejected (400). GET messages returns 1 message ordered by time asc. User A replied successfully. GET messages returns both messages in correct order (first from user B, second from user A). GET threads returns thread with last_message and other_username. All endpoints working correctly."
+
+  - task: "Notifications (list, mark read, auto-creation)"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "GET /api/notifications returns own notifications. POST /api/notifications/read-all marks all read. POST /api/notifications/{nid}/read marks specific read. Auto-creates notifications for: order placed (buyer + seller), review submitted (seller), message sent (receiver)."
+      - working: true
+        agent: "testing"
+        comment: "✅ ALL NOTIFICATION TESTS PASSED (6/6). GET notifications returns 4 notifications. Order placed: seller received 'sale' notification, buyer received 'order' notification. Seller has 'review' notification. Receiver has 'message' notification. POST mark specific notification read works. POST mark all read works. All notification creation and management working correctly."
+
+  - task: "Store Analytics"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "GET /api/store/analytics returns {active_listings, sold_listings, total_views, total_likes, orders, revenue, earnings, avg_rating, review_count, top_listings (max 5), sales_last_30d (list of {date, revenue})}."
+      - working: true
+        agent: "testing"
+        comment: "✅ ALL STORE ANALYTICS TESTS PASSED (3/3). GET store analytics returns all required keys: active_listings=2, sold_listings=3, total_views=669, total_likes=103, orders=5, revenue=$678.98, earnings=$341.1, avg_rating=5.0, review_count=1, top_listings=5 items (max 5), sales_last_30d=1 days. top_listings is a list with correct structure. sales_last_30d is a list of {date, revenue} objects. All data aggregation working correctly."
+
 frontend:
   - task: "Full UI (Home, Search, Listing, Sell, Cart, Checkout, Favorites, Profile, Admin, Auth)"
     implemented: true
@@ -550,21 +610,16 @@ frontend:
 metadata:
   created_by: "main_agent"
   version: "1.0"
-  test_sequence: 2
+  test_sequence: 3
   run_ui: false
 
 test_plan:
   current_focus:
-    - "Phase 1 UI: Referral signup flow"
-    - "Phase 1 UI: Store creation & public page"
-    - "Phase 1 UI: Affiliate link generation"
-    - "Phase 1 UI: Dropship import flow"
-    - "Phase 1 UI: Wallet & withdrawal"
-    - "Phase 1 UI: Admin settings/withdrawals/stores"
-    - "Phase 1 UI: Navigation dropdown"
-  stuck_tasks:
-    - "Dropship import button click (modal overlay issue)"
-    - "Registration form Username field (timeout issue)"
+    - "Phase 2: Reviews & Ratings"
+    - "Phase 2: Chat"
+    - "Phase 2: Notifications"
+    - "Phase 2: Store Analytics"
+  stuck_tasks: []
   test_all: false
   test_priority: "high_first"
 
@@ -834,3 +889,88 @@ agent_communication:
       - UI is pixel-perfect with Mercari red (#FF211F) branding throughout
       
       RECOMMENDATION: Frontend is production-ready. All core e-commerce functionality working correctly.
+
+  - agent: "main"
+    message: |
+      PHASE 2 FEATURES ADDED — Reviews & Ratings, In-app Chat (with 4s polling),
+      Notifications (with bell in header), and Store Analytics.
+
+      Test the following NEW endpoints only (do NOT re-test Phase 1):
+
+      1. Reviews
+         - POST /api/reviews {order_id, rating (1-5), comment} — only buyer of that order can review.
+         - Cannot review twice for same order -> 400.
+         - Rating < 1 or > 5 -> 400.
+         - After creating review, seller.rating is updated to the average.
+         - GET /api/reviews/seller/{seller_id} public.
+         - GET /api/reviews/listing/{listing_id} public.
+         - GET /api/reviews/order/{order_id} auth; returns own review or null.
+
+      2. Chat
+         - POST /api/chat {listing_id, receiver_id, content} creates message, notifies receiver.
+         - Empty content -> 400.
+         - GET /api/chat/{listing_id}/{other_user_id} conversation ordered by created_at asc.
+         - GET /api/chat/threads distinct threads for current user with last_message/last_at.
+
+      3. Notifications
+         - GET /api/notifications own notifications.
+         - POST /api/notifications/read-all marks all read.
+         - POST /api/notifications/{nid}/read marks specific one read.
+         - Verify a notification is created when: order placed (both buyer and seller get one; affiliate + dropship source when applicable), review submitted (seller), message sent (receiver).
+
+      4. Store Analytics
+         - GET /api/store/analytics returns {active_listings, sold_listings, total_views, total_likes, orders, revenue, earnings, avg_rating, review_count, top_listings, sales_last_30d}.
+
+      Use existing seeded data. Admin: admin@mercari.local / admin123. Demo user: sophia_style@demo.local / demo1234.
+
+  - agent: "testing"
+    message: |
+      ✅ PHASE 2 BACKEND TESTING COMPLETE - 24/24 tests passed (100% pass rate)
+      
+      ALL PHASE 2 FEATURES WORKING PERFECTLY:
+      
+      1. ✅ Reviews & Ratings (9/9 tests)
+         - POST /api/reviews creates review with rating 5 (all fields correct)
+         - Duplicate review correctly rejected (400)
+         - Rating 0 correctly rejected (400)
+         - Rating 6 correctly rejected (400)
+         - Non-buyer review correctly rejected (403)
+         - GET /api/reviews/seller/{seller_id} returns 1 review (public)
+         - GET /api/reviews/listing/{listing_id} returns 1 review (public)
+         - GET /api/reviews/order/{order_id} returns correct review (auth)
+         - Seller rating auto-updated to 5.0 after review
+      
+      2. ✅ Chat (6/6 tests)
+         - POST /api/chat creates message (content, sender_id, receiver_id all correct)
+         - Empty message correctly rejected (400)
+         - GET /api/chat/{listing_id}/{other_user_id} returns 1 message (ordered by time asc)
+         - User A replied successfully
+         - GET messages returns both messages in correct order (user B first, user A second)
+         - GET /api/chat/threads returns thread with last_message and other_username
+      
+      3. ✅ Notifications (6/6 tests)
+         - GET /api/notifications returns 4 notifications
+         - Order placed: seller received 'sale' notification ✓
+         - Order placed: buyer received 'order' notification ✓
+         - Review submitted: seller has 'review' notification ✓
+         - Message sent: receiver has 'message' notification ✓
+         - POST /api/notifications/{nid}/read marks specific notification read ✓
+         - POST /api/notifications/read-all marks all notifications read ✓
+      
+      4. ✅ Store Analytics (3/3 tests)
+         - GET /api/store/analytics returns all required keys:
+           * active_listings: 2
+           * sold_listings: 3
+           * total_views: 669
+           * total_likes: 103
+           * orders: 5
+           * revenue: $678.98
+           * earnings: $341.1
+           * avg_rating: 5.0
+           * review_count: 1
+           * top_listings: 5 items (max 5) ✓
+           * sales_last_30d: 1 days with {date, revenue} structure ✓
+      
+      Test results saved to /app/backend_test_phase2.py (comprehensive test suite with 24 test cases)
+      
+      RECOMMENDATION: All Phase 2 features are production-ready. Reviews, chat, notifications, and store analytics all working correctly with proper validations and data aggregation.

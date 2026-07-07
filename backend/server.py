@@ -299,6 +299,37 @@ class MessageCreate(BaseModel):
 
 
 # =========================
+# Phase 2: Reviews & Notifications
+# =========================
+class Review(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    order_id: str
+    reviewer_id: str
+    reviewer_name: str
+    seller_id: str
+    listing_id: str
+    listing_title: str
+    rating: int  # 1..5
+    comment: str = ""
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class ReviewCreate(BaseModel):
+    order_id: str
+    rating: int
+    comment: Optional[str] = ""
+
+class Notification(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    type: Literal["order", "sale", "message", "review", "payout", "system"] = "system"
+    title: str
+    body: str = ""
+    link: Optional[str] = None
+    read: bool = False
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+# =========================
 # Helpers
 # =========================
 def hash_password(password: str) -> str:
@@ -385,6 +416,12 @@ async def get_referral_chain(user_id: str, max_levels: int = 3) -> List[str]:
         chain.append(u["referred_by"])
         current_id = u["referred_by"]
     return chain
+
+async def notify(user_id: str, ntype: str, title: str, body: str = "", link: Optional[str] = None):
+    if not user_id:
+        return
+    n = Notification(user_id=user_id, type=ntype, title=title, body=body, link=link)
+    await db.notifications.insert_one(n.model_dump())
 
 
 # =========================
@@ -724,6 +761,14 @@ async def create_order(payload: OrderCreate, user: dict = Depends(get_current_us
     # Update store total_sales
     if listing.get("store_id"):
         await db.stores.update_one({"id": listing["store_id"]}, {"$inc": {"total_sales": 1}})
+
+    # Notifications
+    await notify(listing["seller_id"], "sale", f"You sold {listing['title']}!", f"Earnings: ${seller_earnings:.2f}", f"/listing/{listing['id']}")
+    await notify(user["id"], "order", f"Order placed: {listing['title']}", f"You paid ${amount + shipping_fee:.2f}", f"/profile?tab=orders")
+    if affiliate_user_id:
+        await notify(affiliate_user_id, "payout", f"Affiliate commission earned", f"+${affiliate_earnings:.2f} from your link", "/affiliate")
+    if dropship_source_seller_id:
+        await notify(dropship_source_seller_id, "sale", f"Dropship sale: {listing['title']}", f"Earnings: ${dropship_source_earnings:.2f}", None)
 
     return order
 
@@ -1107,6 +1152,202 @@ async def admin_affiliate_links(_admin: dict = Depends(require_admin)):
 
 
 # =========================
+# PHASE 2: REVIEWS
+# =========================
+@api_router.post("/reviews", response_model=Review)
+async def create_review(payload: ReviewCreate, user: dict = Depends(get_current_user)):
+    if payload.rating < 1 or payload.rating > 5:
+        raise HTTPException(400, "Rating must be 1-5")
+    order = await db.orders.find_one({"id": payload.order_id}, {"_id": 0})
+    if not order:
+        raise HTTPException(404, "Order not found")
+    if order["buyer_id"] != user["id"]:
+        raise HTTPException(403, "Only the buyer can review")
+    existing = await db.reviews.find_one({"order_id": payload.order_id, "reviewer_id": user["id"]})
+    if existing:
+        raise HTTPException(400, "Already reviewed this order")
+    review = Review(
+        order_id=payload.order_id,
+        reviewer_id=user["id"],
+        reviewer_name=user["username"],
+        seller_id=order["seller_id"],
+        listing_id=order["listing_id"],
+        listing_title=order["listing_title"],
+        rating=payload.rating,
+        comment=payload.comment or "",
+    )
+    await db.reviews.insert_one(review.model_dump())
+    # Update seller rating
+    agg = await db.reviews.aggregate([
+        {"$match": {"seller_id": order["seller_id"]}},
+        {"$group": {"_id": None, "avg": {"$avg": "$rating"}, "count": {"$sum": 1}}},
+    ]).to_list(1)
+    if agg:
+        await db.users.update_one({"id": order["seller_id"]}, {"$set": {"rating": round(agg[0]["avg"], 2)}})
+    await notify(order["seller_id"], "review", f"New {payload.rating}-star review", (payload.comment or "")[:120], f"/listing/{order['listing_id']}")
+    return review
+
+@api_router.get("/reviews/seller/{seller_id}", response_model=List[Review])
+async def get_seller_reviews(seller_id: str):
+    docs = await db.reviews.find({"seller_id": seller_id}, {"_id": 0}).sort("created_at", -1).to_list(200)
+    return [Review(**d) for d in docs]
+
+@api_router.get("/reviews/listing/{listing_id}", response_model=List[Review])
+async def get_listing_reviews(listing_id: str):
+    docs = await db.reviews.find({"listing_id": listing_id}, {"_id": 0}).sort("created_at", -1).to_list(100)
+    return [Review(**d) for d in docs]
+
+@api_router.get("/reviews/order/{order_id}", response_model=Optional[Review])
+async def get_order_review(order_id: str, user: dict = Depends(get_current_user)):
+    doc = await db.reviews.find_one({"order_id": order_id, "reviewer_id": user["id"]}, {"_id": 0})
+    return Review(**doc) if doc else None
+
+
+# =========================
+# PHASE 2: MESSAGES / CHAT
+# =========================
+@api_router.get("/chat/threads")
+async def get_threads(user: dict = Depends(get_current_user)):
+    """Return distinct conversation threads for the user."""
+    pipeline = [
+        {"$match": {"$or": [{"sender_id": user["id"]}, {"receiver_id": user["id"]}]}},
+        {"$sort": {"created_at": -1}},
+        {"$group": {
+            "_id": {
+                "listing_id": "$listing_id",
+                "other": {"$cond": [{"$eq": ["$sender_id", user["id"]]}, "$receiver_id", "$sender_id"]},
+            },
+            "last_content": {"$first": "$content"},
+            "last_at": {"$first": "$created_at"},
+            "sender_id": {"$first": "$sender_id"},
+        }},
+        {"$sort": {"last_at": -1}},
+    ]
+    threads = await db.messages.aggregate(pipeline).to_list(200)
+    # Enrich with user + listing info
+    result = []
+    for t in threads:
+        other_id = t["_id"]["other"]
+        listing_id = t["_id"]["listing_id"]
+        other = await db.users.find_one({"id": other_id}, {"_id": 0, "id": 1, "username": 1})
+        listing = await db.listings.find_one({"id": listing_id}, {"_id": 0, "id": 1, "title": 1, "images": 1, "price": 1})
+        result.append({
+            "listing_id": listing_id,
+            "other_user_id": other_id,
+            "other_username": other.get("username") if other else "Unknown",
+            "listing_title": listing.get("title") if listing else "Listing removed",
+            "listing_image": (listing.get("images") or [None])[0] if listing else None,
+            "last_message": t.get("last_content", "")[:120],
+            "last_at": t.get("last_at"),
+            "unread": False,
+        })
+    return result
+
+@api_router.get("/chat/{listing_id}/{other_user_id}", response_model=List[Message])
+async def chat_messages(listing_id: str, other_user_id: str, user: dict = Depends(get_current_user)):
+    docs = await db.messages.find({
+        "listing_id": listing_id,
+        "$or": [
+            {"sender_id": user["id"], "receiver_id": other_user_id},
+            {"sender_id": other_user_id, "receiver_id": user["id"]},
+        ],
+    }, {"_id": 0}).sort("created_at", 1).to_list(500)
+    return [Message(**d) for d in docs]
+
+@api_router.post("/chat", response_model=Message)
+async def send_chat_message(payload: MessageCreate, user: dict = Depends(get_current_user)):
+    if not payload.content.strip():
+        raise HTTPException(400, "Empty message")
+    msg = Message(
+        listing_id=payload.listing_id,
+        sender_id=user["id"],
+        sender_name=user["username"],
+        receiver_id=payload.receiver_id,
+        content=payload.content.strip(),
+    )
+    await db.messages.insert_one(msg.model_dump())
+    await notify(payload.receiver_id, "message", f"New message from {user['username']}", payload.content[:120], f"/chat/{payload.listing_id}/{user['id']}")
+    return msg
+
+
+# =========================
+# PHASE 2: NOTIFICATIONS
+# =========================
+@api_router.get("/notifications", response_model=List[Notification])
+async def list_notifications(user: dict = Depends(get_current_user), limit: int = 50):
+    docs = await db.notifications.find({"user_id": user["id"]}, {"_id": 0}).sort("created_at", -1).to_list(limit)
+    return [Notification(**d) for d in docs]
+
+@api_router.post("/notifications/read-all")
+async def mark_all_read(user: dict = Depends(get_current_user)):
+    await db.notifications.update_many({"user_id": user["id"], "read": False}, {"$set": {"read": True}})
+    return {"ok": True}
+
+@api_router.post("/notifications/{nid}/read")
+async def mark_read(nid: str, user: dict = Depends(get_current_user)):
+    await db.notifications.update_one({"id": nid, "user_id": user["id"]}, {"$set": {"read": True}})
+    return {"ok": True}
+
+
+# =========================
+# PHASE 2: STORE ANALYTICS
+# =========================
+@api_router.get("/store/analytics")
+async def store_analytics(user: dict = Depends(get_current_user)):
+    """Analytics for the current user's store (or for their listings if no store)."""
+    seller_id = user["id"]
+    active = await db.listings.count_documents({"seller_id": seller_id, "status": "active"})
+    sold = await db.listings.count_documents({"seller_id": seller_id, "status": "sold"})
+    total_views_agg = await db.listings.aggregate([
+        {"$match": {"seller_id": seller_id}},
+        {"$group": {"_id": None, "views": {"$sum": "$views_count"}, "likes": {"$sum": "$likes_count"}}},
+    ]).to_list(1)
+    views = total_views_agg[0]["views"] if total_views_agg else 0
+    likes = total_views_agg[0]["likes"] if total_views_agg else 0
+
+    orders_agg = await db.orders.aggregate([
+        {"$match": {"seller_id": seller_id}},
+        {"$group": {"_id": None, "count": {"$sum": 1}, "revenue": {"$sum": "$amount"}, "earnings": {"$sum": "$seller_earnings"}}},
+    ]).to_list(1)
+    order_count = orders_agg[0]["count"] if orders_agg else 0
+    revenue = orders_agg[0]["revenue"] if orders_agg else 0
+    earnings = orders_agg[0].get("earnings", 0) if orders_agg else 0
+
+    reviews_agg = await db.reviews.aggregate([
+        {"$match": {"seller_id": seller_id}},
+        {"$group": {"_id": None, "avg": {"$avg": "$rating"}, "count": {"$sum": 1}}},
+    ]).to_list(1)
+    avg_rating = round(reviews_agg[0]["avg"], 2) if reviews_agg else None
+    review_count = reviews_agg[0]["count"] if reviews_agg else 0
+
+    # Top listings by views
+    top = await db.listings.find({"seller_id": seller_id}, {"_id": 0, "id": 1, "title": 1, "views_count": 1, "likes_count": 1, "price": 1, "images": 1}).sort("views_count", -1).limit(5).to_list(5)
+
+    # Sales over last 30 days
+    thirty_ago = datetime.now(timezone.utc) - timedelta(days=30)
+    recent_orders = await db.orders.find({"seller_id": seller_id, "created_at": {"$gte": thirty_ago}}, {"_id": 0, "created_at": 1, "amount": 1}).to_list(500)
+    daily: dict = {}
+    for o in recent_orders:
+        d = o["created_at"].date().isoformat() if hasattr(o["created_at"], "date") else str(o["created_at"])[:10]
+        daily[d] = daily.get(d, 0) + o.get("amount", 0)
+    sales_series = sorted([{"date": k, "revenue": round(v, 2)} for k, v in daily.items()], key=lambda x: x["date"])
+
+    return {
+        "active_listings": active,
+        "sold_listings": sold,
+        "total_views": views,
+        "total_likes": likes,
+        "orders": order_count,
+        "revenue": round(revenue, 2),
+        "earnings": round(earnings, 2),
+        "avg_rating": avg_rating,
+        "review_count": review_count,
+        "top_listings": top,
+        "sales_last_30d": sales_series,
+    }
+
+
+# =========================
 # Seed
 # =========================
 @api_router.post("/seed")
@@ -1278,6 +1519,11 @@ async def startup():
     await db.wallet_txs.create_index([("user_id", 1), ("created_at", -1)])
     await db.withdrawals.create_index("user_id")
     await db.withdrawals.create_index("status")
+    await db.reviews.create_index("seller_id")
+    await db.reviews.create_index("listing_id")
+    await db.reviews.create_index([("order_id", 1), ("reviewer_id", 1)], unique=True)
+    await db.messages.create_index([("listing_id", 1), ("sender_id", 1), ("receiver_id", 1)])
+    await db.notifications.create_index([("user_id", 1), ("created_at", -1)])
 
     # Migrate existing users: add referral_code, wallet_balance if missing
     async for u in db.users.find({"referral_code": {"$exists": False}}, {"_id": 0, "id": 1}):
