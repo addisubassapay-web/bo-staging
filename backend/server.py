@@ -40,6 +40,7 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     password: str
+    referral_code: Optional[str] = None  # code of the referrer
 
 class UserLogin(BaseModel):
     email: str  # Changed from EmailStr to allow .local domains in development
@@ -53,6 +54,10 @@ class User(UserBase):
     rating: float = 5.0
     sales_count: int = 0
     is_active: bool = True
+    referral_code: str = Field(default_factory=lambda: uuid.uuid4().hex[:8].upper())
+    referred_by: Optional[str] = None  # user_id who referred this user
+    wallet_balance: float = 0.0
+    store_id: Optional[str] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class UserPublic(BaseModel):
@@ -65,6 +70,10 @@ class UserPublic(BaseModel):
     rating: float = 5.0
     sales_count: int = 0
     is_active: bool = True
+    referral_code: Optional[str] = None
+    referred_by: Optional[str] = None
+    wallet_balance: float = 0.0
+    store_id: Optional[str] = None
     created_at: datetime
 
 class AuthResponse(BaseModel):
@@ -107,6 +116,9 @@ class Listing(BaseModel):
     likes_count: int = 0
     views_count: int = 0
     featured: bool = False
+    store_id: Optional[str] = None
+    imported_from_id: Optional[str] = None  # original listing id if this is a dropship import
+    base_price: Optional[float] = None  # original seller's price when imported
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class ListingCreate(BaseModel):
@@ -158,11 +170,118 @@ class Order(BaseModel):
     shipping_fee: float = 0.0
     status: Literal["pending", "paid", "shipped", "delivered", "cancelled"] = "paid"
     shipping_address: dict = {}
+    # Commission breakdown
+    platform_fee: float = 0.0
+    seller_earnings: float = 0.0
+    affiliate_link_id: Optional[str] = None
+    affiliate_user_id: Optional[str] = None
+    affiliate_earnings: float = 0.0
+    referral_payouts: List[dict] = []  # [{level, user_id, amount}]
+    dropship_source_seller_id: Optional[str] = None
+    dropship_source_earnings: float = 0.0
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class OrderCreate(BaseModel):
     listing_id: str
     shipping_address: dict = {}
+    affiliate_code: Optional[str] = None
+
+
+# =========================
+# Phase 1: Stores / Affiliate / Wallet / Referral / Settings
+# =========================
+class Store(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    owner_id: str
+    name: str
+    slug: str
+    tagline: Optional[str] = ""
+    bio: Optional[str] = ""
+    logo: Optional[str] = None
+    banner: Optional[str] = None
+    verified_tier: Literal["none", "bronze", "silver", "gold"] = "none"
+    followers_count: int = 0
+    total_sales: int = 0
+    is_active: bool = True
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class StoreCreate(BaseModel):
+    name: str
+    slug: str
+    tagline: Optional[str] = ""
+    bio: Optional[str] = ""
+    logo: Optional[str] = None
+    banner: Optional[str] = None
+
+class StoreUpdate(BaseModel):
+    name: Optional[str] = None
+    tagline: Optional[str] = None
+    bio: Optional[str] = None
+    logo: Optional[str] = None
+    banner: Optional[str] = None
+
+class AffiliateLink(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    code: str = Field(default_factory=lambda: uuid.uuid4().hex[:10])
+    affiliate_user_id: str
+    listing_id: Optional[str] = None
+    store_id: Optional[str] = None
+    clicks: int = 0
+    conversions: int = 0
+    earnings: float = 0.0
+    status: Literal["active", "disabled"] = "active"
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class AffiliateLinkCreate(BaseModel):
+    listing_id: Optional[str] = None
+    store_id: Optional[str] = None
+
+class WalletTransaction(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    type: Literal["sale", "affiliate", "referral", "dropship", "withdrawal", "adjustment", "bonus"]
+    amount: float  # positive = credit, negative = debit
+    balance_after: float
+    description: str = ""
+    related_id: Optional[str] = None
+    status: Literal["completed", "pending"] = "completed"
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class WithdrawalRequest(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    user_name: str
+    amount: float
+    method: str = "bank_transfer"  # mocked
+    account_info: str = ""
+    status: Literal["pending", "approved", "rejected", "paid"] = "pending"
+    notes: Optional[str] = ""
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    processed_at: Optional[datetime] = None
+
+class WithdrawalRequestCreate(BaseModel):
+    amount: float
+    method: str = "bank_transfer"
+    account_info: str = ""
+
+class Settings(BaseModel):
+    id: str = "global"
+    platform_fee_pct: float = 10.0
+    affiliate_commission_pct: float = 5.0
+    referral_l1_pct: float = 3.0  # % of platform fee to referrer L1
+    referral_l2_pct: float = 1.0
+    referral_l3_pct: float = 0.5
+    dropship_max_markup_pct: float = 100.0
+    min_withdrawal: float = 10.0
+    signup_bonus: float = 0.0
+    affiliate_mode: Literal["auto", "semi", "manual"] = "auto"
+    store_mode: Literal["auto", "semi", "manual"] = "auto"
+    withdrawal_mode: Literal["auto", "semi", "manual"] = "manual"
+    listing_mode: Literal["auto", "semi", "manual"] = "auto"
+    semi_threshold: float = 100.0  # for semi-auto approvals under this amount
+    referral_levels_enabled: bool = True
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
 
 class Message(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -231,6 +350,44 @@ def to_public_user(user: dict) -> dict:
 
 
 # =========================
+# Helpers: Settings, Wallet, Commissions
+# =========================
+async def get_settings() -> dict:
+    doc = await db.settings.find_one({"id": "global"}, {"_id": 0})
+    if not doc:
+        s = Settings()
+        await db.settings.insert_one(s.model_dump())
+        return s.model_dump()
+    return doc
+
+async def credit_wallet(user_id: str, amount: float, tx_type: str, description: str, related_id: Optional[str] = None):
+    if amount == 0:
+        return
+    user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    if not user:
+        return
+    new_balance = round(user.get("wallet_balance", 0.0) + amount, 2)
+    await db.users.update_one({"id": user_id}, {"$set": {"wallet_balance": new_balance}})
+    tx = WalletTransaction(
+        user_id=user_id, type=tx_type, amount=amount,
+        balance_after=new_balance, description=description, related_id=related_id
+    )
+    await db.wallet_txs.insert_one(tx.model_dump())
+
+async def get_referral_chain(user_id: str, max_levels: int = 3) -> List[str]:
+    """Return referrer chain for a user: [L1, L2, L3, ...] up to max_levels."""
+    chain: List[str] = []
+    current_id = user_id
+    for _ in range(max_levels):
+        u = await db.users.find_one({"id": current_id}, {"_id": 0, "referred_by": 1})
+        if not u or not u.get("referred_by"):
+            break
+        chain.append(u["referred_by"])
+        current_id = u["referred_by"]
+    return chain
+
+
+# =========================
 # Auth Routes
 # =========================
 @api_router.post("/auth/register", response_model=AuthResponse)
@@ -238,12 +395,25 @@ async def register(payload: UserCreate):
     existing = await db.users.find_one({"$or": [{"email": payload.email}, {"username": payload.username}]})
     if existing:
         raise HTTPException(status_code=400, detail="Email or username already exists")
-    user = User(email=payload.email, username=payload.username)
+    referred_by = None
+    if payload.referral_code:
+        ref = await db.users.find_one({"referral_code": payload.referral_code.upper()}, {"_id": 0, "id": 1})
+        if ref:
+            referred_by = ref["id"]
+    user = User(email=payload.email, username=payload.username, referred_by=referred_by)
     doc = user.model_dump()
     doc["password_hash"] = hash_password(payload.password)
     await db.users.insert_one(doc)
+    # Signup bonus
+    settings = await get_settings()
+    if settings.get("signup_bonus", 0) > 0:
+        await credit_wallet(user.id, settings["signup_bonus"], "bonus", "Signup bonus")
+    if referred_by:
+        # notify referrer via wallet transaction with $0? Just a log entry
+        pass
     token = create_token(user.id, user.role)
-    return AuthResponse(token=token, user=UserPublic(**user.model_dump()))
+    fresh = await db.users.find_one({"id": user.id}, {"_id": 0, "password_hash": 0})
+    return AuthResponse(token=token, user=UserPublic(**fresh))
 
 @api_router.post("/auth/login", response_model=AuthResponse)
 async def login(payload: UserLogin):
@@ -359,6 +529,7 @@ async def create_listing(payload: ListingCreate, user: dict = Depends(get_curren
         seller_id=user["id"],
         seller_name=user["username"],
         category_name=cat["name"],
+        store_id=user.get("store_id"),
         **payload.model_dump(),
     )
     await db.listings.insert_one(listing.model_dump())
@@ -464,6 +635,53 @@ async def create_order(payload: OrderCreate, user: dict = Depends(get_current_us
         raise HTTPException(404, "Listing not available")
     if listing["seller_id"] == user["id"]:
         raise HTTPException(400, "Cannot buy your own listing")
+
+    settings = await get_settings()
+    amount = float(listing["price"])
+    shipping_fee = 0.0 if listing.get("shipping_paid_by") == "seller" else 5.99
+
+    # Platform fee
+    platform_fee = round(amount * settings["platform_fee_pct"] / 100.0, 2)
+
+    # Affiliate lookup
+    affiliate_link = None
+    affiliate_user_id = None
+    affiliate_earnings = 0.0
+    if payload.affiliate_code:
+        affiliate_link = await db.affiliate_links.find_one(
+            {"code": payload.affiliate_code, "status": "active"}, {"_id": 0}
+        )
+        if affiliate_link:
+            # ensure affiliate is not the buyer
+            if affiliate_link["affiliate_user_id"] != user["id"]:
+                affiliate_earnings = round(amount * settings["affiliate_commission_pct"] / 100.0, 2)
+                affiliate_user_id = affiliate_link["affiliate_user_id"]
+
+    # Dropship: original seller earnings
+    dropship_source_seller_id = None
+    dropship_source_earnings = 0.0
+    if listing.get("imported_from_id") and listing.get("base_price"):
+        original = await db.listings.find_one({"id": listing["imported_from_id"]}, {"_id": 0, "seller_id": 1})
+        if original and original.get("seller_id"):
+            dropship_source_seller_id = original["seller_id"]
+            dropship_source_earnings = float(listing["base_price"])
+
+    # Reseller (current seller) earnings = amount - platform_fee - affiliate - dropship_source
+    seller_earnings = round(amount - platform_fee - affiliate_earnings - dropship_source_earnings, 2)
+    if seller_earnings < 0:
+        seller_earnings = 0.0
+
+    # Referral chain from the seller side (rewards seller's referrers)
+    referral_payouts: List[dict] = []
+    if settings.get("referral_levels_enabled", True):
+        chain = await get_referral_chain(listing["seller_id"], max_levels=3)
+        pcts = [settings["referral_l1_pct"], settings["referral_l2_pct"], settings["referral_l3_pct"]]
+        for level, referrer_id in enumerate(chain, start=1):
+            pct = pcts[level - 1]
+            payout = round(platform_fee * pct / 100.0, 2)
+            if payout > 0:
+                referral_payouts.append({"level": level, "user_id": referrer_id, "amount": payout})
+
     order = Order(
         buyer_id=user["id"],
         buyer_name=user["username"],
@@ -472,15 +690,41 @@ async def create_order(payload: OrderCreate, user: dict = Depends(get_current_us
         listing_id=listing["id"],
         listing_title=listing["title"],
         listing_image=listing["images"][0] if listing.get("images") else None,
-        amount=listing["price"],
-        shipping_fee=0.0 if listing.get("shipping_paid_by") == "seller" else 5.99,
+        amount=amount,
+        shipping_fee=shipping_fee,
         shipping_address=payload.shipping_address,
         status="paid",
+        platform_fee=platform_fee,
+        seller_earnings=seller_earnings,
+        affiliate_link_id=affiliate_link["id"] if affiliate_link else None,
+        affiliate_user_id=affiliate_user_id,
+        affiliate_earnings=affiliate_earnings,
+        referral_payouts=referral_payouts,
+        dropship_source_seller_id=dropship_source_seller_id,
+        dropship_source_earnings=dropship_source_earnings,
     )
     await db.orders.insert_one(order.model_dump())
     await db.listings.update_one({"id": listing["id"]}, {"$set": {"status": "sold"}})
     await db.users.update_one({"id": listing["seller_id"]}, {"$inc": {"sales_count": 1}})
     await db.cart_items.delete_many({"listing_id": listing["id"]})
+
+    # Credit wallets
+    await credit_wallet(listing["seller_id"], seller_earnings, "sale", f"Sale: {listing['title']}", order.id)
+    if affiliate_user_id and affiliate_earnings > 0:
+        await credit_wallet(affiliate_user_id, affiliate_earnings, "affiliate", f"Affiliate commission: {listing['title']}", order.id)
+        await db.affiliate_links.update_one(
+            {"id": affiliate_link["id"]},
+            {"$inc": {"conversions": 1, "earnings": affiliate_earnings}},
+        )
+    if dropship_source_seller_id and dropship_source_earnings > 0:
+        await credit_wallet(dropship_source_seller_id, dropship_source_earnings, "dropship", f"Dropship sale: {listing['title']}", order.id)
+    for rp in referral_payouts:
+        await credit_wallet(rp["user_id"], rp["amount"], "referral", f"Referral L{rp['level']} bonus", order.id)
+
+    # Update store total_sales
+    if listing.get("store_id"):
+        await db.stores.update_one({"id": listing["store_id"]}, {"$inc": {"total_sales": 1}})
+
     return order
 
 
@@ -521,17 +765,25 @@ async def admin_stats(_admin: dict = Depends(require_admin)):
     sold_listings = await db.listings.count_documents({"status": "sold"})
     orders_count = await db.orders.count_documents({})
     categories_count = await db.categories.count_documents({})
+    stores_count = await db.stores.count_documents({})
+    pending_withdrawals = await db.withdrawals.count_documents({"status": "pending"})
     revenue_agg = await db.orders.aggregate([
-        {"$group": {"_id": None, "total": {"$sum": "$amount"}}}
+        {"$group": {"_id": None, "total": {"$sum": "$amount"}, "fees": {"$sum": "$platform_fee"}}}
     ]).to_list(1)
     total_revenue = revenue_agg[0]["total"] if revenue_agg else 0
+    total_fees = revenue_agg[0].get("fees", 0) if revenue_agg else 0
+    affiliate_links = await db.affiliate_links.count_documents({})
     return {
         "users": users_count,
         "active_listings": active_listings,
         "sold_listings": sold_listings,
         "orders": orders_count,
         "categories": categories_count,
+        "stores": stores_count,
+        "affiliate_links": affiliate_links,
+        "pending_withdrawals": pending_withdrawals,
         "revenue": total_revenue,
+        "platform_fees": total_fees,
     }
 
 @api_router.get("/admin/users", response_model=List[UserPublic])
@@ -567,6 +819,291 @@ async def admin_listings(_admin: dict = Depends(require_admin), status_filter: O
         q["status"] = status_filter
     docs = await db.listings.find(q, {"_id": 0}).sort("created_at", -1).to_list(2000)
     return [Listing(**d) for d in docs]
+
+
+# =========================
+# STORES
+# =========================
+@api_router.post("/stores", response_model=Store)
+async def create_store(payload: StoreCreate, user: dict = Depends(get_current_user)):
+    if user.get("store_id"):
+        raise HTTPException(400, "You already own a store")
+    slug_taken = await db.stores.find_one({"slug": payload.slug.lower()})
+    if slug_taken:
+        raise HTTPException(400, "Slug already taken")
+    settings = await get_settings()
+    is_active = settings.get("store_mode", "auto") == "auto"
+    store = Store(owner_id=user["id"], **{**payload.model_dump(), "slug": payload.slug.lower()}, is_active=is_active)
+    await db.stores.insert_one(store.model_dump())
+    await db.users.update_one({"id": user["id"]}, {"$set": {"store_id": store.id}})
+    return store
+
+@api_router.get("/stores/{slug}", response_model=Store)
+async def get_store_by_slug(slug: str):
+    doc = await db.stores.find_one({"slug": slug.lower()}, {"_id": 0})
+    if not doc:
+        raise HTTPException(404, "Store not found")
+    return Store(**doc)
+
+@api_router.get("/stores/{slug}/listings", response_model=List[Listing])
+async def get_store_listings(slug: str):
+    store = await db.stores.find_one({"slug": slug.lower()}, {"_id": 0})
+    if not store:
+        raise HTTPException(404, "Store not found")
+    docs = await db.listings.find({"store_id": store["id"], "status": "active"}, {"_id": 0}).sort("created_at", -1).to_list(500)
+    return [Listing(**d) for d in docs]
+
+@api_router.put("/stores/{store_id}", response_model=Store)
+async def update_store(store_id: str, payload: StoreUpdate, user: dict = Depends(get_current_user)):
+    store = await db.stores.find_one({"id": store_id}, {"_id": 0})
+    if not store:
+        raise HTTPException(404, "Store not found")
+    if store["owner_id"] != user["id"] and user["role"] != "admin":
+        raise HTTPException(403, "Not allowed")
+    updates = {k: v for k, v in payload.model_dump().items() if v is not None}
+    if updates:
+        await db.stores.update_one({"id": store_id}, {"$set": updates})
+    doc = await db.stores.find_one({"id": store_id}, {"_id": 0})
+    return Store(**doc)
+
+@api_router.get("/my/store", response_model=Optional[Store])
+async def my_store(user: dict = Depends(get_current_user)):
+    if not user.get("store_id"):
+        return None
+    doc = await db.stores.find_one({"id": user["store_id"]}, {"_id": 0})
+    return Store(**doc) if doc else None
+
+
+# =========================
+# AFFILIATE LINKS
+# =========================
+@api_router.post("/affiliate/links", response_model=AffiliateLink)
+async def create_affiliate_link(payload: AffiliateLinkCreate, user: dict = Depends(get_current_user)):
+    if not payload.listing_id and not payload.store_id:
+        raise HTTPException(400, "Provide listing_id or store_id")
+    existing = await db.affiliate_links.find_one({
+        "affiliate_user_id": user["id"],
+        "listing_id": payload.listing_id,
+        "store_id": payload.store_id,
+    }, {"_id": 0})
+    if existing:
+        return AffiliateLink(**existing)
+    link = AffiliateLink(affiliate_user_id=user["id"], listing_id=payload.listing_id, store_id=payload.store_id)
+    await db.affiliate_links.insert_one(link.model_dump())
+    return link
+
+@api_router.get("/affiliate/links", response_model=List[AffiliateLink])
+async def my_affiliate_links(user: dict = Depends(get_current_user)):
+    docs = await db.affiliate_links.find({"affiliate_user_id": user["id"]}, {"_id": 0}).sort("created_at", -1).to_list(500)
+    return [AffiliateLink(**d) for d in docs]
+
+@api_router.get("/affiliate/track/{code}")
+async def track_affiliate_click(code: str):
+    link = await db.affiliate_links.find_one({"code": code, "status": "active"}, {"_id": 0})
+    if not link:
+        raise HTTPException(404, "Invalid affiliate code")
+    await db.affiliate_links.update_one({"code": code}, {"$inc": {"clicks": 1}})
+    return {"ok": True, "listing_id": link.get("listing_id"), "store_id": link.get("store_id"), "code": code}
+
+@api_router.get("/affiliate/stats")
+async def affiliate_stats(user: dict = Depends(get_current_user)):
+    links = await db.affiliate_links.find({"affiliate_user_id": user["id"]}, {"_id": 0}).to_list(500)
+    total_clicks = sum(l.get("clicks", 0) for l in links)
+    total_conversions = sum(l.get("conversions", 0) for l in links)
+    total_earnings = sum(l.get("earnings", 0.0) for l in links)
+    return {
+        "links": len(links),
+        "clicks": total_clicks,
+        "conversions": total_conversions,
+        "earnings": round(total_earnings, 2),
+        "conversion_rate": round((total_conversions / total_clicks * 100) if total_clicks else 0, 2),
+    }
+
+
+# =========================
+# REFERRALS
+# =========================
+@api_router.get("/referrals/me")
+async def my_referrals(user: dict = Depends(get_current_user)):
+    l1 = await db.users.find({"referred_by": user["id"]}, {"_id": 0, "id": 1, "username": 1, "created_at": 1}).to_list(1000)
+    l1_ids = [u["id"] for u in l1]
+    l2 = await db.users.find({"referred_by": {"$in": l1_ids}}, {"_id": 0, "id": 1, "username": 1, "referred_by": 1, "created_at": 1}).to_list(1000) if l1_ids else []
+    l2_ids = [u["id"] for u in l2]
+    l3 = await db.users.find({"referred_by": {"$in": l2_ids}}, {"_id": 0, "id": 1, "username": 1, "referred_by": 1, "created_at": 1}).to_list(1000) if l2_ids else []
+    # Earnings from referral wallet transactions
+    txs = await db.wallet_txs.find({"user_id": user["id"], "type": "referral"}, {"_id": 0}).to_list(1000)
+    total_earnings = sum(t.get("amount", 0) for t in txs)
+    return {
+        "referral_code": user.get("referral_code"),
+        "levels": {
+            "l1": l1,
+            "l2": l2,
+            "l3": l3,
+        },
+        "counts": {"l1": len(l1), "l2": len(l2), "l3": len(l3)},
+        "total_referral_earnings": round(total_earnings, 2),
+    }
+
+
+# =========================
+# WALLET
+# =========================
+@api_router.get("/wallet")
+async def get_wallet(user: dict = Depends(get_current_user)):
+    txs = await db.wallet_txs.find({"user_id": user["id"]}, {"_id": 0}).sort("created_at", -1).to_list(200)
+    pending_wd = await db.withdrawals.find({"user_id": user["id"], "status": {"$in": ["pending", "approved"]}}, {"_id": 0}).to_list(100)
+    return {
+        "balance": user.get("wallet_balance", 0.0),
+        "transactions": [WalletTransaction(**t).model_dump() for t in txs],
+        "pending_withdrawals": [WithdrawalRequest(**w).model_dump() for w in pending_wd],
+    }
+
+@api_router.post("/wallet/withdraw", response_model=WithdrawalRequest)
+async def request_withdrawal(payload: WithdrawalRequestCreate, user: dict = Depends(get_current_user)):
+    settings = await get_settings()
+    min_wd = settings.get("min_withdrawal", 10.0)
+    if payload.amount < min_wd:
+        raise HTTPException(400, f"Minimum withdrawal is ${min_wd}")
+    if payload.amount > user.get("wallet_balance", 0.0):
+        raise HTTPException(400, "Insufficient balance")
+
+    mode = settings.get("withdrawal_mode", "manual")
+    threshold = settings.get("semi_threshold", 100.0)
+    initial_status = "pending"
+    if mode == "auto":
+        initial_status = "paid"
+    elif mode == "semi" and payload.amount <= threshold:
+        initial_status = "paid"
+
+    wd = WithdrawalRequest(
+        user_id=user["id"], user_name=user["username"],
+        amount=payload.amount, method=payload.method, account_info=payload.account_info,
+        status=initial_status,
+    )
+    if initial_status == "paid":
+        wd.processed_at = datetime.now(timezone.utc)
+    await db.withdrawals.insert_one(wd.model_dump())
+
+    if initial_status == "paid":
+        # debit wallet immediately
+        await credit_wallet(user["id"], -payload.amount, "withdrawal", f"Withdrawal #{wd.id[:8]}", wd.id)
+
+    return wd
+
+
+# =========================
+# DROPSHIP / IMPORT
+# =========================
+class ImportPayload(BaseModel):
+    listing_id: str
+    markup_pct: float  # percentage on top of base price
+
+@api_router.post("/listings/import", response_model=Listing)
+async def import_listing(payload: ImportPayload, user: dict = Depends(get_current_user)):
+    settings = await get_settings()
+    max_mk = settings.get("dropship_max_markup_pct", 100.0)
+    if payload.markup_pct < 0 or payload.markup_pct > max_mk:
+        raise HTTPException(400, f"Markup must be between 0 and {max_mk}%")
+    original = await db.listings.find_one({"id": payload.listing_id, "status": "active"}, {"_id": 0})
+    if not original:
+        raise HTTPException(404, "Source listing not available")
+    if original["seller_id"] == user["id"]:
+        raise HTTPException(400, "Cannot import your own listing")
+    if original.get("imported_from_id"):
+        raise HTTPException(400, "Cannot import an already imported listing")
+    base_price = float(original["price"])
+    new_price = round(base_price * (1 + payload.markup_pct / 100.0), 2)
+    imported = Listing(
+        seller_id=user["id"],
+        seller_name=user["username"],
+        title=original["title"],
+        description=original["description"] + "\n\n(Fulfilled by original seller.)",
+        price=new_price,
+        original_price=original.get("original_price"),
+        category_id=original["category_id"],
+        category_name=original["category_name"],
+        condition=original["condition"],
+        brand=original.get("brand", ""),
+        size=original.get("size", ""),
+        color=original.get("color", ""),
+        images=original.get("images", []),
+        shipping_paid_by=original.get("shipping_paid_by", "seller"),
+        shipping_method=original.get("shipping_method", "Standard"),
+        store_id=user.get("store_id"),
+        imported_from_id=original["id"],
+        base_price=base_price,
+    )
+    await db.listings.insert_one(imported.model_dump())
+    return imported
+
+
+# =========================
+# ADMIN: Settings, Withdrawals, Stores, Affiliate
+# =========================
+@api_router.get("/admin/settings")
+async def admin_get_settings(_admin: dict = Depends(require_admin)):
+    return await get_settings()
+
+@api_router.put("/admin/settings")
+async def admin_update_settings(updates: dict, _admin: dict = Depends(require_admin)):
+    allowed = {
+        "platform_fee_pct", "affiliate_commission_pct",
+        "referral_l1_pct", "referral_l2_pct", "referral_l3_pct",
+        "dropship_max_markup_pct", "min_withdrawal", "signup_bonus",
+        "affiliate_mode", "store_mode", "withdrawal_mode", "listing_mode",
+        "semi_threshold", "referral_levels_enabled",
+    }
+    filtered = {k: v for k, v in updates.items() if k in allowed}
+    filtered["updated_at"] = datetime.now(timezone.utc)
+    await db.settings.update_one({"id": "global"}, {"$set": filtered}, upsert=True)
+    return await get_settings()
+
+@api_router.get("/admin/withdrawals", response_model=List[WithdrawalRequest])
+async def admin_withdrawals(_admin: dict = Depends(require_admin), status_filter: Optional[str] = None):
+    q = {}
+    if status_filter:
+        q["status"] = status_filter
+    docs = await db.withdrawals.find(q, {"_id": 0}).sort("created_at", -1).to_list(500)
+    return [WithdrawalRequest(**d) for d in docs]
+
+@api_router.put("/admin/withdrawals/{wd_id}")
+async def admin_process_withdrawal(wd_id: str, updates: dict, _admin: dict = Depends(require_admin)):
+    wd = await db.withdrawals.find_one({"id": wd_id}, {"_id": 0})
+    if not wd:
+        raise HTTPException(404, "Withdrawal not found")
+    new_status = updates.get("status")
+    if new_status not in ("approved", "rejected", "paid"):
+        raise HTTPException(400, "Invalid status")
+    was_paid = wd["status"] == "paid"
+    is_paid = new_status == "paid"
+    set_data = {"status": new_status, "notes": updates.get("notes", wd.get("notes", ""))}
+    if new_status in ("paid", "rejected"):
+        set_data["processed_at"] = datetime.now(timezone.utc)
+    await db.withdrawals.update_one({"id": wd_id}, {"$set": set_data})
+    # Debit wallet on transition to paid
+    if is_paid and not was_paid:
+        await credit_wallet(wd["user_id"], -wd["amount"], "withdrawal", f"Withdrawal #{wd_id[:8]} approved", wd_id)
+    return {"ok": True, "status": new_status}
+
+@api_router.get("/admin/stores", response_model=List[Store])
+async def admin_stores(_admin: dict = Depends(require_admin)):
+    docs = await db.stores.find({}, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    return [Store(**d) for d in docs]
+
+@api_router.put("/admin/stores/{store_id}")
+async def admin_update_store(store_id: str, updates: dict, _admin: dict = Depends(require_admin)):
+    allowed = {"verified_tier", "is_active", "name", "tagline"}
+    filtered = {k: v for k, v in updates.items() if k in allowed}
+    if not filtered:
+        raise HTTPException(400, "No valid updates")
+    await db.stores.update_one({"id": store_id}, {"$set": filtered})
+    doc = await db.stores.find_one({"id": store_id}, {"_id": 0})
+    return Store(**doc) if doc else {"ok": True}
+
+@api_router.get("/admin/affiliate-links", response_model=List[AffiliateLink])
+async def admin_affiliate_links(_admin: dict = Depends(require_admin)):
+    docs = await db.affiliate_links.find({}, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    return [AffiliateLink(**d) for d in docs]
 
 
 # =========================
@@ -727,11 +1264,34 @@ logger = logging.getLogger(__name__)
 async def startup():
     await db.users.create_index("email", unique=True)
     await db.users.create_index("username", unique=True)
+    await db.users.create_index("referral_code")
     await db.listings.create_index("seller_id")
     await db.listings.create_index("category_id")
     await db.listings.create_index("status")
+    await db.listings.create_index("store_id")
     await db.favorites.create_index([("user_id", 1), ("listing_id", 1)], unique=True)
     await db.cart_items.create_index([("user_id", 1), ("listing_id", 1)], unique=True)
+    await db.stores.create_index("slug", unique=True)
+    await db.stores.create_index("owner_id")
+    await db.affiliate_links.create_index("code", unique=True)
+    await db.affiliate_links.create_index("affiliate_user_id")
+    await db.wallet_txs.create_index([("user_id", 1), ("created_at", -1)])
+    await db.withdrawals.create_index("user_id")
+    await db.withdrawals.create_index("status")
+
+    # Migrate existing users: add referral_code, wallet_balance if missing
+    async for u in db.users.find({"referral_code": {"$exists": False}}, {"_id": 0, "id": 1}):
+        await db.users.update_one(
+            {"id": u["id"]},
+            {"$set": {
+                "referral_code": uuid.uuid4().hex[:8].upper(),
+                "wallet_balance": 0.0,
+                "referred_by": None,
+                "store_id": None,
+            }},
+        )
+    # Ensure settings doc exists
+    await get_settings()
 
 
 @app.on_event("shutdown")

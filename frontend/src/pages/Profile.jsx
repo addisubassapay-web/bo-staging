@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Star, Edit, Trash2, Package as PackageIcon } from "lucide-react";
 
 const Profile = () => {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [params, setParams] = useSearchParams();
@@ -19,11 +19,12 @@ const Profile = () => {
   const [sales, setSales] = useState([]);
 
   useEffect(() => {
+    if (authLoading) return;
     if (!user) { navigate("/login"); return; }
     api.get("/listings", { params: { seller_id: user.id, status_filter: "" } }).then((r) => setListings(r.data));
     api.get("/orders", { params: { role: "buyer" } }).then((r) => setOrders(r.data));
     api.get("/orders", { params: { role: "seller" } }).then((r) => setSales(r.data));
-  }, [user, navigate]);
+  }, [user, authLoading, navigate]);
 
   const deleteListing = async (id) => {
     if (!window.confirm("Delete this listing?")) return;

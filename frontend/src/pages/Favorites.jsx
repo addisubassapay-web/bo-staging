@@ -6,15 +6,16 @@ import { useAuth } from "@/context/AuthContext";
 import { Heart } from "lucide-react";
 
 const Favorites = () => {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (authLoading) return;
     if (!user) { navigate("/login"); return; }
     api.get("/favorites").then((r) => setItems(r.data)).finally(() => setLoading(false));
-  }, [user, navigate]);
+  }, [user, authLoading, navigate]);
 
   const onChange = (id, isFav) => {
     if (!isFav) setItems((prev) => prev.filter((i) => i.id !== id));

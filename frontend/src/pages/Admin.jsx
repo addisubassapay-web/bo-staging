@@ -10,7 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { LayoutDashboard, Users, Package, ShoppingBag, FolderTree, Trash2, Star, Plus } from "lucide-react";
+import { LayoutDashboard, Users, Package, ShoppingBag, FolderTree, Trash2, Star, Plus, Settings as SettingsIcon, Wallet, Store as StoreIcon, Save, Check, X as XIcon } from "lucide-react";
 
 const SidebarLink = ({ to, icon: Icon, children }) => (
   <NavLink
@@ -41,11 +41,14 @@ const Dashboard = () => {
       <h2 className="text-2xl font-bold">Dashboard</h2>
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <StatCard label="Users" value={stats.users} />
+        <StatCard label="Stores" value={stats.stores} />
         <StatCard label="Active listings" value={stats.active_listings} />
         <StatCard label="Sold listings" value={stats.sold_listings} />
         <StatCard label="Orders" value={stats.orders} />
         <StatCard label="Categories" value={stats.categories} />
-        <StatCard label="Total revenue" value={formatPrice(stats.revenue)} hint="Across all completed orders" />
+        <StatCard label="Affiliate links" value={stats.affiliate_links} />
+        <StatCard label="Pending withdrawals" value={stats.pending_withdrawals} hint={stats.pending_withdrawals > 0 ? "Requires review" : ""} />
+        <StatCard label="Total revenue" value={formatPrice(stats.revenue)} hint={`Platform fees: ${formatPrice(stats.platform_fees)}`} />
       </div>
     </div>
   );
@@ -333,6 +336,241 @@ const CategoriesMgr = () => {
   );
 };
 
+const SettingsMgr = () => {
+  const [settings, setSettings] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const { toast } = useToast();
+
+  useEffect(() => { api.get("/admin/settings").then((r) => setSettings(r.data)); }, []);
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      const { data } = await api.put("/admin/settings", settings);
+      setSettings(data);
+      toast({ title: "Settings saved" });
+    } catch {
+      toast({ title: "Save failed", variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const set = (k, v) => setSettings((s) => ({ ...s, [k]: v }));
+
+  if (!settings) return <div>Loading…</div>;
+
+  const modeField = (label, key) => (
+    <div>
+      <Label>{label}</Label>
+      <Select value={settings[key]} onValueChange={(v) => set(key, v)}>
+        <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+        <SelectContent>
+          <SelectItem value="auto">Automatic</SelectItem>
+          <SelectItem value="semi">Semi-automatic</SelectItem>
+          <SelectItem value="manual">Manual review</SelectItem>
+        </SelectContent>
+      </Select>
+    </div>
+  );
+
+  const numField = (label, key, step = 0.5, suffix = "%") => (
+    <div>
+      <Label>{label} {suffix && <span className="text-xs text-neutral-400">({suffix})</span>}</Label>
+      <Input type="number" step={step} value={settings[key]} onChange={(e) => set(key, parseFloat(e.target.value))} className="mt-1" />
+    </div>
+  );
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-2xl font-bold">Platform settings</h2>
+        <Button onClick={save} disabled={saving} className="bg-[#FF211F] hover:bg-[#e01d1b]">
+          <Save className="h-4 w-4 mr-1" /> {saving ? "Saving…" : "Save"}
+        </Button>
+      </div>
+
+      <div className="space-y-6">
+        <section className="bg-white border border-neutral-200 rounded-lg p-5">
+          <h3 className="font-semibold mb-3">Commissions & fees</h3>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {numField("Platform fee", "platform_fee_pct")}
+            {numField("Affiliate commission", "affiliate_commission_pct")}
+            {numField("Referral L1", "referral_l1_pct")}
+            {numField("Referral L2", "referral_l2_pct")}
+            {numField("Referral L3", "referral_l3_pct")}
+            {numField("Max dropship markup", "dropship_max_markup_pct")}
+          </div>
+          <div className="mt-4 flex items-center gap-2">
+            <Switch checked={settings.referral_levels_enabled} onCheckedChange={(v) => set("referral_levels_enabled", v)} />
+            <Label className="cursor-pointer">Enable multi-tier referral rewards</Label>
+          </div>
+        </section>
+
+        <section className="bg-white border border-neutral-200 rounded-lg p-5">
+          <h3 className="font-semibold mb-3">Wallet & payouts</h3>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {numField("Minimum withdrawal", "min_withdrawal", 1, "$")}
+            {numField("Signup bonus", "signup_bonus", 1, "$")}
+            {numField("Semi-auto threshold", "semi_threshold", 5, "$")}
+          </div>
+        </section>
+
+        <section className="bg-white border border-neutral-200 rounded-lg p-5">
+          <h3 className="font-semibold mb-3">Automation modes</h3>
+          <p className="text-sm text-neutral-500 mb-3">Choose how new items are approved: instantly (auto), auto up to threshold (semi), or all manual.</p>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {modeField("New listings", "listing_mode")}
+            {modeField("New stores", "store_mode")}
+            {modeField("Affiliate signups", "affiliate_mode")}
+            {modeField("Withdrawals", "withdrawal_mode")}
+          </div>
+        </section>
+      </div>
+    </div>
+  );
+};
+
+const WithdrawalsMgr = () => {
+  const [items, setItems] = useState([]);
+  const { toast } = useToast();
+  const load = () => api.get("/admin/withdrawals").then((r) => setItems(r.data));
+  useEffect(() => { load(); }, []);
+
+  const process = async (wd, status) => {
+    if (!window.confirm(`${status === "paid" ? "Mark as paid" : status === "rejected" ? "Reject" : "Approve"} ${formatPrice(wd.amount)} to ${wd.user_name}?`)) return;
+    try {
+      await api.put(`/admin/withdrawals/${wd.id}`, { status });
+      toast({ title: `Marked ${status}` });
+      load();
+    } catch (err) {
+      toast({ title: "Failed", description: err.response?.data?.detail || "Try again", variant: "destructive" });
+    }
+  };
+
+  return (
+    <div>
+      <h2 className="text-2xl font-bold mb-4">Withdrawals</h2>
+      <div className="bg-white border border-neutral-200 rounded-lg overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead className="bg-neutral-50 text-left">
+            <tr>
+              <th className="p-3">User</th>
+              <th className="p-3">Amount</th>
+              <th className="p-3">Method</th>
+              <th className="p-3">Account info</th>
+              <th className="p-3">Status</th>
+              <th className="p-3">Date</th>
+              <th className="p-3 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.length === 0 && (
+              <tr><td colSpan={7} className="p-8 text-center text-neutral-500">No withdrawal requests.</td></tr>
+            )}
+            {items.map((w) => (
+              <tr key={w.id} className="border-t border-neutral-100">
+                <td className="p-3 font-medium">{w.user_name}</td>
+                <td className="p-3 font-medium">{formatPrice(w.amount)}</td>
+                <td className="p-3 text-neutral-600 capitalize">{w.method.replace("_", " ")}</td>
+                <td className="p-3 text-neutral-600 max-w-xs truncate">{w.account_info || "—"}</td>
+                <td className="p-3"><Badge variant="secondary" className="capitalize">{w.status}</Badge></td>
+                <td className="p-3 text-neutral-500 text-xs">{new Date(w.created_at).toLocaleString()}</td>
+                <td className="p-3 text-right">
+                  {w.status === "pending" && (
+                    <div className="flex gap-1 justify-end">
+                      <Button variant="outline" size="sm" onClick={() => process(w, "paid")}>
+                        <Check className="h-3 w-3 mr-1" /> Pay
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => process(w, "rejected")}>
+                        <XIcon className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  )}
+                  {w.status === "approved" && (
+                    <Button variant="outline" size="sm" onClick={() => process(w, "paid")}>
+                      <Check className="h-3 w-3 mr-1" /> Mark paid
+                    </Button>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};
+
+const StoresMgr = () => {
+  const [stores, setStores] = useState([]);
+  const { toast } = useToast();
+  const load = () => api.get("/admin/stores").then((r) => setStores(r.data));
+  useEffect(() => { load(); }, []);
+
+  const setTier = async (s, verified_tier) => {
+    await api.put(`/admin/stores/${s.id}`, { verified_tier });
+    toast({ title: `Verified tier updated` });
+    load();
+  };
+  const toggleActive = async (s) => {
+    await api.put(`/admin/stores/${s.id}`, { is_active: !s.is_active });
+    load();
+  };
+
+  return (
+    <div>
+      <h2 className="text-2xl font-bold mb-4">Stores</h2>
+      <div className="bg-white border border-neutral-200 rounded-lg overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead className="bg-neutral-50 text-left">
+            <tr>
+              <th className="p-3">Store</th>
+              <th className="p-3">Slug</th>
+              <th className="p-3">Sales</th>
+              <th className="p-3">Followers</th>
+              <th className="p-3">Verified tier</th>
+              <th className="p-3">Status</th>
+              <th className="p-3">Created</th>
+            </tr>
+          </thead>
+          <tbody>
+            {stores.length === 0 && (
+              <tr><td colSpan={7} className="p-8 text-center text-neutral-500">No stores yet.</td></tr>
+            )}
+            {stores.map((s) => (
+              <tr key={s.id} className="border-t border-neutral-100">
+                <td className="p-3 font-medium">{s.name}</td>
+                <td className="p-3 text-neutral-600 font-mono text-xs">/{s.slug}</td>
+                <td className="p-3">{s.total_sales}</td>
+                <td className="p-3">{s.followers_count}</td>
+                <td className="p-3">
+                  <Select value={s.verified_tier} onValueChange={(v) => setTier(s, v)}>
+                    <SelectTrigger className="h-8 w-28"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">None</SelectItem>
+                      <SelectItem value="bronze">Bronze</SelectItem>
+                      <SelectItem value="silver">Silver</SelectItem>
+                      <SelectItem value="gold">Gold</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </td>
+                <td className="p-3">
+                  <div className="flex items-center gap-2">
+                    <Switch checked={s.is_active} onCheckedChange={() => toggleActive(s)} />
+                    <span className="text-xs text-neutral-500">{s.is_active ? "Active" : "Disabled"}</span>
+                  </div>
+                </td>
+                <td className="p-3 text-neutral-500 text-xs">{new Date(s.created_at).toLocaleDateString()}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};
+
 const Admin = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
@@ -351,17 +589,23 @@ const Admin = () => {
         </div>
         <SidebarLink to="/admin" icon={LayoutDashboard}>Dashboard</SidebarLink>
         <SidebarLink to="/admin/users" icon={Users}>Users</SidebarLink>
+        <SidebarLink to="/admin/stores" icon={StoreIcon}>Stores</SidebarLink>
         <SidebarLink to="/admin/listings" icon={Package}>Listings</SidebarLink>
         <SidebarLink to="/admin/orders" icon={ShoppingBag}>Orders</SidebarLink>
         <SidebarLink to="/admin/categories" icon={FolderTree}>Categories</SidebarLink>
+        <SidebarLink to="/admin/withdrawals" icon={Wallet}>Withdrawals</SidebarLink>
+        <SidebarLink to="/admin/settings" icon={SettingsIcon}>Settings</SidebarLink>
       </aside>
       <main>
         <Routes>
           <Route index element={<Dashboard />} />
           <Route path="users" element={<UsersMgr />} />
+          <Route path="stores" element={<StoresMgr />} />
           <Route path="listings" element={<ListingsMgr />} />
           <Route path="orders" element={<OrdersMgr />} />
           <Route path="categories" element={<CategoriesMgr />} />
+          <Route path="withdrawals" element={<WithdrawalsMgr />} />
+          <Route path="settings" element={<SettingsMgr />} />
         </Routes>
       </main>
     </div>

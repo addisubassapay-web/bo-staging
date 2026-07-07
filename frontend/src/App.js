@@ -16,6 +16,12 @@ import Checkout from "@/pages/Checkout";
 import Favorites from "@/pages/Favorites";
 import Profile from "@/pages/Profile";
 import Admin from "@/pages/Admin";
+import Wallet from "@/pages/Wallet";
+import Affiliate from "@/pages/Affiliate";
+import Referrals from "@/pages/Referrals";
+import StoreManage from "@/pages/StoreManage";
+import StorePage from "@/pages/StorePage";
+import AffiliateRedirect from "@/pages/AffiliateRedirect";
 
 function App() {
   return (
@@ -35,6 +41,12 @@ function App() {
               <Route path="/checkout/:id" element={<Checkout />} />
               <Route path="/favorites" element={<Favorites />} />
               <Route path="/profile" element={<Profile />} />
+              <Route path="/wallet" element={<Wallet />} />
+              <Route path="/affiliate" element={<Affiliate />} />
+              <Route path="/referrals" element={<Referrals />} />
+              <Route path="/my/store" element={<StoreManage />} />
+              <Route path="/store/:slug" element={<StorePage />} />
+              <Route path="/r/:code" element={<AffiliateRedirect />} />
               <Route path="/admin/*" element={<Admin />} />
             </Routes>
           </main>

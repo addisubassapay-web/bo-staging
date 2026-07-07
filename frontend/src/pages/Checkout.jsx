@@ -11,7 +11,7 @@ import { CheckCircle2, Lock } from "lucide-react";
 const Checkout = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const [listing, setListing] = useState(null);
   const [address, setAddress] = useState({ full_name: "", street: "", city: "", state: "", zip: "", country: "USA" });
@@ -20,9 +20,10 @@ const Checkout = () => {
   const [done, setDone] = useState(null);
 
   useEffect(() => {
-    if (!user) navigate("/login");
+    if (authLoading) return;
+    if (!user) { navigate("/login"); return; }
     api.get(`/listings/${id}`).then((r) => setListing(r.data));
-  }, [id, user, navigate]);
+  }, [id, user, authLoading, navigate]);
 
   const place = async (e) => {
     e.preventDefault();
@@ -32,8 +33,10 @@ const Checkout = () => {
     }
     setPlacing(true);
     try {
-      const { data } = await api.post("/orders", { listing_id: id, shipping_address: address });
+      const affiliate_code = sessionStorage.getItem("affiliate_code") || null;
+      const { data } = await api.post("/orders", { listing_id: id, shipping_address: address, affiliate_code });
       setDone(data);
+      sessionStorage.removeItem("affiliate_code");
       await api.delete(`/cart/${id}`).catch(() => {});
     } catch (err) {
       toast({ title: "Payment failed", description: err.response?.data?.detail || "Try again", variant: "destructive" });

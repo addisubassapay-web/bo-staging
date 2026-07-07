@@ -8,18 +8,16 @@ import { useToast } from "@/hooks/use-toast";
 
 const Cart = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user) {
-      navigate("/login");
-      return;
-    }
+    if (authLoading) return;
+    if (!user) { navigate("/login"); return; }
     api.get("/cart").then((r) => setItems(r.data)).catch(() => {}).finally(() => setLoading(false));
-  }, [user, navigate]);
+  }, [user, authLoading, navigate]);
 
   const remove = async (id) => {
     await api.delete(`/cart/${id}`);

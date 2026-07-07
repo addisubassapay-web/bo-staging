@@ -15,7 +15,7 @@ const PLACEHOLDER_SEEDS = ["seed1", "seed2", "seed3", "seed4", "seed5", "seed6",
 
 const Sell = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const [categories, setCategories] = useState([]);
   const [images, setImages] = useState([]);
@@ -35,9 +35,10 @@ const Sell = () => {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
+    if (authLoading) return;
     if (!user) navigate("/login");
     api.get("/categories").then((r) => setCategories(r.data));
-  }, [user, navigate]);
+  }, [user, authLoading, navigate]);
 
   const addPlaceholder = () => {
     const seed = PLACEHOLDER_SEEDS[Math.floor(Math.random() * PLACEHOLDER_SEEDS.length)] + Date.now();

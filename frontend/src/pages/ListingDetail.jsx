@@ -3,9 +3,120 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import api, { formatPrice, conditionLabel } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Heart, ShoppingCart, MessageCircle, Truck, Shield, ChevronLeft, Share2, Star } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
+import { Heart, ShoppingCart, MessageCircle, Truck, Shield, ChevronLeft, Share2, Star, LinkIcon, Copy, PackagePlus } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+
+const AffiliateShareButton = ({ listingId }) => {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
+  const [link, setLink] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const create = async () => {
+    if (!user) { navigate("/login"); return; }
+    setLoading(true);
+    try {
+      const { data } = await api.post("/affiliate/links", { listing_id: listingId });
+      setLink(`${window.location.origin}/r/${data.code}`);
+      setOpen(true);
+    } catch {
+      toast({ title: "Failed to create link", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const copy = () => {
+    navigator.clipboard.writeText(link);
+    toast({ title: "Link copied" });
+  };
+
+  return (
+    <>
+      <Button onClick={create} variant="outline" className="h-11" disabled={loading}>
+        <LinkIcon className="h-4 w-4 mr-2" /> Share as affiliate
+      </Button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Your affiliate link</DialogTitle></DialogHeader>
+          <p className="text-sm text-neutral-600">Share this link. You&apos;ll earn a commission on every sale.</p>
+          <div className="flex gap-2 mt-2">
+            <Input value={link} readOnly className="font-mono text-xs" />
+            <Button onClick={copy}><Copy className="h-4 w-4" /></Button>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpen(false)}>Close</Button>
+            <Button className="bg-[#FF211F] hover:bg-[#e01d1b]" onClick={() => navigate("/affiliate")}>Go to dashboard</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+};
+
+const DropshipImportButton = ({ listing, onImported }) => {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
+  const [markup, setMarkup] = useState(20);
+  const [loading, setLoading] = useState(false);
+
+  const doImport = async () => {
+    if (!user) { navigate("/login"); return; }
+    setLoading(true);
+    try {
+      const { data } = await api.post("/listings/import", { listing_id: listing.id, markup_pct: parseFloat(markup) });
+      toast({ title: "Imported to your store", description: "You'll earn the markup on every sale." });
+      setOpen(false);
+      onImported?.(data.id);
+    } catch (err) {
+      toast({ title: "Import failed", description: err.response?.data?.detail || "Try again", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const newPrice = (listing.price * (1 + markup / 100)).toFixed(2);
+  const earn = (listing.price * markup / 100).toFixed(2);
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" className="h-11">
+          <PackagePlus className="h-4 w-4 mr-2" /> Import & resell
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader><DialogTitle>Import to your store</DialogTitle></DialogHeader>
+        <p className="text-sm text-neutral-600">
+          Sell this item without holding inventory. Set your markup — you earn the difference, the original seller fulfills.
+        </p>
+        <div className="mt-3">
+          <Label>Markup %</Label>
+          <Input type="number" min="0" max="100" value={markup} onChange={(e) => setMarkup(e.target.value)} className="mt-1" />
+        </div>
+        <div className="mt-3 bg-neutral-50 rounded-lg p-3 text-sm space-y-1">
+          <div className="flex justify-between"><span>Base price</span><span>${listing.price.toFixed(2)}</span></div>
+          <div className="flex justify-between"><span>Your listing price</span><span className="font-semibold">${newPrice}</span></div>
+          <div className="flex justify-between text-green-600"><span>You earn per sale</span><span className="font-semibold">${earn}</span></div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+          <Button className="bg-[#FF211F] hover:bg-[#e01d1b]" onClick={doImport} disabled={loading}>
+            {loading ? "Importing…" : "Import"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
 
 const ListingDetail = () => {
   const { id } = useParams();
@@ -170,6 +281,10 @@ const ListingDetail = () => {
                   <Heart className={`h-4 w-4 mr-2 ${fav ? "fill-[#FF211F] text-[#FF211F]" : ""}`} />
                   {fav ? "Saved" : "Save"}
                 </Button>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <AffiliateShareButton listingId={listing.id} />
+                <DropshipImportButton listing={listing} onImported={(id) => navigate(`/listing/${id}`)} />
               </div>
               <Button variant="ghost" className="w-full h-11" onClick={() => toast({ title: "Chat coming soon", description: "Message the seller feature is available in-app." })}>
                 <MessageCircle className="h-4 w-4 mr-2" /> Message seller

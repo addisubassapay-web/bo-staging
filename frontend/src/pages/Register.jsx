@@ -1,17 +1,23 @@
-import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import api from "@/lib/api";
 
 const Register = () => {
   const navigate = useNavigate();
-  const { register } = useAuth();
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
-  const [form, setForm] = useState({ email: "", username: "", password: "" });
+  const [form, setForm] = useState({ email: "", username: "", password: "", referral_code: "" });
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const ref = searchParams.get("ref");
+    if (ref) setForm((f) => ({ ...f, referral_code: ref.toUpperCase() }));
+  }, [searchParams]);
 
   const submit = async (e) => {
     e.preventDefault();
@@ -21,9 +27,15 @@ const Register = () => {
     }
     setLoading(true);
     try {
-      const u = await register(form.email, form.username, form.password);
-      toast({ title: `Welcome, ${u.username}!` });
-      navigate("/");
+      const { data } = await api.post("/auth/register", {
+        email: form.email,
+        username: form.username,
+        password: form.password,
+        referral_code: form.referral_code || null,
+      });
+      localStorage.setItem("mercari_token", data.token);
+      toast({ title: `Welcome, ${data.user.username}!` });
+      window.location.href = "/";
     } catch (err) {
       toast({ title: "Sign up failed", description: err.response?.data?.detail || "Try a different email or username", variant: "destructive" });
     } finally {
@@ -49,6 +61,10 @@ const Register = () => {
           <div>
             <Label>Password</Label>
             <Input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required minLength={6} className="mt-1" />
+          </div>
+          <div>
+            <Label>Referral code <span className="text-xs text-neutral-400">(optional)</span></Label>
+            <Input value={form.referral_code} onChange={(e) => setForm({ ...form, referral_code: e.target.value.toUpperCase() })} placeholder="Have a friend's code?" className="mt-1 font-mono uppercase" maxLength={12} />
           </div>
           <Button type="submit" disabled={loading} className="w-full bg-[#FF211F] hover:bg-[#e01d1b] h-11">
             {loading ? "Creating…" : "Create account"}

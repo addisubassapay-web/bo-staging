@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Search, ShoppingCart, Heart, User, Menu, LogOut, Package, Settings, Store, X } from "lucide-react";
+import { Search, ShoppingCart, Heart, User, Menu, LogOut, Package, Settings, Store, X, Wallet, Link as LinkIcon, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -106,6 +106,19 @@ const Header = () => {
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate("/profile?tab=orders")}>
                   <Package className="h-4 w-4 mr-2" /> Orders
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => navigate("/wallet")}>
+                  <Wallet className="h-4 w-4 mr-2" /> Wallet
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/my/store")}>
+                  <Store className="h-4 w-4 mr-2" /> My store
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/affiliate")}>
+                  <LinkIcon className="h-4 w-4 mr-2" /> Affiliate
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/referrals")}>
+                  <Users className="h-4 w-4 mr-2" /> Referrals
                 </DropdownMenuItem>
                 {user.role === "admin" && (
                   <>
