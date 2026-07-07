@@ -1,0 +1,14 @@
+.App {
+    min-height: 100vh;
+}
+
+img {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Better focus rings */
+:focus-visible {
+    outline: 2px solid #FF211F;
+    outline-offset: 2px;
+}
