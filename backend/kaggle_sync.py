@@ -12,6 +12,8 @@ from pathlib import Path
 from typing import List, Dict, Optional, Iterator
 import uuid
 
+from image_pools import pick_images
+
 DATA_FILE = Path("/app/backend/kaggle_data/items.tsv")
 
 # JPY -> USD (rounded, updated 2026). We use a fixed rate for consistency.
@@ -95,10 +97,10 @@ def jpy_to_usd(jpy: float) -> float:
         return 0.99
 
 
-def make_placeholder_images(item_id: str, count: int = 3) -> List[str]:
-    """Generate deterministic placeholder image URLs from item id."""
-    h = hashlib.md5(item_id.encode()).hexdigest()[:12]
-    return [f"https://picsum.photos/seed/{h}{i}/800/800" for i in range(count)]
+def make_placeholder_images(item_id: str, category_slug: str = "other", count: int = 3) -> List[str]:
+    """Real category-matched product photos from Unsplash/Pexels."""
+    seed = int(hashlib.md5(item_id.encode()).hexdigest()[:8], 16)
+    return pick_images(category_slug, seed, count=count)
 
 
 def make_title(name: str, brand: str) -> str:
@@ -174,7 +176,7 @@ def build_listing(
         "brand": (row.get("brand_name") or "").strip()[:60],
         "size": "",
         "color": "",
-        "images": make_placeholder_images(item_id),
+        "images": make_placeholder_images(item_id, cat_slug),
         "shipping_paid_by": shipping_paid_by,
         "shipping_method": "Standard",
         "status": "active",
@@ -184,6 +186,7 @@ def build_listing(
         "store_id": None,
         "imported_from_id": None,
         "base_price": None,
+        "translated": False,
         "created_at": datetime.now(timezone.utc) - timedelta(minutes=random.randint(0, 60 * 24 * 30)),
         # Meta for live sync tracking
         "kaggle_source_id": row.get("id"),
@@ -352,6 +355,8 @@ async def get_sync_status(db) -> Dict:
     state = await db.sync_state.find_one({"id": "kaggle"}, {"_id": 0}) or {}
     active_listings = await db.listings.count_documents({"status": "active"})
     sold_listings = await db.listings.count_documents({"status": "sold"})
+    translated_count = await db.listings.count_documents({"translated": True})
+    total_listings = await db.listings.count_documents({})
     return {
         "source": state.get("source", "hyamamoto2000/mercari-jp-dataset"),
         "last_sync_at": state.get("last_sync_at").isoformat() if state.get("last_sync_at") else None,
@@ -362,4 +367,9 @@ async def get_sync_status(db) -> Dict:
         "processed_rows": state.get("processed_rows", 0),
         "target_count": state.get("target_count", 0),
         "live_sync_enabled": True,
+        "translated_count": translated_count,
+        "total_listings": total_listings,
+        "translation_pct": round((translated_count / total_listings * 100) if total_listings else 0, 1),
+        "translation_running": bool(state.get("translation_running")),
+        "translation_progress": state.get("translation_progress"),
     }
