@@ -1402,3 +1402,249 @@ agent_communication:
       - System restored to 10,000 listings as requested
       
       RECOMMENDATION: All Kaggle integration features are production-ready. The Mercari clone now has real Japanese marketplace data with live simulation capabilities.
+
+
+  - task: "Kaggle Integration UI: Live sync badge in header"
+    implemented: true
+    working: true
+    file: "frontend/src/components/LiveSyncBadge.jsx, Header.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: |
+          ✅ FULLY WORKING
+          - Green pulsing dot visible (animate-ping animation)
+          - "Live" text visible with Radio icon
+          - Relative timestamp showing and updating correctly (53s ago → 28s ago after 30 seconds)
+          - Item count showing and updating correctly (9,940 → 9,935 live items)
+          - Tooltip with source info working on hover (Source: hyamamoto2000/mercari-jp-dataset, Last sync timestamp, Active count)
+          - Badge auto-refreshes every 30 seconds
+          - All UI elements rendering correctly in header (top-right, next to Favorites/Cart)
+
+  - task: "Kaggle Integration UI: Real Mercari Japan data display"
+    implemented: true
+    working: true
+    file: "frontend/src/pages/Search.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: |
+          ✅ FULLY WORKING
+          - Products with Japanese characters visible (59 detected on search page)
+          - USD prices visible with dollar sign and cents (60 detected)
+          - Sample titles confirmed with Japanese text: "FiiO KA17 ヘッドホンアンプ DAC オマケ付き ブラック 新品未開封(2)", "Apple Pencil 第二世代", "CCP TZJ-MA221-WH 電動モップ", etc.
+          - At least 60 items loading in grid initially
+          - Category filters working (Women, Electronics tested)
+          - Price range slider working ($5-$50 filter tested)
+          - All search and filter functionality working correctly with real Kaggle data
+
+  - task: "Kaggle Integration UI: Admin Kaggle Sync page"
+    implemented: true
+    working: true
+    file: "frontend/src/pages/AdminKaggleSync.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: |
+          ✅ FULLY WORKING
+          - Page accessible at /admin/kaggle-sync
+          - "Kaggle Data Sync" heading visible with database icon
+          - Description text: "Import real Mercari Japan product listings from Kaggle. Prices are automatically converted to USD."
+          - Manual sync card visible with:
+            * Target listings input (100 to 100,000 range)
+            * "Replace all existing listings (recommended)" checkbox
+            * "Sync now" button with loading state
+          - Live sync status card visible with all fields:
+            * Source: hyamamoto2000/mercari-jp-dataset
+            * Active listings: 9,935 (formatted with commas)
+            * Sold listings: 65
+            * Imported total: 10,000
+            * Rows scanned: 81,541
+            * Last full sync: 7/10/2026, 10:02:30 PM
+            * Last live tick: 7/10/2026, 10:14:53 PM
+            * Live simulator: "Running every 60s" with green checkmark
+          - "About live sync" info box visible at bottom
+          - Page auto-refreshes every 15 seconds
+          - All UI elements rendering correctly
+
+  - task: "Kaggle Integration UI: Manual sync functionality"
+    implemented: true
+    working: true
+    file: "frontend/src/pages/AdminKaggleSync.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: |
+          ✅ FULLY WORKING
+          - Changed target listings to 500
+          - "Replace all existing" checkbox working (checked by default)
+          - Clicked "Sync now" button
+          - Browser confirmation dialog appeared with correct message
+          - Confirmed dialog
+          - Syncing state visible with spinning icon
+          - Success toast appeared: "Sync complete" with count details
+          - Active listings updated to 495 (close to 500 target)
+          - Changed target back to 10000
+          - Clicked "Sync now" again, confirmed dialog
+          - Active listings updated to 9,995 (close to 10,000 target)
+          - Full sync flow working correctly with proper validations and UI feedback
+
+  - task: "Kaggle Integration UI: Live sync tick verification"
+    implemented: true
+    working: true
+    file: "frontend/src/pages/AdminKaggleSync.jsx, backend/kaggle_sync.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: |
+          ✅ FULLY WORKING
+          - Initial "Last live tick" timestamp: 7/10/2026, 10:16:54 PM
+          - Waited 70 seconds (page auto-refreshes every 15 seconds)
+          - Updated "Last live tick" timestamp: 7/10/2026, 10:17:54 PM
+          - Timestamp advanced by 1 minute as expected
+          - Background scheduler running correctly every 60 seconds
+          - Live simulation updating sync state correctly
+          - UI reflecting live tick updates in real-time
+
+  - task: "Kaggle Integration UI: Admin sidebar with Kaggle sync link"
+    implemented: true
+    working: true
+    file: "frontend/src/pages/Admin.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: |
+          ✅ FULLY WORKING
+          - Admin sidebar includes ALL 9 required items:
+            * Dashboard ✓
+            * Users ✓
+            * Stores ✓
+            * Listings ✓
+            * Orders ✓
+            * Categories ✓
+            * Withdrawals ✓
+            * Kaggle sync ✓ (with database icon)
+            * Settings ✓
+          - "Kaggle sync" link visible and clickable
+          - Database icon visible next to "Kaggle sync" text
+          - Navigation to /admin/kaggle-sync working correctly
+          - All sidebar items properly styled and functional
+
+metadata:
+  created_by: "main_agent"
+  version: "1.0"
+  test_sequence: 6
+  run_ui: false
+
+test_plan:
+  current_focus: []
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+  - agent: "testing"
+    message: |
+      ✅ KAGGLE INTEGRATION UI E2E TESTING COMPLETE - ALL FEATURES WORKING (6/6 pass rate: 100%)
+      
+      TESTED FEATURES (ALL PASSED):
+      
+      1. ✅ Live sync badge in header (public, no login needed)
+         - Green pulsing dot with animate-ping animation
+         - "Live" text with Radio icon
+         - Relative timestamp updating correctly (53s ago → 28s ago)
+         - Item count updating correctly (9,940 → 9,935 live items)
+         - Tooltip with source info on hover
+         - Badge auto-refreshes every 30 seconds
+      
+      2. ✅ Real Mercari Japan data display
+         - 59 products with Japanese characters detected
+         - 60 products with USD prices detected
+         - Sample titles confirmed: "FiiO KA17 ヘッドホンアンプ", "Apple Pencil 第二世代", etc.
+         - At least 60 items loading in grid
+         - Category filters working (Women, Electronics)
+         - Price range slider working ($5-$50)
+      
+      3. ✅ Admin Kaggle Sync page
+         - Page accessible at /admin/kaggle-sync
+         - "Kaggle Data Sync" heading with database icon
+         - Manual sync card with target input and checkbox
+         - Live sync status card with all 8 fields:
+           * Source: hyamamoto2000/mercari-jp-dataset
+           * Active listings: 9,935
+           * Sold listings: 65
+           * Imported total: 10,000
+           * Rows scanned: 81,541
+           * Last full sync timestamp
+           * Last live tick timestamp
+           * Live simulator: "Running every 60s" ✓
+         - Page auto-refreshes every 15 seconds
+      
+      4. ✅ Manual sync functionality
+         - Target changed to 500, sync completed successfully
+         - Active listings updated to 495
+         - Target changed back to 10000, sync completed successfully
+         - Active listings updated to 9,995
+         - Confirmation dialogs working
+         - Success toasts appearing
+         - Loading states working
+      
+      5. ✅ Live sync tick verification
+         - Initial timestamp: 7/10/2026, 10:16:54 PM
+         - After 70s: 7/10/2026, 10:17:54 PM
+         - Timestamp advanced by 1 minute
+         - Background scheduler working correctly
+      
+      6. ✅ Admin sidebar
+         - All 9 items present and functional:
+           Dashboard, Users, Stores, Listings, Orders, Categories, Withdrawals, Kaggle sync, Settings
+         - "Kaggle sync" link with database icon working
+      
+      SCREENSHOTS CAPTURED:
+      - kaggle_01_live_badge.png - Live sync badge in header
+      - kaggle_02_live_badge_after_30s.png - Badge after 30 seconds
+      - kaggle_03_search_page.png - Search page with Japanese products
+      - kaggle_04_electronics_filter.png - Electronics category filter
+      - kaggle_05_price_filter.png - Price range filter
+      - kaggle_06_admin_sidebar.png - Admin sidebar with Kaggle sync link
+      - kaggle_07_admin_sync_page.png - Admin Kaggle Sync page
+      - kaggle_08_sync_500_setup.png - Manual sync setup (500 listings)
+      - kaggle_10_sync_complete.png - Sync complete (495 listings)
+      - kaggle_11_sync_10000_complete.png - Sync complete (9,995 listings)
+      - kaggle_12_live_tick_after_70s.png - Live tick after 70 seconds
+      - kaggle_13_admin_sidebar_full.png - Full admin sidebar
+      - kaggle_14_women_filter.png - Women category filter
+      - kaggle_15_electronics_filter.png - Electronics category filter
+      - kaggle_16_price_filter.png - Price range filter ($5-$50)
+      - kaggle_17_admin_sidebar_verified.png - Admin sidebar verified
+      
+      SUMMARY:
+      - 6/6 features (100%) fully functional
+      - All UI components rendering correctly
+      - All backend integrations working perfectly
+      - Live sync badge visible to public users
+      - Real Mercari Japan data displaying correctly with Japanese titles and USD prices
+      - Admin Kaggle Sync page fully functional with manual sync and live status
+      - Manual sync working with proper validations and UI feedback
+      - Live sync tick advancing correctly every 60 seconds
+      - Admin sidebar complete with all 9 items including Kaggle sync
+      
+      RECOMMENDATION: All Kaggle integration UI features are production-ready. The Mercari clone now has a complete Kaggle data sync system with public live status badge, real Japanese marketplace data, and full admin controls for data management.
