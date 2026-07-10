@@ -9,9 +9,12 @@ from pathlib import Path
 from pydantic import BaseModel, Field, EmailStr
 from typing import List, Optional, Literal
 import uuid
+import asyncio
 from datetime import datetime, timezone, timedelta
 import jwt
 from passlib.context import CryptContext
+
+from kaggle_sync import import_from_kaggle, simulate_live_update, get_sync_status
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -1348,6 +1351,29 @@ async def store_analytics(user: dict = Depends(get_current_user)):
 
 
 # =========================
+# KAGGLE SYNC
+# =========================
+@api_router.post("/admin/sync/kaggle")
+async def admin_sync_kaggle(payload: dict, _admin: dict = Depends(require_admin)):
+    """Import listings from the downloaded Kaggle Mercari JP TSV."""
+    target = int(payload.get("target_count", 10000))
+    replace = bool(payload.get("replace_existing", True))
+    if target < 100 or target > 100000:
+        raise HTTPException(400, "target_count must be between 100 and 100000")
+    result = await import_from_kaggle(db, target_count=target, replace_existing=replace)
+    return result
+
+@api_router.get("/admin/sync/status")
+async def admin_sync_status(_admin: dict = Depends(require_admin)):
+    return await get_sync_status(db)
+
+@api_router.get("/sync/status")
+async def public_sync_status():
+    """Public view of live-sync status for the UI live indicator."""
+    return await get_sync_status(db)
+
+
+# =========================
 # Seed
 # =========================
 @api_router.post("/seed")
@@ -1538,6 +1564,19 @@ async def startup():
         )
     # Ensure settings doc exists
     await get_settings()
+
+    # Start background live-sync simulation
+    async def live_sync_loop():
+        # Wait a bit to let the app finish initializing
+        await asyncio.sleep(30)
+        while True:
+            try:
+                await simulate_live_update(db)
+            except Exception as e:
+                logger.error(f"live_sync tick failed: {e}")
+            await asyncio.sleep(60)  # tick every 60 seconds
+
+    asyncio.create_task(live_sync_loop())
 
 
 @app.on_event("shutdown")

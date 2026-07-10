@@ -10,7 +10,8 @@ import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { LayoutDashboard, Users, Package, ShoppingBag, FolderTree, Trash2, Star, Plus, Settings as SettingsIcon, Wallet, Store as StoreIcon, Save, Check, X as XIcon } from "lucide-react";
+import { LayoutDashboard, Users, Package, ShoppingBag, FolderTree, Trash2, Star, Plus, Settings as SettingsIcon, Wallet, Store as StoreIcon, Save, Check, X as XIcon, Database } from "lucide-react";
+import KaggleSync from "@/pages/AdminKaggleSync";
 
 const SidebarLink = ({ to, icon: Icon, children }) => (
   <NavLink
@@ -594,6 +595,7 @@ const Admin = () => {
         <SidebarLink to="/admin/orders" icon={ShoppingBag}>Orders</SidebarLink>
         <SidebarLink to="/admin/categories" icon={FolderTree}>Categories</SidebarLink>
         <SidebarLink to="/admin/withdrawals" icon={Wallet}>Withdrawals</SidebarLink>
+        <SidebarLink to="/admin/kaggle-sync" icon={Database}>Kaggle sync</SidebarLink>
         <SidebarLink to="/admin/settings" icon={SettingsIcon}>Settings</SidebarLink>
       </aside>
       <main>
@@ -605,6 +607,7 @@ const Admin = () => {
           <Route path="orders" element={<OrdersMgr />} />
           <Route path="categories" element={<CategoriesMgr />} />
           <Route path="withdrawals" element={<WithdrawalsMgr />} />
+          <Route path="kaggle-sync" element={<KaggleSync />} />
           <Route path="settings" element={<SettingsMgr />} />
         </Routes>
       </main>

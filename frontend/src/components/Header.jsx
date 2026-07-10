@@ -14,6 +14,7 @@ import {
 import { useAuth } from "@/context/AuthContext";
 import api from "@/lib/api";
 import NotificationsBell from "@/components/NotificationsBell";
+import LiveSyncBadge from "@/components/LiveSyncBadge";
 
 const Header = () => {
   const { user, logout } = useAuth();
@@ -59,6 +60,7 @@ const Header = () => {
         </form>
 
         <nav className="hidden md:flex items-center gap-1">
+          <LiveSyncBadge />
           <NotificationsBell />
           <Link to="/favorites">
             <Button variant="ghost" size="sm" className="relative">
