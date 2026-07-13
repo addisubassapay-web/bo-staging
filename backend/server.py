@@ -14,8 +14,8 @@ from datetime import datetime, timezone, timedelta
 import jwt
 from passlib.context import CryptContext
 
-from kaggle_sync import import_from_kaggle, simulate_live_update, get_sync_status
-from translator import translate_all_listings
+from apify_sync import import_from_apify, simulate_live_update, get_sync_status
+
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -1352,17 +1352,30 @@ async def store_analytics(user: dict = Depends(get_current_user)):
 
 
 # =========================
-# KAGGLE SYNC
+# APIFY SYNC (Amazon US)
 # =========================
-@api_router.post("/admin/sync/kaggle")
-async def admin_sync_kaggle(payload: dict, _admin: dict = Depends(require_admin)):
-    """Import listings from the downloaded Kaggle Mercari JP TSV."""
-    target = int(payload.get("target_count", 10000))
+@api_router.post("/admin/sync/apify")
+async def admin_sync_apify(payload: dict, _admin: dict = Depends(require_admin)):
+    """Trigger Apify Amazon scrape + import. Runs in background."""
+    target = int(payload.get("target_count", 5000))
     replace = bool(payload.get("replace_existing", True))
-    if target < 100 or target > 100000:
-        raise HTTPException(400, "target_count must be between 100 and 100000")
-    result = await import_from_kaggle(db, target_count=target, replace_existing=replace)
-    return result
+    if target < 100 or target > 20000:
+        raise HTTPException(400, "target_count must be between 100 and 20000")
+
+    state = await db.sync_state.find_one({"id": "apify"}, {"_id": 0}) or {}
+    if state.get("sync_running"):
+        return {"ok": True, "already_running": True}
+
+    async def _run():
+        try:
+            await import_from_apify(db, target_count=target, replace_existing=replace)
+        except Exception as e:
+            logger.error(f"Apify sync failed: {e}")
+            await db.sync_state.update_one(
+                {"id": "apify"}, {"$set": {"sync_running": False, "message": f"Error: {e}"}}
+            )
+    asyncio.create_task(_run())
+    return {"ok": True, "started": True}
 
 @api_router.get("/admin/sync/status")
 async def admin_sync_status(_admin: dict = Depends(require_admin)):
@@ -1370,36 +1383,7 @@ async def admin_sync_status(_admin: dict = Depends(require_admin)):
 
 @api_router.get("/sync/status")
 async def public_sync_status():
-    """Public view of live-sync status for the UI live indicator."""
     return await get_sync_status(db)
-
-
-@api_router.post("/admin/sync/translate")
-async def admin_translate(_admin: dict = Depends(require_admin)):
-    """Trigger LLM-powered Japanese->English translation of all untranslated listings.
-    Runs in the background; poll /api/admin/sync/status for progress."""
-    # Guard: don't launch twice if already running
-    state = await db.sync_state.find_one({"id": "kaggle"}, {"_id": 0}) or {}
-    if state.get("translation_running"):
-        return {"ok": True, "already_running": True}
-    await db.sync_state.update_one(
-        {"id": "kaggle"},
-        {"$set": {"translation_running": True, "translation_progress": {"done": 0, "total": 0, "pct": 0}}},
-        upsert=True,
-    )
-
-    async def _run():
-        try:
-            await translate_all_listings(db)
-        except Exception as e:
-            logger.error(f"Translation task failed: {e}")
-        finally:
-            await db.sync_state.update_one(
-                {"id": "kaggle"}, {"$set": {"translation_running": False}}, upsert=True
-            )
-
-    asyncio.create_task(_run())
-    return {"ok": True, "started": True}
 
 
 # =========================
@@ -1605,7 +1589,21 @@ async def startup():
                 logger.error(f"live_sync tick failed: {e}")
             await asyncio.sleep(60)  # tick every 60 seconds
 
+    async def apify_auto_sync_loop():
+        # Auto-sync Amazon data every 24 hours
+        await asyncio.sleep(60 * 60 * 24)  # wait 24h before first auto-sync
+        while True:
+            try:
+                state = await db.sync_state.find_one({"id": "apify"}, {"_id": 0}) or {}
+                if not state.get("sync_running"):
+                    logger.info("Starting scheduled Apify auto-sync (every 24h)")
+                    await import_from_apify(db, target_count=5000, replace_existing=True)
+            except Exception as e:
+                logger.error(f"apify auto-sync failed: {e}")
+            await asyncio.sleep(60 * 60 * 24)
+
     asyncio.create_task(live_sync_loop())
+    asyncio.create_task(apify_auto_sync_loop())
 
 
 @app.on_event("shutdown")
