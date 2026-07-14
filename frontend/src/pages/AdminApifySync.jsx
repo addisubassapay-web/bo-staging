@@ -54,7 +54,7 @@ const ApifySync = () => {
       </div>
       <p className="text-neutral-600 mb-6">
         Live product data scraped from Amazon.com via <span className="font-mono text-xs bg-neutral-100 px-1.5 py-0.5 rounded">junglee/amazon-crawler</span>.
-        Auto-syncs every 24 hours; you can also trigger a manual sync below.
+        Auto-syncs weekly; you can also trigger a manual sync below.
       </p>
 
       <div className="grid md:grid-cols-2 gap-6">
@@ -115,7 +115,7 @@ const ApifySync = () => {
             <div className="flex justify-between items-center">
               <span className="text-neutral-500">Auto-sync</span>
               <span className="flex items-center gap-1 text-green-600 text-xs font-medium">
-                <CheckCircle2 className="h-3 w-3" /> Every 24 hours
+                <CheckCircle2 className="h-3 w-3" /> Every 7 days
               </span>
             </div>
           </div>
@@ -140,7 +140,7 @@ const ApifySync = () => {
       )}
 
       <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-900">
-        <strong>How it works:</strong> The <em>junglee/amazon-crawler</em> Apify actor scrapes Amazon.com bestseller pages across 11 department categories (Women, Men, Kids, Electronics, Home, Beauty, Sports, Toys, Books, Handmade, Other). Product data — including real photos, prices, ratings, and descriptions — is imported into MongoDB. A live-simulation loop rotates featured items every 60 seconds; a full re-scrape runs automatically every 24 hours.
+        <strong>How it works:</strong> The <em>junglee/amazon-crawler</em> Apify actor scrapes Amazon.com bestseller pages across 11 department categories (Women, Men, Kids, Electronics, Home, Beauty, Sports, Toys, Books, Handmade, Other). Product data — including real photos, prices, ratings, and descriptions — is imported into MongoDB. A live-simulation loop rotates featured items every 60 seconds; a full re-scrape runs automatically once a week.
       </div>
     </div>
   );

@@ -481,6 +481,21 @@ backend:
         agent: "testing"
         comment: "✅ ALL TRANSLATION TESTS PASSED (6/6). GET /api/sync/status includes all new keys: translated_count=1200, total_listings=10000, translation_pct=12.0%, translation_running=true, translation_progress={done, total, pct}. POST /api/admin/sync/translate as admin returns {ok:true, already_running:true} (translation already in progress). Second call correctly returns already_running=true. Non-admin access correctly rejected with 403. Progress verification: translated_count increased from 1200 to 1275 after 45s wait (+75 items). Data quality spot-check: Found 3 translated listings with English titles (e.g., 'KAGOSHIMA Mutsu x Lapuan Kankuri Kitchen Towel KUKAT' from '新品★ 鹿児島睦×ラプアンカンクリ　キッチンタオル　KUKAT'), original Japanese preserved in original_title_ja field, all images from unsplash.com/pexels.com (no picsum.photos). Translation running at ~100 items/min in background."
 
+  - task: "Apify integration (Amazon US scraper replacing Kaggle)"
+    implemented: true
+    working: true
+    file: "backend/server.py, backend/apify_sync.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Kaggle module fully removed. New Apify integration using junglee/amazon-crawler for Amazon US. Endpoints: POST /api/admin/sync/apify (admin-only, triggers background scrape, validates target_count 100-20000), GET /api/admin/sync/status (admin), GET /api/sync/status (public). First scrape completed: 971 real Amazon products imported (of 993 raw), distributed across 11 categories. Products have real m.media-amazon.com images, real prices, real brands, real descriptions. Auto-sync task runs weekly (every 7 days). Live simulator still runs every 60s."
+      - working: true
+        agent: "testing"
+        comment: "✅ ALL APIFY INTEGRATION TESTS PASSED (8/8). GET /api/sync/status (public) returns all required keys: source='junglee/amazon-crawler', imported_count=971, raw_items=993, active_listings=620, sold_listings=351, total_listings=971, target_count=5000, sync_running=false, live_sync_enabled=true, per_category breakdown (11 categories). GET /api/admin/sync/status (admin) returns same schema. Non-admin access correctly rejected with 403. POST /api/admin/sync/apify with target_count=100 returns {ok:true, started:true}. Validation tests: target_count < 100 correctly rejected (400), target_count > 20000 correctly rejected (400), non-admin access correctly rejected (403). Real Amazon data verification: All 5 checked listings have m.media-amazon.com images (3 images each), English titles (e.g., 'OlarHike 10 Set Compression Packing Cubes', 'Dove Beauty Bar Soap Sensitive'), and real brands (OlarHike, Gokeey, Dove, CLEAN SKIN CLUB, GoSports). All endpoints working correctly. NOTE: Review request specified target_count=50 for test #3, but backend validation requires minimum 100 (used 100 instead)."
+
 frontend:
   - task: "Full UI (Home, Search, Listing, Sell, Cart, Checkout, Favorites, Profile, Admin, Auth)"
     implemented: true
@@ -1750,3 +1765,118 @@ agent_communication:
       - All 6 test scenarios passed without issues
       
       RECOMMENDATION: Translation feature is production-ready. The Mercari clone now has real product images and LLM-powered Japanese-to-English translation running in the background.
+
+  - agent: "main"
+    message: |
+      APIFY INTEGRATION REPLACES KAGGLE (weekly auto-sync).
+
+      Kaggle module fully removed: /app/backend/kaggle_data/, kaggle_sync.py,
+      translator.py, AdminKaggleSync.jsx.
+
+      New Apify integration using junglee/amazon-crawler:
+        - Endpoint: POST /api/admin/sync/apify {target_count, replace_existing}
+          returns {ok, started:true} or {ok, already_running:true}.
+          400 for target_count outside 100..20000. 401/403 for non-admin.
+        - Endpoint: GET /api/admin/sync/status (ADMIN) and GET /api/sync/status
+          (PUBLIC) return: source, last_sync_at, started_at, last_live_tick,
+          imported_count, raw_items, active_listings, sold_listings,
+          total_listings, target_count, sync_running, message, per_category,
+          live_sync_enabled.
+        - Auto-sync task runs weekly (every 7 days).
+        - Live simulator still runs every 60s.
+
+      First scrape completed: 971 real Amazon products imported (of 993 raw),
+      distributed across 11 categories. Products have real m.media-amazon.com
+      images, real prices, real brands, real descriptions.
+
+      Please test:
+        1. GET /api/sync/status - verify keys match schema above; sync_running
+           should be false; imported_count around 971; active_listings > 500;
+           source = "junglee/amazon-crawler".
+        2. GET /api/admin/sync/status as admin - same schema.
+        3. GET /api/admin/sync/status as non-admin -> 401/403.
+        4. POST /api/admin/sync/apify {target_count: 50, replace_existing: false}
+           - should return {ok, started:true} OR {ok, already_running:true}.
+           Do NOT wait for completion; just verify accepted.
+        5. POST /api/admin/sync/apify {target_count: 10} - should reject with
+           400 (below minimum of 100).
+        6. Verify listings have real Amazon URLs:
+           GET /api/listings?limit=5 - image URLs contain
+           "m.media-amazon.com" and titles/brands are in English.
+
+      Do NOT re-test previous phases. Focus only on the Apify endpoints.
+
+      Admin: admin@mercari.local / admin123
+      Demo user: sophia_style@demo.local / demo1234
+
+
+  - agent: "testing"
+    message: |
+      ✅ APIFY INTEGRATION BACKEND TESTING COMPLETE - ALL TESTS PASSED (8/8)
+      
+      Tested NEW Apify endpoints only (did NOT re-test previous phases as instructed):
+      
+      1. ✅ GET /api/sync/status (PUBLIC, no auth)
+         - All required keys present: source, last_sync_at, started_at, last_live_tick, imported_count, raw_items, active_listings, sold_listings, total_listings, target_count, sync_running, message, per_category, live_sync_enabled
+         - source = "junglee/amazon-crawler" ✓
+         - sync_running = false ✓
+         - imported_count = 971 (expected ~971) ✓
+         - active_listings = 620 (> 500) ✓
+         - raw_items = 993
+         - per_category breakdown: 11 categories (men: 194, books: 69, home: 80, sports: 97, women: 115, electronics: 70, beauty: 157, toys: 91, handmade: 39, other: 25, kids: 34)
+      
+      2. ✅ GET /api/admin/sync/status (ADMIN)
+         - Same schema as public endpoint ✓
+         - All keys present and correct ✓
+      
+      3. ✅ GET /api/admin/sync/status as non-admin
+         - Correctly rejected with 403 Forbidden ✓
+      
+      4. ✅ POST /api/admin/sync/apify (valid payload)
+         - Used target_count=100 (minimum valid value)
+         - NOTE: Review request specified target_count=50, but backend validation requires 100-20000 range
+         - Response: {ok: true, started: true} ✓
+         - Endpoint accepts valid requests and kicks off background scrape ✓
+      
+      5. ✅ POST /api/admin/sync/apify (target_count < 100)
+         - Used target_count=10
+         - Correctly rejected with 400 Bad Request ✓
+         - Error message: "target_count must be between 100 and 20000" ✓
+      
+      6. ✅ POST /api/admin/sync/apify (target_count > 20000)
+         - Used target_count=50000
+         - Correctly rejected with 400 Bad Request ✓
+      
+      7. ✅ POST /api/admin/sync/apify as non-admin
+         - Correctly rejected with 403 Forbidden ✓
+      
+      8. ✅ Real Amazon data verification
+         - GET /api/listings?limit=5 returned 5 listings
+         - All listings have m.media-amazon.com images (3 images each) ✓
+         - All titles are English (contain latin letters) ✓
+         - Sample listings:
+           * "OlarHike 10 Set Compression Packing Cubes for Travel Essentials..." (Brand: OlarHike)
+           * "Gokeey Transformable Fidget Spinners Toys 4 Pcs for Kids and Adults..." (Brand: Gokeey)
+           * "Dove Beauty Bar Soap Sensitive, 8 Bars for Sensitive Skin..." (Brand: Dove)
+           * "Reduces Fine Lines and Wrinkles in 6 weeks or Less, CLEAN SKIN CLUB..." (Brand: CLEAN SKIN CLUB)
+           * "GoSports Splash Hoop PRO Pool Basketball Game..." (Brand: GoSports)
+         - All images verified to contain "m.media-amazon.com" ✓
+      
+      SUMMARY:
+      - All 8 Apify integration tests passed (100% pass rate)
+      - Public and admin sync status endpoints working correctly
+      - Admin-only access control enforced properly (403 for non-admin)
+      - POST /api/admin/sync/apify endpoint working with proper validations
+      - Target count validation working (100-20000 range enforced)
+      - Real Amazon US products successfully imported (971 items from 993 raw)
+      - All listings have authentic Amazon images (m.media-amazon.com)
+      - All listings have English titles and brands
+      - Per-category distribution working (11 categories populated)
+      - Live sync enabled and background scheduler running
+      
+      DISCREPANCY NOTED:
+      - Review request test #3 specified target_count=50, but backend validation requires minimum 100
+      - Used target_count=100 instead to pass validation
+      - This is consistent with test #4 which confirms minimum is 100
+      
+      RECOMMENDATION: Apify integration is production-ready. All endpoints working correctly with proper authentication, authorization, and validation. Real Amazon US data successfully imported and verified.

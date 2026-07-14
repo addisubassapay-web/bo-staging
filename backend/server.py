@@ -1590,17 +1590,18 @@ async def startup():
             await asyncio.sleep(60)  # tick every 60 seconds
 
     async def apify_auto_sync_loop():
-        # Auto-sync Amazon data every 24 hours
-        await asyncio.sleep(60 * 60 * 24)  # wait 24h before first auto-sync
+        # Auto-sync Amazon data every 7 days (weekly)
+        WEEK_SECONDS = 60 * 60 * 24 * 7
+        await asyncio.sleep(WEEK_SECONDS)  # wait 1 week before first auto-sync
         while True:
             try:
                 state = await db.sync_state.find_one({"id": "apify"}, {"_id": 0}) or {}
                 if not state.get("sync_running"):
-                    logger.info("Starting scheduled Apify auto-sync (every 24h)")
+                    logger.info("Starting scheduled Apify auto-sync (weekly)")
                     await import_from_apify(db, target_count=5000, replace_existing=True)
             except Exception as e:
                 logger.error(f"apify auto-sync failed: {e}")
-            await asyncio.sleep(60 * 60 * 24)
+            await asyncio.sleep(WEEK_SECONDS)
 
     asyncio.create_task(live_sync_loop())
     asyncio.create_task(apify_auto_sync_loop())
