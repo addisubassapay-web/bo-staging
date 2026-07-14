@@ -17,19 +17,49 @@ logger = logging.getLogger(__name__)
 ACTOR_ID = "junglee/amazon-crawler"
 
 # Amazon department search URLs → our category slug
-# Using /s?i=<department> which the actor accepts
+# Multiple `/s?i=<dept>` URLs per category (this format works reliably with the actor).
+# NOTE: `/s?k=<keyword>` (keyword search) also works but consumes MORE credits per item
+# because the actor visits more pages. Keep this list to department URLs.
 CATEGORY_URLS = [
-    ("women",       "https://www.amazon.com/s?i=fashion-womens&rh=n%3A7141123011&s=exact-aware-popularity-rank"),
-    ("men",         "https://www.amazon.com/s?i=fashion-mens&rh=n%3A7147441011&s=exact-aware-popularity-rank"),
-    ("kids",        "https://www.amazon.com/s?i=fashion-baby&s=exact-aware-popularity-rank"),
+    # Women
+    ("women", "https://www.amazon.com/s?i=fashion-womens&s=exact-aware-popularity-rank"),
+    ("women", "https://www.amazon.com/s?i=fashion-womens-shoes&s=exact-aware-popularity-rank"),
+    ("women", "https://www.amazon.com/s?i=fashion-womens-handbags&s=exact-aware-popularity-rank"),
+    # Men
+    ("men", "https://www.amazon.com/s?i=fashion-mens&s=exact-aware-popularity-rank"),
+    ("men", "https://www.amazon.com/s?i=fashion-mens-shoes&s=exact-aware-popularity-rank"),
+    ("men", "https://www.amazon.com/s?i=fashion-mens-watches&s=exact-aware-popularity-rank"),
+    # Kids
+    ("kids", "https://www.amazon.com/s?i=fashion-baby&s=exact-aware-popularity-rank"),
+    ("kids", "https://www.amazon.com/s?i=fashion-boys&s=exact-aware-popularity-rank"),
+    ("kids", "https://www.amazon.com/s?i=fashion-girls&s=exact-aware-popularity-rank"),
+    # Electronics
     ("electronics", "https://www.amazon.com/s?i=electronics&s=exact-aware-popularity-rank"),
-    ("home",        "https://www.amazon.com/s?i=garden&s=exact-aware-popularity-rank"),
-    ("beauty",      "https://www.amazon.com/s?i=beauty&s=exact-aware-popularity-rank"),
-    ("sports",      "https://www.amazon.com/s?i=sporting&s=exact-aware-popularity-rank"),
-    ("toys",        "https://www.amazon.com/s?i=toys-and-games&s=exact-aware-popularity-rank"),
-    ("books",       "https://www.amazon.com/s?i=stripbooks&s=exact-aware-popularity-rank"),
-    ("handmade",    "https://www.amazon.com/s?i=handmade&s=exact-aware-popularity-rank"),
-    ("other",       "https://www.amazon.com/s?i=office-products&s=exact-aware-popularity-rank"),
+    ("electronics", "https://www.amazon.com/s?i=computers&s=exact-aware-popularity-rank"),
+    ("electronics", "https://www.amazon.com/s?i=mobile&s=exact-aware-popularity-rank"),
+    # Home
+    ("home", "https://www.amazon.com/s?i=garden&s=exact-aware-popularity-rank"),
+    ("home", "https://www.amazon.com/s?i=kitchen&s=exact-aware-popularity-rank"),
+    ("home", "https://www.amazon.com/s?i=furniture&s=exact-aware-popularity-rank"),
+    # Beauty
+    ("beauty", "https://www.amazon.com/s?i=beauty&s=exact-aware-popularity-rank"),
+    ("beauty", "https://www.amazon.com/s?i=luxury-beauty&s=exact-aware-popularity-rank"),
+    ("beauty", "https://www.amazon.com/s?i=hpc&s=exact-aware-popularity-rank"),
+    # Sports
+    ("sports", "https://www.amazon.com/s?i=sporting&s=exact-aware-popularity-rank"),
+    ("sports", "https://www.amazon.com/s?i=outdoor&s=exact-aware-popularity-rank"),
+    # Toys
+    ("toys", "https://www.amazon.com/s?i=toys-and-games&s=exact-aware-popularity-rank"),
+    ("toys", "https://www.amazon.com/s?i=videogames&s=exact-aware-popularity-rank"),
+    # Books
+    ("books", "https://www.amazon.com/s?i=stripbooks&s=exact-aware-popularity-rank"),
+    ("books", "https://www.amazon.com/s?i=audible&s=exact-aware-popularity-rank"),
+    # Handmade
+    ("handmade", "https://www.amazon.com/s?i=handmade&s=exact-aware-popularity-rank"),
+    # Other
+    ("other", "https://www.amazon.com/s?i=office-products&s=exact-aware-popularity-rank"),
+    ("other", "https://www.amazon.com/s?i=pet-supplies&s=exact-aware-popularity-rank"),
+    ("other", "https://www.amazon.com/s?i=automotive&s=exact-aware-popularity-rank"),
 ]
 
 
@@ -222,6 +252,13 @@ async def import_from_apify(
     def _fetch_items():
         return list(client.dataset(dataset_id).iterate_items())
     items = await loop.run_in_executor(None, _fetch_items)
+
+    if not items:
+        await db.sync_state.update_one(
+            {"id": "apify"},
+            {"$set": {"sync_running": False, "message": "Actor returned 0 items — likely out of Apify credits. Existing listings kept."}},
+        )
+        return {"ok": False, "error": "Actor returned 0 items — check your Apify credit balance."}
 
     if replace_existing:
         await db.listings.delete_many({})
