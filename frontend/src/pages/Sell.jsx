@@ -36,7 +36,12 @@ const Sell = () => {
 
   useEffect(() => {
     if (authLoading) return;
-    if (!user) navigate("/login");
+    if (!user) { navigate("/login"); return; }
+    // Gate: require approved seller status (admins bypass)
+    if (user.role !== "admin" && user.seller_status !== "approved") {
+      navigate("/verify");
+      return;
+    }
     api.get("/categories").then((r) => setCategories(r.data));
   }, [user, authLoading, navigate]);
 

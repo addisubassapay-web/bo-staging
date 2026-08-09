@@ -10,7 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { LayoutDashboard, Users, Package, ShoppingBag, FolderTree, Trash2, Star, Plus, Settings as SettingsIcon, Wallet, Store as StoreIcon, Save, Check, X as XIcon, Database } from "lucide-react";
+import { LayoutDashboard, Users, Package, ShoppingBag, FolderTree, Trash2, Star, Plus, Settings as SettingsIcon, Wallet, Store as StoreIcon, Save, Check, X as XIcon, Database, IdCard } from "lucide-react";
 import ApifySync from "@/pages/AdminApifySync";
 
 const SidebarLink = ({ to, icon: Icon, children }) => (
@@ -572,6 +572,85 @@ const StoresMgr = () => {
   );
 };
 
+const SellerApplicationsMgr = () => {
+  const [apps, setApps] = useState([]);
+  const [filter, setFilter] = useState("pending");
+  const [notesById, setNotesById] = useState({});
+  const { toast } = useToast();
+
+  const load = () => {
+    const params = filter && filter !== "all" ? { status_filter: filter } : {};
+    api.get("/admin/seller-applications", { params }).then((r) => setApps(r.data));
+  };
+  useEffect(() => { load(); /* eslint-disable-next-line */ }, [filter]);
+
+  const review = async (id, status) => {
+    const admin_notes = notesById[id] || "";
+    try {
+      await api.put(`/admin/seller-applications/${id}`, { status, admin_notes });
+      toast({ title: `Application ${status}` });
+      load();
+    } catch (err) {
+      toast({ title: "Failed", description: err.response?.data?.detail || "Try again", variant: "destructive" });
+    }
+  };
+
+  return (
+    <div data-testid="admin-seller-apps">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-2xl font-bold">Seller applications</h2>
+        <Select value={filter} onValueChange={setFilter}>
+          <SelectTrigger className="w-40" data-testid="apps-filter"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All</SelectItem>
+            <SelectItem value="pending">Pending</SelectItem>
+            <SelectItem value="approved">Approved</SelectItem>
+            <SelectItem value="rejected">Rejected</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      {apps.length === 0 && <div className="text-neutral-500 text-sm">No applications match this filter.</div>}
+      <div className="space-y-3">
+        {apps.map((a) => (
+          <div key={a.id} className="bg-white border border-neutral-200 rounded-lg p-4" data-testid={`app-row-${a.id}`}>
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <div className="font-semibold">{a.legal_name} <span className="text-neutral-400 text-sm">({a.user_username})</span></div>
+                <div className="text-xs text-neutral-500">{a.user_email} · {a.business_type} · {a.business_name || "—"}</div>
+                <div className="text-xs text-neutral-500 mt-1">
+                  {a.address_line1}, {a.city}, {a.state} {a.postal_code} · {a.country}
+                </div>
+                <div className="text-xs text-neutral-500 mt-1">Tax ID: {a.tax_id || "—"} · Payout: {a.payout_method} · Phone: {a.phone}</div>
+                <div className="text-xs text-neutral-400 mt-1">Submitted {new Date(a.created_at).toLocaleString()}</div>
+              </div>
+              <Badge className={`capitalize ${a.status === "pending" ? "bg-amber-100 text-amber-800" : a.status === "approved" ? "bg-emerald-100 text-emerald-800" : "bg-red-100 text-red-800"} hover:opacity-100`}>{a.status}</Badge>
+            </div>
+            {a.status === "pending" && (
+              <div className="mt-3 flex flex-col sm:flex-row gap-2 sm:items-center">
+                <Input
+                  placeholder="Admin notes (optional)"
+                  value={notesById[a.id] || ""}
+                  onChange={(e) => setNotesById({ ...notesById, [a.id]: e.target.value })}
+                  data-testid={`app-notes-${a.id}`}
+                />
+                <Button size="sm" onClick={() => review(a.id, "approved")} className="bg-emerald-600 hover:bg-emerald-700" data-testid={`app-approve-${a.id}`}>
+                  <Check className="h-4 w-4 mr-1" /> Approve
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => review(a.id, "rejected")} data-testid={`app-reject-${a.id}`}>
+                  <XIcon className="h-4 w-4 mr-1" /> Reject
+                </Button>
+              </div>
+            )}
+            {a.admin_notes && a.status !== "pending" && (
+              <div className="mt-3 text-xs text-neutral-600 border-t border-neutral-100 pt-2">Notes: {a.admin_notes}</div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 const Admin = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
@@ -595,6 +674,7 @@ const Admin = () => {
         <SidebarLink to="/admin/orders" icon={ShoppingBag}>Orders</SidebarLink>
         <SidebarLink to="/admin/categories" icon={FolderTree}>Categories</SidebarLink>
         <SidebarLink to="/admin/withdrawals" icon={Wallet}>Withdrawals</SidebarLink>
+        <SidebarLink to="/admin/seller-applications" icon={IdCard}>Seller applications</SidebarLink>
         <SidebarLink to="/admin/apify-sync" icon={Database}>Apify sync</SidebarLink>
         <SidebarLink to="/admin/settings" icon={SettingsIcon}>Settings</SidebarLink>
       </aside>
@@ -607,6 +687,7 @@ const Admin = () => {
           <Route path="orders" element={<OrdersMgr />} />
           <Route path="categories" element={<CategoriesMgr />} />
           <Route path="withdrawals" element={<WithdrawalsMgr />} />
+          <Route path="seller-applications" element={<SellerApplicationsMgr />} />
           <Route path="apify-sync" element={<ApifySync />} />
           <Route path="settings" element={<SettingsMgr />} />
         </Routes>

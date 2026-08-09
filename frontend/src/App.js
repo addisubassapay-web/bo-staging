@@ -24,6 +24,8 @@ import StorePage from "@/pages/StorePage";
 import AffiliateRedirect from "@/pages/AffiliateRedirect";
 import { ChatThreads, ChatRoom } from "@/pages/Chat";
 import StoreAnalytics from "@/pages/StoreAnalytics";
+import Verification from "@/pages/Verification";
+import SellerApply from "@/pages/SellerApply";
 
 function App() {
   return (
@@ -51,6 +53,8 @@ function App() {
               <Route path="/store/:slug" element={<StorePage />} />
               <Route path="/chat" element={<ChatThreads />} />
               <Route path="/chat/:listingId/:otherId" element={<ChatRoom />} />
+              <Route path="/verify" element={<Verification />} />
+              <Route path="/seller/apply" element={<SellerApply />} />
               <Route path="/r/:code" element={<AffiliateRedirect />} />
               <Route path="/admin/*" element={<Admin />} />
             </Routes>

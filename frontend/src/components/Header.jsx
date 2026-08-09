@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Search, ShoppingCart, Heart, User, Menu, LogOut, Package, Settings, Store, X, Wallet, Link as LinkIcon, Users, MessageSquare, BarChart3 } from "lucide-react";
+import { Search, ShoppingCart, Heart, User, Menu, LogOut, Package, Settings, Store, X, Wallet, Link as LinkIcon, Users, MessageSquare, BarChart3, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -110,6 +110,9 @@ const Header = () => {
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate("/profile?tab=orders")}>
                   <Package className="h-4 w-4 mr-2" /> Orders
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/verify")}>
+                  <ShieldCheck className="h-4 w-4 mr-2" /> Verification
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => navigate("/wallet")}>

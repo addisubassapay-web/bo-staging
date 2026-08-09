@@ -62,6 +62,15 @@ class User(UserBase):
     referred_by: Optional[str] = None  # user_id who referred this user
     wallet_balance: float = 0.0
     store_id: Optional[str] = None
+    # Phase 1: Trust & Payments
+    email_verified: bool = False
+    email_verified_at: Optional[datetime] = None
+    phone: Optional[str] = None
+    phone_verified: bool = False
+    phone_verified_at: Optional[datetime] = None
+    seller_status: Literal["none", "pending", "approved", "rejected"] = "none"
+    stripe_account_id: Optional[str] = None
+    stripe_status: Literal["none", "pending", "active", "restricted"] = "none"
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class UserPublic(BaseModel):
@@ -78,6 +87,14 @@ class UserPublic(BaseModel):
     referred_by: Optional[str] = None
     wallet_balance: float = 0.0
     store_id: Optional[str] = None
+    email_verified: bool = False
+    email_verified_at: Optional[datetime] = None
+    phone: Optional[str] = None
+    phone_verified: bool = False
+    phone_verified_at: Optional[datetime] = None
+    seller_status: str = "none"
+    stripe_account_id: Optional[str] = None
+    stripe_status: str = "none"
     created_at: datetime
 
 class AuthResponse(BaseModel):
@@ -334,6 +351,73 @@ class Notification(BaseModel):
 
 
 # =========================
+# Phase 1: Trust & Payments (Mocked External Services)
+# =========================
+class VerificationToken(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    kind: Literal["email", "phone"]
+    token: str  # magic link token or 6-digit OTP
+    target: str  # email address or phone number
+    used: bool = False
+    attempts: int = 0
+    expires_at: datetime
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class SellerApplication(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    user_email: str
+    user_username: str
+    legal_name: str
+    business_name: Optional[str] = ""
+    business_type: Literal["individual", "sole_prop", "llc", "corp"] = "individual"
+    tax_id: str = ""  # last-4 stored for mock; real would be tokenized
+    country: str = "US"
+    address_line1: str = ""
+    address_line2: Optional[str] = ""
+    city: str = ""
+    state: str = ""
+    postal_code: str = ""
+    phone: str = ""
+    payout_method: Literal["stripe_connect", "bank_transfer"] = "stripe_connect"
+    id_document_note: Optional[str] = ""  # placeholder; real flow would upload
+    status: Literal["pending", "approved", "rejected"] = "pending"
+    admin_notes: Optional[str] = ""
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    reviewed_at: Optional[datetime] = None
+    reviewed_by: Optional[str] = None
+
+class SellerApplicationCreate(BaseModel):
+    legal_name: str
+    business_name: Optional[str] = ""
+    business_type: str = "individual"
+    tax_id: str = ""
+    country: str = "US"
+    address_line1: str = ""
+    address_line2: Optional[str] = ""
+    city: str = ""
+    state: str = ""
+    postal_code: str = ""
+    phone: str = ""
+    payout_method: str = "stripe_connect"
+    id_document_note: Optional[str] = ""
+
+class EmailSendRequest(BaseModel):
+    email: Optional[str] = None  # optional override; defaults to user's account email
+
+class PhoneSendRequest(BaseModel):
+    phone: str
+
+class PhoneConfirmRequest(BaseModel):
+    phone: str
+    code: str
+
+class EmailConfirmRequest(BaseModel):
+    token: str
+
+
+# =========================
 # Helpers
 # =========================
 def hash_password(password: str) -> str:
@@ -563,6 +647,9 @@ async def get_listing(listing_id: str):
 
 @api_router.post("/listings", response_model=Listing)
 async def create_listing(payload: ListingCreate, user: dict = Depends(get_current_user)):
+    # Gate: only approved sellers (or admins) can create listings
+    if user.get("role") != "admin" and user.get("seller_status") != "approved":
+        raise HTTPException(403, "Complete seller verification and approval to create listings")
     cat = await db.categories.find_one({"id": payload.category_id}, {"_id": 0})
     if not cat:
         raise HTTPException(400, "Invalid category")
@@ -816,6 +903,7 @@ async def admin_stats(_admin: dict = Depends(require_admin)):
     categories_count = await db.categories.count_documents({})
     stores_count = await db.stores.count_documents({})
     pending_withdrawals = await db.withdrawals.count_documents({"status": "pending"})
+    pending_seller_apps = await db.seller_applications.count_documents({"status": "pending"})
     revenue_agg = await db.orders.aggregate([
         {"$group": {"_id": None, "total": {"$sum": "$amount"}, "fees": {"$sum": "$platform_fee"}}}
     ]).to_list(1)
@@ -831,6 +919,7 @@ async def admin_stats(_admin: dict = Depends(require_admin)):
         "stores": stores_count,
         "affiliate_links": affiliate_links,
         "pending_withdrawals": pending_withdrawals,
+        "pending_seller_apps": pending_seller_apps,
         "revenue": total_revenue,
         "platform_fees": total_fees,
     }
@@ -1387,9 +1476,252 @@ async def public_sync_status():
 
 
 # =========================
-# Seed
+# PHASE 1: TRUST & PAYMENTS (MOCKED)
+# External services (Resend, Twilio, Stripe Connect) are MOCKED for development.
+# Verification tokens are stored in the DB and returned in API responses (dev_mock=true)
+# so the frontend can auto-fill them for testing.
 # =========================
-@api_router.post("/seed")
+import secrets
+import random
+
+def _now_utc() -> datetime:
+    return datetime.now(timezone.utc)
+
+def _gen_otp() -> str:
+    return f"{random.randint(0, 999999):06d}"
+
+def _gen_magic_token() -> str:
+    return secrets.token_urlsafe(24)
+
+async def _create_verification_token(user_id: str, kind: str, target: str, ttl_minutes: int = 30) -> dict:
+    # Invalidate previous unused tokens of same kind for the user
+    await db.verification_tokens.update_many(
+        {"user_id": user_id, "kind": kind, "used": False},
+        {"$set": {"used": True, "attempts": 999}},
+    )
+    token_value = _gen_magic_token() if kind == "email" else _gen_otp()
+    expires = _now_utc() + timedelta(minutes=ttl_minutes)
+    doc = VerificationToken(
+        user_id=user_id, kind=kind, token=token_value, target=target, expires_at=expires
+    ).model_dump()
+    await db.verification_tokens.insert_one(doc)
+    logger.info(f"[MOCK] Sent {kind} verification to {target} for user {user_id}: token={token_value}")
+    return doc
+
+
+@api_router.post("/verify/email/send")
+async def verify_email_send(payload: EmailSendRequest, user: dict = Depends(get_current_user)):
+    """Mocked email verification send. Returns the token in response for dev use."""
+    if user.get("email_verified"):
+        return {"ok": True, "already_verified": True}
+    target_email = payload.email or user["email"]
+    doc = await _create_verification_token(user["id"], "email", target_email, ttl_minutes=60)
+    verify_link = f"/verify?token={doc['token']}"
+    return {
+        "ok": True,
+        "message": f"[MOCK] Magic link sent to {target_email}",
+        "dev_mock": True,
+        "token": doc["token"],
+        "verify_link": verify_link,
+        "expires_at": doc["expires_at"],
+    }
+
+@api_router.post("/verify/email/confirm")
+async def verify_email_confirm(payload: EmailConfirmRequest, user: dict = Depends(get_current_user)):
+    doc = await db.verification_tokens.find_one(
+        {"token": payload.token, "kind": "email", "user_id": user["id"]}, {"_id": 0}
+    )
+    if not doc:
+        raise HTTPException(400, "Invalid or unknown token")
+    if doc.get("used"):
+        raise HTTPException(400, "Token already used")
+    expires = doc["expires_at"]
+    if isinstance(expires, str):
+        expires = datetime.fromisoformat(expires.replace("Z", "+00:00"))
+    if expires.tzinfo is None:
+        expires = expires.replace(tzinfo=timezone.utc)
+    if expires < _now_utc():
+        raise HTTPException(400, "Token expired")
+    await db.verification_tokens.update_one({"id": doc["id"]}, {"$set": {"used": True}})
+    await db.users.update_one(
+        {"id": user["id"]},
+        {"$set": {"email_verified": True, "email_verified_at": _now_utc()}},
+    )
+    await notify(user["id"], "system", "Email verified", "Your email is now verified.", "/profile")
+    return {"ok": True, "email_verified": True}
+
+
+@api_router.post("/verify/phone/send")
+async def verify_phone_send(payload: PhoneSendRequest, user: dict = Depends(get_current_user)):
+    """Mocked SMS OTP. Returns the 6-digit code in response for dev use."""
+    phone = (payload.phone or "").strip()
+    if len(phone) < 6:
+        raise HTTPException(400, "Phone number too short")
+    doc = await _create_verification_token(user["id"], "phone", phone, ttl_minutes=10)
+    return {
+        "ok": True,
+        "message": f"[MOCK] OTP sent to {phone}",
+        "dev_mock": True,
+        "code": doc["token"],
+        "phone": phone,
+        "expires_at": doc["expires_at"],
+    }
+
+@api_router.post("/verify/phone/confirm")
+async def verify_phone_confirm(payload: PhoneConfirmRequest, user: dict = Depends(get_current_user)):
+    phone = (payload.phone or "").strip()
+    doc = await db.verification_tokens.find_one(
+        {"kind": "phone", "user_id": user["id"], "target": phone, "used": False},
+        {"_id": 0},
+        sort=[("created_at", -1)],
+    )
+    if not doc:
+        raise HTTPException(400, "No pending OTP for this phone")
+    if doc.get("attempts", 0) >= 5:
+        raise HTTPException(400, "Too many attempts. Request a new code.")
+    expires = doc["expires_at"]
+    if isinstance(expires, str):
+        expires = datetime.fromisoformat(expires.replace("Z", "+00:00"))
+    if expires.tzinfo is None:
+        expires = expires.replace(tzinfo=timezone.utc)
+    if expires < _now_utc():
+        raise HTTPException(400, "Code expired. Request a new one.")
+    if payload.code.strip() != doc["token"]:
+        await db.verification_tokens.update_one({"id": doc["id"]}, {"$inc": {"attempts": 1}})
+        raise HTTPException(400, "Invalid code")
+    await db.verification_tokens.update_one({"id": doc["id"]}, {"$set": {"used": True}})
+    await db.users.update_one(
+        {"id": user["id"]},
+        {"$set": {"phone": phone, "phone_verified": True, "phone_verified_at": _now_utc()}},
+    )
+    await notify(user["id"], "system", "Phone verified", f"Phone {phone} verified.", "/profile")
+    return {"ok": True, "phone_verified": True, "phone": phone}
+
+
+# ---------- Seller Application ----------
+@api_router.post("/seller/apply", response_model=SellerApplication)
+async def seller_apply(payload: SellerApplicationCreate, user: dict = Depends(get_current_user)):
+    # Require email + phone verification before applying
+    fresh_user = await db.users.find_one({"id": user["id"]}, {"_id": 0})
+    if not fresh_user.get("email_verified"):
+        raise HTTPException(400, "Please verify your email before applying")
+    if not fresh_user.get("phone_verified"):
+        raise HTTPException(400, "Please verify your phone before applying")
+    if fresh_user.get("seller_status") == "approved":
+        raise HTTPException(400, "You are already an approved seller")
+    # If there's an existing pending app, block duplicates
+    existing = await db.seller_applications.find_one(
+        {"user_id": user["id"], "status": "pending"}, {"_id": 0}
+    )
+    if existing:
+        raise HTTPException(400, "You already have a pending application")
+
+    tax_id_last4 = (payload.tax_id or "").strip()[-4:]  # keep only last 4 digits (mock)
+    app_doc = SellerApplication(
+        user_id=user["id"],
+        user_email=user["email"],
+        user_username=user["username"],
+        legal_name=payload.legal_name,
+        business_name=payload.business_name or "",
+        business_type=payload.business_type,  # type: ignore
+        tax_id=f"****{tax_id_last4}" if tax_id_last4 else "",
+        country=payload.country,
+        address_line1=payload.address_line1,
+        address_line2=payload.address_line2 or "",
+        city=payload.city,
+        state=payload.state,
+        postal_code=payload.postal_code,
+        phone=payload.phone or fresh_user.get("phone", ""),
+        payout_method=payload.payout_method,  # type: ignore
+        id_document_note=payload.id_document_note or "",
+    )
+    await db.seller_applications.insert_one(app_doc.model_dump())
+    await db.users.update_one({"id": user["id"]}, {"$set": {"seller_status": "pending"}})
+    await notify(user["id"], "system", "Seller application submitted",
+                 "We'll review your application shortly.", "/profile")
+    return app_doc
+
+@api_router.get("/seller/application", response_model=Optional[SellerApplication])
+async def my_seller_application(user: dict = Depends(get_current_user)):
+    doc = await db.seller_applications.find_one(
+        {"user_id": user["id"]}, {"_id": 0}, sort=[("created_at", -1)]
+    )
+    return SellerApplication(**doc) if doc else None
+
+
+# ---------- Mock Stripe Connect ----------
+@api_router.post("/stripe/connect/onboard")
+async def stripe_connect_onboard(user: dict = Depends(get_current_user)):
+    """Mocked Stripe Connect onboarding. Generates a fake acct_ ID and marks pending -> active."""
+    fresh = await db.users.find_one({"id": user["id"]}, {"_id": 0})
+    if fresh.get("stripe_status") == "active":
+        return {
+            "ok": True,
+            "already_active": True,
+            "stripe_account_id": fresh.get("stripe_account_id"),
+        }
+    acct_id = fresh.get("stripe_account_id") or f"acct_mock_{uuid.uuid4().hex[:16]}"
+    # In mock mode, we simulate immediate active status once onboarding is "completed"
+    await db.users.update_one(
+        {"id": user["id"]},
+        {"$set": {"stripe_account_id": acct_id, "stripe_status": "active"}},
+    )
+    logger.info(f"[MOCK] Stripe Connect account created for user {user['id']}: {acct_id}")
+    return {
+        "ok": True,
+        "dev_mock": True,
+        "stripe_account_id": acct_id,
+        "stripe_status": "active",
+        "onboarding_url": f"/mock-stripe/onboard?acct={acct_id}",
+    }
+
+@api_router.get("/stripe/connect/status")
+async def stripe_connect_status(user: dict = Depends(get_current_user)):
+    fresh = await db.users.find_one({"id": user["id"]}, {"_id": 0})
+    return {
+        "stripe_account_id": fresh.get("stripe_account_id"),
+        "stripe_status": fresh.get("stripe_status", "none"),
+    }
+
+
+# ---------- Admin: Seller Application Queue ----------
+@api_router.get("/admin/seller-applications", response_model=List[SellerApplication])
+async def admin_seller_apps(_admin: dict = Depends(require_admin), status_filter: Optional[str] = None):
+    q: dict = {}
+    if status_filter:
+        q["status"] = status_filter
+    docs = await db.seller_applications.find(q, {"_id": 0}).sort("created_at", -1).to_list(500)
+    return [SellerApplication(**d) for d in docs]
+
+@api_router.put("/admin/seller-applications/{app_id}")
+async def admin_review_seller_app(app_id: str, updates: dict, admin: dict = Depends(require_admin)):
+    doc = await db.seller_applications.find_one({"id": app_id}, {"_id": 0})
+    if not doc:
+        raise HTTPException(404, "Application not found")
+    new_status = updates.get("status")
+    if new_status not in ("approved", "rejected"):
+        raise HTTPException(400, "Invalid status")
+    notes = updates.get("admin_notes", doc.get("admin_notes", "")) or ""
+    await db.seller_applications.update_one(
+        {"id": app_id},
+        {"$set": {
+            "status": new_status,
+            "admin_notes": notes,
+            "reviewed_at": _now_utc(),
+            "reviewed_by": admin["id"],
+        }},
+    )
+    await db.users.update_one({"id": doc["user_id"]}, {"$set": {"seller_status": new_status}})
+    if new_status == "approved":
+        await notify(doc["user_id"], "system", "Seller application approved",
+                     "You can now sell on Mercari. Connect your payout method.", "/verify")
+    else:
+        await notify(doc["user_id"], "system", "Seller application rejected",
+                     notes or "See admin notes.", "/profile")
+    return {"ok": True, "status": new_status}
+
+
+
 async def seed_data():
     """Idempotent seed. Only seeds when categories collection is empty."""
     existing = await db.categories.count_documents({})
@@ -1575,6 +1907,25 @@ async def startup():
                 "store_id": None,
             }},
         )
+    # Migrate: add Phase 1 verification fields for existing users
+    await db.users.update_many(
+        {"email_verified": {"$exists": False}},
+        {"$set": {
+            "email_verified": False,
+            "email_verified_at": None,
+            "phone": None,
+            "phone_verified": False,
+            "phone_verified_at": None,
+            "seller_status": "none",
+            "stripe_account_id": None,
+            "stripe_status": "none",
+        }},
+    )
+    # Admin account should be treated as verified by default
+    await db.users.update_many(
+        {"role": "admin", "email_verified": False},
+        {"$set": {"email_verified": True, "email_verified_at": datetime.now(timezone.utc), "seller_status": "approved"}},
+    )
     # Ensure settings doc exists
     await get_settings()
 
