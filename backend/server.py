@@ -2819,74 +2819,16 @@ async def seed_data():
         })
     await db.users.insert_many(sellers)
 
-    # Sample listings
-    cats_by_slug = {c["slug"]: c for c in cat_docs}
-    samples = [
-        ("Vintage Levi's 501 Jeans", "Classic straight-leg denim, gently worn, size 30x32.", 48.0, 90.0, "men", "good", "Levi's", "30x32", "Blue"),
-        ("Nike Air Max 90 Sneakers", "Iconic silhouette, barely used, comes with original box.", 85.0, 130.0, "men", "like_new", "Nike", "US 10", "White"),
-        ("Zara Wool Blend Coat", "Elegant camel coat, perfect for fall/winter, size S.", 62.0, 149.0, "women", "like_new", "Zara", "S", "Camel"),
-        ("Apple AirPods Pro (2nd Gen)", "MagSafe case, active noise cancelation, near new.", 165.0, 249.0, "electronics", "like_new", "Apple", "", "White"),
-        ("Sony WH-1000XM4 Headphones", "Industry-leading noise canceling. Excellent condition.", 210.0, 349.0, "electronics", "good", "Sony", "", "Black"),
-        ("Ceramic Handmade Vase Set", "Set of 3 minimalist stoneware vases, unused gift.", 34.0, None, "home", "new", "", "", "Cream"),
-        ("Coach Leather Handbag", "Authentic Coach shoulder bag, soft pebbled leather.", 120.0, 295.0, "women", "good", "Coach", "", "Tan"),
-        ("Fujifilm Instax Mini 11", "Instant camera + strap, includes 20 films.", 55.0, 89.0, "electronics", "good", "Fujifilm", "", "Blue"),
-        ("Yoga Mat + Block Bundle", "6mm eco-friendly TPE mat with cork block.", 28.0, 55.0, "sports", "like_new", "", "", "Purple"),
-        ("Le Creuset Dutch Oven 5.5qt", "Cerise red enamel cast iron, minor use.", 220.0, 400.0, "home", "good", "Le Creuset", "", "Red"),
-        ("Lego Star Wars Millennium Falcon", "Complete set with instructions, kids outgrew it.", 145.0, 199.0, "toys", "good", "Lego", "", "Grey"),
-        ("Nintendo Switch OLED", "White Joy-Cons, includes dock and cables.", 260.0, 349.0, "electronics", "good", "Nintendo", "", "White"),
-        ("Handmade Macramé Wall Hanging", "Original piece, cotton rope, boho vibe.", 42.0, None, "handmade", "new", "", "24 in", "Natural"),
-        ("Vintage 90s Denim Jacket", "Oversized fit, faded wash, unisex.", 38.0, None, "vintage", "good", "", "L", "Blue"),
-        ("H&M Kids Rainbow Sweater", "Soft cotton, size 6-7Y, worn twice.", 12.0, 29.0, "kids", "like_new", "H&M", "6-7Y", "Multi"),
-        ("Fenty Beauty Foundation", "Shade 240, brand new sealed.", 28.0, 40.0, "beauty", "new", "Fenty Beauty", "", ""),
-        ("Complete Harry Potter Book Set", "All 7 hardcovers, gently read.", 78.0, 180.0, "books", "good", "", "", ""),
-        ("iPad Air 5th Gen 64GB", "Space Gray, WiFi, includes charger.", 380.0, 599.0, "electronics", "like_new", "Apple", "10.9\"", "Grey"),
-        ("Adidas Ultraboost 22 Running Shoes", "Size US 9, run only 3 times.", 90.0, 190.0, "sports", "like_new", "Adidas", "US 9", "Black"),
-        ("Bose SoundLink Mini II", "Portable Bluetooth speaker, warm sound.", 95.0, 199.0, "electronics", "good", "Bose", "", "Silver"),
-        ("Anthropologie Ceramic Planters", "Set of 2, drainage holes, indoor use.", 32.0, 60.0, "home", "new", "", "", "White"),
-        ("Kate Spade Wristlet Wallet", "Saffiano leather, pink, RFID protected.", 44.0, 98.0, "women", "like_new", "Kate Spade", "", "Pink"),
-        ("Baby Bjorn Bouncer", "Ergonomic baby bouncer, mesh fabric.", 85.0, 219.0, "kids", "good", "Baby Bjorn", "", "Grey"),
-        ("Vintage Vinyl Records Lot (10)", "70s rock classics, VG+ condition.", 60.0, None, "vintage", "good", "", "", ""),
-    ]
-    now = datetime.now(timezone.utc)
-    listings_docs = []
-    for i, s in enumerate(samples):
-        title, desc, price, orig, cat_slug, cond, brand, size, color = s
-        cat = cats_by_slug[cat_slug]
-        seller = sellers[i % len(sellers)]
-        listing = Listing(
-            seller_id=seller["id"],
-            seller_name=seller["username"],
-            title=title,
-            description=desc,
-            price=price,
-            original_price=orig,
-            category_id=cat["id"],
-            category_name=cat["name"],
-            condition=cond,
-            brand=brand,
-            size=size,
-            color=color,
-            images=[
-                f"https://picsum.photos/seed/{cat_slug}{i}a/800/800",
-                f"https://picsum.photos/seed/{cat_slug}{i}b/800/800",
-                f"https://picsum.photos/seed/{cat_slug}{i}c/800/800",
-            ],
-            shipping_paid_by="seller" if i % 2 == 0 else "buyer",
-            shipping_method="Standard",
-            likes_count=(i * 3) % 47,
-            views_count=(i * 11) % 500 + 20,
-            featured=i < 6,
-            created_at=now - timedelta(hours=i * 5),
-        )
-        listings_docs.append(listing.model_dump())
-    await db.listings.insert_many(listings_docs)
+    # Real product listings come from the Apify Amazon crawler, not this seed.
+    # Trigger the sync via /api/admin/sync/apify (auto-runs weekly and on empty startup too).
 
     return {
         "ok": True,
         "seeded": True,
         "categories": len(cat_docs),
         "users": len(sellers) + 1,
-        "listings": len(listings_docs),
+        "listings": 0,
+        "note": "Categories, admin, and demo sellers seeded. Listings come from Apify — trigger /api/admin/sync/apify to import real Amazon products.",
         "admin_credentials": {"email": "admin@mercari.local", "password": "admin123"},
     }
 

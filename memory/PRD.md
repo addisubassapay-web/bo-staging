@@ -26,6 +26,12 @@ Exact replica of Mercari platform (mercari.com) — same color scheme (`#FF211F`
 
 ## Implemented (with dates)
 
+### Feb 2026 — Real Amazon Catalog Replaces Mock Listings
+- **Removed 100% of mock listings.** Deleted 1,748 seed/demo/TEST listings and replaced them with **2,611 real Amazon products** imported from the previously-completed Apify dataset (`4l18Zx7sRwgZJBbBy`, 2,694 raw items). All catalog data now originates from the connected Apify Amazon crawler — real titles (Brooks Adrenaline GTS 25, Marc Jacobs Tote Bag, Citizen watches, Lamicall accessories), real prices (up to $1,045), real breadcrumb-classified categories, real high-resolution images.
+- **Disabled the seed mock-listings block.** `POST /api/seed` no longer inserts sample listings; it seeds categories, admin, and demo sellers only, and returns a note pointing to `/api/admin/sync/apify` for real product data.
+- **New importer script** `/app/scripts/import_from_dataset.py <dataset_id>` — re-runs against any completed Apify dataset to re-populate the catalog without burning new Apify credits. Handles breadcrumb-to-category mapping, de-duplicates by ASIN, chunk-inserts, and updates `sync_state` for the admin dashboard.
+- **Live per-category distribution**: Women 564 · Men 544 · Kids 429 · Other 360 · Electronics 211 · Beauty 208 · Toys 149 · Home 85 · Books 47 · Sports 14.
+
 ### Feb 2026 — Bug Fix: Preview showed 0 products (runaway live-simulator)
 - **Root cause**: The `simulate_live_update` loop in `apify_sync.py` marked 3 random active listings as "sold" every 60s but had NO counterbalance — nothing brought sold items back to active. Over ~12 hours since the last real sync, the tick marked all 212 listings sold, so `/api/listings` returned `[]` and Home/Search rendered empty.
 - **Fix**: (a) Revived all 212 sold listings back to active (one-off). (b) Rewrote `simulate_live_update` with guardrails: `ACTIVE_FLOOR=60` prevents dipping below the floor, `REVIVE_PER_TICK=5` resurrects sold items back to active on every tick BEFORE the sell pass, and the sell-3 pass only runs when active count is safely above the floor. Also cleaned 30 leftover TEST_ listings from testing agent runs.
