@@ -22,6 +22,7 @@ from passlib.context import CryptContext
 from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
 
 from apify_sync import import_from_apify, simulate_live_update, get_sync_status
+from shipping_providers import get_provider as get_shipping_provider, next_stage_for_age, event_details
 
 
 ROOT_DIR = Path(__file__).parent
@@ -676,6 +677,7 @@ async def list_listings(
         "price_asc": [("price", 1)],
         "price_desc": [("price", -1)],
         "popular": [("likes_count", -1), ("views_count", -1)],
+        "trending": [("views_count", -1), ("likes_count", -1), ("created_at", -1)],
     }
     cursor = db.listings.find(query, {"_id": 0}).sort(sort_map.get(sort, sort_map["newest"])).skip(skip).limit(limit)
     docs = await cursor.to_list(limit)
@@ -1988,28 +1990,28 @@ async def create_shipping_label(order_id: str, user: dict = Depends(get_current_
             label_url=order.get("label_url", ""),
             estimated_delivery=order.get("estimated_delivery", "2-5 business days"),
             cost=float(order.get("shipping_fee", 0)),
+            dev_mock=order.get("shipping_provider", "mock") == "mock",
         )
-    carrier = random.choice(["USPS", "UPS", "FedEx"])
-    tracking = f"MOCK{uuid.uuid4().hex[:12].upper()}"
-    label_url = f"/mock-shipping/label/{tracking}.pdf"
-    est_delivery = (datetime.now(timezone.utc) + timedelta(days=random.randint(2, 5))).strftime("%A, %b %d")
+    provider = get_shipping_provider()
+    label = provider.create_label(order)
+    initial_event = event_details("label_created", label.carrier)
     await db.orders.update_one(
         {"id": order_id},
         {"$set": {
-            "tracking_number": tracking,
-            "carrier": carrier,
-            "label_url": label_url,
+            "tracking_number": label.tracking_number,
+            "carrier": label.carrier,
+            "label_url": label.label_url,
             "shipping_status": "label_created",
-            "estimated_delivery": est_delivery,
+            "shipping_provider": label.provider,
+            "estimated_delivery": label.estimated_delivery,
+            "shipping_events": [initial_event],
+            "label_created_at": _now_utc(),
         }},
     )
     await notify(order["buyer_id"], "order", "Shipping label created",
-                 f"Tracking: {tracking} via {carrier}", "/profile?tab=orders")
-    logger.info(f"[MOCK] Shipping label created for order {order_id}: {carrier} {tracking}")
-    return ShippingLabelResponse(
-        tracking_number=tracking, carrier=carrier, label_url=label_url,
-        estimated_delivery=est_delivery, cost=float(order.get("shipping_fee", 0)),
-    )
+                 f"Tracking: {label.tracking_number} via {label.carrier}", f"/order/{order_id}")
+    logger.info(f"[shipping:{label.provider}] Label created for order {order_id}: {label.carrier} {label.tracking_number}")
+    return ShippingLabelResponse(**{k: v for k, v in label.to_dict().items() if k != "provider"})
 
 
 @api_router.get("/orders/{order_id}/tracking")
@@ -2021,44 +2023,110 @@ async def get_tracking(order_id: str, user: dict = Depends(get_current_user)):
         raise HTTPException(403, "Not allowed")
     if not order.get("tracking_number"):
         return {"has_label": False}
-    created = order.get("created_at")
-    if isinstance(created, str):
-        try:
-            created = datetime.fromisoformat(created.replace("Z", "+00:00"))
-        except Exception:
-            created = _now_utc()
-    if created and created.tzinfo is None:
-        created = created.replace(tzinfo=timezone.utc)
-    age_h = (_now_utc() - created).total_seconds() / 3600.0
-    carrier = order.get("carrier", "Carrier")
-    events = [{
-        "status": "label_created",
-        "at": created.isoformat(),
-        "location": "Origin facility",
-        "description": "Shipping label created",
-    }]
-    if age_h > 2:
-        events.append({"status": "picked_up", "at": (created + timedelta(hours=2)).isoformat(),
-                       "location": f"{carrier} origin hub", "description": "Package picked up by carrier"})
-    if age_h > 24:
-        events.append({"status": "in_transit", "at": (created + timedelta(hours=24)).isoformat(),
-                       "location": "Regional facility", "description": "In transit"})
-    if age_h > 72:
-        events.append({"status": "out_for_delivery", "at": (created + timedelta(hours=72)).isoformat(),
-                       "location": "Local hub", "description": "Out for delivery"})
-    if age_h > 96:
-        events.append({"status": "delivered", "at": (created + timedelta(hours=96)).isoformat(),
-                       "location": "Delivered", "description": "Delivered to recipient"})
+    events = order.get("shipping_events") or []
+    if not events:
+        # Backfill for legacy orders — synthesize a single label_created event.
+        created = order.get("label_created_at") or order.get("created_at") or _now_utc()
+        if isinstance(created, str):
+            try: created = datetime.fromisoformat(created.replace("Z", "+00:00"))
+            except Exception: created = _now_utc()
+        if created.tzinfo is None:
+            created = created.replace(tzinfo=timezone.utc)
+        events = [{
+            "status": "label_created",
+            "at": created.isoformat(),
+            "location": "Origin facility",
+            "description": "Shipping label created",
+        }]
+        await db.orders.update_one({"id": order_id}, {"$set": {"shipping_events": events, "label_created_at": created}})
     return {
         "has_label": True,
         "tracking_number": order["tracking_number"],
-        "carrier": carrier,
+        "carrier": order.get("carrier"),
         "label_url": order.get("label_url"),
         "estimated_delivery": order.get("estimated_delivery"),
-        "current_status": events[-1]["status"],
+        "current_status": order.get("shipping_status", "label_created"),
+        "provider": order.get("shipping_provider", "mock"),
         "events": events,
-        "dev_mock": True,
+        "dev_mock": order.get("shipping_provider", "mock") == "mock",
     }
+
+
+class AdvanceShippingRequest(BaseModel):
+    to_status: Optional[str] = None  # optional target; if omitted advance by one stage
+
+
+@api_router.post("/orders/{order_id}/shipping-advance")
+async def advance_shipping(order_id: str, payload: AdvanceShippingRequest, user: dict = Depends(get_current_user)):
+    """Seller/admin manually advances shipping status by one stage (or to a target status)."""
+    order = await db.orders.find_one({"id": order_id}, {"_id": 0})
+    if not order:
+        raise HTTPException(404, "Order not found")
+    if order["seller_id"] != user["id"] and user.get("role") != "admin":
+        raise HTTPException(403, "Only the seller or admin can advance shipping")
+    if not order.get("tracking_number"):
+        raise HTTPException(400, "No shipping label on this order")
+    stages = ["label_created", "picked_up", "in_transit", "out_for_delivery", "delivered"]
+    current = order.get("shipping_status", "label_created")
+    if current == "delivered":
+        raise HTTPException(400, "Order already delivered")
+    if payload.to_status:
+        if payload.to_status not in stages:
+            raise HTTPException(400, "Invalid target status")
+        if stages.index(payload.to_status) <= stages.index(current):
+            raise HTTPException(400, "Target status must be beyond current")
+        next_status = payload.to_status
+    else:
+        next_status = stages[stages.index(current) + 1]
+    ev = event_details(next_status, order.get("carrier", "Carrier"))
+    await db.orders.update_one(
+        {"id": order_id},
+        {"$set": {"shipping_status": next_status}, "$push": {"shipping_events": ev}},
+    )
+    await notify(order["buyer_id"], "order",
+                 f"Shipping update: {next_status.replace('_',' ').title()}",
+                 ev["description"], f"/order/{order_id}")
+    return {"ok": True, "current_status": next_status, "event": ev}
+
+
+async def shipping_progress_loop():
+    """Background: auto-advance MOCK shipping timelines and notify buyers on transitions.
+    Only affects orders whose shipping_provider == 'mock' and status < delivered.
+    """
+    await asyncio.sleep(5)  # let startup complete
+    while True:
+        try:
+            cursor = db.orders.find(
+                {"shipping_provider": "mock", "shipping_status": {"$nin": ["delivered", None]}, "tracking_number": {"$ne": None}},
+                {"_id": 0, "id": 1, "shipping_status": 1, "label_created_at": 1, "carrier": 1, "buyer_id": 1},
+            )
+            async for o in cursor:
+                created = o.get("label_created_at")
+                if not created:
+                    continue
+                if isinstance(created, str):
+                    try:
+                        created = datetime.fromisoformat(created.replace("Z", "+00:00"))
+                    except Exception:
+                        continue
+                if created.tzinfo is None:
+                    created = created.replace(tzinfo=timezone.utc)
+                age = (_now_utc() - created).total_seconds()
+                nxt = next_stage_for_age(o.get("shipping_status", "label_created"), age)
+                if not nxt:
+                    continue
+                ev = event_details(nxt, o.get("carrier", "Carrier"))
+                await db.orders.update_one(
+                    {"id": o["id"]},
+                    {"$set": {"shipping_status": nxt}, "$push": {"shipping_events": ev}},
+                )
+                await notify(o["buyer_id"], "order",
+                             f"Shipping update: {nxt.replace('_',' ').title()}",
+                             ev["description"], f"/order/{o['id']}")
+                logger.info(f"[shipping:auto] order {o['id']} advanced to {nxt}")
+        except Exception as e:
+            logger.warning(f"shipping_progress_loop error: {e}")
+        await asyncio.sleep(30)
 
 
 # =========================
@@ -2299,6 +2367,7 @@ async def startup():
 
     asyncio.create_task(live_sync_loop())
     asyncio.create_task(apify_auto_sync_loop())
+    asyncio.create_task(shipping_progress_loop())
 
 
 @app.on_event("shutdown")

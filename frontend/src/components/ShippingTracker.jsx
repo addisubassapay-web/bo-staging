@@ -18,11 +18,12 @@ const STATUS_LABELS = {
  * - Displays label status + events for a given order.
  * - If `canPurchase` (seller view) and no label yet, shows a "Buy label" button.
  */
-const ShippingTracker = ({ orderId, canPurchase = false }) => {
+const ShippingTracker = ({ orderId, canPurchase = false, canAdvance = false }) => {
   const { toast } = useToast();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [buying, setBuying] = useState(false);
+  const [advancing, setAdvancing] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -33,7 +34,7 @@ const ShippingTracker = ({ orderId, canPurchase = false }) => {
     setLoading(false);
   };
 
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, [orderId]);
+  useEffect(() => { load(); }, [orderId]);
 
   const buyLabel = async () => {
     setBuying(true);
@@ -45,6 +46,19 @@ const ShippingTracker = ({ orderId, canPurchase = false }) => {
       toast({ title: "Could not create label", description: err.response?.data?.detail || "Try again", variant: "destructive" });
     } finally {
       setBuying(false);
+    }
+  };
+
+  const advance = async () => {
+    setAdvancing(true);
+    try {
+      const { data: r } = await api.post(`/orders/${orderId}/shipping-advance`, {});
+      toast({ title: `Advanced to ${r.current_status.replace(/_/g, " ")}` });
+      await load();
+    } catch (err) {
+      toast({ title: "Could not advance", description: err.response?.data?.detail || "Try again", variant: "destructive" });
+    } finally {
+      setAdvancing(false);
     }
   };
 
@@ -79,6 +93,13 @@ const ShippingTracker = ({ orderId, canPurchase = false }) => {
           {data.estimated_delivery && <>ETA {data.estimated_delivery}</>}
         </div>
       </div>
+      {canAdvance && data.current_status !== "delivered" && (
+        <div className="mt-2 flex justify-end">
+          <Button size="sm" variant="outline" onClick={advance} disabled={advancing} data-testid={`advance-${orderId}`}>
+            {advancing ? "Advancing…" : "Mark next stage →"}
+          </Button>
+        </div>
+      )}
       <div className="mt-3 space-y-2">
         {data.events.slice().reverse().map((e, i) => {
           const s = STATUS_LABELS[e.status] || STATUS_LABELS.label_created;

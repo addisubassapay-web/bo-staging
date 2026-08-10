@@ -26,6 +26,7 @@ import { ChatThreads, ChatRoom } from "@/pages/Chat";
 import StoreAnalytics from "@/pages/StoreAnalytics";
 import Verification from "@/pages/Verification";
 import SellerApply from "@/pages/SellerApply";
+import EditListing from "@/pages/EditListing";
 
 function App() {
   return (
@@ -55,6 +56,7 @@ function App() {
               <Route path="/chat/:listingId/:otherId" element={<ChatRoom />} />
               <Route path="/verify" element={<Verification />} />
               <Route path="/seller/apply" element={<SellerApply />} />
+              <Route path="/listing/:id/edit" element={<EditListing />} />
               <Route path="/r/:code" element={<AffiliateRedirect />} />
               <Route path="/admin/*" element={<Admin />} />
             </Routes>

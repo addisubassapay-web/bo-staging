@@ -94,7 +94,10 @@ const Profile = () => {
                     </div>
                     <div className="mt-3 flex gap-2">
                       <Button variant="outline" size="sm" className="flex-1" onClick={() => navigate(`/listing/${l.id}`)}>
-                        <Edit className="h-3 w-3 mr-1" /> View
+                        View
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => navigate(`/listing/${l.id}/edit`)} data-testid={`edit-listing-${l.id}`}>
+                        <Edit className="h-3 w-3" />
                       </Button>
                       <Button variant="outline" size="sm" onClick={() => deleteListing(l.id)}>
                         <Trash2 className="h-3 w-3" />
@@ -155,7 +158,7 @@ const Profile = () => {
                       <div className="text-xs text-neutral-500 font-mono">#{o.id.slice(0, 8)}</div>
                     </div>
                   </div>
-                  <ShippingTracker orderId={o.id} canPurchase />
+                  <ShippingTracker orderId={o.id} canPurchase canAdvance />
                 </div>
               ))}
             </div>

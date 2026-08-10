@@ -1,0 +1,37 @@
+{
+  "summary": "Phase 3 backend tests: 15/15 pytest cases pass. Covered: (1) POST /orders/{id}/shipping-label on a fresh order — persists shipping_provider='mock', shipping_events=[label_created], label_created_at; subsequent GET tracking returns has_label:true, provider='mock', current_status='label_created', dev_mock:true, events[0].status=='label_created'. (2) POST /orders/{id}/shipping-advance with empty body advances label_created -> picked_up, appends event, updates shipping_status, and creates a buyer notification of type='order' with title containing 'Shipping update'. (3) POST /orders/{id}/shipping-advance {to_status:'delivered'} jumps ahead; second advance on delivered order returns 400. Invalid to_status ('banana') returns 400. to_status equal to or earlier than current returns 400. (4) Non-seller/non-admin (buyer, unrelated user) receive 403 on /shipping-advance. (5) Background shipping_progress_loop: verified by backdating label_created_at 2 min into the past via direct Mongo write and polling GET /tracking — order auto-advanced to picked_up within ~50s without any client call. (6) GET /listings?sort=trending returns listings ordered by (views_count desc, likes_count desc, created_at desc) — verified with 3 seeded listings whose counters were set directly to controlled values. (7) PUT /api/listings/{id}: admin/owner can update; unrelated users get 403. (8) Regression: /auth/me carries email_verified/phone_verified/seller_status; register+login+me; /users/{id}/public omits email; verify email+phone mock flow; upload → seller/apply with id_document_file_id → admin PUT approve; /ai/listing-suggest with real base64 image returns full structured JSON (title, description, category_slug/id/name, condition, suggested_price_usd).",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/upload", "issue": "Sporadic 500 'Upload failed. Please try again.' from Emergent object storage (observed once during a run, cleared on retry). Consider adding a small retry with backoff around storage.put_object() and returning 502 (not 500) when the upstream store is unavailable so clients know it is upstream."},
+      {"endpoint": "POST /api/verify/email/send", "issue": "Requires JSON body — even though EmailSendRequest.email is Optional, sending no body returns 422. Either accept empty body (Body(None) / default request model) or make this clear to frontend."},
+      {"endpoint": "PUT /api/admin/seller-applications/{app_id}", "issue": "Approval uses PUT with {status:'approved'} body — not the more RESTy POST .../approve. Ok as-is, just noting for frontend integration consistency."}
+    ]
+  },
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_phase3_shipping_advance_trending.py",
+    "/app/test_reports/pytest/phase3_results.xml"
+  ],
+  "action_items": [
+    "Optional: add retry/backoff around Emergent storage.put_object() and return 502 on upstream storage failure so /api/upload no longer surfaces as generic 500.",
+    "server.py is now ~2376 lines — long-standing split-into-routers item still not addressed (auth, listings, seller, verify, stripe, admin, storage, ai, shipping)."
+  ],
+  "critical_code_review_comments": [
+    "shipping_progress_loop uses a single global 30s polling loop iterating all mock orders; fine for small volumes but will not scale — consider event-driven or worker-queue when order counts grow. Also it does not detect timezone-naive label_created_at written by tests/legacy paths without fixing them on the order (only in-memory). Minor.",
+    "advance_shipping trusts payload.to_status against a hard-coded stages list; consider centralizing the stages list in shipping_providers.py so /advance and next_stage_for_age can't drift.",
+    "Trending sort ordering is (views desc, likes desc, created_at desc) but there are no indexes on views_count/likes_count in Mongo — will full-scan as catalog grows. Add compound index.",
+    "PUT /admin/seller-applications/{app_id} accepts a raw `updates: dict` — bypasses Pydantic validation for admin surface. Prefer a typed AdminSellerReview model.",
+    "server.py still exceeds the 700-line guideline (2376 lines)."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_phase3_shipping_advance_trending.py (new)"
+  ],
+  "success_rate": {"backend": "100% (15/15)", "frontend": "not tested (backend-only iteration per request)"},
+  "test_credentials": "Admin admin@mercari.local/admin123. Tests register ephemeral e2e_alt3_*, e2e_buyer3_*, e2e_reg3_*, e2e_ver3_*, e2e_sd3_* per run.",
+  "seed_data_creation": "Each run creates: several admin listings ('TEST Phase3 ...' and 'TEST Trending ...' + one 'TEST EditListing ...'), several buyer orders + shipping labels (MOCK...), ephemeral registered users, a pending-then-approved seller application. Trending-test listings have views_count/likes_count set to 99999/99998/1 directly — these will appear at the top of /listings?sort=trending in the DB. Safe to leave or purge by title prefix TEST Trending/TEST Phase3/TEST EditListing.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Phase 3 backend endpoints (shipping-advance manual, background auto-advance loop, trending sort, PUT listings RBAC) all green. Frontend (EditListing.jsx, ShippingTracker canAdvance button, hero carousel + flash deals redesign, trending on home page) still needs UI verification in a later iteration. The pytest config /app/backend/pytest.ini pins -n 2 --dist loadscope; run tests from /app/backend. Auto-advance test uses direct MongoClient(MONGO_URL) to backdate label_created_at (2 min) — pymongo is already installed. Run: `cd /app/backend && pytest tests/test_phase3_shipping_advance_trending.py -v`.",
+  "rca of the issue": "N/A — no product bugs found. Three self-inflicted test wiring issues fixed inside the test file: (a) /verify/email/send needs an explicit JSON body (added json={}), (b) /upload response key is 'id' not 'file_id', (c) admin approve is PUT /admin/seller-applications/{id} with {status:'approved'} body, not a POST .../approve route."
+}

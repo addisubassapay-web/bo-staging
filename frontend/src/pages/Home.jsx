@@ -1,148 +1,316 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "@/lib/api";
 import ProductCard from "@/components/ProductCard";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, ShieldCheck, Truck, MessageCircle } from "lucide-react";
-import * as Icons from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import {
+  ArrowRight, ShieldCheck, Truck, Headphones, RotateCcw, Flame, Zap,
+  CheckCircle2, Lock, Globe, Heart, Sparkles,
+} from "lucide-react";
 
-const iconFor = (name) => {
-  const key = (name || "package").split("-").map((s, i) => (i === 0 ? s : s[0].toUpperCase() + s.slice(1))).join("");
-  const Comp = Icons[key[0].toUpperCase() + key.slice(1)] || Icons.Package;
-  return Comp;
+const money = (n) => `$${Number(n).toFixed(2)}`;
+
+// -------------------- HERO CAROUSEL --------------------
+const HERO_SLIDES = [
+  {
+    tag: "HOT DEALS",
+    title: "Big Fashion Sale",
+    subtitle: "Up to 50% OFF Premium Styles",
+    img: "https://images.unsplash.com/photo-1483985988355-763728e1935b?w=1600&auto=format&fit=crop&q=80",
+    ctaLink: "/search?category_slug=women",
+  },
+  {
+    tag: "NEW IN",
+    title: "Electronics that spark joy",
+    subtitle: "Verified sellers · Fast delivery",
+    img: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=1600&auto=format&fit=crop&q=80",
+    ctaLink: "/search?category_slug=electronics",
+  },
+  {
+    tag: "TRENDING",
+    title: "Vintage finds you'll love",
+    subtitle: "One-of-a-kind pieces from real people",
+    img: "https://images.unsplash.com/photo-1445205170230-053b83016050?w=1600&auto=format&fit=crop&q=80",
+    ctaLink: "/search?category_slug=vintage",
+  },
+];
+
+const HeroCarousel = () => {
+  const [idx, setIdx] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setIdx((i) => (i + 1) % HERO_SLIDES.length), 5000);
+    return () => clearInterval(t);
+  }, []);
+  const s = HERO_SLIDES[idx];
+  return (
+    <section className="max-w-7xl mx-auto px-4 pt-6" data-testid="hero-carousel">
+      <div className="relative rounded-2xl overflow-hidden aspect-[21/9] bg-neutral-100">
+        <img key={s.img} src={s.img} alt={s.title} className="absolute inset-0 h-full w-full object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/45 via-black/10 to-transparent" />
+        <div className="absolute inset-0 flex flex-col justify-center gap-4 p-8 md:p-14 max-w-2xl">
+          <span className="inline-flex items-center gap-1.5 self-start bg-[#FF7A18] text-white text-xs font-bold px-3 py-1 rounded-full">
+            <Flame className="h-3 w-3" /> {s.tag}
+          </span>
+          <h1 className="text-white text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight drop-shadow">{s.title}</h1>
+          <p className="text-white/95 text-base sm:text-lg">{s.subtitle}</p>
+          <div className="flex gap-3">
+            <Link to={s.ctaLink}><Button className="bg-[#FF7A18] hover:bg-[#e86a10] h-11 px-6 rounded-full font-semibold" data-testid="hero-shop-now">Shop Now</Button></Link>
+            <Link to="/search"><Button variant="outline" className="h-11 px-6 rounded-full bg-transparent border-2 border-white text-white hover:bg-white hover:text-[#FF7A18] font-semibold">View Deals</Button></Link>
+          </div>
+        </div>
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1.5">
+          {HERO_SLIDES.map((_, i) => (
+            <button
+              key={i}
+              aria-label={`slide ${i + 1}`}
+              onClick={() => setIdx(i)}
+              className={`h-1.5 rounded-full transition-all ${i === idx ? "bg-[#FF7A18] w-8" : "bg-white/70 w-2"}`}
+            />
+          ))}
+        </div>
+      </div>
+    </section>
+  );
 };
 
+// -------------------- FLASH DEALS COUNTDOWN --------------------
+const useCountdown = (hours = 6) => {
+  const [t, setT] = useState(hours * 3600);
+  useEffect(() => {
+    const iv = setInterval(() => setT((v) => (v > 0 ? v - 1 : 0)), 1000);
+    return () => clearInterval(iv);
+  }, []);
+  const h = Math.floor(t / 3600), m = Math.floor((t % 3600) / 60), s = t % 60;
+  return `${h}h ${m}m ${s}s`;
+};
+
+const FlashCard = ({ l, onFavChange, isFav }) => {
+  // synthesize a "discount %" and "stock left" purely for UI theatre — deterministic per listing id
+  const seed = (l.id || "").split("").reduce((a, c) => a + c.charCodeAt(0), 0);
+  const discount = 20 + (seed % 60);
+  const stockLeft = 5 + (seed % 100);
+  const original = (l.original_price && l.original_price > l.price) ? l.original_price : (l.price / (1 - discount / 100)).toFixed(2);
+  const stockPct = Math.max(6, Math.min(95, stockLeft));
+
+  return (
+    <div className="group relative bg-white rounded-xl border border-neutral-200 overflow-hidden hover:shadow-lg hover:border-[#FF7A18]/40 transition" data-testid={`flash-card-${l.id}`}>
+      <Link to={`/listing/${l.id}`}>
+        <div className="relative aspect-square bg-neutral-100 overflow-hidden">
+          <img src={l.images?.[0]} alt={l.title} className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500" />
+          <span className="absolute top-2 left-2 bg-[#FF211F] text-white text-[11px] font-bold px-2 py-1 rounded shadow">
+            FLASH -{discount}%
+          </span>
+          <button
+            aria-label="Favorite"
+            onClick={(e) => { e.preventDefault(); onFavChange?.(l.id); }}
+            className="absolute top-2 right-2 h-8 w-8 rounded-full bg-white/95 hover:bg-white grid place-items-center transition"
+          >
+            <Heart className={`h-4 w-4 ${isFav ? "fill-[#FF211F] text-[#FF211F]" : "text-neutral-600"}`} />
+          </button>
+        </div>
+      </Link>
+      <div className="p-3">
+        <Link to={`/listing/${l.id}`}>
+          <div className="text-sm font-medium text-neutral-900 line-clamp-2 min-h-[2.5rem]">{l.title}</div>
+        </Link>
+        <div className="mt-1.5 flex items-baseline gap-2 flex-wrap">
+          <span className="text-lg font-bold text-neutral-900">{money(l.price)}</span>
+          <span className="text-xs text-neutral-400 line-through">${Number(original).toFixed(2)}</span>
+          <span className="ml-auto text-[11px] text-[#FF211F] font-medium">Only {stockLeft} left</span>
+        </div>
+        <div className="mt-2 h-1.5 rounded-full bg-neutral-100 overflow-hidden">
+          <div className="h-full bg-gradient-to-r from-[#FF211F] to-[#FF7A18]" style={{ width: `${stockPct}%` }} />
+        </div>
+        <div className="mt-2 text-[11px] text-amber-600 font-medium flex items-center gap-1">
+          <Zap className="h-3 w-3" /> Fast Delivery
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const FlashDeals = ({ items, onFav, favIds }) => {
+  const countdown = useCountdown(6);
+  if (!items?.length) return null;
+  return (
+    <section className="max-w-7xl mx-auto px-4 mt-10">
+      <div className="bg-gradient-to-b from-[#FFF7EF] to-white rounded-2xl border border-orange-100 p-5 sm:p-6">
+        <div className="flex items-start sm:items-center justify-between flex-wrap gap-3">
+          <div>
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#FF211F] flex items-center gap-2">
+              <Zap className="h-6 w-6" /> Flash Deals
+            </h2>
+            <p className="text-sm text-neutral-600">Limited time offers — grab before it ends</p>
+          </div>
+          <div className="bg-neutral-900 text-white px-4 py-2 rounded-full text-sm font-semibold" data-testid="flash-countdown">
+            Ends in: <span className="text-orange-400 font-mono">{countdown}</span>
+          </div>
+        </div>
+        <div className="mt-5 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+          {items.map((l) => (
+            <FlashCard key={l.id} l={l} isFav={favIds.has(l.id)} onFavChange={onFav} />
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+};
+
+// -------------------- TRUST STRIP --------------------
+const TrustStrip = () => (
+  <section className="max-w-7xl mx-auto px-4 mt-14">
+    <div className="text-center">
+      <h2 className="text-3xl font-bold text-neutral-900">Why millions trust us</h2>
+      <p className="text-neutral-500 mt-1">Safe shopping experience with global protection</p>
+    </div>
+    <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+      {[
+        { icon: Lock, title: "Secure Payments", body: "Encrypted checkout & buyer protection", bg: "bg-emerald-50 text-emerald-700 border-emerald-100" },
+        { icon: Truck, title: "Fast Global Delivery", body: "Tracked shipping worldwide", bg: "bg-sky-50 text-sky-700 border-sky-100" },
+        { icon: RotateCcw, title: "Easy Returns", body: "7-30 day hassle-free returns", bg: "bg-orange-50 text-orange-700 border-orange-100" },
+        { icon: Headphones, title: "24/7 Support", body: "Instant help anytime you need", bg: "bg-violet-50 text-violet-700 border-violet-100" },
+      ].map((f, i) => (
+        <div key={i} className={`border ${f.bg.split(" ").pop()} bg-white rounded-xl p-5`} data-testid={`trust-${i}`}>
+          <div className={`h-10 w-10 rounded-lg grid place-items-center ${f.bg}`}>
+            <f.icon className="h-5 w-5" />
+          </div>
+          <div className="font-semibold text-neutral-900 mt-3">{f.title}</div>
+          <div className="text-sm text-neutral-500">{f.body}</div>
+        </div>
+      ))}
+    </div>
+    <div className="mt-6 border-t border-neutral-200 pt-5 grid grid-cols-2 md:grid-cols-4 gap-3 text-sm text-neutral-600">
+      {["Verified Sellers", "Secure Checkout", "Global Shipping", "Buyer Protection"].map((t) => (
+        <div key={t} className="flex items-center justify-center gap-2">
+          <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+          <span>{t}</span>
+        </div>
+      ))}
+    </div>
+  </section>
+);
+
+// -------------------- CANT FIND PRODUCT CTA --------------------
+const RequestBanner = () => (
+  <section className="max-w-7xl mx-auto px-4 mt-14">
+    <div className="rounded-2xl bg-gradient-to-r from-[#FF7A18] to-[#FF211F] text-white text-center px-6 py-12 shadow-lg">
+      <div className="mx-auto h-14 w-14 rounded-xl bg-white/20 grid place-items-center mb-4">
+        <Sparkles className="h-7 w-7" />
+      </div>
+      <h2 className="text-3xl sm:text-4xl font-bold">Can&apos;t Find Your Product?</h2>
+      <p className="mt-2 text-white/90 max-w-2xl mx-auto">Send us your request and our team will try to source it for you from global suppliers.</p>
+      <div className="mt-6 flex items-center justify-center gap-3 flex-wrap">
+        <Link to="/chat"><Button className="bg-white text-[#FF211F] hover:bg-neutral-100 h-11 px-6 rounded-lg font-semibold" data-testid="cta-request-product">Request Product</Button></Link>
+        <Link to="/chat"><Button variant="outline" className="h-11 px-6 rounded-lg bg-transparent border-2 border-white text-white hover:bg-white/20 font-semibold">Contact Support</Button></Link>
+      </div>
+    </div>
+  </section>
+);
+
+// -------------------- FEATURE CARDS --------------------
+const FeatureCards = () => (
+  <section className="max-w-7xl mx-auto px-4 mt-14">
+    <div className="grid md:grid-cols-3 gap-4">
+      {[
+        { icon: Headphones, title: "24/7 Customer Support", body: "Fast help from our support team anytime.", tone: "text-orange-500" },
+        { icon: Truck, title: "Global Delivery", body: "Shipping to many countries worldwide.", tone: "text-orange-500" },
+        { icon: ShieldCheck, title: "Buyer Protection", body: "Secure payments and trusted checkout.", tone: "text-orange-500" },
+      ].map((f, i) => (
+        <div key={i} className="bg-white border border-neutral-200 rounded-xl p-6" data-testid={`feature-${i}`}>
+          <f.icon className={`h-9 w-9 ${f.tone}`} />
+          <div className="mt-3 font-semibold text-lg text-neutral-900">{f.title}</div>
+          <div className="text-sm text-neutral-500 mt-1">{f.body}</div>
+        </div>
+      ))}
+    </div>
+  </section>
+);
+
+// -------------------- MAIN PAGE --------------------
 const Home = () => {
-  const [categories, setCategories] = useState([]);
   const [featured, setFeatured] = useState([]);
   const [recent, setRecent] = useState([]);
+  const [trending, setTrending] = useState([]);
   const [favIds, setFavIds] = useState(new Set());
 
   useEffect(() => {
-    api.get("/categories").then((r) => setCategories(r.data)).catch(() => {});
-    api.get("/listings", { params: { featured: true, limit: 12 } }).then((r) => setFeatured(r.data)).catch(() => {});
-    api.get("/listings", { params: { sort: "newest", limit: 18 } }).then((r) => setRecent(r.data)).catch(() => {});
+    api.get("/listings", { params: { featured: true, limit: 10 } }).then((r) => setFeatured(r.data)).catch(() => {});
+    api.get("/listings", { params: { sort: "newest", limit: 12 } }).then((r) => setRecent(r.data)).catch(() => {});
+    api.get("/listings", { params: { sort: "trending", limit: 12 } }).then((r) => setTrending(r.data)).catch(() => {});
     const token = localStorage.getItem("mercari_token");
     if (token) {
       api.get("/favorites").then((r) => setFavIds(new Set(r.data.map((l) => l.id)))).catch(() => {});
     }
   }, []);
 
-  const onFavChange = (id, isFav) => {
-    setFavIds((prev) => {
-      const s = new Set(prev);
-      if (isFav) s.add(id);
-      else s.delete(id);
-      return s;
-    });
+  const toggleFav = async (id) => {
+    const token = localStorage.getItem("mercari_token");
+    if (!token) { window.location.href = "/login"; return; }
+    const isFav = favIds.has(id);
+    try {
+      if (isFav) { await api.delete(`/favorites/${id}`); }
+      else { await api.post(`/favorites/${id}`); }
+      setFavIds((prev) => { const s = new Set(prev); isFav ? s.delete(id) : s.add(id); return s; });
+    } catch { /* no-op */ }
   };
 
+  const flashItems = useMemo(() => (featured.length ? featured : recent).slice(0, 10), [featured, recent]);
+
   return (
-    <div>
-      {/* Hero */}
-      <section className="bg-gradient-to-b from-[#FFF3F2] to-white">
-        <div className="max-w-7xl mx-auto px-4 py-12 md:py-20 grid md:grid-cols-2 gap-10 items-center">
+    <div className="bg-white">
+      <HeroCarousel />
+
+      {/* Limited time badge */}
+      <div className="max-w-7xl mx-auto px-4 mt-10 text-center">
+        <Badge className="bg-[#FF7A18] hover:bg-[#FF7A18] text-white uppercase tracking-wider font-bold px-4 py-1">Limited Time Deals</Badge>
+      </div>
+
+      <FlashDeals items={flashItems} onFav={toggleFav} favIds={favIds} />
+
+      <TrustStrip />
+
+      {/* Trending Now */}
+      <section className="max-w-7xl mx-auto px-4 mt-14">
+        <div className="flex items-center justify-between mb-5">
           <div>
-            <span className="inline-block bg-[#FF211F] text-white text-xs font-semibold px-3 py-1 rounded-full mb-4">New · Free shipping over $50</span>
-            <h1 className="text-4xl md:text-5xl font-bold text-neutral-900 leading-tight">
-              Your marketplace for <span className="text-[#FF211F]">everything</span>
-            </h1>
-            <p className="mt-4 text-lg text-neutral-600 max-w-lg">
-              Buy and sell secondhand fashion, electronics, home goods and more. Millions of items from real people, priced to move.
-            </p>
-            <div className="mt-6 flex flex-wrap gap-3">
-              <Link to="/search">
-                <Button className="bg-[#FF211F] hover:bg-[#e01d1b] h-11 px-6">Start shopping <ArrowRight className="h-4 w-4 ml-2" /></Button>
-              </Link>
-              <Link to="/sell">
-                <Button variant="outline" className="h-11 px-6">Sell in 60 seconds</Button>
-              </Link>
-            </div>
-            <div className="mt-8 flex flex-wrap gap-6 text-sm text-neutral-600">
-              <div className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-[#FF211F]" /> Buyer protection</div>
-              <div className="flex items-center gap-2"><Truck className="h-4 w-4 text-[#FF211F]" /> Fast shipping</div>
-              <div className="flex items-center gap-2"><MessageCircle className="h-4 w-4 text-[#FF211F]" /> In-app chat</div>
-            </div>
+            <h2 className="text-2xl sm:text-3xl font-bold text-[#FF211F] flex items-center gap-2">
+              <Flame className="h-6 w-6" /> Trending Now
+            </h2>
+            <p className="text-sm text-neutral-500">Based on popularity &amp; engagement</p>
           </div>
-          <div className="grid grid-cols-3 gap-3">
-            {featured.slice(0, 6).map((l, i) => (
-              <Link key={l.id} to={`/listing/${l.id}`} className={`rounded-lg overflow-hidden bg-neutral-100 aspect-square ${i === 0 ? "col-span-2 row-span-2" : ""}`}>
-                <img src={l.images?.[0]} alt={l.title} className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" />
-              </Link>
+          <Link to="/search?sort=trending" className="text-sm text-[#FF7A18] font-medium hover:underline flex items-center gap-1">
+            Live Feed <ArrowRight className="h-3 w-3" />
+          </Link>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          {trending.slice(0, 12).map((l) => (
+            <ProductCard key={l.id} listing={l} isFavorite={favIds.has(l.id)} onFavoriteChange={(id, isFav) => setFavIds((prev) => { const s = new Set(prev); isFav ? s.add(id) : s.delete(id); return s; })} />
+          ))}
+        </div>
+      </section>
+
+      {/* Just listed */}
+      {recent.length > 0 && (
+        <section className="max-w-7xl mx-auto px-4 mt-14">
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="text-2xl sm:text-3xl font-bold text-neutral-900">Just listed</h2>
+            <Link to="/search?sort=newest" className="text-sm text-[#FF7A18] font-medium hover:underline flex items-center gap-1">
+              View more <ArrowRight className="h-3 w-3" />
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            {recent.slice(0, 12).map((l) => (
+              <ProductCard key={l.id} listing={l} isFavorite={favIds.has(l.id)} onFavoriteChange={(id, isFav) => setFavIds((prev) => { const s = new Set(prev); isFav ? s.add(id) : s.delete(id); return s; })} />
             ))}
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
-      {/* Categories */}
-      <section className="max-w-7xl mx-auto px-4 py-10">
-        <div className="flex items-baseline justify-between mb-6">
-          <h2 className="text-2xl font-bold text-neutral-900">Browse categories</h2>
-          <Link to="/search" className="text-sm text-[#FF211F] font-medium hover:underline">See all</Link>
-        </div>
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-12 gap-3">
-          {categories.map((c) => {
-            const Icon = iconFor(c.icon);
-            return (
-              <Link
-                key={c.id}
-                to={`/search?category=${c.id}`}
-                className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-neutral-50 border border-transparent hover:border-neutral-200 transition"
-              >
-                <div className="h-12 w-12 rounded-full bg-[#FFF3F2] grid place-items-center text-[#FF211F]">
-                  <Icon className="h-5 w-5" />
-                </div>
-                <span className="text-xs text-center text-neutral-700">{c.name}</span>
-              </Link>
-            );
-          })}
-        </div>
-      </section>
+      <RequestBanner />
+      <FeatureCards />
 
-      {/* Featured */}
-      <section className="max-w-7xl mx-auto px-4 py-6">
-        <div className="flex items-baseline justify-between mb-4">
-          <h2 className="text-2xl font-bold text-neutral-900">Featured picks</h2>
-          <Link to="/search" className="text-sm text-[#FF211F] font-medium hover:underline">View more</Link>
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-          {featured.map((l) => (
-            <ProductCard key={l.id} listing={l} isFavorite={favIds.has(l.id)} onFavoriteChange={onFavChange} />
-          ))}
-        </div>
-      </section>
-
-      {/* Recent */}
-      <section className="max-w-7xl mx-auto px-4 py-10">
-        <div className="flex items-baseline justify-between mb-4">
-          <h2 className="text-2xl font-bold text-neutral-900">Just listed</h2>
-          <Link to="/search?sort=newest" className="text-sm text-[#FF211F] font-medium hover:underline">View more</Link>
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-          {recent.map((l) => (
-            <ProductCard key={l.id} listing={l} isFavorite={favIds.has(l.id)} onFavoriteChange={onFavChange} />
-          ))}
-        </div>
-      </section>
-
-      {/* Value props */}
-      <section className="bg-neutral-50 py-14 mt-8">
-        <div className="max-w-7xl mx-auto px-4 grid md:grid-cols-3 gap-6">
-          {[
-            { icon: ShieldCheck, title: "Buyer protection", body: "Your money is held safely until you confirm delivery. Not what you expected? Get your money back." },
-            { icon: Truck, title: "Simple shipping", body: "Print a prepaid label right from the app. Drop off at the nearest carrier and you're done." },
-            { icon: MessageCircle, title: "Chat with sellers", body: "Ask questions, negotiate, and coordinate delivery — all inside Mercari." },
-          ].map((f, i) => (
-            <div key={i} className="bg-white rounded-xl p-6 border border-neutral-200">
-              <div className="h-11 w-11 rounded-lg bg-[#FFF3F2] grid place-items-center text-[#FF211F] mb-4">
-                <f.icon className="h-5 w-5" />
-              </div>
-              <h3 className="font-semibold text-lg text-neutral-900">{f.title}</h3>
-              <p className="mt-2 text-sm text-neutral-600">{f.body}</p>
-            </div>
-          ))}
-        </div>
-      </section>
+      <div className="h-14" />
     </div>
   );
 };
