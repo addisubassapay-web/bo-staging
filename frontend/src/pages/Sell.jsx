@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Camera, X, Upload, DollarSign, Sparkles } from "lucide-react";
+import { Camera, X, Upload, DollarSign, Sparkles, Wand2 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
@@ -34,6 +34,26 @@ const Sell = () => {
   });
   const [submitting, setSubmitting] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
+  const [enhancingIdx, setEnhancingIdx] = useState(-1);
+
+  const enhancePhoto = async (idx) => {
+    const src = images[idx];
+    if (!src) return;
+    setEnhancingIdx(idx);
+    try {
+      const body = src.startsWith("data:") ? { image_base64: src } : { image_url: src };
+      const { data } = await api.post("/ai/photo-enhance", body);
+      // Use the enhanced URL directly — replace the photo at the same index
+      const token = localStorage.getItem("mercari_token");
+      const enhancedUrl = `${process.env.REACT_APP_BACKEND_URL}${data.url}?auth=${encodeURIComponent(token || "")}`;
+      setImages((prev) => prev.map((v, i) => (i === idx ? enhancedUrl : v)));
+      toast({ title: "Photo enhanced", description: "Background removed & polished by AI" });
+    } catch (err) {
+      toast({ title: "Enhance failed", description: err.response?.data?.detail || "Try a different photo", variant: "destructive" });
+    } finally {
+      setEnhancingIdx(-1);
+    }
+  };
 
   const runAiFromImage = async (dataUrl) => {
     setAiLoading(true);
@@ -181,6 +201,17 @@ const Sell = () => {
               <div key={i} className="relative aspect-square rounded-lg overflow-hidden bg-neutral-100 group">
                 <img src={src} alt="" className="w-full h-full object-cover" />
                 {i === 0 && <span className="absolute top-1 left-1 bg-[#FF211F] text-white text-[10px] px-1.5 py-0.5 rounded">Cover</span>}
+                <button
+                  type="button"
+                  onClick={() => enhancePhoto(i)}
+                  disabled={enhancingIdx === i}
+                  aria-label="Enhance photo with AI"
+                  className="absolute bottom-1 left-1 h-7 w-7 rounded-full bg-[#FF7A18] hover:bg-[#e86a10] disabled:opacity-60 text-white grid place-items-center shadow-md"
+                  data-testid={`enhance-photo-${i}`}
+                  title="Enhance with AI (Nano Banana)"
+                >
+                  <Wand2 className={`h-3.5 w-3.5 ${enhancingIdx === i ? "animate-pulse" : ""}`} />
+                </button>
                 <button type="button" onClick={() => removeImage(i)} className="absolute top-1 right-1 h-6 w-6 rounded-full bg-black/60 hover:bg-black/80 text-white grid place-items-center">
                   <X className="h-3 w-3" />
                 </button>

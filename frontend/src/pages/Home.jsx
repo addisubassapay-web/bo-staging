@@ -75,22 +75,34 @@ const HeroCarousel = () => {
 };
 
 // -------------------- FLASH DEALS COUNTDOWN --------------------
-const useCountdown = (hours = 6) => {
-  const [t, setT] = useState(hours * 3600);
+const useMidnightCountdown = (endsAtIso) => {
+  const [t, setT] = useState(0);
   useEffect(() => {
-    const iv = setInterval(() => setT((v) => (v > 0 ? v - 1 : 0)), 1000);
+    const tick = () => {
+      if (!endsAtIso) {
+        setT(6 * 3600);
+        return;
+      }
+      const now = Date.now();
+      const end = new Date(endsAtIso).getTime();
+      setT(Math.max(0, Math.floor((end - now) / 1000)));
+    };
+    tick();
+    const iv = setInterval(tick, 1000);
     return () => clearInterval(iv);
-  }, []);
+  }, [endsAtIso]);
   const h = Math.floor(t / 3600), m = Math.floor((t % 3600) / 60), s = t % 60;
   return `${h}h ${m}m ${s}s`;
 };
 
 const FlashCard = ({ l, onFavChange, isFav }) => {
-  // synthesize a "discount %" and "stock left" purely for UI theatre — deterministic per listing id
+  // Prefer real backend flash-deal values; fall back to synthesized theatre for non-flash items.
   const seed = (l.id || "").split("").reduce((a, c) => a + c.charCodeAt(0), 0);
-  const discount = 20 + (seed % 60);
+  const discount = l.flash_deal_discount_pct ?? 20 + (seed % 60);
   const stockLeft = 5 + (seed % 100);
-  const original = (l.original_price && l.original_price > l.price) ? l.original_price : (l.price / (1 - discount / 100)).toFixed(2);
+  const original = (l.original_price && l.original_price > l.price)
+    ? l.original_price
+    : Number((l.price / (1 - discount / 100)).toFixed(2));
   const stockPct = Math.max(6, Math.min(95, stockLeft));
 
   return (
@@ -131,7 +143,8 @@ const FlashCard = ({ l, onFavChange, isFav }) => {
 };
 
 const FlashDeals = ({ items, onFav, favIds }) => {
-  const countdown = useCountdown(6);
+  const endsAt = items?.[0]?.flash_deal_ends_at || null;
+  const countdown = useMidnightCountdown(endsAt);
   if (!items?.length) return null;
   return (
     <section className="max-w-7xl mx-auto px-4 mt-10">
@@ -141,7 +154,7 @@ const FlashDeals = ({ items, onFav, favIds }) => {
             <h2 className="text-2xl sm:text-3xl font-extrabold text-[#FF211F] flex items-center gap-2">
               <Zap className="h-6 w-6" /> Flash Deals
             </h2>
-            <p className="text-sm text-neutral-600">Limited time offers — grab before it ends</p>
+            <p className="text-sm text-neutral-600">Limited time offers — ends at midnight UTC</p>
           </div>
           <div className="bg-neutral-900 text-white px-4 py-2 rounded-full text-sm font-semibold" data-testid="flash-countdown">
             Ends in: <span className="text-orange-400 font-mono">{countdown}</span>
@@ -229,13 +242,13 @@ const FeatureCards = () => (
 
 // -------------------- MAIN PAGE --------------------
 const Home = () => {
-  const [featured, setFeatured] = useState([]);
+  const [flash, setFlash] = useState([]);
   const [recent, setRecent] = useState([]);
   const [trending, setTrending] = useState([]);
   const [favIds, setFavIds] = useState(new Set());
 
   useEffect(() => {
-    api.get("/listings", { params: { featured: true, limit: 10 } }).then((r) => setFeatured(r.data)).catch(() => {});
+    api.get("/flash-deals", { params: { limit: 10 } }).then((r) => setFlash(r.data)).catch(() => {});
     api.get("/listings", { params: { sort: "newest", limit: 12 } }).then((r) => setRecent(r.data)).catch(() => {});
     api.get("/listings", { params: { sort: "trending", limit: 12 } }).then((r) => setTrending(r.data)).catch(() => {});
     const token = localStorage.getItem("mercari_token");
@@ -255,7 +268,7 @@ const Home = () => {
     } catch { /* no-op */ }
   };
 
-  const flashItems = useMemo(() => (featured.length ? featured : recent).slice(0, 10), [featured, recent]);
+  const flashItems = useMemo(() => (flash.length ? flash : recent).slice(0, 10), [flash, recent]);
 
   return (
     <div className="bg-white">

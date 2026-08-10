@@ -1,0 +1,32 @@
+{
+  "summary": "Phase 4 backend testing complete. Tested new /ai/photo-enhance (Nano Banana) endpoint, /flash-deals list, /admin/flash-deals/rotate, plus light regression on listings, verify/email/send, ai/listing-suggest, seller/apply. 18/18 tests pass.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "/api/flash-deals", "issue": "flash_deal_ends_at is returned as naive-UTC ISO string (no 'Z' or offset). Client code must assume UTC. Consider serializing with explicit tzinfo for clarity."}
+    ]
+  },
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_phase4_photo_enhance_flash_deals.py",
+    "/app/test_reports/pytest/phase4_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "server.py is 2565 lines — long past the >700-line threshold. Should be split into routers (auth, listings, verify, seller, ai, flash_deals, files, orders).",
+    "rotate_flash_deals uses deterministic per-listing-id discount (sum(bytearray(id))%55 + 20). Discount never rotates day-over-day for the same listing — advertised as 'random' in PRD; consider making it truly random per rotation.",
+    "flash_deals GET endpoint auto-triggers rotate_flash_deals() inline when pool < 10. This means an unauthenticated public request can trigger a Mongo write path. Acceptable but consider gating to a lock/debounce to avoid thundering-herd writes.",
+    "photo-enhance response returns 200 with a URL that requires auth (query param ?auth= or Bearer header) — good. But 'url' field is a relative /api/... path; frontend must prepend REACT_APP_BACKEND_URL.",
+    "flash_deal_ends_at datetime returned without tzinfo — recommend storing/serializing with explicit UTC offset."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_phase4_photo_enhance_flash_deals.py"
+  ],
+  "success_rate": {"backend": "100% (18/18)", "frontend": "N/A (not tested)"},
+  "test_credentials": "Used admin@mercari.local/admin123, urban_finds@demo.local/demo1234, vintage_maven@demo.local/demo1234 (from /app/memory/test_credentials.md).",
+  "seed_data_creation": "No new seed data. Uploaded 1 test image via /api/upload during test_photo_enhance_with_file_id; generated 2 enhanced files via Nano Banana in db.files (source=ai_enhance). No cleanup performed.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Phase 4 endpoints all green. Verified: (1) /flash-deals returns 10 items, all with is_flash_deal=true, status=active, discount 20-74, ends_at=next midnight UTC. (2) POST /admin/flash-deals/rotate works for admin, 403 for non-admin, pool capped at 10 across multiple rotations. (3) /ai/photo-enhance (Nano Banana) works with image_base64 and file_id inputs — real Emergent LLM calls, ~5-10s each. Returns id/url/content_type/size/prompt_used; enhanced file is downloadable via /api/files/{id}?auth=<token>. Returns 400 with no input, 404 for unknown file_id, 403 for another user's file. (4) Listing model exposes is_flash_deal, flash_deal_ends_at, flash_deal_discount_pct. Regression on /listings, /listings/{id}, sort=trending, /verify/email/send, /ai/listing-suggest, /seller/apply all pass.",
+  "rca of the issue": "N/A — no functional bugs found."
+}

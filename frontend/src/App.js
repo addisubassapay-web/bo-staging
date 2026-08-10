@@ -27,6 +27,7 @@ import StoreAnalytics from "@/pages/StoreAnalytics";
 import Verification from "@/pages/Verification";
 import SellerApply from "@/pages/SellerApply";
 import EditListing from "@/pages/EditListing";
+import BuyerProgressToast from "@/components/BuyerProgressToast";
 
 function App() {
   return (
@@ -34,6 +35,7 @@ function App() {
       <BrowserRouter>
         <AuthProvider>
           <Header />
+          <BuyerProgressToast />
           <main className="flex-1">
             <Routes>
               <Route path="/" element={<Home />} />

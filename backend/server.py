@@ -158,6 +158,10 @@ class Listing(BaseModel):
     store_id: Optional[str] = None
     imported_from_id: Optional[str] = None  # original listing id if this is a dropship import
     base_price: Optional[float] = None  # original seller's price when imported
+    # Flash deals (rotated daily)
+    is_flash_deal: bool = False
+    flash_deal_ends_at: Optional[datetime] = None
+    flash_deal_discount_pct: Optional[int] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class ListingCreate(BaseModel):
@@ -1965,8 +1969,193 @@ async def ai_listing_suggest(payload: AIListingSuggestRequest, user: dict = Depe
 
 
 # =========================
-# PHASE 4: SHIPPING LABELS (MOCKED EasyPost/Shippo)
+# PHASE 4: AI Photo Cleanup (Nano Banana image editing) + Flash Deals
 # =========================
+NANO_BANANA_MODEL = "gemini-3.1-flash-image-preview"
+
+
+class PhotoEnhanceRequest(BaseModel):
+    file_id: Optional[str] = None
+    image_base64: Optional[str] = None
+    image_url: Optional[str] = None
+    prompt: Optional[str] = "Remove the background, produce a clean centered product photo with a soft studio-white backdrop, crisp lighting, high resolution, no watermarks."
+
+
+@api_router.post("/ai/photo-enhance")
+async def ai_photo_enhance(payload: PhotoEnhanceRequest, user: dict = Depends(get_current_user)):
+    """One-click photo cleanup with Gemini Nano Banana. Returns a NEW uploaded file id + URL."""
+    if not EMERGENT_LLM_KEY:
+        raise HTTPException(500, "AI service not configured")
+
+    # Resolve input bytes
+    image_bytes: Optional[bytes] = None
+    if payload.file_id:
+        rec = await db.files.find_one({"id": payload.file_id, "is_deleted": False}, {"_id": 0})
+        if not rec:
+            raise HTTPException(404, "File not found")
+        if rec["user_id"] != user["id"] and user.get("role") != "admin":
+            raise HTTPException(403, "Not allowed")
+        image_bytes, _ct = get_object(rec["storage_path"])
+    elif payload.image_base64:
+        b = payload.image_base64
+        if b.startswith("data:") and "," in b:
+            b = b.split(",", 1)[1]
+        try:
+            image_bytes = base64.b64decode(b)
+        except Exception:
+            raise HTTPException(400, "Invalid base64 image")
+    elif payload.image_url:
+        try:
+            r = _requests.get(payload.image_url, timeout=30)
+            r.raise_for_status()
+            image_bytes = r.content
+        except Exception as e:
+            raise HTTPException(400, f"Could not fetch image_url: {e}")
+    else:
+        raise HTTPException(400, "Provide file_id, image_base64, or image_url")
+
+    b64_in = base64.b64encode(image_bytes).decode("utf-8")
+    chat = LlmChat(
+        api_key=EMERGENT_LLM_KEY,
+        session_id=f"photo-enhance-{user['id']}-{uuid.uuid4().hex[:8]}",
+        system_message="You are a professional product-photo editor. Return only the enhanced image.",
+    ).with_model("gemini", NANO_BANANA_MODEL).with_params(modalities=["image", "text"])
+
+    try:
+        text, images = await chat.send_message_multimodal_response(
+            UserMessage(text=payload.prompt or "Enhance this product photo.", file_contents=[ImageContent(b64_in)])
+        )
+    except Exception as e:
+        logger.error(f"Nano Banana enhance failed: {e}")
+        raise HTTPException(500, f"AI enhance failed: {e}")
+
+    if not images:
+        raise HTTPException(500, "AI returned no image")
+    enhanced_b64 = images[0]["data"]
+    enhanced_mime = images[0].get("mime_type") or "image/png"
+    try:
+        enhanced_bytes = base64.b64decode(enhanced_b64)
+    except Exception:
+        raise HTTPException(500, "AI returned an invalid image payload")
+
+    # Save enhanced to object storage under new file id
+    ext = "png" if "png" in enhanced_mime else ("jpg" if "jpeg" in enhanced_mime else "png")
+    new_id = str(uuid.uuid4())
+    new_path = f"{APP_NAME}/uploads/{user['id']}/{new_id}.{ext}"
+    try:
+        result = put_object(new_path, enhanced_bytes, enhanced_mime)
+    except Exception as e:
+        logger.error(f"Storage put enhanced failed: {e}")
+        raise HTTPException(502, "Enhanced image storage failed. Please try again.")
+
+    doc = {
+        "id": new_id,
+        "user_id": user["id"],
+        "storage_path": result["path"],
+        "original_filename": f"enhanced_{new_id[:8]}.{ext}",
+        "content_type": enhanced_mime,
+        "size": result.get("size", len(enhanced_bytes)),
+        "is_deleted": False,
+        "source": "ai_enhance",
+        "created_at": _now_utc(),
+    }
+    await db.files.insert_one(doc)
+    return {
+        "id": new_id,
+        "url": f"/api/files/{new_id}",
+        "content_type": enhanced_mime,
+        "size": doc["size"],
+        "prompt_used": payload.prompt,
+    }
+
+
+# ---- FLASH DEALS -----------------------------------------------------------
+FLASH_DEAL_COUNT = 10
+
+def _today_midnight_utc() -> datetime:
+    now = _now_utc()
+    return (now + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+
+
+async def rotate_flash_deals():
+    """Pick FLASH_DEAL_COUNT random active listings, mark them as flash deals until midnight UTC."""
+    now = _now_utc()
+    # Clear any expired flash deals
+    await db.listings.update_many(
+        {"is_flash_deal": True, "flash_deal_ends_at": {"$lt": now}},
+        {"$set": {"is_flash_deal": False, "flash_deal_ends_at": None, "flash_deal_discount_pct": None}},
+    )
+    # Count current active flash deals
+    active_count = await db.listings.count_documents({"is_flash_deal": True})
+    needed = max(0, FLASH_DEAL_COUNT - active_count)
+    if needed == 0:
+        return {"selected": 0, "active": active_count}
+
+    ends_at = _today_midnight_utc()
+    pipeline = [
+        {"$match": {"status": "active", "is_flash_deal": {"$ne": True}}},
+        {"$sample": {"size": needed}},
+        {"$project": {"_id": 0, "id": 1}},
+    ]
+    picks = []
+    async for d in db.listings.aggregate(pipeline):
+        picks.append(d["id"])
+    if not picks:
+        return {"selected": 0, "active": active_count, "reason": "no active listings available"}
+    for lid in picks:
+        pct = 20 + int((sum(bytearray(lid.encode())) % 55))  # deterministic per id, 20-74%
+        await db.listings.update_one(
+            {"id": lid},
+            {"$set": {
+                "is_flash_deal": True,
+                "flash_deal_ends_at": ends_at,
+                "flash_deal_discount_pct": pct,
+            }},
+        )
+    logger.info(f"[flash-deals] activated {len(picks)} new deals until {ends_at.isoformat()}")
+    return {"selected": len(picks), "active": active_count + len(picks), "ends_at": ends_at.isoformat()}
+
+
+async def flash_deals_rotation_loop():
+    """Refill the flash-deal pool at startup and shortly after midnight UTC each day."""
+    await asyncio.sleep(3)
+    try:
+        await rotate_flash_deals()
+    except Exception as e:
+        logger.warning(f"initial flash rotation failed: {e}")
+    while True:
+        # Sleep until next midnight + 30s
+        now = _now_utc()
+        next_run = _today_midnight_utc() + timedelta(seconds=30)
+        await asyncio.sleep(max(30, (next_run - now).total_seconds()))
+        try:
+            await rotate_flash_deals()
+        except Exception as e:
+            logger.warning(f"scheduled flash rotation failed: {e}")
+
+
+@api_router.get("/flash-deals", response_model=List[Listing])
+async def flash_deals(limit: int = 12):
+    now = _now_utc()
+    # Auto-refill if depleted (e.g., first hit after a listing was deleted)
+    active = await db.listings.count_documents(
+        {"is_flash_deal": True, "flash_deal_ends_at": {"$gt": now}, "status": "active"}
+    )
+    if active < FLASH_DEAL_COUNT:
+        try:
+            await rotate_flash_deals()
+        except Exception as e:
+            logger.warning(f"on-demand flash refill failed: {e}")
+    docs = await db.listings.find(
+        {"is_flash_deal": True, "flash_deal_ends_at": {"$gt": now}, "status": "active"},
+        {"_id": 0},
+    ).sort("flash_deal_ends_at", 1).limit(limit).to_list(limit)
+    return [Listing(**d) for d in docs]
+
+
+@api_router.post("/admin/flash-deals/rotate")
+async def admin_rotate_flash_deals(_admin: dict = Depends(require_admin)):
+    return await rotate_flash_deals()
 class ShippingLabelResponse(BaseModel):
     tracking_number: str
     carrier: str
@@ -2368,6 +2557,7 @@ async def startup():
     asyncio.create_task(live_sync_loop())
     asyncio.create_task(apify_auto_sync_loop())
     asyncio.create_task(shipping_progress_loop())
+    asyncio.create_task(flash_deals_rotation_loop())
 
 
 @app.on_event("shutdown")
