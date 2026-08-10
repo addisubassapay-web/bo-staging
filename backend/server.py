@@ -92,6 +92,7 @@ class User(UserBase):
     stripe_account_id: Optional[str] = None
     stripe_status: Literal["none", "pending", "active", "restricted"] = "none"
     weekly_earnings_goal: float = 0.0
+    weekly_digest_opt_in: bool = True
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class UserPublic(BaseModel):
@@ -2175,11 +2176,14 @@ async def wishlist_digest_loop():
                     {"id": {"$in": lids}, "price_drop_at": {"$gte": since}},
                     {"_id": 0, "id": 1, "title": 1, "price": 1, "previous_price": 1, "price_drop_at": 1},
                 ).to_list(50)
-                if not drops:
-                    continue
-                user = await db.users.find_one({"id": uid}, {"_id": 0, "email": 1, "username": 1})
-                if not user:
-                    continue
+            if not drops:
+                continue
+            user = await db.users.find_one({"id": uid}, {"_id": 0, "email": 1, "username": 1, "weekly_digest_opt_in": 1})
+            if not user:
+                continue
+            # Respect opt-out
+            if user.get("weekly_digest_opt_in", True) is False:
+                continue
                 subject = f"Weekly wishlist digest: {len(drops)} price drop(s) on your favourites"
                 lines = [f"- {d['title']}: ${d['previous_price']:.2f} -> ${d['price']:.2f}" for d in drops[:20]]
                 body = "Hi " + user.get("username", "there") + ",\n\n" + "\n".join(lines) + "\n\nShop now on Mercari Global!"

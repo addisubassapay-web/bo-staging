@@ -184,6 +184,39 @@ async def set_seller_goal(payload: SellerGoalIn, user: dict = Depends(get_curren
     return {"ok": True, "weekly_earnings_goal": float(payload.weekly_earnings_goal)}
 
 
+# ---- Wishlist digest: preview + opt-in -----------------------------------
+@router.get("/wishlist-digest/preview")
+async def digest_preview(user: dict = Depends(get_current_user)):
+    from datetime import timedelta as _td
+    db = get_db()
+    since = now_utc() - _td(days=7)
+    favs = await db.favorites.find({"user_id": user["id"]}, {"_id": 0, "listing_id": 1}).to_list(500)
+    lids = [f["listing_id"] for f in favs]
+    if not lids:
+        return {"opt_in": user.get("weekly_digest_opt_in", True), "drops": [], "total_favorites": 0}
+    drops = await db.listings.find(
+        {"id": {"$in": lids}, "price_drop_at": {"$gte": since}},
+        {"_id": 0, "id": 1, "title": 1, "price": 1, "previous_price": 1, "images": 1, "price_drop_at": 1},
+    ).sort("price_drop_at", -1).to_list(20)
+    return {
+        "opt_in": user.get("weekly_digest_opt_in", True),
+        "email": user.get("email"),
+        "drops": drops,
+        "total_favorites": len(lids),
+        "next_send": "every 6h in dev · weekly in production",
+    }
+
+
+class DigestOptIn(BaseModel):
+    opt_in: bool
+
+@router.put("/wishlist-digest/opt")
+async def digest_opt(payload: DigestOptIn, user: dict = Depends(get_current_user)):
+    db = get_db()
+    await db.users.update_one({"id": user["id"]}, {"$set": {"weekly_digest_opt_in": bool(payload.opt_in)}})
+    return {"ok": True, "opt_in": bool(payload.opt_in)}
+
+
 # ---- Admin Shelf Management -----------------------------------------------
 DEFAULT_SHELVES_SEED = [
     {"id": "fashion-day",   "title": "Fashion of the day",  "subtitle": "Trending styles",         "category_slugs": ["women", "men"],      "price_lte": None, "sort_by": "views",  "limit": 8, "enabled": True, "order": 0},

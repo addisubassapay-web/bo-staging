@@ -10,6 +10,7 @@ import { Star, Edit, Trash2, Package as PackageIcon } from "lucide-react";
 import { ReviewOrderCard } from "@/components/Reviews";
 import { VerificationBadges } from "@/components/VerificationBadges";
 import ShippingTracker from "@/components/ShippingTracker";
+import DigestCard from "@/components/DigestCard";
 
 const Profile = () => {
   const { user, loading: authLoading } = useAuth();
@@ -57,6 +58,7 @@ const Profile = () => {
             <span>{user.sales_count} sales</span>
             <span>Joined {new Date(user.created_at).toLocaleDateString()}</span>
           </div>
+          <div className="mt-4 max-w-md"><DigestCard /></div>
         </div>
       </div>
 

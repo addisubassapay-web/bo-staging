@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import api, { formatPrice } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
@@ -101,35 +101,13 @@ const StatCard = ({ icon: Icon, label, value, sub, tone = "orange", testid }) =>
 const StoreAnalytics = () => {
   const { user, loading: authLoading } = useAuth();
   const [data, setData] = useState(null);
-  const [celebrated, setCelebrated] = useState(() => localStorage.getItem("mercari_last_goal_celebrated") || "");
-  const celebrateRef = useRef(false);
 
   useEffect(() => {
     if (!user) return;
     api.get("/seller/dashboard").then((r) => setData(r.data)).catch(() => {});
   }, [user]);
 
-  // Fire confetti when weekly goal reaches 100% (once per week)
-  useEffect(() => {
-    const pct = data?.weekly?.progress_pct || 0;
-    if (pct < 100 || celebrateRef.current) return;
-    // Cache-key by ISO week: yyyy-w
-    const now = new Date();
-    const first = new Date(now.getFullYear(), 0, 1);
-    const days = Math.floor((now - first) / 86400000);
-    const weekKey = `${now.getFullYear()}-w${Math.ceil((days + first.getDay() + 1) / 7)}`;
-    if (celebrated === weekKey) return;
-    celebrateRef.current = true;
-    localStorage.setItem("mercari_last_goal_celebrated", weekKey);
-    setCelebrated(weekKey);
-    const colors = ["#FF211F", "#FF7A18", "#FFD166", "#06D6A0", "#118AB2"];
-    const end = Date.now() + 2000;
-    (function frame() {
-      confetti({ particleCount: 6, angle: 60, spread: 60, startVelocity: 60, origin: { x: 0, y: 0.6 }, colors });
-      confetti({ particleCount: 6, angle: 120, spread: 60, startVelocity: 60, origin: { x: 1, y: 0.6 }, colors });
-      if (Date.now() < end) requestAnimationFrame(frame);
-    })();
-  }, [data, celebrated]);
+  // NOTE: the milestone-based celebrations useEffect above replaces the older 100%-only handler.
 
   if (authLoading) return <div className="max-w-5xl mx-auto px-4 py-16 text-neutral-500">Loading…</div>;
   if (!user) {

@@ -26,6 +26,11 @@ Exact replica of Mercari platform (mercari.com) — same color scheme (`#FF211F`
 
 ## Implemented (with dates)
 
+### Feb 2026 — Phase 10: DnD Shelves, Digest Modal, Goal Milestones
+- **Drag-and-Drop Shelves** — swapped arrow controls for full drag-and-drop via `@hello-pangea/dnd`. Rows highlight on drag, "Save order" button disables until dirty, then persists via `POST /api/admin/shelves/reorder`.
+- **Digest Preview Modal + Opt-out** — new `GET /api/wishlist-digest/preview` returns the user's opt-in flag + up-to-20 recent price drops + delivery cadence. `PUT /api/wishlist-digest/opt` toggles subscription. Users see a `DigestCard` on their profile with a Switch (auto-saves) and a Preview button that opens a full email-style modal with product thumbnails + Unsubscribe button. `wishlist_digest_loop` now respects `user.weekly_digest_opt_in`.
+- **Custom Goal Milestones** — dashboard fires escalating confetti bursts at 25/50/75/100% weekly progress, staggered by 400ms, with intensity scaled by milestone. ISO-week keyed localStorage tracks which milestones already celebrated so each fires exactly once per week.
+
 ### Feb 2026 — Phase 9: Typography, Shelf CMS UI, Digest, Celebrations
 - **Geometric Sans-Serif Typography** — Poppins + DM Sans (Google Fonts) loaded via `public/index.html`; global `body` + `h1-h6` rules in `index.css` with `letter-spacing: -0.015em` on headings for a modern editorial feel.
 - **Shelf Admin Screen** (`AdminShelves.jsx`) — new "Homepage shelves" tab under Admin. Editable title inline (blur to save), limit selector, toggle switch (auto-saves), up/down arrows for reorder, "Save order" button posts the final order to `POST /api/admin/shelves/reorder`.
