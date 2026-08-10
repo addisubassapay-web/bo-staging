@@ -91,6 +91,7 @@ class User(UserBase):
     seller_status: Literal["none", "pending", "approved", "rejected"] = "none"
     stripe_account_id: Optional[str] = None
     stripe_status: Literal["none", "pending", "active", "restricted"] = "none"
+    weekly_earnings_goal: float = 0.0
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class UserPublic(BaseModel):
@@ -115,6 +116,7 @@ class UserPublic(BaseModel):
     seller_status: str = "none"
     stripe_account_id: Optional[str] = None
     stripe_status: str = "none"
+    weekly_earnings_goal: float = 0.0
     created_at: datetime
 
 class AuthResponse(BaseModel):
@@ -164,6 +166,9 @@ class Listing(BaseModel):
     is_flash_deal: bool = False
     flash_deal_ends_at: Optional[datetime] = None
     flash_deal_discount_pct: Optional[int] = None
+    # Wishlist / price drop
+    price_drop_at: Optional[datetime] = None
+    previous_price: Optional[float] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class ListingCreate(BaseModel):
@@ -734,6 +739,9 @@ async def update_listing(listing_id: str, payload: ListingUpdate, user: dict = D
     new_price = float(updates.get("price")) if "price" in updates else old_price
     if old_price and new_price and new_price < old_price:
         price_drop_pct = round((old_price - new_price) / old_price * 100)
+    if price_drop_pct >= 5:
+        updates["price_drop_at"] = _now_utc()
+        updates["previous_price"] = old_price
     if updates:
         await db.listings.update_one({"id": listing_id}, {"$set": updates})
     # Notify every user who has this listing favorited when price drops >=5%

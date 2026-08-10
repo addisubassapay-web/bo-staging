@@ -7,15 +7,16 @@ Endpoints:
 """
 from __future__ import annotations
 from datetime import timedelta
-from fastapi import APIRouter, Depends
+from typing import List, Optional
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
 
 from .deps import get_db, get_current_user, now_utc
 
 router = APIRouter()
 
 
-# Curated shelf definitions — each shelf targets a specific slice of the catalog.
-# Kept small on purpose so the Home page stays snappy.
+# Fallback shelf definitions (used only when the DB collection is missing).
 SHELVES = [
     {"id": "fashion-day",   "title": "Fashion of the day",   "subtitle": "Trending styles",       "category_slugs": ["women", "men"], "sort": [("views_count", -1)], "limit": 8},
     {"id": "tech-under-50", "title": "Tech under $50",       "subtitle": "Gadgets, cables, extras", "category_slugs": ["electronics"], "price_lte": 50, "sort": [("likes_count", -1)], "limit": 8},
@@ -27,22 +28,29 @@ SHELVES = [
 
 @router.get("/shelves")
 async def category_shelves():
-    """Return curated category shelves for the Home page."""
+    """Return curated category shelves for the Home page (admin-editable via DB)."""
     db = get_db()
-    # Resolve category slugs to ids once
-    all_slugs = list({s for sh in SHELVES for s in sh["category_slugs"]})
+    # Try DB-configured shelves first; fall back to defaults
+    shelf_defs = await db.shelves.find({"enabled": True}, {"_id": 0}).sort("order", 1).to_list(50)
+    if not shelf_defs:
+        shelf_defs = [{**s, "enabled": True} for s in SHELVES]
+
+    all_slugs = list({s for sh in shelf_defs for s in sh["category_slugs"]})
     cats = await db.categories.find({"slug": {"$in": all_slugs}}, {"_id": 0, "id": 1, "slug": 1}).to_list(100)
     slug_to_id = {c["slug"]: c["id"] for c in cats}
 
     out = []
-    for sh in SHELVES:
+    for sh in shelf_defs:
         ids = [slug_to_id[s] for s in sh["category_slugs"] if s in slug_to_id]
         if not ids:
             continue
         query = {"status": "active", "category_id": {"$in": ids}}
         if sh.get("price_lte") is not None:
             query["price"] = {"$lte": sh["price_lte"]}
-        docs = await db.listings.find(query, {"_id": 0}).sort(sh["sort"]).limit(sh["limit"]).to_list(sh["limit"])
+        sort_field = "likes_count" if sh.get("sort_by") == "likes" else "views_count"
+        sort_spec = sh.get("sort") or [(sort_field, -1)]
+        limit = sh.get("limit", 8)
+        docs = await db.listings.find(query, {"_id": 0}).sort(sort_spec).limit(limit).to_list(limit)
         if docs:
             out.append({
                 "id": sh["id"],
@@ -120,6 +128,22 @@ async def seller_dashboard(user: dict = Depends(get_current_user)):
         if hasattr(c, "isoformat"):
             r["created_at"] = c.isoformat()
 
+    # Weekly earnings goal + progress
+    weekly_goal = float(fresh_user.get("weekly_earnings_goal", 0) or 0) if fresh_user else 0.0
+    week_start = (now - timedelta(days=now.weekday())).replace(hour=0, minute=0, second=0, microsecond=0)
+    week_earnings = 0.0
+    for o in orders:
+        c = o.get("created_at")
+        if hasattr(c, "tzinfo") and c.tzinfo is None:
+            c = c.replace(tzinfo=week_start.tzinfo)
+        if c and c >= week_start:
+            week_earnings += float(o.get("amount", 0)) - float(o.get("platform_fee", 0))
+    weekly = {
+        "goal": round(weekly_goal, 2),
+        "earned": round(week_earnings, 2),
+        "progress_pct": min(100, round(week_earnings / weekly_goal * 100)) if weekly_goal > 0 else 0,
+    }
+
     return {
         "series": series,
         "totals": {
@@ -139,5 +163,87 @@ async def seller_dashboard(user: dict = Depends(get_current_user)):
             "views": total_views,
             "likes": total_likes,
         },
+        "weekly": weekly,
         "recent_orders": recent,
     }
+
+
+class SellerGoalIn(BaseModel):
+    weekly_earnings_goal: float
+
+
+@router.put("/seller/goal")
+async def set_seller_goal(payload: SellerGoalIn, user: dict = Depends(get_current_user)):
+    if payload.weekly_earnings_goal < 0 or payload.weekly_earnings_goal > 1_000_000:
+        raise HTTPException(400, "Goal out of range")
+    db = get_db()
+    await db.users.update_one(
+        {"id": user["id"]},
+        {"$set": {"weekly_earnings_goal": float(payload.weekly_earnings_goal)}},
+    )
+    return {"ok": True, "weekly_earnings_goal": float(payload.weekly_earnings_goal)}
+
+
+# ---- Admin Shelf Management -----------------------------------------------
+DEFAULT_SHELVES_SEED = [
+    {"id": "fashion-day",   "title": "Fashion of the day",  "subtitle": "Trending styles",         "category_slugs": ["women", "men"],      "price_lte": None, "sort_by": "views",  "limit": 8, "enabled": True, "order": 0},
+    {"id": "tech-under-50", "title": "Tech under $50",      "subtitle": "Gadgets, cables, extras", "category_slugs": ["electronics"],       "price_lte": 50,   "sort_by": "likes",  "limit": 8, "enabled": True, "order": 1},
+    {"id": "home-essentials","title": "Home essentials",    "subtitle": "Everyday for every home", "category_slugs": ["home"],              "price_lte": None, "sort_by": "views",  "limit": 8, "enabled": True, "order": 2},
+    {"id": "beauty-buzz",   "title": "Beauty buzz",         "subtitle": "Skincare, makeup & more", "category_slugs": ["beauty"],            "price_lte": None, "sort_by": "likes",  "limit": 8, "enabled": True, "order": 3},
+    {"id": "kids-fun",      "title": "For the kids",        "subtitle": "Toys, books & more",      "category_slugs": ["kids", "toys", "books"], "price_lte": None, "sort_by": "views",  "limit": 8, "enabled": True, "order": 4},
+]
+
+
+async def _ensure_shelves_seeded():
+    db = get_db()
+    count = await db.shelves.count_documents({})
+    if count == 0:
+        await db.shelves.insert_many(DEFAULT_SHELVES_SEED)
+
+
+async def _require_admin(user: dict = Depends(get_current_user)):
+    if user.get("role") != "admin":
+        raise HTTPException(403, "Admin only")
+    return user
+
+
+@router.get("/admin/shelves")
+async def list_shelves(_admin: dict = Depends(_require_admin)):
+    await _ensure_shelves_seeded()
+    db = get_db()
+    docs = await db.shelves.find({}, {"_id": 0}).sort("order", 1).to_list(50)
+    return docs
+
+
+class ShelfUpdate(BaseModel):
+    title: Optional[str] = None
+    subtitle: Optional[str] = None
+    category_slugs: Optional[List[str]] = None
+    price_lte: Optional[float] = None
+    sort_by: Optional[str] = None
+    limit: Optional[int] = None
+    enabled: Optional[bool] = None
+    order: Optional[int] = None
+
+
+@router.put("/admin/shelves/{shelf_id}")
+async def update_shelf(shelf_id: str, payload: ShelfUpdate, _admin: dict = Depends(_require_admin)):
+    db = get_db()
+    updates = {k: v for k, v in payload.model_dump().items() if v is not None}
+    if not updates:
+        return {"ok": True, "no_changes": True}
+    r = await db.shelves.update_one({"id": shelf_id}, {"$set": updates})
+    if r.matched_count == 0:
+        raise HTTPException(404, "Shelf not found")
+    return {"ok": True}
+
+
+@router.post("/admin/shelves/reorder")
+async def reorder_shelves(payload: dict, _admin: dict = Depends(_require_admin)):
+    ids = payload.get("ids") or []
+    if not isinstance(ids, list) or not ids:
+        raise HTTPException(400, "Provide ids: [shelf_id, ...] in desired order")
+    db = get_db()
+    for i, sid in enumerate(ids):
+        await db.shelves.update_one({"id": sid}, {"$set": {"order": i}})
+    return {"ok": True, "count": len(ids)}

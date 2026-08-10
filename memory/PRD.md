@@ -26,6 +26,12 @@ Exact replica of Mercari platform (mercari.com) — same color scheme (`#FF211F`
 
 ## Implemented (with dates)
 
+### Feb 2026 — Phase 8: Wishlist toast, Shelf CMS, Seller goals
+- **Wishlist Price Toast** — `Listing` model gains `price_drop_at` + `previous_price`. `PUT /api/listings/{id}` stamps both when the price drops 5%+ and notifies every favoriting user. `ProductCard.jsx` shows a pulsing green **-N%** badge (with strike-through of the old price) for 7 days after the drop.
+- **Shelf A/B Ordering** (Admin CMS) — moved shelf definitions from hardcoded to `db.shelves` collection with `enabled`, `order`, `title`, `subtitle`, `category_slugs`, `price_lte`, `sort_by`, `limit`. New endpoints: `GET/PUT /api/admin/shelves/{id}`, `POST /api/admin/shelves/reorder`. Public `GET /api/shelves` now respects the enabled+order fields, with auto-seeding on first request.
+- **Seller Weekly Goal + Progress Ring** — `User` model gains `weekly_earnings_goal`. New `PUT /api/seller/goal` sets it; `GET /api/seller/dashboard` now returns a `weekly: {goal, earned, progress_pct}` block. `StoreAnalytics.jsx` renders an SVG progress ring in the hero banner — click the amount to edit the goal inline.
+- **Refactor step 3** — `routers/discovery.py` now hosts `/shelves`, `/seller/dashboard`, `/seller/goal`, and the admin shelf CRUD.
+
 ### Feb 2026 — Phase 7: Wishlist alerts, category shelves, seller dashboard redesign
 - **Buyer Wishlist Alerts** — `PUT /api/listings/{id}` now compares old vs new price; if the drop is 5% or more, every user who favorited the listing receives a `notify()` record with the new/old price. The existing global `BuyerProgressToast` surfaces it in-app instantly.
 - **Home Category Deep-Dive** — new `GET /api/shelves` endpoint (via `routers/discovery.py`) returns 5 curated shelves: Fashion of the day, Tech under $50, Home essentials, Beauty buzz, For the kids. Home renders a "Category Shelves" strip below Trust with 8 items per row and per-shelf "See all" deep links.

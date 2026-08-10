@@ -6,10 +6,38 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   TrendingUp, DollarSign, Package, Eye, Heart, Wallet, Clock,
-  ArrowUpRight, Sparkles, Zap,
+  ArrowUpRight, Sparkles, Zap, Target,
 } from "lucide-react";
 
 const money = (n) => `$${Number(n || 0).toFixed(2)}`;
+
+// -- Progress ring (SVG) -----------------------------------------------------
+const ProgressRing = ({ pct = 0, size = 88, stroke = 8 }) => {
+  const r = (size - stroke) / 2;
+  const c = 2 * Math.PI * r;
+  const off = c - (Math.min(100, Math.max(0, pct)) / 100) * c;
+  return (
+    <div className="relative" style={{ width: size, height: size }} data-testid="weekly-progress-ring">
+      <svg width={size} height={size} className="-rotate-90">
+        <circle cx={size / 2} cy={size / 2} r={r} stroke="rgba(255,255,255,0.25)" strokeWidth={stroke} fill="none" />
+        <circle
+          cx={size / 2} cy={size / 2} r={r}
+          stroke="white" strokeWidth={stroke} fill="none"
+          strokeLinecap="round"
+          strokeDasharray={c}
+          strokeDashoffset={off}
+          style={{ transition: "stroke-dashoffset 0.6s ease" }}
+        />
+      </svg>
+      <div className="absolute inset-0 grid place-items-center text-white">
+        <div className="text-center leading-tight">
+          <div className="text-lg font-bold">{Math.round(pct)}%</div>
+          <div className="text-[9px] uppercase tracking-wider opacity-80">of goal</div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 // -- Sparkline chart (pure SVG, no library) -----------------------------------
 const Sparkline = ({ series }) => {
@@ -99,9 +127,29 @@ const StoreAnalytics = () => {
             <h1 className="text-3xl sm:text-4xl font-extrabold mt-1">Hey, {user.username}</h1>
             <p className="text-white/90 mt-1">Here&apos;s how your store is performing right now.</p>
           </div>
-          <div className="flex gap-2">
-            <Link to="/sell"><Button className="bg-white text-[#FF211F] hover:bg-neutral-100 h-10 rounded-full px-5" data-testid="dash-list-btn">List an item</Button></Link>
-            <Link to="/store"><Button variant="outline" className="border-white text-white hover:bg-white/20 h-10 rounded-full px-5 bg-transparent">Manage store</Button></Link>
+          <div className="flex items-center gap-4">
+            <div className="text-right hidden sm:block">
+              <div className="text-xs opacity-80 flex items-center justify-end gap-1"><Target className="h-3 w-3" /> Weekly goal</div>
+              <button
+                onClick={async () => {
+                  const v = prompt("Weekly earnings goal (USD)", String(data.weekly?.goal || 0));
+                  if (v == null) return;
+                  const num = parseFloat(v);
+                  if (isNaN(num) || num < 0) return;
+                  try {
+                    await api.put("/seller/goal", { weekly_earnings_goal: num });
+                    const r = await api.get("/seller/dashboard");
+                    setData(r.data);
+                  } catch { /* ignore */ }
+                }}
+                className="text-lg font-bold underline decoration-white/30 hover:decoration-white"
+                data-testid="edit-weekly-goal"
+              >
+                {money(data.weekly?.goal || 0)}
+              </button>
+              <div className="text-[11px] opacity-80">Earned {money(data.weekly?.earned || 0)} this week</div>
+            </div>
+            <ProgressRing pct={data.weekly?.progress_pct || 0} />
           </div>
         </div>
         <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-4">

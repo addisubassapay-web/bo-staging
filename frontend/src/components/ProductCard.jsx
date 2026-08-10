@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Heart, ShieldCheck } from "lucide-react";
+import { Heart, ShieldCheck, TrendingDown } from "lucide-react";
 import { formatPrice } from "@/lib/api";
 import api from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
@@ -56,6 +56,15 @@ const ProductCard = ({ listing, isFavorite = false, onFavoriteChange }) => {
   };
 
   const sold = listing.status === "sold";
+  const priceDropRecent = (() => {
+    if (!listing.price_drop_at) return null;
+    const ago = Date.now() - new Date(listing.price_drop_at).getTime();
+    if (ago > 7 * 24 * 3600 * 1000) return null;
+    const prev = Number(listing.previous_price || 0);
+    const cur = Number(listing.price || 0);
+    if (!prev || prev <= cur) return null;
+    return { pct: Math.round(((prev - cur) / prev) * 100), prev };
+  })();
 
   return (
     <Link to={`/listing/${listing.id}`} className="group block">
@@ -70,6 +79,14 @@ const ProductCard = ({ listing, isFavorite = false, onFavoriteChange }) => {
           <div className="absolute inset-0 bg-black/50 grid place-items-center">
             <span className="bg-white text-neutral-900 font-semibold px-3 py-1 rounded text-sm">SOLD</span>
           </div>
+        )}
+        {priceDropRecent && !sold && (
+          <span
+            className="absolute top-2 left-2 inline-flex items-center gap-1 bg-emerald-600 text-white text-[10px] font-bold px-2 py-1 rounded shadow ring-2 ring-emerald-300/60 animate-pulse"
+            data-testid="price-drop-badge"
+          >
+            <TrendingDown className="h-3 w-3" /> -{priceDropRecent.pct}%
+          </span>
         )}
         <button
           onClick={toggleFav}
@@ -93,7 +110,10 @@ const ProductCard = ({ listing, isFavorite = false, onFavoriteChange }) => {
           <span>{listing.title}</span>
         </div>
         <div className="mt-1 flex items-center justify-between">
-          <span className="font-semibold text-neutral-900">{formatPrice(listing.price)}</span>
+          <span className="font-semibold text-neutral-900">
+            {formatPrice(listing.price)}
+            {priceDropRecent && <span className="ml-1 text-xs text-neutral-400 line-through">${priceDropRecent.prev.toFixed(2)}</span>}
+          </span>
           {listing.likes_count > 0 && (
             <span className="text-xs text-neutral-500 flex items-center gap-1">
               <Heart className="h-3 w-3" /> {listing.likes_count}
