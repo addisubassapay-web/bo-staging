@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
@@ -14,7 +14,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import {
   AlertCircle, Upload, ImagePlus, X, Package, Clock, CheckCircle2, XCircle,
-  ShieldAlert, MessageSquareWarning,
+  ShieldAlert, MessageSquareWarning, MessageCircle, Send, ChevronDown, ChevronUp, ShieldCheck,
 } from "lucide-react";
 
 const money = (n) => `$${Number(n || 0).toFixed(2)}`;
@@ -186,8 +186,193 @@ const NewDisputeDialog = ({ open, onOpenChange, orders, onCreated }) => {
   );
 };
 
+const ROLE_META = {
+  buyer:  { label: "Buyer",  cls: "bg-sky-500/15 text-sky-700 dark:text-sky-300 border-sky-500/30" },
+  seller: { label: "Seller", cls: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30" },
+  admin:  { label: "Support", cls: "bg-[#FF211F]/15 text-[#FF211F] dark:text-orange-300 border-[#FF211F]/30" },
+};
+
+const fileUrl = (url) => {
+  if (!url) return "";
+  if (url.startsWith("http")) return url;
+  const t = localStorage.getItem("mercari_token") || "";
+  return `${process.env.REACT_APP_BACKEND_URL}${url}?auth=${encodeURIComponent(t)}`;
+};
+
+const DisputeChat = ({ disputeId, currentUserId, currentUserRole, closed }) => {
+  const [messages, setMessages] = useState([]);
+  const [body, setBody] = useState("");
+  const [photos, setPhotos] = useState([]);
+  const [uploading, setUploading] = useState(false);
+  const [sending, setSending] = useState(false);
+  const bottomRef = useRef(null);
+  const { toast } = useToast();
+
+  const load = useCallback(async () => {
+    try {
+      const r = await api.get(`/disputes/${disputeId}/messages`);
+      setMessages(r.data);
+    } catch { /* noop */ }
+  }, [disputeId]);
+
+  useEffect(() => { load(); }, [load]);
+  // Poll every 6s while thread is open
+  useEffect(() => {
+    if (closed) return;
+    const t = setInterval(load, 6000);
+    return () => clearInterval(t);
+  }, [load, closed]);
+
+  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" }); }, [messages.length]);
+
+  const onFiles = async (fileList) => {
+    const files = Array.from(fileList || []).slice(0, 4 - photos.length);
+    if (!files.length) return;
+    setUploading(true);
+    try {
+      const uploaded = [];
+      for (const f of files) {
+        const fd = new FormData();
+        fd.append("file", f);
+        const r = await api.post("/upload", fd, { headers: { "Content-Type": "multipart/form-data" } });
+        if (r.data?.url) uploaded.push(r.data.url);
+      }
+      setPhotos((p) => [...p, ...uploaded].slice(0, 4));
+    } catch (e) {
+      toast({ title: "Upload failed", description: e?.response?.data?.detail || "Try again.", variant: "destructive" });
+    } finally { setUploading(false); }
+  };
+
+  const send = async () => {
+    const trimmed = body.trim();
+    if (!trimmed && photos.length === 0) return;
+    setSending(true);
+    try {
+      await api.post(`/disputes/${disputeId}/messages`, { body: trimmed, photos });
+      setBody("");
+      setPhotos([]);
+      await load();
+    } catch (e) {
+      toast({ title: "Message failed", description: e?.response?.data?.detail || "Try again.", variant: "destructive" });
+    } finally { setSending(false); }
+  };
+
+  return (
+    <div className="mt-4 border-t border-neutral-200 dark:border-neutral-800 pt-3" data-testid={`dispute-chat-${disputeId}`}>
+      <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-neutral-500 dark:text-neutral-400 font-medium mb-2">
+        <MessageCircle className="h-4 w-4 text-[#FF7A18]" /> Conversation
+        <span className="ml-auto normal-case tracking-normal text-[11px] text-neutral-400">
+          {messages.length} {messages.length === 1 ? "message" : "messages"}
+        </span>
+      </div>
+
+      <div className="space-y-2 max-h-80 overflow-y-auto pr-1" data-testid={`dispute-chat-messages-${disputeId}`}>
+        {messages.length === 0 ? (
+          <p className="text-sm text-neutral-500 dark:text-neutral-400 py-3 text-center">
+            No messages yet. Say hello and share more details.
+          </p>
+        ) : messages.map((m) => {
+          const mine = m.sender_id === currentUserId;
+          const rmeta = ROLE_META[m.sender_role] || ROLE_META.buyer;
+          return (
+            <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`} data-testid={`dispute-msg-${m.id}`}>
+              <div className={`max-w-[80%] rounded-2xl px-3.5 py-2.5 ${
+                mine
+                  ? "bg-[#FF211F] text-white rounded-br-md"
+                  : "bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 rounded-bl-md"
+              }`}>
+                <div className={`flex items-center gap-1.5 text-[10px] font-medium mb-1 ${mine ? "opacity-80" : ""}`}>
+                  <span className={`px-1.5 py-0.5 rounded-full border ${mine ? "bg-white/15 border-white/20" : rmeta.cls}`}>
+                    {m.sender_role === "admin" && <ShieldCheck className="inline h-2.5 w-2.5 mr-0.5" />}
+                    {rmeta.label}
+                  </span>
+                  <span>{m.sender_name}</span>
+                  <span className={mine ? "opacity-70" : "text-neutral-400 dark:text-neutral-500"}>
+                    · {new Date(m.created_at).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
+                  </span>
+                </div>
+                {m.body && <p className="text-sm whitespace-pre-wrap leading-snug">{m.body}</p>}
+                {m.photos?.length > 0 && (
+                  <div className="mt-2 grid grid-cols-2 gap-1.5">
+                    {m.photos.map((url, i) => (
+                      <a key={i} href={fileUrl(url)} target="_blank" rel="noreferrer" className="block aspect-square rounded-lg overflow-hidden bg-black/10">
+                        <img src={fileUrl(url)} alt="" className="h-full w-full object-cover" />
+                      </a>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+        <div ref={bottomRef} />
+      </div>
+
+      {closed ? (
+        <div className="mt-3 text-xs text-neutral-500 dark:text-neutral-400 text-center py-3">
+          This dispute is closed — replies are disabled.
+        </div>
+      ) : (
+        <div className="mt-3 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-2">
+          <Textarea
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            placeholder={currentUserRole === "seller" ? "Reply to the buyer…" : currentUserRole === "admin" ? "Post a support message…" : "Add more details or reply to the seller…"}
+            className="min-h-[52px] border-0 focus-visible:ring-0 resize-none bg-transparent"
+            data-testid={`dispute-chat-input-${disputeId}`}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); send(); }
+            }}
+          />
+          {photos.length > 0 && (
+            <div className="grid grid-cols-4 gap-2 px-1">
+              {photos.map((url, i) => (
+                <div key={i} className="relative aspect-square rounded-lg overflow-hidden bg-neutral-100 dark:bg-neutral-800 group">
+                  <img src={fileUrl(url)} alt="" className="h-full w-full object-cover" />
+                  <button
+                    onClick={() => setPhotos((p) => p.filter((_, idx) => idx !== i))}
+                    className="absolute top-1 right-1 h-5 w-5 rounded-full bg-black/60 text-white grid place-items-center opacity-0 group-hover:opacity-100 transition"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="flex items-center gap-1 pt-2 border-t border-neutral-100 dark:border-neutral-800">
+            <label className="inline-flex items-center gap-1 text-xs text-neutral-500 dark:text-neutral-400 hover:text-[#FF7A18] cursor-pointer px-2 py-1 rounded-md">
+              <ImagePlus className="h-4 w-4" /> Attach
+              <input
+                type="file" accept="image/*" multiple hidden
+                onChange={(e) => onFiles(e.target.files)}
+                data-testid={`dispute-chat-file-${disputeId}`}
+              />
+            </label>
+            {uploading && <span className="text-[11px] text-neutral-400 inline-flex items-center gap-1"><Upload className="h-3 w-3 animate-pulse" /> Uploading…</span>}
+            <div className="ml-auto flex items-center gap-2">
+              <span className="text-[10px] text-neutral-400 hidden sm:inline">⌘ + Enter to send</span>
+              <Button
+                onClick={send}
+                disabled={sending || uploading || (!body.trim() && photos.length === 0)}
+                size="sm"
+                className="bg-[#FF211F] hover:bg-[#e01d1b] gap-1"
+                data-testid={`dispute-chat-send-${disputeId}`}
+              >
+                <Send className="h-3.5 w-3.5" /> Send
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const DisputeCard = ({ d, currentUserId }) => {
   const iAmBuyer = d.buyer_id === currentUserId;
+  const [chatOpen, setChatOpen] = useState(false);
+  const closed = ["refunded", "rejected"].includes(d.status);
+  const myRole = iAmBuyer ? "buyer" : "seller";
   return (
     <div
       className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4 sm:p-5"
@@ -244,6 +429,25 @@ const DisputeCard = ({ d, currentUserId }) => {
           <div className="text-xs uppercase tracking-wider text-neutral-500 dark:text-neutral-400 font-medium mb-1">Resolution</div>
           <div className="text-neutral-800 dark:text-neutral-200">{d.resolution}</div>
         </div>
+      )}
+
+      <button
+        onClick={() => setChatOpen((v) => !v)}
+        className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-[#FF7A18] hover:text-[#FF211F] transition"
+        data-testid={`dispute-toggle-chat-${d.id}`}
+      >
+        <MessageCircle className="h-4 w-4" />
+        {chatOpen ? "Hide conversation" : (closed ? "View conversation" : "Message the other party")}
+        {chatOpen ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+      </button>
+
+      {chatOpen && (
+        <DisputeChat
+          disputeId={d.id}
+          currentUserId={currentUserId}
+          currentUserRole={myRole}
+          closed={closed}
+        />
       )}
     </div>
   );

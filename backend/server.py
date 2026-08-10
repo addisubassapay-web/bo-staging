@@ -393,6 +393,22 @@ class DisputeResolveIn(BaseModel):
     resolution: Optional[str] = ""
 
 
+class DisputeMessage(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    dispute_id: str
+    sender_id: str
+    sender_name: str
+    sender_role: Literal["buyer", "seller", "admin"]
+    body: str
+    photos: List[str] = []
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class DisputeMessageCreate(BaseModel):
+    body: str = ""
+    photos: List[str] = []
+
+
 # =========================
 # Phase 2: Reviews & Notifications
 # =========================
@@ -2611,6 +2627,75 @@ async def admin_resolve_dispute(
     await db.disputes.update_one({"id": dispute_id}, {"$set": updates})
     fresh = await db.disputes.find_one({"id": dispute_id}, {"_id": 0})
     return Dispute(**fresh)
+
+
+# ---- Dispute chat thread ----------------------------------------------------
+async def _dispute_role_for(user: dict, d: dict) -> str:
+    if user.get("role") == "admin":
+        return "admin"
+    if user["id"] == d.get("buyer_id"):
+        return "buyer"
+    if user["id"] == d.get("seller_id"):
+        return "seller"
+    raise HTTPException(403, "Not allowed")
+
+
+@api_router.get("/disputes/{dispute_id}/messages", response_model=List[DisputeMessage])
+async def list_dispute_messages(dispute_id: str, user: dict = Depends(get_current_user)):
+    d = await db.disputes.find_one({"id": dispute_id}, {"_id": 0})
+    if not d:
+        raise HTTPException(404, "Dispute not found")
+    await _dispute_role_for(user, d)
+    docs = await db.dispute_messages.find(
+        {"dispute_id": dispute_id}, {"_id": 0}
+    ).sort("created_at", 1).to_list(500)
+    return [DisputeMessage(**m) for m in docs]
+
+
+@api_router.post("/disputes/{dispute_id}/messages", response_model=DisputeMessage)
+async def post_dispute_message(
+    dispute_id: str, payload: DisputeMessageCreate, user: dict = Depends(get_current_user),
+):
+    d = await db.disputes.find_one({"id": dispute_id}, {"_id": 0})
+    if not d:
+        raise HTTPException(404, "Dispute not found")
+    role = await _dispute_role_for(user, d)
+    if d.get("status") in ("refunded", "rejected"):
+        raise HTTPException(400, "This dispute is closed")
+    body = (payload.body or "").strip()
+    photos = [p for p in (payload.photos or []) if isinstance(p, str)][:8]
+    if not body and not photos:
+        raise HTTPException(400, "Message body or at least one photo is required")
+
+    msg = DisputeMessage(
+        dispute_id=dispute_id,
+        sender_id=user["id"],
+        sender_name=user["username"],
+        sender_role=role,
+        body=body,
+        photos=photos,
+    )
+    await db.dispute_messages.insert_one(msg.model_dump())
+
+    # Notify the other party (or both parties if admin)
+    recipients = []
+    if role == "buyer":
+        recipients = [d["seller_id"]]
+    elif role == "seller":
+        recipients = [d["buyer_id"]]
+    elif role == "admin":
+        recipients = [d["buyer_id"], d["seller_id"]]
+    for rid in recipients:
+        try:
+            await notify(
+                rid, "dispute",
+                f"New message on dispute for '{d['listing_title']}'",
+                body[:120] if body else "New photo attached",
+                "/disputes",
+            )
+        except Exception as e:
+            logger.warning(f"dispute message notify failed: {e}")
+    return msg
 
 
 # =========================

@@ -1,0 +1,27 @@
+{
+  "short_name": "Mercari",
+  "name": "Mercari Global — Smart Ecommerce Platform",
+  "description": "Buy and sell fashion, electronics, home & everyday essentials. Verified sellers, buyer protection, global shipping.",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": ".",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#FF211F",
+  "background_color": "#ffffff",
+  "categories": ["shopping", "lifestyle"],
+  "lang": "en"
+}

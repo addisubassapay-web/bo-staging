@@ -10,7 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { LayoutDashboard, Users, Package, ShoppingBag, FolderTree, Trash2, Star, Plus, Settings as SettingsIcon, Wallet, Store as StoreIcon, Save, Check, X as XIcon, Database, IdCard, LayoutGrid, GripVertical, AlertCircle, ShieldAlert, CheckCircle2, XCircle, Clock } from "lucide-react";
+import { LayoutDashboard, Users, Package, ShoppingBag, FolderTree, Trash2, Star, Plus, Settings as SettingsIcon, Wallet, Store as StoreIcon, Save, Check, X as XIcon, Database, IdCard, LayoutGrid, GripVertical, AlertCircle, ShieldAlert, CheckCircle2, XCircle, Clock, MessageCircle, ChevronDown, ChevronUp } from "lucide-react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import AdminShelves from "@/pages/AdminShelves";
 import ApifySync from "@/pages/AdminApifySync";
@@ -883,16 +883,122 @@ const DisputesMgr = () => {
                       )}
                     </div>
                   </div>
-                ) : (
-                  <div className="mt-3 text-xs text-neutral-500 border-t border-neutral-100 pt-2 space-y-1">
+                ) : null}
+                {closed ? (
+                  <div className="mt-3 text-xs text-neutral-500 dark:text-neutral-400 border-t border-neutral-100 dark:border-neutral-800 pt-2 space-y-1">
                     {d.resolution && <div><span className="font-medium">Resolution:</span> {d.resolution}</div>}
                     {d.admin_notes && <div><span className="font-medium">Notes:</span> {d.admin_notes}</div>}
                     {d.resolved_at && <div>Closed on {new Date(d.resolved_at).toLocaleDateString()}</div>}
                   </div>
-                )}
+                ) : null}
+
+                <AdminDisputeThread disputeId={d.id} closed={closed} />
               </div>
             );
           })}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// -- Compact admin-side chat thread reused inside DisputesMgr -----------------
+const AdminDisputeThread = ({ disputeId, closed }) => {
+  const { user } = useAuth();
+  const [open, setOpen] = useState(false);
+  const [messages, setMessages] = useState([]);
+  const [body, setBody] = useState("");
+  const [sending, setSending] = useState(false);
+  const { toast } = useToast();
+
+  const load = React.useCallback(async () => {
+    try {
+      const r = await api.get(`/disputes/${disputeId}/messages`);
+      setMessages(r.data);
+    } catch { /* noop */ }
+  }, [disputeId]);
+
+  useEffect(() => { if (open) load(); }, [open, load]);
+
+  const send = async () => {
+    const trimmed = body.trim();
+    if (!trimmed) return;
+    setSending(true);
+    try {
+      await api.post(`/disputes/${disputeId}/messages`, { body: trimmed, photos: [] });
+      setBody("");
+      await load();
+    } catch (e) {
+      toast({ title: "Message failed", description: e?.response?.data?.detail || "Try again.", variant: "destructive" });
+    } finally { setSending(false); }
+  };
+
+  return (
+    <div className="mt-3 border-t border-neutral-200 dark:border-neutral-800 pt-3">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="inline-flex items-center gap-1.5 text-sm font-medium text-[#FF7A18] hover:text-[#FF211F] transition"
+        data-testid={`admin-dispute-thread-toggle-${disputeId}`}
+      >
+        <MessageCircle className="h-4 w-4" />
+        {open ? "Hide thread" : "View & message thread"}
+        {open ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+      </button>
+      {open && (
+        <div className="mt-3">
+          <div className="space-y-2 max-h-64 overflow-y-auto pr-1 mb-2">
+            {messages.length === 0 && (
+              <p className="text-sm text-neutral-500 dark:text-neutral-400 py-2 text-center">No messages yet.</p>
+            )}
+            {messages.map((m) => {
+              const mine = m.sender_id === user?.id;
+              const role = m.sender_role || "buyer";
+              return (
+                <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
+                  <div className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm ${
+                    mine
+                      ? "bg-[#FF211F] text-white rounded-br-md"
+                      : role === "seller"
+                        ? "bg-emerald-50 dark:bg-emerald-500/15 text-neutral-900 dark:text-neutral-100 rounded-bl-md"
+                        : "bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 rounded-bl-md"
+                  }`}>
+                    <div className={`text-[10px] font-medium mb-0.5 ${mine ? "opacity-80" : "text-neutral-500 dark:text-neutral-400"}`}>
+                      {role === "admin" ? "Support" : role === "seller" ? "Seller" : "Buyer"} · {m.sender_name} · {new Date(m.created_at).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
+                    </div>
+                    {m.body && <div className="whitespace-pre-wrap leading-snug">{m.body}</div>}
+                    {m.photos?.length > 0 && (
+                      <div className="mt-1.5 grid grid-cols-2 gap-1">
+                        {m.photos.map((url, i) => (
+                          <a key={i} href={url.startsWith("http") ? url : `${process.env.REACT_APP_BACKEND_URL}${url}?auth=${localStorage.getItem("mercari_token") || ""}`} target="_blank" rel="noreferrer" className="block aspect-square rounded-md overflow-hidden">
+                            <img src={url.startsWith("http") ? url : `${process.env.REACT_APP_BACKEND_URL}${url}?auth=${localStorage.getItem("mercari_token") || ""}`} alt="" className="h-full w-full object-cover" />
+                          </a>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          {!closed && (
+            <div className="flex gap-2">
+              <Input
+                value={body}
+                onChange={(e) => setBody(e.target.value)}
+                placeholder="Post a support message to both parties…"
+                onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
+                data-testid={`admin-dispute-msg-input-${disputeId}`}
+              />
+              <Button
+                onClick={send}
+                disabled={sending || !body.trim()}
+                className="bg-[#FF211F] hover:bg-[#e01d1b] shrink-0"
+                data-testid={`admin-dispute-msg-send-${disputeId}`}
+              >
+                <MessageCircle className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
         </div>
       )}
     </div>

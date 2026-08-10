@@ -19,6 +19,7 @@ const HERO_SLIDES = [
     subtitle: "Up to 50% OFF Premium Styles",
     img: "https://images.unsplash.com/photo-1483985988355-763728e1935b?w=1600&auto=format&fit=crop&q=80",
     ctaLink: "/search?category_slug=women",
+    accent: "from-rose-500/60 via-orange-400/40 to-transparent",
   },
   {
     tag: "NEW IN",
@@ -26,6 +27,7 @@ const HERO_SLIDES = [
     subtitle: "Verified sellers · Fast delivery",
     img: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=1600&auto=format&fit=crop&q=80",
     ctaLink: "/search?category_slug=electronics",
+    accent: "from-sky-500/60 via-indigo-400/30 to-transparent",
   },
   {
     tag: "TRENDING",
@@ -33,39 +35,137 @@ const HERO_SLIDES = [
     subtitle: "One-of-a-kind pieces from real people",
     img: "https://images.unsplash.com/photo-1445205170230-053b83016050?w=1600&auto=format&fit=crop&q=80",
     ctaLink: "/search?category_slug=vintage",
+    accent: "from-amber-500/60 via-orange-500/40 to-transparent",
   },
+];
+
+const HERO_HIGHLIGHTS = [
+  { icon: ShieldCheck, label: "Buyer protection" },
+  { icon: Truck,       label: "Fast delivery" },
+  { icon: BadgeCheck,  label: "Verified sellers" },
+  { icon: Heart,       label: "Loved by millions" },
 ];
 
 const HeroCarousel = () => {
   const [idx, setIdx] = useState(0);
+  const [paused, setPaused] = useState(false);
   useEffect(() => {
-    const t = setInterval(() => setIdx((i) => (i + 1) % HERO_SLIDES.length), 5000);
+    if (paused) return;
+    const t = setInterval(() => setIdx((i) => (i + 1) % HERO_SLIDES.length), 5500);
     return () => clearInterval(t);
-  }, []);
+  }, [paused]);
   const s = HERO_SLIDES[idx];
+
+  const now = new Date().getHours();
+  const greeting = now < 12 ? "Good morning" : now < 18 ? "Good afternoon" : "Good evening";
+
   return (
-    <section className="max-w-7xl mx-auto px-4 pt-6" data-testid="hero-carousel">
-      <div className="relative rounded-2xl overflow-hidden aspect-[21/9] bg-neutral-100">
-        <img key={s.img} src={s.img} alt={s.title} className="absolute inset-0 h-full w-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/45 via-black/10 to-transparent" />
-        <div className="absolute inset-0 flex flex-col justify-center gap-4 p-8 md:p-14 max-w-2xl">
-          <span className="inline-flex items-center gap-1.5 self-start bg-[#FF7A18] text-white text-xs font-bold px-3 py-1 rounded-full">
+    <section
+      className="max-w-7xl mx-auto px-3 sm:px-4 pt-4 sm:pt-6"
+      data-testid="hero-carousel"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+    >
+      {/* Warm welcome ribbon */}
+      <div className="mb-3 sm:mb-4 flex items-center justify-between flex-wrap gap-2 px-1">
+        <div className="flex items-center gap-2 text-sm sm:text-base">
+          <span className="inline-flex h-6 sm:h-7 items-center gap-1.5 rounded-full bg-gradient-to-r from-[#FF7A18]/10 to-[#FF211F]/10 dark:from-[#FF7A18]/20 dark:to-[#FF211F]/20 border border-orange-200/70 dark:border-orange-500/30 px-2.5 text-[#FF211F] dark:text-orange-300 font-medium">
+            <Sparkles className="h-3.5 w-3.5" /> {greeting}
+          </span>
+          <span className="text-neutral-500 dark:text-neutral-400 hidden sm:inline">— warm picks curated for you today</span>
+        </div>
+        <span className="text-xs text-neutral-500 dark:text-neutral-400 hidden md:inline">
+          {HERO_SLIDES.length} featured stories · auto-rotates every few seconds
+        </span>
+      </div>
+
+      <div
+        className="relative rounded-2xl sm:rounded-3xl overflow-hidden aspect-[16/10] sm:aspect-[21/9] bg-gradient-to-br from-orange-100 via-rose-50 to-white dark:from-neutral-900 dark:via-neutral-900 dark:to-neutral-950 shadow-lg ring-1 ring-black/5 dark:ring-white/10"
+      >
+        {/* Background image with soft ken-burns */}
+        <img
+          key={s.img}
+          src={s.img}
+          alt={s.title}
+          className="absolute inset-0 h-full w-full object-cover animate-hero-zoom will-change-transform"
+        />
+
+        {/* Warm brand overlay + per-slide accent */}
+        <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/25 to-transparent" />
+        <div className={`absolute inset-0 bg-gradient-to-br ${s.accent} mix-blend-soft-light`} />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_85%_25%,rgba(255,255,255,0.28),transparent_55%)]" />
+
+        {/* Decorative blobs */}
+        <div className="pointer-events-none absolute -top-16 -right-16 h-56 w-56 rounded-full bg-[#FF7A18]/40 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-20 left-1/3 h-56 w-56 rounded-full bg-[#FF211F]/30 blur-3xl" />
+
+        {/* Content */}
+        <div className="absolute inset-0 flex flex-col justify-center gap-3 sm:gap-4 p-5 sm:p-10 md:p-14 max-w-2xl">
+          <span
+            key={`${s.tag}-${idx}`}
+            className="inline-flex items-center gap-1.5 self-start bg-white/95 text-[#FF211F] text-[10px] sm:text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full shadow-sm animate-hero-in"
+          >
             <Flame className="h-3 w-3" /> {s.tag}
           </span>
-          <h1 className="text-white text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight drop-shadow">{s.title}</h1>
-          <p className="text-white/95 text-base sm:text-lg">{s.subtitle}</p>
-          <div className="flex gap-3">
-            <Link to={s.ctaLink}><Button className="bg-[#FF7A18] hover:bg-[#e86a10] h-11 px-6 rounded-full font-semibold" data-testid="hero-shop-now">Shop Now</Button></Link>
-            <Link to="/search"><Button variant="outline" className="h-11 px-6 rounded-full bg-transparent border-2 border-white text-white hover:bg-white hover:text-[#FF7A18] font-semibold">View Deals</Button></Link>
+
+          <h1
+            key={`${s.title}-${idx}`}
+            className="text-white text-3xl sm:text-5xl lg:text-6xl font-extrabold leading-[1.05] tracking-tight drop-shadow-lg animate-hero-in"
+          >
+            {s.title}
+          </h1>
+
+          <p
+            key={`${s.subtitle}-${idx}`}
+            className="text-white/95 text-sm sm:text-lg max-w-md animate-hero-in"
+          >
+            {s.subtitle}
+          </p>
+
+          <div className="flex gap-2 sm:gap-3 flex-wrap">
+            <Link to={s.ctaLink}>
+              <Button
+                className="bg-white text-[#FF211F] hover:bg-[#FF7A18] hover:text-white h-11 sm:h-12 px-5 sm:px-6 rounded-full font-semibold shadow-lg gap-2 transition-all group"
+                data-testid="hero-shop-now"
+              >
+                Shop Now
+                <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
+              </Button>
+            </Link>
+            <Link to="/search">
+              <Button
+                variant="outline"
+                className="h-11 sm:h-12 px-5 sm:px-6 rounded-full bg-white/10 backdrop-blur-sm border-2 border-white/70 text-white hover:bg-white hover:text-[#FF7A18] font-semibold"
+              >
+                Browse everything
+              </Button>
+            </Link>
+          </div>
+
+          {/* Trust chips (hidden on very small screens to keep hero clean) */}
+          <div className="hidden sm:flex items-center gap-2 flex-wrap mt-2 sm:mt-3">
+            {HERO_HIGHLIGHTS.map(({ icon: Icon, label }, i) => (
+              <span
+                key={label}
+                className="inline-flex items-center gap-1.5 rounded-full bg-white/15 backdrop-blur-sm text-white text-xs font-medium px-3 py-1 ring-1 ring-white/20"
+                data-testid={`hero-trust-chip-${i}`}
+              >
+                <Icon className="h-3.5 w-3.5" /> {label}
+              </span>
+            ))}
           </div>
         </div>
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1.5">
+
+        {/* Slide dots */}
+        <div className="absolute bottom-3 sm:bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1.5">
           {HERO_SLIDES.map((_, i) => (
             <button
               key={i}
               aria-label={`slide ${i + 1}`}
               onClick={() => setIdx(i)}
-              className={`h-1.5 rounded-full transition-all ${i === idx ? "bg-[#FF7A18] w-8" : "bg-white/70 w-2"}`}
+              className={`h-1.5 rounded-full transition-all ${
+                i === idx ? "bg-white w-8 shadow" : "bg-white/60 w-2 hover:bg-white/80"
+              }`}
             />
           ))}
         </div>
