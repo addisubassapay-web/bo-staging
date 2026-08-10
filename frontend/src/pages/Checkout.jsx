@@ -6,7 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { CheckCircle2, Lock } from "lucide-react";
+import { CheckCircle2, Lock, Share2 } from "lucide-react";
+import confetti from "canvas-confetti";
 
 const Checkout = () => {
   const { id } = useParams();
@@ -38,6 +39,16 @@ const Checkout = () => {
       setDone(data);
       sessionStorage.removeItem("affiliate_code");
       await api.delete(`/cart/${id}`).catch(() => {});
+      // 🎉 Confetti burst on success
+      requestAnimationFrame(() => {
+        const end = Date.now() + 1500;
+        const colors = ["#FF211F", "#FF7A18", "#FFD166", "#06D6A0", "#118AB2"];
+        (function frame() {
+          confetti({ particleCount: 5, angle: 60, spread: 55, startVelocity: 55, origin: { x: 0, y: 0.7 }, colors });
+          confetti({ particleCount: 5, angle: 120, spread: 55, startVelocity: 55, origin: { x: 1, y: 0.7 }, colors });
+          if (Date.now() < end) requestAnimationFrame(frame);
+        })();
+      });
     } catch (err) {
       toast({ title: "Payment failed", description: err.response?.data?.detail || "Try again", variant: "destructive" });
     } finally {
@@ -48,17 +59,35 @@ const Checkout = () => {
   if (!listing) return <div className="max-w-3xl mx-auto px-4 py-8">Loading…</div>;
 
   if (done) {
+    const shareUrl = `${window.location.origin}/listing/${done.listing_id || done.listing?.id || id}`;
+    const shareText = `I just scored "${done.listing_title}" on Mercari Global! 🎉`;
+    const doShare = async () => {
+      if (navigator.share) {
+        try { await navigator.share({ title: "Mercari Global", text: shareText, url: shareUrl }); } catch { /* cancelled */ }
+      } else {
+        try {
+          await navigator.clipboard.writeText(`${shareText} ${shareUrl}`);
+          toast({ title: "Copied to clipboard", description: "Share your win with friends!" });
+        } catch { /* ignore */ }
+      }
+    };
     return (
-      <div className="max-w-lg mx-auto px-4 py-16 text-center">
-        <CheckCircle2 className="h-16 w-16 mx-auto text-green-500" />
-        <h1 className="text-2xl font-bold mt-4">Order placed!</h1>
-        <p className="text-neutral-600 mt-2">We’ve notified {done.seller_name}. You’ll get updates as your item ships.</p>
+      <div className="max-w-lg mx-auto px-4 py-16 text-center" data-testid="checkout-success">
+        <div className="relative inline-block">
+          <CheckCircle2 className="h-16 w-16 mx-auto text-green-500" />
+          <span className="absolute -top-1 -right-1 text-2xl">🎉</span>
+        </div>
+        <h1 className="text-3xl font-bold mt-4">Score! Order placed</h1>
+        <p className="text-neutral-600 mt-2">We&apos;ve notified {done.seller_name}. You&apos;ll get updates as your item ships.</p>
         <div className="mt-6 bg-neutral-50 rounded-lg p-4 text-left text-sm">
           <div className="flex justify-between"><span>Order ID</span><span className="font-mono">{done.id.slice(0, 8)}</span></div>
           <div className="flex justify-between mt-1"><span>Item</span><span>{done.listing_title}</span></div>
           <div className="flex justify-between mt-1"><span>Amount</span><span className="font-semibold">{formatPrice(done.amount + done.shipping_fee)}</span></div>
         </div>
-        <div className="mt-6 flex gap-2 justify-center">
+        <div className="mt-6 flex gap-2 justify-center flex-wrap">
+          <Button variant="outline" onClick={doShare} className="gap-1.5" data-testid="checkout-share-btn">
+            <Share2 className="h-4 w-4" /> Share your win
+          </Button>
           <Button variant="outline" onClick={() => navigate("/profile?tab=orders")}>View orders</Button>
           <Button className="bg-[#FF211F] hover:bg-[#e01d1b]" onClick={() => navigate("/")}>Keep shopping</Button>
         </div>

@@ -15,6 +15,7 @@ import { useAuth } from "@/context/AuthContext";
 import api from "@/lib/api";
 import NotificationsBell from "@/components/NotificationsBell";
 import LiveSyncBadge from "@/components/LiveSyncBadge";
+import SearchAutocomplete from "@/components/SearchAutocomplete";
 
 const TopStrip = ({ user, onLogout }) => (
   <div className="bg-[#0F1113] text-neutral-200 text-xs">
@@ -85,23 +86,12 @@ const Header = () => {
             </div>
           </Link>
 
-          <form onSubmit={handleSearch} className="flex-1 max-w-3xl relative" data-testid="header-search-form">
-            <Input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="Search products, brands, categories..."
-              className="h-12 pl-5 pr-14 rounded-full border-2 border-[#FF7A18]/70 focus-visible:border-[#FF7A18] focus-visible:ring-0 bg-white"
-              data-testid="header-search-input"
-            />
-            <button
-              type="submit"
-              aria-label="Search"
-              className="absolute right-1.5 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full bg-[#FF7A18] hover:bg-[#e86a10] text-white grid place-items-center transition"
-              data-testid="header-search-btn"
-            >
-              <Search className="h-4 w-4" />
-            </button>
-          </form>
+          <SearchAutocomplete
+            value={q}
+            onChange={setQ}
+            onSubmit={handleSearch}
+            placeholder="Search products, brands, categories..."
+          />
 
           <nav className="hidden md:flex items-center gap-1.5 shrink-0">
             <LiveSyncBadge />

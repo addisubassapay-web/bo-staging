@@ -35,6 +35,28 @@ const Sell = () => {
   const [submitting, setSubmitting] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
   const [enhancingIdx, setEnhancingIdx] = useState(-1);
+  const [enhanceAllBusy, setEnhanceAllBusy] = useState(false);
+  const [prePublishOpen, setPrePublishOpen] = useState(false);
+
+  const enhanceAll = async () => {
+    if (images.length === 0) return;
+    setEnhanceAllBusy(true);
+    const token = localStorage.getItem("mercari_token");
+    const nextImages = [...images];
+    for (let i = 0; i < nextImages.length; i++) {
+      const src = nextImages[i];
+      try {
+        const body = src.startsWith("data:") ? { image_base64: src } : { image_url: src };
+        const { data } = await api.post("/ai/photo-enhance", body);
+        nextImages[i] = `${process.env.REACT_APP_BACKEND_URL}${data.url}?auth=${encodeURIComponent(token || "")}`;
+        setImages([...nextImages]);
+      } catch {
+        // keep original if enhancement fails
+      }
+    }
+    setEnhanceAllBusy(false);
+    toast({ title: "All photos enhanced", description: "Your listing is grid-ready." });
+  };
 
   const enhancePhoto = async (idx) => {
     const src = images[idx];
@@ -152,6 +174,17 @@ const Sell = () => {
       toast({ title: "Add at least one photo", variant: "destructive" });
       return;
     }
+    // Check if any photo is un-enhanced (not from AI /files endpoint). If so, prompt.
+    const anyRaw = images.some((src) => !src.includes("/api/files/"));
+    if (anyRaw && !prePublishOpen) {
+      setPrePublishOpen(true);
+      return;
+    }
+    setPrePublishOpen(false);
+    await doPublish();
+  };
+
+  const doPublish = async () => {
     setSubmitting(true);
     try {
       const payload = {
@@ -339,11 +372,55 @@ const Sell = () => {
 
         <div className="flex justify-end gap-3 pt-4 border-t">
           <Button type="button" variant="outline" onClick={() => navigate(-1)}>Cancel</Button>
-          <Button type="submit" disabled={submitting} className="bg-[#FF211F] hover:bg-[#e01d1b] min-w-[140px]">
+          <Button type="submit" disabled={submitting} className="bg-[#FF211F] hover:bg-[#e01d1b] min-w-[140px]" data-testid="publish-btn">
             {submitting ? "Publishing…" : "Publish listing"}
           </Button>
         </div>
       </form>
+
+      {/* Pre-publish enhance prompt */}
+      {prePublishOpen && (
+        <div className="fixed inset-0 z-50 bg-black/40 grid place-items-center px-4" onClick={() => !enhanceAllBusy && setPrePublishOpen(false)} data-testid="pre-publish-modal">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start gap-3">
+              <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-[#FF7A18] to-[#FF211F] grid place-items-center text-white">
+                <Sparkles className="h-5 w-5" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-bold">Make your photos pop?</h3>
+                <p className="text-sm text-neutral-600 mt-1">
+                  Enhance all photos with AI in one tap — background removed, studio polish, so your listing shines on the grid.
+                </p>
+              </div>
+            </div>
+            <div className="grid grid-cols-4 gap-2 mt-4">
+              {images.slice(0, 4).map((src, i) => (
+                <img key={i} src={src} alt="" className="aspect-square rounded-lg object-cover bg-neutral-100" />
+              ))}
+            </div>
+            <div className="flex gap-2 mt-6">
+              <Button
+                variant="outline"
+                className="flex-1"
+                disabled={enhanceAllBusy}
+                onClick={() => { setPrePublishOpen(false); doPublish(); }}
+                data-testid="publish-skip-enhance"
+              >
+                Skip &amp; publish
+              </Button>
+              <Button
+                className="flex-1 bg-[#FF7A18] hover:bg-[#e86a10] gap-1.5"
+                disabled={enhanceAllBusy}
+                onClick={async () => { await enhanceAll(); await doPublish(); }}
+                data-testid="publish-enhance-all"
+              >
+                <Wand2 className={`h-4 w-4 ${enhanceAllBusy ? "animate-pulse" : ""}`} />
+                {enhanceAllBusy ? "Enhancing…" : "Enhance all"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

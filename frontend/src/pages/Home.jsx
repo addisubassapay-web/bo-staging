@@ -245,6 +245,7 @@ const Home = () => {
   const [flash, setFlash] = useState([]);
   const [recent, setRecent] = useState([]);
   const [trending, setTrending] = useState([]);
+  const [forYou, setForYou] = useState([]);
   const [favIds, setFavIds] = useState(new Set());
 
   useEffect(() => {
@@ -254,6 +255,7 @@ const Home = () => {
     const token = localStorage.getItem("mercari_token");
     if (token) {
       api.get("/favorites").then((r) => setFavIds(new Set(r.data.map((l) => l.id)))).catch(() => {});
+      api.get("/for-you", { params: { limit: 12 } }).then((r) => setForYou(r.data)).catch(() => {});
     }
   }, []);
 
@@ -280,6 +282,28 @@ const Home = () => {
       </div>
 
       <FlashDeals items={flashItems} onFav={toggleFav} favIds={favIds} />
+
+      {/* For You — personalised */}
+      {forYou.length > 0 && (
+        <section className="max-w-7xl mx-auto px-4 mt-14" data-testid="for-you-section">
+          <div className="flex items-center justify-between mb-5">
+            <div>
+              <h2 className="text-2xl sm:text-3xl font-bold text-neutral-900 flex items-center gap-2">
+                <Sparkles className="h-6 w-6 text-[#FF7A18]" /> For You
+              </h2>
+              <p className="text-sm text-neutral-500">Handpicked from your favourites &amp; purchases</p>
+            </div>
+            <Link to="/search" className="text-sm text-[#FF7A18] font-medium hover:underline flex items-center gap-1">
+              Refresh <ArrowRight className="h-3 w-3" />
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            {forYou.slice(0, 12).map((l) => (
+              <ProductCard key={l.id} listing={l} isFavorite={favIds.has(l.id)} onFavoriteChange={(id, isFav) => setFavIds((prev) => { const s = new Set(prev); isFav ? s.add(id) : s.delete(id); return s; })} />
+            ))}
+          </div>
+        </section>
+      )}
 
       <TrustStrip />
 
