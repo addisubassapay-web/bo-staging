@@ -26,6 +26,18 @@ Exact replica of Mercari platform (mercari.com) — same color scheme (`#FF211F`
 
 ## Implemented (with dates)
 
+### Feb 2026 — Phase 3: Design refresh + live shipping + adapter pattern
+- **Landing page redesign** matching Mercari Global mockups: dark top strip, gradient orange "M" logo + "Mercari Global · Smart Ecommerce Platform" wordmark, big rounded search bar with orange button, category pills strip, auto-rotating hero carousel, Flash Deals grid (FLASH -%, stock bar, ETA), "Why millions trust us" pastel card row, "Can't Find Your Product?" gradient CTA, feature cards, dark footer with Mercari Global branding.
+- **Trending sort** (`GET /api/listings?sort=trending`) — views_count desc, likes_count desc, created_at desc.
+- **Shipping provider adapter** (`/app/backend/shipping_providers.py`) — pluggable via `SHIPPING_PROVIDER=mock|easypost|shippo`. EasyPost/Shippo stubs raise NotImplementedError until keys are provided.
+- **Persisted shipping events** on `orders.shipping_events` array. Backfill on read for legacy orders.
+- **Auto-advance background loop** (`shipping_progress_loop`) runs every 30s, advances mock orders per `SHIPPING_MOCK_FAST` (default true → ~60s to picked_up, ~2m to in_transit, ~5m to out_for_delivery, ~8m to delivered), and notifies buyer on each transition.
+- **Manual advance endpoint** `POST /api/orders/{id}/shipping-advance` (seller/admin) — either advance one stage or jump to `to_status`. Emits buyer notification.
+- **Edit Listing page** at `/listing/:id/edit` (`EditListing.jsx`) — pick any existing photo, regenerate title/description/category/condition/price via the AI listing assistant (`/api/ai/listing-suggest` with `image_url`), or edit manually then `PUT /api/listings/{id}`.
+- **ShippingTracker** now supports `canAdvance` prop → shows "Mark next stage →" button for sellers.
+- **Header/Footer** rebuilt: sticky top strip, category pills row, user drop-down (Verification/Wallet/Referrals/Affiliate/Store analytics/Sell/Admin), notifications badge, cart, favorites.
+- **Testing**: 15/15 Phase 3 backend tests pass (`/app/backend/tests/test_phase3_shipping_advance_trending.py`).
+
 ### Feb 2026 — Phase 2: Trust Badges, AI, Uploads, Shipping
 - **Verification badges** (`VerificationBadges.jsx`) shown on Profile, Listing detail (seller block), Store page — pills for verified email / phone / approved seller. Public snapshot endpoint `GET /api/users/{id}/public` powers cross-user display without exposing sensitive fields.
 - **AI Listing Assistant** — `POST /api/ai/listing-suggest` with `{image_base64|image_url, hints?}` calls GPT-5.4 vision via Emergent LLM Key and returns structured JSON (title, description, category_slug + category_id, condition, brand, color, size, suggested_price_usd). Wired into `Sell.jsx` — "AI-fill from photo" button auto-populates form fields.
