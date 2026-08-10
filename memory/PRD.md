@@ -26,6 +26,13 @@ Exact replica of Mercari platform (mercari.com) — same color scheme (`#FF211F`
 
 ## Implemented (with dates)
 
+### Feb 2026 — Phase 4: Nano Banana + Flash Deals + Live buyer toast
+- **AI Photo Cleanup** (`POST /api/ai/photo-enhance`) — one-click background removal & studio polish via Nano Banana (`gemini-3.1-flash-image-preview`) using Emergent LLM Key. Accepts `file_id | image_base64 | image_url` + optional `prompt`. Enhanced image is saved to Emergent object storage under a new file id. Sellers see a small orange wand button on every photo in `Sell.jsx`.
+- **Live Flash Deals** — 10 random `status=active` listings become flash deals daily. `is_flash_deal`, `flash_deal_ends_at` (next midnight UTC), `flash_deal_discount_pct` (20-74%). Endpoints: `GET /api/flash-deals`, `POST /api/admin/flash-deals/rotate`. Background `flash_deals_rotation_loop()` refills the pool at boot and after each midnight UTC. Home `FlashDeals` component now uses this and shows a real ETA countdown.
+- **Buyer Progress Toast** (`BuyerProgressToast.jsx`) — a global provider mounted at App root that polls `/api/notifications` every 30s for shipping-update notifications and fires a floating toast + "Track →" link when a NEW status change happens. Uses localStorage to avoid replaying on page reloads.
+- **Bulk Import Ready** — new Home + Trending grid render Apify-imported items correctly. Apify actor still running in background (long-running scrape across 28 categories).
+- **Testing**: 18/18 Phase 4 backend tests pass (`/app/backend/tests/test_phase4_photo_enhance_flash_deals.py`).
+
 ### Feb 2026 — Phase 3: Design refresh + live shipping + adapter pattern
 - **Landing page redesign** matching Mercari Global mockups: dark top strip, gradient orange "M" logo + "Mercari Global · Smart Ecommerce Platform" wordmark, big rounded search bar with orange button, category pills strip, auto-rotating hero carousel, Flash Deals grid (FLASH -%, stock bar, ETA), "Why millions trust us" pastel card row, "Can't Find Your Product?" gradient CTA, feature cards, dark footer with Mercari Global branding.
 - **Trending sort** (`GET /api/listings?sort=trending`) — views_count desc, likes_count desc, created_at desc.
