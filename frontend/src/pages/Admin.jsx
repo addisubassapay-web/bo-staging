@@ -419,6 +419,35 @@ const SettingsMgr = () => {
           </div>
         </section>
 
+        <section className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg p-5" data-testid="settings-disputes-section">
+          <h3 className="font-semibold mb-1 flex items-center gap-2">
+            <AlertCircle className="h-4 w-4 text-[#FF211F]" /> Disputes automation
+          </h3>
+          <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-3">
+            Auto-refund any incoming dispute whose order amount is at or below this threshold, so your team only reviews the high-value cases. Set to 0 to disable and review every dispute manually.
+          </p>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div>
+              <Label>Auto-refund threshold <span className="text-xs text-neutral-400">($)</span></Label>
+              <Input
+                type="number"
+                step={1}
+                min={0}
+                value={settings.dispute_auto_refund_threshold ?? 0}
+                onChange={(e) => set("dispute_auto_refund_threshold", parseFloat(e.target.value) || 0)}
+                className="mt-1"
+                data-testid="dispute-auto-refund-threshold-input"
+                placeholder="0 = disabled"
+              />
+              <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                {settings.dispute_auto_refund_threshold > 0
+                  ? `Disputes on orders at or under $${Number(settings.dispute_auto_refund_threshold).toFixed(2)} will auto-refund the buyer.`
+                  : "Auto-refund is off — all disputes go to your review queue."}
+              </p>
+            </div>
+          </div>
+        </section>
+
         <section className="bg-white border border-neutral-200 rounded-lg p-5">
           <h3 className="font-semibold mb-3">Automation modes</h3>
           <p className="text-sm text-neutral-500 mb-3">Choose how new items are approved: instantly (auto), auto up to threshold (semi), or all manual.</p>

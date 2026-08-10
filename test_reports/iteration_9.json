@@ -1,0 +1,34 @@
+{
+  "summary": "Phase 14 (Dispute Auto-Refund Threshold + PWA Icons) fully validated. Backend: 11/11 pytest cases pass in /app/backend/tests/test_phase14_auto_refund_pwa.py — covers Settings GET/PUT (default merge, number type, persistence, non-admin 403), auto-refund happy path (dispute.status=refunded, resolution starts 'Auto-refunded', admin_notes contains 'Auto-refunded (threshold=$25.00)', resolved_at set, buyer wallet credited by amount, order cancelled, buyer + seller notifications delivered), no-auto-refund when amount > threshold (status=open, no wallet mutation, no cancellation), threshold=0 disables rule, zero-amount guard (amount>0). PWA: icon-192.png (192x192), icon-512.png (512x512), favicon.png all return 200 image/png; manifest.json lists both with purpose='any maskable'. Frontend: /admin/settings shows 'Disputes automation' section (settings-disputes-section), numeric input (dispute-auto-refund-threshold-input), helper text switches from 'Auto-refund is off' at 0 to 'Disputes on orders at or under $25.00 will auto-refund the buyer.' at 25; Save persists (verified via API GET). Threshold reset to 0 after tests.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_phase14_auto_refund_pwa.py",
+    "/app/test_reports/pytest/phase14_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "server.py create_dispute auto-refund block is not transactional — if credit_wallet(seller, -X) fails after credit_wallet(buyer, +X) succeeds, buyer keeps refund and seller isn't debited. Consider wrapping in a MongoDB session/transaction or at least try/except + compensating action.",
+    "credit_wallet with negative amount allows seller wallet_balance to go negative (no floor check). Fine for now (matches manual admin refund pattern) but should be tracked — sellers with no cash-in balance will end up negative.",
+    "Auto-refund fires on ANY dispute reason (including 'other') as long as amount<=threshold. If admins want to exclude 'counterfeit'/'other' from auto-refund, that flexibility isn't there.",
+    "Notification order: buyer notify runs before seller notify but both can silently swallow failures. If buyer notify raises, dispute is already 'refunded' — the buyer just won't see the notification. Log level is fine.",
+    "resolution message hardcodes 'orders under ${threshold:.2f}' but the guard is inclusive (amount <= threshold). Copy nit: say 'at or under' to match Admin UI helper text."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_phase14_auto_refund_pwa.py (new — 11 tests)"
+  ],
+  "success_rate": {"backend": "100% (11/11 Phase 14)", "frontend": "100% (admin settings section, input, helper text, save persistence all working)"},
+  "test_credentials": "admin@mercari.local / admin123; sophia_style@demo.local / demo1234; fresh buyers registered per test via /api/auth/register",
+  "seed_data_creation": "Created 4 TEST_p14 listings under sophia_style (prices 15, 40, 5, 0) and their orders + disputes. Threshold reset to 0 in module-scoped teardown so unrelated suites are unaffected.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Phase 14 fully green. To reproduce E2E: PUT /api/admin/settings {dispute_auto_refund_threshold: 25}, register buyer, create $15 listing as sophia_style, POST /api/orders, POST /api/disputes -> expect status=refunded. Always reset threshold to 0 after your tests. Phase 12 regression fixture bug from iteration 8 (order_ctx dict missing dispute_id) still present but unrelated to Phase 14.",
+  "rca of the issue": "N/A — no issues discovered."
+}

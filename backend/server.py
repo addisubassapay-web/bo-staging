@@ -338,6 +338,7 @@ class Settings(BaseModel):
     listing_mode: Literal["auto", "semi", "manual"] = "auto"
     semi_threshold: float = 100.0  # for semi-auto approvals under this amount
     referral_levels_enabled: bool = True
+    dispute_auto_refund_threshold: float = 0.0  # auto-refund disputes below this amount ($). 0 disables.
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
@@ -568,11 +569,12 @@ def to_public_user(user: dict) -> dict:
 # =========================
 async def get_settings() -> dict:
     doc = await db.settings.find_one({"id": "global"}, {"_id": 0})
+    defaults = Settings().model_dump()
     if not doc:
-        s = Settings()
-        await db.settings.insert_one(s.model_dump())
-        return s.model_dump()
-    return doc
+        await db.settings.insert_one(defaults)
+        return defaults
+    # Merge defaults for any newly introduced fields so callers never see None
+    return {**defaults, **doc}
 
 async def credit_wallet(user_id: str, amount: float, tx_type: str, description: str, related_id: Optional[str] = None):
     if amount == 0:
@@ -1327,7 +1329,7 @@ async def admin_update_settings(updates: dict, _admin: dict = Depends(require_ad
         "referral_l1_pct", "referral_l2_pct", "referral_l3_pct",
         "dropship_max_markup_pct", "min_withdrawal", "signup_bonus",
         "affiliate_mode", "store_mode", "withdrawal_mode", "listing_mode",
-        "semi_threshold", "referral_levels_enabled",
+        "semi_threshold", "referral_levels_enabled", "dispute_auto_refund_threshold",
     }
     filtered = {k: v for k, v in updates.items() if k in allowed}
     filtered["updated_at"] = datetime.now(timezone.utc)
@@ -2524,6 +2526,46 @@ async def create_dispute(payload: DisputeCreate, user: dict = Depends(get_curren
     )
     doc = dispute.model_dump()
     await db.disputes.insert_one(doc)
+
+    # Auto-refund rule: if the dispute amount is under the admin-configured threshold,
+    # resolve immediately with a wallet refund so support only reviews high-value cases.
+    settings = await get_settings()
+    threshold = float(settings.get("dispute_auto_refund_threshold") or 0.0)
+    if threshold > 0 and dispute.amount > 0 and dispute.amount <= threshold:
+        now = datetime.now(timezone.utc)
+        resolution_msg = f"Auto-refunded — orders at or under ${threshold:.2f} are refunded instantly."
+        # Credit buyer, debit seller
+        await credit_wallet(
+            dispute.buyer_id, dispute.amount, "adjustment",
+            f"Auto-refund for dispute #{dispute.id[:8]}", dispute.id,
+        )
+        seller_debit = float(order["seller_earnings"]) if order.get("seller_earnings") is not None else dispute.amount
+        await credit_wallet(
+            dispute.seller_id, -seller_debit, "adjustment",
+            f"Auto-refund chargeback for dispute #{dispute.id[:8]}", dispute.id,
+        )
+        await db.orders.update_one({"id": order["id"]}, {"$set": {"status": "cancelled"}})
+        await db.disputes.update_one(
+            {"id": dispute.id},
+            {"$set": {
+                "status": "refunded",
+                "resolution": resolution_msg,
+                "admin_notes": f"Auto-refunded (threshold=${threshold:.2f})",
+                "resolved_at": now,
+            }},
+        )
+        await notify(
+            dispute.buyer_id, "dispute", "Refund issued automatically",
+            resolution_msg, "/wallet",
+        )
+        await notify(
+            dispute.seller_id, "dispute", "Dispute auto-refunded",
+            f"An order under ${threshold:.2f} was automatically refunded to the buyer.",
+            "/profile?tab=disputes",
+        )
+        fresh = await db.disputes.find_one({"id": dispute.id}, {"_id": 0})
+        return Dispute(**fresh)
+
     await notify(
         order["seller_id"], "dispute",
         f"Buyer opened a dispute on '{order['listing_title']}'",

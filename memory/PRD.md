@@ -26,6 +26,11 @@ Exact replica of Mercari platform (mercari.com) — same color scheme (`#FF211F`
 
 ## Implemented (with dates)
 
+### Feb 2026 — Phase 14: Auto-Refund Threshold + Branded PWA Icons
+- **Auto-Refund Rule** — New `Settings.dispute_auto_refund_threshold` field ($). Any dispute filed on an order at-or-under the threshold auto-resolves at creation: buyer wallet credited, seller debited, order set to `cancelled`, both parties notified with "Refund issued automatically" / "Dispute auto-refunded". Threshold = 0 disables the rule. `get_settings()` now merges defaults so newly added fields never return None. New "Disputes automation" section in `/admin/settings` with numeric input + dynamic helper text.
+- **Branded PWA Icons** — Generated 192×192, 512×512 PNG icons and a 32×32 favicon in `/app/frontend/public/`. Design mirrors the header logo: gradient #FF7A18 → #FF211F with a rounded-corner mask (maskable-safe), soft top-left highlight, and centered bold "M" mark with subtle drop shadow. Icons wired into `manifest.json` (`purpose: "any maskable"`) and `index.html` (`<link rel="icon">`, `apple-touch-icon` sizes). Regenerator script at `/app/scripts/generate_pwa_icons.py`.
+- **Tests**: 11/11 backend pytest pass (`test_phase14_auto_refund_pwa.py`). Frontend flows verified by testing agent iteration_9. No P0/P1 issues.
+
 ### Feb 2026 — Phase 13: Warm Hero, Dispute Chat, PWA + Mobile Polish
 - **Warm Hero Redesign** — New `HeroCarousel` on Home with time-of-day greeting ribbon (Good morning/afternoon/evening), ken-burns image zoom, per-slide gradient accents, decorative blur blobs, trust chips (Buyer protection / Fast delivery / Verified sellers / Loved by millions), animated Shop Now button with arrow slide, and slide dots. Auto-rotates every 5.5s and pauses on hover.
 - **Dispute Chat** — New `DisputeMessage` model + endpoints `GET /api/disputes/{id}/messages` and `POST /api/disputes/{id}/messages`. Buyer, seller, and admin can all post text and up to 8 photo attachments. Auto-notifies the counterparty (or both parties for admin messages). Frontend inline `DisputeChat` on `/disputes` toggles per dispute card, polls every 6s while open. Admin has compact `AdminDisputeThread` inside `/admin/disputes`. Closed disputes disable the composer.
