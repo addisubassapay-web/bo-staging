@@ -415,7 +415,7 @@ class SellerApplication(BaseModel):
 class SellerApplicationCreate(BaseModel):
     legal_name: str
     business_name: Optional[str] = ""
-    business_type: str = "individual"
+    business_type: Literal["individual", "sole_prop", "llc", "corp"] = "individual"
     tax_id: str = ""
     country: str = "US"
     address_line1: str = ""
@@ -424,7 +424,7 @@ class SellerApplicationCreate(BaseModel):
     state: str = ""
     postal_code: str = ""
     phone: str = ""
-    payout_method: str = "stripe_connect"
+    payout_method: Literal["stripe_connect", "bank_transfer"] = "stripe_connect"
     id_document_note: Optional[str] = ""
     id_document_file_id: Optional[str] = None
 

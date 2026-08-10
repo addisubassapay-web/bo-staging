@@ -26,6 +26,15 @@ Exact replica of Mercari platform (mercari.com) — same color scheme (`#FF211F`
 
 ## Implemented (with dates)
 
+### Feb 2026 — Phase 2: Trust Badges, AI, Uploads, Shipping
+- **Verification badges** (`VerificationBadges.jsx`) shown on Profile, Listing detail (seller block), Store page — pills for verified email / phone / approved seller. Public snapshot endpoint `GET /api/users/{id}/public` powers cross-user display without exposing sensitive fields.
+- **AI Listing Assistant** — `POST /api/ai/listing-suggest` with `{image_base64|image_url, hints?}` calls GPT-5.4 vision via Emergent LLM Key and returns structured JSON (title, description, category_slug + category_id, condition, brand, color, size, suggested_price_usd). Wired into `Sell.jsx` — "AI-fill from photo" button auto-populates form fields.
+- **File Upload / Object Storage** — `POST /api/upload` (multipart) + `GET /api/files/{id}?auth=…` for authenticated retrieval. Storage backed by Emergent object storage (`init_storage`, `put_object`, `get_object`). Files stored at `mercari-clone/uploads/{user_id}/{uuid}.{ext}`. Accepts JPG/PNG/WEBP/GIF/PDF up to 12MB. `db.files` collection tracks metadata + soft-delete flag.
+- **ID Document Upload** replaces the textarea placeholder in `SellerApply.jsx`. Applications now persist `id_document_file_id` referencing the uploaded document.
+- **Shipping Labels (MOCKED)** — `POST /api/orders/{id}/shipping-label` mints a MOCK tracking number + label URL + estimated delivery via random carrier (USPS/UPS/FedEx). `GET /api/orders/{id}/tracking` returns a progressive events timeline (label_created → picked_up → in_transit → out_for_delivery → delivered) computed from order age. `Order` model extended with `tracking_number`, `carrier`, `label_url`, `shipping_status`, `estimated_delivery`. `ShippingTracker.jsx` component wired into Profile → Purchases (buyer view) and Sales (seller view with "Buy label" CTA).
+- **Apify sync**: Amazon 5000-item scrape re-triggered from admin API (runs in the background; actor progressing through 28 categories).
+- **Testing**: 32/32 Phase 2 backend tests pass (`/app/backend/tests/test_phase2_verify_upload_ai_shipping.py`).
+
 ### Feb 2026 — Phase 1: Trust & Payments (Week-1, MOCKED)
 - **User model extended**: `email_verified`, `phone`, `phone_verified`, `seller_status`, `stripe_account_id`, `stripe_status`.
 - **Email verification** (`POST /api/verify/email/send`, `/confirm`) — magic-link token stored in DB; returned in response with `dev_mock:true`.
@@ -97,3 +106,9 @@ See `/app/memory/test_credentials.md`.
 - **Resend** (email delivery) — MOCKED. Tokens returned in API response.
 - **Twilio SMS** (OTP) — MOCKED. 6-digit codes returned in API response.
 - **Stripe Connect** (payouts) — MOCKED. Fake `acct_mock_*` IDs, instant-active status.
+- **EasyPost / Shippo** (shipping labels) — MOCKED. `MOCK...` tracking numbers, synthetic events timeline based on order age.
+
+## Real Integrations
+- **Emergent LLM Key** (`gpt-5.4` vision) — AI listing assistant.
+- **Emergent Object Storage** — file uploads for seller ID documents and (future) listing images.
+- **Apify** (`junglee/amazon-crawler`) — real Amazon scraping, weekly auto-sync.
