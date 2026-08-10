@@ -333,33 +333,63 @@ async def import_from_apify(
 
 
 async def simulate_live_update(db) -> Dict:
-    """Rotate featured, tick views/likes, mark random items sold."""
-    changes = {"featured_rotated": 0, "sold": 0, "views_bumped": 0}
+    """Rotate featured, tick views/likes, mark a few active items sold, and revive some sold items.
+
+    Guardrails:
+      * Never mark any item sold when active count is at or below ACTIVE_FLOOR (keeps the marketplace populated).
+      * Resurrect a handful of sold listings back to active on every tick so the demo stays lively.
+    """
+    ACTIVE_FLOOR = 60      # never dip below this many active listings
+    REVIVE_PER_TICK = 5    # bring this many sold items back to active each minute
+    SELL_PER_TICK = 3      # mark this many active items as sold (only if above floor)
+
+    changes = {"featured_rotated": 0, "sold": 0, "revived": 0, "views_bumped": 0}
+
+    total_count = await db.listings.count_documents({})
+    if total_count == 0:
+        return changes
+
+    # Revive some sold items back to active first
+    sold_sample = await db.listings.aggregate([
+        {"$match": {"status": "sold"}},
+        {"$sample": {"size": REVIVE_PER_TICK}},
+        {"$project": {"_id": 0, "id": 1}},
+    ]).to_list(REVIVE_PER_TICK)
+    if sold_sample:
+        r = await db.listings.update_many(
+            {"id": {"$in": [d["id"] for d in sold_sample]}},
+            {"$set": {"status": "active"}},
+        )
+        changes["revived"] = r.modified_count
+
     active_count = await db.listings.count_documents({"status": "active"})
     if active_count == 0:
         return changes
 
     await db.listings.update_many({"featured": True}, {"$set": {"featured": False}})
-    sample = await db.listings.aggregate([
+    feat_sample = await db.listings.aggregate([
         {"$match": {"status": "active"}},
         {"$sample": {"size": min(40, active_count)}},
         {"$project": {"_id": 0, "id": 1}},
     ]).to_list(40)
-    ids = [d["id"] for d in sample]
+    ids = [d["id"] for d in feat_sample]
     if ids:
         r = await db.listings.update_many({"id": {"$in": ids}}, {"$set": {"featured": True}})
         changes["featured_rotated"] = r.modified_count
 
-    sold_sample = await db.listings.aggregate([
-        {"$match": {"status": "active"}},
-        {"$sample": {"size": 3}},
-        {"$project": {"_id": 0, "id": 1}},
-    ]).to_list(3)
-    if sold_sample:
-        r = await db.listings.update_many(
-            {"id": {"$in": [d["id"] for d in sold_sample]}}, {"$set": {"status": "sold"}}
-        )
-        changes["sold"] = r.modified_count
+    # Only mark items sold when active count is safely above the floor.
+    if active_count - SELL_PER_TICK >= ACTIVE_FLOOR:
+        sell_sample = await db.listings.aggregate([
+            {"$match": {"status": "active"}},
+            {"$sample": {"size": SELL_PER_TICK}},
+            {"$project": {"_id": 0, "id": 1}},
+        ]).to_list(SELL_PER_TICK)
+        if sell_sample:
+            r = await db.listings.update_many(
+                {"id": {"$in": [d["id"] for d in sell_sample]}},
+                {"$set": {"status": "sold"}},
+            )
+            changes["sold"] = r.modified_count
 
     view_sample = await db.listings.aggregate([
         {"$match": {"status": "active"}},

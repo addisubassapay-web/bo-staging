@@ -26,6 +26,11 @@ Exact replica of Mercari platform (mercari.com) — same color scheme (`#FF211F`
 
 ## Implemented (with dates)
 
+### Feb 2026 — Bug Fix: Preview showed 0 products (runaway live-simulator)
+- **Root cause**: The `simulate_live_update` loop in `apify_sync.py` marked 3 random active listings as "sold" every 60s but had NO counterbalance — nothing brought sold items back to active. Over ~12 hours since the last real sync, the tick marked all 212 listings sold, so `/api/listings` returned `[]` and Home/Search rendered empty.
+- **Fix**: (a) Revived all 212 sold listings back to active (one-off). (b) Rewrote `simulate_live_update` with guardrails: `ACTIVE_FLOOR=60` prevents dipping below the floor, `REVIVE_PER_TICK=5` resurrects sold items back to active on every tick BEFORE the sell pass, and the sell-3 pass only runs when active count is safely above the floor. Also cleaned 30 leftover TEST_ listings from testing agent runs.
+- **Verified**: 5 consecutive ticks show a stable steady-state of `active=179`. Home page now renders the full catalog with flash deals, categories, and shelves.
+
 ### Feb 2026 — Phase 16: Apify Sync Insights (Per-Category Breakdown)
 - **Live Per-Category Breakdown** — Backend `apify_sync.py` now persists `per_category` counts every 200 successful imports along with a mid-run message ("Classifying — N of M raw items imported"), so admins see live progress instead of waiting for end-of-run. Frontend replaces the old 4-column grid with a rich `CategoryBreakdownCard` featuring per-category icons, warm gradient bars sorted descending by count, percent + count on each row, a total-imported pill, dark-mode support, an empty state, and a live-refresh banner while a sync is running.
 - **Bonus**: Cleared a stale `sync_running=true` flag left over from an earlier backend restart. New idle-state message shown when no sync is active.
