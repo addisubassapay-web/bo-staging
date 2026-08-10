@@ -26,6 +26,12 @@ Exact replica of Mercari platform (mercari.com) — same color scheme (`#FF211F`
 
 ## Implemented (with dates)
 
+### Feb 2026 — Phase 9: Typography, Shelf CMS UI, Digest, Celebrations
+- **Geometric Sans-Serif Typography** — Poppins + DM Sans (Google Fonts) loaded via `public/index.html`; global `body` + `h1-h6` rules in `index.css` with `letter-spacing: -0.015em` on headings for a modern editorial feel.
+- **Shelf Admin Screen** (`AdminShelves.jsx`) — new "Homepage shelves" tab under Admin. Editable title inline (blur to save), limit selector, toggle switch (auto-saves), up/down arrows for reorder, "Save order" button posts the final order to `POST /api/admin/shelves/reorder`.
+- **Wishlist Digest Email (MOCKED Resend)** — new `wishlist_digest_loop` runs every `WISHLIST_DIGEST_INTERVAL_SEC` (default 6h in dev). For each user with favorites, gathers listings whose `price_drop_at` is within 7 days and logs a mock Resend email (`db.email_log`) + creates an in-app notification linking to `/favorites`.
+- **Goal Celebrations** — When the seller dashboard sees `weekly.progress_pct >= 100`, it fires a `canvas-confetti` burst and shows a green "🎉 Goal hit!" banner above the hero. Uses ISO-week keyed localStorage so it only fires once per week.
+
 ### Feb 2026 — Phase 8: Wishlist toast, Shelf CMS, Seller goals
 - **Wishlist Price Toast** — `Listing` model gains `price_drop_at` + `previous_price`. `PUT /api/listings/{id}` stamps both when the price drops 5%+ and notifies every favoriting user. `ProductCard.jsx` shows a pulsing green **-N%** badge (with strike-through of the old price) for 7 days after the drop.
 - **Shelf A/B Ordering** (Admin CMS) — moved shelf definitions from hardcoded to `db.shelves` collection with `enabled`, `order`, `title`, `subtitle`, `category_slugs`, `price_lte`, `sort_by`, `limit`. New endpoints: `GET/PUT /api/admin/shelves/{id}`, `POST /api/admin/shelves/reorder`. Public `GET /api/shelves` now respects the enabled+order fields, with auto-seeding on first request.

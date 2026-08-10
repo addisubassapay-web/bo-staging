@@ -2155,6 +2155,49 @@ async def rotate_flash_deals():
     return {"selected": len(picks), "active": active_count + len(picks), "ends_at": ends_at.isoformat()}
 
 
+async def wishlist_digest_loop():
+    """Weekly wishlist digest — collates price drops from the last 7 days per user
+    and MOCK-sends via Resend (logged to backend console + persisted to db.email_log)."""
+    await asyncio.sleep(10)
+    while True:
+        try:
+            since = _now_utc() - timedelta(days=7)
+            # Group favorites by user, resolve current listings, filter recent price drops
+            users_seen = set()
+            async for f in db.favorites.find({}, {"_id": 0, "user_id": 1, "listing_id": 1}):
+                users_seen.add(f["user_id"])
+            for uid in users_seen:
+                favs = await db.favorites.find({"user_id": uid}, {"_id": 0, "listing_id": 1}).to_list(500)
+                lids = [x["listing_id"] for x in favs]
+                if not lids:
+                    continue
+                drops = await db.listings.find(
+                    {"id": {"$in": lids}, "price_drop_at": {"$gte": since}},
+                    {"_id": 0, "id": 1, "title": 1, "price": 1, "previous_price": 1, "price_drop_at": 1},
+                ).to_list(50)
+                if not drops:
+                    continue
+                user = await db.users.find_one({"id": uid}, {"_id": 0, "email": 1, "username": 1})
+                if not user:
+                    continue
+                subject = f"Weekly wishlist digest: {len(drops)} price drop(s) on your favourites"
+                lines = [f"- {d['title']}: ${d['previous_price']:.2f} -> ${d['price']:.2f}" for d in drops[:20]]
+                body = "Hi " + user.get("username", "there") + ",\n\n" + "\n".join(lines) + "\n\nShop now on Mercari Global!"
+                logger.info(f"[MOCK Resend] to={user['email']} subject={subject!r}")
+                await db.email_log.insert_one({
+                    "id": str(uuid.uuid4()),
+                    "user_id": uid, "to": user["email"], "kind": "wishlist_digest",
+                    "subject": subject, "body": body, "drops": len(drops),
+                    "sent_at": _now_utc(), "provider": "mock_resend",
+                })
+                await notify(uid, "system", subject, f"{len(drops)} price drops in your favourites this week.", "/favorites")
+        except Exception as e:
+            logger.warning(f"wishlist_digest_loop error: {e}")
+        # Run once a week (dev: every 6 hours to make it observable during testing)
+        interval = int(os.environ.get("WISHLIST_DIGEST_INTERVAL_SEC", str(6 * 3600)))
+        await asyncio.sleep(max(60, interval))
+
+
 async def flash_deals_rotation_loop():
     """Refill the flash-deal pool at startup and shortly after midnight UTC each day."""
     await asyncio.sleep(3)
@@ -2603,6 +2646,7 @@ async def startup():
     asyncio.create_task(apify_auto_sync_loop())
     asyncio.create_task(shipping_progress_loop())
     asyncio.create_task(flash_deals_rotation_loop())
+    asyncio.create_task(wishlist_digest_loop())
 
 
 @app.on_event("shutdown")
