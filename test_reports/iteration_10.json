@@ -1,0 +1,25 @@
+{
+  "summary": "Phase 15 tested end-to-end: dispute reason exclusions (backend + Admin UI pill toggles) and Apify sync status endpoints. All 12 new backend tests pass (serial run) plus Phase 14 regression (11/11). UI verified: admin/settings shows exclusions block with 5 pill toggles, counterfeit excluded by default, toggling flips state, helper text updates, and Save persists to backend.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_phase15_dispute_exclusions_apify.py",
+    "/app/test_reports/pytest/phase15.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Global settings tests race under pytest-xdist (parallel workers). Recommend adding pytest marker or serializing settings-mutating suites (e.g., @pytest.mark.serial or configure loadscope by class). Currently ran with -n 0 to work around. Phase 14 & 15 both mutate the same global doc.",
+    "server.py is now 3009 lines — exceeds 700-line guideline; recommend splitting (settings/disputes/apify routers) in a future refactor.",
+    "admin_update_settings does not validate numeric bounds on threshold (accepts negative floats). Minor — not blocking."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_phase15_dispute_exclusions_apify.py (created)"
+  ],
+  "success_rate": {"backend": "100% (12/12 new + 11/11 phase14 regression)", "frontend": "100% (all pill toggles + save flow verified)"},
+  "test_credentials": "admin@mercari.local / admin123 (from /app/memory/test_credentials.md)",
+  "seed_data_creation": "Phase 15 test creates TEST_ prefixed listings/categories via public API; buyer users e2e_p15_*.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Settings are reset to threshold=0 and exclusions=['counterfeit'] after tests. When running Phase 14 + 15 together, use pytest -n 0 to avoid xdist race on the global settings doc. Apify status endpoints confirmed: source='junglee/amazon-crawler', total_listings numeric, started_at/last_sync_at populated. POST /api/admin/sync/apify returns ok:true with started or already_running.",
+  "rca of the issue": "n/a"
+}

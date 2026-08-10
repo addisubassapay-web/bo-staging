@@ -446,6 +446,49 @@ const SettingsMgr = () => {
               </p>
             </div>
           </div>
+
+          <div className="mt-5">
+            <Label>Never auto-refund these reasons</Label>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-2">
+              High-fraud reasons stay in the manual queue even when under the threshold.
+            </p>
+            <div className="flex flex-wrap gap-2" data-testid="dispute-reason-exclusions">
+              {[
+                { value: "not_as_described", label: "Not as described" },
+                { value: "damaged",          label: "Damaged" },
+                { value: "not_received",     label: "Not received" },
+                { value: "counterfeit",      label: "Counterfeit" },
+                { value: "other",            label: "Other" },
+              ].map((r) => {
+                const excluded = (settings.dispute_auto_refund_excluded_reasons || []).includes(r.value);
+                return (
+                  <button
+                    key={r.value}
+                    type="button"
+                    onClick={() => {
+                      const cur = new Set(settings.dispute_auto_refund_excluded_reasons || []);
+                      if (excluded) cur.delete(r.value); else cur.add(r.value);
+                      set("dispute_auto_refund_excluded_reasons", Array.from(cur));
+                    }}
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border transition ${
+                      excluded
+                        ? "bg-[#FF211F] text-white border-[#FF211F] shadow-sm"
+                        : "bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-200 border-neutral-200 dark:border-neutral-700 hover:border-[#FF7A18]"
+                    }`}
+                    data-testid={`exclusion-toggle-${r.value}`}
+                  >
+                    {excluded ? <XCircle className="h-3.5 w-3.5" /> : <CheckCircle2 className="h-3.5 w-3.5 opacity-40" />}
+                    {r.label}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-2">
+              {(settings.dispute_auto_refund_excluded_reasons || []).length === 0
+                ? "No exclusions — every eligible reason auto-refunds."
+                : `${(settings.dispute_auto_refund_excluded_reasons || []).length} reason(s) will always go to manual review.`}
+            </p>
+          </div>
         </section>
 
         <section className="bg-white border border-neutral-200 rounded-lg p-5">

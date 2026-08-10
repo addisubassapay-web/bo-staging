@@ -26,6 +26,11 @@ Exact replica of Mercari platform (mercari.com) — same color scheme (`#FF211F`
 
 ## Implemented (with dates)
 
+### Feb 2026 — Phase 15: Apify Verification + Dispute Reason Exclusions
+- **Apify Live Scraping Verified** — User's key `apify_api_SeSGRVh...` is wired via `APIFY_TOKEN` in `backend/.env`. Confirmed working end-to-end: SDK authenticates as user `coolish_fantail` (STARTER plan), `junglee/amazon-crawler` actor is actively running across 28 category URLs, target 5000 listings. Existing `POST /api/admin/sync/apify` and `GET /api/admin/sync/status` endpoints continue to serve real live data.
+- **Dispute Reason Exclusions** — New `Settings.dispute_auto_refund_excluded_reasons: List[str]` (defaults to `["counterfeit"]`). PUT sanitizes: must be a list; unknown reasons stripped; strings/other types 400. `create_dispute` auto-refund block now checks BOTH the amount threshold AND `reason not in excluded` — excluded reasons always land in the manual queue regardless of amount. Admin UI: pill-toggle chips (`exclusion-toggle-<reason>`) inside the Disputes automation section with live count-helper text.
+- **Tests**: 12/12 new backend pytest pass + 11/11 Phase 14 regression pass. Frontend flows verified by testing agent iteration_10. No P0/P1 issues.
+
 ### Feb 2026 — Phase 14: Auto-Refund Threshold + Branded PWA Icons
 - **Auto-Refund Rule** — New `Settings.dispute_auto_refund_threshold` field ($). Any dispute filed on an order at-or-under the threshold auto-resolves at creation: buyer wallet credited, seller debited, order set to `cancelled`, both parties notified with "Refund issued automatically" / "Dispute auto-refunded". Threshold = 0 disables the rule. `get_settings()` now merges defaults so newly added fields never return None. New "Disputes automation" section in `/admin/settings` with numeric input + dynamic helper text.
 - **Branded PWA Icons** — Generated 192×192, 512×512 PNG icons and a 32×32 favicon in `/app/frontend/public/`. Design mirrors the header logo: gradient #FF7A18 → #FF211F with a rounded-corner mask (maskable-safe), soft top-left highlight, and centered bold "M" mark with subtle drop shadow. Icons wired into `manifest.json` (`purpose: "any maskable"`) and `index.html` (`<link rel="icon">`, `apple-touch-icon` sizes). Regenerator script at `/app/scripts/generate_pwa_icons.py`.

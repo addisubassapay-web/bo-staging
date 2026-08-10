@@ -339,6 +339,7 @@ class Settings(BaseModel):
     semi_threshold: float = 100.0  # for semi-auto approvals under this amount
     referral_levels_enabled: bool = True
     dispute_auto_refund_threshold: float = 0.0  # auto-refund disputes below this amount ($). 0 disables.
+    dispute_auto_refund_excluded_reasons: List[str] = Field(default_factory=lambda: ["counterfeit"])
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
@@ -1330,8 +1331,17 @@ async def admin_update_settings(updates: dict, _admin: dict = Depends(require_ad
         "dropship_max_markup_pct", "min_withdrawal", "signup_bonus",
         "affiliate_mode", "store_mode", "withdrawal_mode", "listing_mode",
         "semi_threshold", "referral_levels_enabled", "dispute_auto_refund_threshold",
+        "dispute_auto_refund_excluded_reasons",
     }
     filtered = {k: v for k, v in updates.items() if k in allowed}
+    # Sanitize the exclusion list — only accept known dispute reasons
+    if "dispute_auto_refund_excluded_reasons" in filtered:
+        raw = filtered["dispute_auto_refund_excluded_reasons"]
+        if not isinstance(raw, list):
+            raise HTTPException(400, "dispute_auto_refund_excluded_reasons must be a list")
+        filtered["dispute_auto_refund_excluded_reasons"] = [
+            r for r in raw if r in DISPUTE_REASONS
+        ]
     filtered["updated_at"] = datetime.now(timezone.utc)
     await db.settings.update_one({"id": "global"}, {"$set": filtered}, upsert=True)
     return await get_settings()
@@ -2531,7 +2541,13 @@ async def create_dispute(payload: DisputeCreate, user: dict = Depends(get_curren
     # resolve immediately with a wallet refund so support only reviews high-value cases.
     settings = await get_settings()
     threshold = float(settings.get("dispute_auto_refund_threshold") or 0.0)
-    if threshold > 0 and dispute.amount > 0 and dispute.amount <= threshold:
+    excluded = set(settings.get("dispute_auto_refund_excluded_reasons") or [])
+    if (
+        threshold > 0
+        and dispute.amount > 0
+        and dispute.amount <= threshold
+        and dispute.reason not in excluded
+    ):
         now = datetime.now(timezone.utc)
         resolution_msg = f"Auto-refunded — orders at or under ${threshold:.2f} are refunded instantly."
         # Credit buyer, debit seller
