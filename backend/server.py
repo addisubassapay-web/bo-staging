@@ -357,6 +357,43 @@ class MessageCreate(BaseModel):
 
 
 # =========================
+# Phase 12: Disputes & Returns
+# =========================
+DISPUTE_REASONS = ("not_as_described", "damaged", "not_received", "counterfeit", "other")
+DISPUTE_STATUSES = ("open", "reviewing", "refunded", "rejected")
+
+class Dispute(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    order_id: str
+    buyer_id: str
+    buyer_name: str
+    seller_id: str
+    listing_id: str
+    listing_title: str
+    listing_image: Optional[str] = None
+    amount: float
+    reason: Literal["not_as_described", "damaged", "not_received", "counterfeit", "other"]
+    description: str
+    photos: List[str] = []  # list of /api/files/<id> URLs
+    status: Literal["open", "reviewing", "refunded", "rejected"] = "open"
+    admin_notes: str = ""
+    resolution: Optional[str] = None  # short resolution summary shown to buyer
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    resolved_at: Optional[datetime] = None
+
+class DisputeCreate(BaseModel):
+    order_id: str
+    reason: Literal["not_as_described", "damaged", "not_received", "counterfeit", "other"]
+    description: str
+    photos: List[str] = []
+
+class DisputeResolveIn(BaseModel):
+    action: Literal["refund", "reject", "review"]
+    admin_notes: Optional[str] = ""
+    resolution: Optional[str] = ""
+
+
+# =========================
 # Phase 2: Reviews & Notifications
 # =========================
 class Review(BaseModel):
@@ -376,10 +413,13 @@ class ReviewCreate(BaseModel):
     rating: int
     comment: Optional[str] = ""
 
+NOTIFICATION_TYPES = ("order", "sale", "message", "review", "payout", "system", "dispute", "shipping", "wallet", "verification")
+
+
 class Notification(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     user_id: str
-    type: Literal["order", "sale", "message", "review", "payout", "system"] = "system"
+    type: str = "system"
     title: str
     body: str = ""
     link: Optional[str] = None
@@ -2425,6 +2465,152 @@ async def shipping_progress_loop():
         except Exception as e:
             logger.warning(f"shipping_progress_loop error: {e}")
         await asyncio.sleep(30)
+
+
+# =========================
+# Phase 12: Disputes & Returns
+# =========================
+async def _get_order_or_404(order_id: str) -> dict:
+    order = await db.orders.find_one({"id": order_id}, {"_id": 0})
+    if not order:
+        raise HTTPException(404, "Order not found")
+    return order
+
+
+@api_router.post("/disputes", response_model=Dispute)
+async def create_dispute(payload: DisputeCreate, user: dict = Depends(get_current_user)):
+    """Buyer opens a dispute on one of their orders. Delivered/paid/shipped orders eligible."""
+    order = await _get_order_or_404(payload.order_id)
+    if order["buyer_id"] != user["id"]:
+        raise HTTPException(403, "Only the buyer can open a dispute for this order")
+    if order.get("status") not in ("paid", "shipped", "delivered"):
+        raise HTTPException(400, "This order is not eligible for a dispute")
+    existing = await db.disputes.find_one(
+        {"order_id": payload.order_id, "status": {"$in": ["open", "reviewing"]}}, {"_id": 0}
+    )
+    if existing:
+        raise HTTPException(400, "An open dispute already exists for this order")
+    if not (payload.description or "").strip():
+        raise HTTPException(400, "Please describe what went wrong")
+
+    dispute = Dispute(
+        order_id=order["id"],
+        buyer_id=user["id"],
+        buyer_name=user["username"],
+        seller_id=order["seller_id"],
+        listing_id=order["listing_id"],
+        listing_title=order["listing_title"],
+        listing_image=order.get("listing_image"),
+        amount=float(order.get("amount", 0)),
+        reason=payload.reason,
+        description=payload.description.strip(),
+        photos=[p for p in (payload.photos or []) if isinstance(p, str)][:8],
+    )
+    doc = dispute.model_dump()
+    await db.disputes.insert_one(doc)
+    await notify(
+        order["seller_id"], "dispute",
+        f"Buyer opened a dispute on '{order['listing_title']}'",
+        payload.description[:120],
+        f"/profile?tab=disputes",
+    )
+    return dispute
+
+
+@api_router.get("/disputes/mine", response_model=List[Dispute])
+async def my_disputes(user: dict = Depends(get_current_user)):
+    """Return disputes where the current user is either buyer or seller."""
+    docs = await db.disputes.find(
+        {"$or": [{"buyer_id": user["id"]}, {"seller_id": user["id"]}]}, {"_id": 0}
+    ).sort("created_at", -1).to_list(200)
+    return [Dispute(**d) for d in docs]
+
+
+@api_router.get("/disputes/{dispute_id}", response_model=Dispute)
+async def get_dispute(dispute_id: str, user: dict = Depends(get_current_user)):
+    d = await db.disputes.find_one({"id": dispute_id}, {"_id": 0})
+    if not d:
+        raise HTTPException(404, "Dispute not found")
+    if user.get("role") != "admin" and user["id"] not in (d["buyer_id"], d["seller_id"]):
+        raise HTTPException(403, "Not allowed")
+    return Dispute(**d)
+
+
+@api_router.get("/admin/disputes", response_model=List[Dispute])
+async def admin_list_disputes(
+    status_filter: Optional[str] = Query(None, alias="status"),
+    _admin: dict = Depends(require_admin),
+):
+    q: dict = {}
+    if status_filter and status_filter in DISPUTE_STATUSES:
+        q["status"] = status_filter
+    docs = await db.disputes.find(q, {"_id": 0}).sort("created_at", -1).to_list(500)
+    return [Dispute(**d) for d in docs]
+
+
+@api_router.post("/admin/disputes/{dispute_id}/resolve", response_model=Dispute)
+async def admin_resolve_dispute(
+    dispute_id: str, payload: DisputeResolveIn, _admin: dict = Depends(require_admin),
+):
+    d = await db.disputes.find_one({"id": dispute_id}, {"_id": 0})
+    if not d:
+        raise HTTPException(404, "Dispute not found")
+    if d["status"] in ("refunded", "rejected"):
+        raise HTTPException(400, f"Dispute already {d['status']}")
+
+    now = datetime.now(timezone.utc)
+    updates: dict = {
+        "admin_notes": (payload.admin_notes or d.get("admin_notes", "")).strip(),
+    }
+    if payload.resolution is not None:
+        updates["resolution"] = payload.resolution.strip()
+
+    if payload.action == "review":
+        updates["status"] = "reviewing"
+    elif payload.action == "reject":
+        updates["status"] = "rejected"
+        updates["resolved_at"] = now
+        await notify(
+            d["buyer_id"], "dispute",
+            "Your dispute was reviewed",
+            (updates.get("resolution") or "Our team sided with the seller after review.")[:200],
+            f"/profile?tab=disputes",
+        )
+    elif payload.action == "refund":
+        updates["status"] = "refunded"
+        updates["resolved_at"] = now
+        # Refund: credit the buyer wallet, debit the seller earnings for that order
+        amount = float(d.get("amount", 0))
+        if amount > 0:
+            await credit_wallet(
+                d["buyer_id"], amount, "adjustment",
+                f"Refund for dispute #{dispute_id[:8]}", dispute_id,
+            )
+            # Best-effort debit of seller wallet (uses seller_earnings if we have it)
+            order = await db.orders.find_one({"id": d["order_id"]}, {"_id": 0})
+            seller_debit = float(order["seller_earnings"]) if (order and order.get("seller_earnings") is not None) else amount
+            await credit_wallet(
+                d["seller_id"], -seller_debit, "adjustment",
+                f"Chargeback for dispute #{dispute_id[:8]}", dispute_id,
+            )
+        # Mark order as cancelled
+        await db.orders.update_one({"id": d["order_id"]}, {"$set": {"status": "cancelled"}})
+        await notify(
+            d["buyer_id"], "dispute",
+            "Refund issued",
+            (updates.get("resolution") or f"We refunded ${amount:.2f} to your wallet.")[:200],
+            f"/wallet",
+        )
+        await notify(
+            d["seller_id"], "dispute",
+            "Dispute resolved with refund",
+            "The buyer was refunded and the sale was cancelled.",
+            f"/profile?tab=disputes",
+        )
+
+    await db.disputes.update_one({"id": dispute_id}, {"$set": updates})
+    fresh = await db.disputes.find_one({"id": dispute_id}, {"_id": 0})
+    return Dispute(**fresh)
 
 
 # =========================

@@ -10,7 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { LayoutDashboard, Users, Package, ShoppingBag, FolderTree, Trash2, Star, Plus, Settings as SettingsIcon, Wallet, Store as StoreIcon, Save, Check, X as XIcon, Database, IdCard, LayoutGrid, GripVertical } from "lucide-react";
+import { LayoutDashboard, Users, Package, ShoppingBag, FolderTree, Trash2, Star, Plus, Settings as SettingsIcon, Wallet, Store as StoreIcon, Save, Check, X as XIcon, Database, IdCard, LayoutGrid, GripVertical, AlertCircle, ShieldAlert, CheckCircle2, XCircle, Clock } from "lucide-react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import AdminShelves from "@/pages/AdminShelves";
 import ApifySync from "@/pages/AdminApifySync";
@@ -714,6 +714,191 @@ const SellerApplicationsMgr = () => {
   );
 };
 
+const DISPUTE_REASON_LABEL = {
+  not_as_described: "Not as described",
+  damaged: "Damaged",
+  not_received: "Not received",
+  counterfeit: "Counterfeit",
+  other: "Other",
+};
+
+const DISPUTE_STATUS_BADGE = {
+  open:      { label: "Open",      Icon: Clock,        cls: "bg-amber-100 text-amber-800 border-amber-200" },
+  reviewing: { label: "Reviewing", Icon: ShieldAlert,  cls: "bg-sky-100 text-sky-800 border-sky-200" },
+  refunded:  { label: "Refunded",  Icon: CheckCircle2, cls: "bg-emerald-100 text-emerald-800 border-emerald-200" },
+  rejected:  { label: "Rejected",  Icon: XCircle,      cls: "bg-rose-100 text-rose-800 border-rose-200" },
+};
+
+const DisputesMgr = () => {
+  const [disputes, setDisputes] = useState([]);
+  const [filter, setFilter] = useState("open");
+  const [notesById, setNotesById] = useState({});
+  const [resolutionById, setResolutionById] = useState({});
+  const [busyId, setBusyId] = useState(null);
+  const { toast } = useToast();
+
+  const load = () => {
+    const params = filter === "all" ? {} : { status: filter };
+    api.get("/admin/disputes", { params }).then((r) => setDisputes(r.data)).catch(() => {});
+  };
+  useEffect(() => { load(); /* eslint-disable-next-line */ }, [filter]);
+
+  const resolve = async (d, action) => {
+    setBusyId(d.id);
+    try {
+      const payload = {
+        action,
+        admin_notes: notesById[d.id] ?? d.admin_notes ?? "",
+        resolution: resolutionById[d.id] ?? d.resolution ?? "",
+      };
+      await api.post(`/admin/disputes/${d.id}/resolve`, payload);
+      toast({
+        title: action === "refund" ? "Refund issued" : action === "reject" ? "Dispute rejected" : "Marked as reviewing",
+      });
+      load();
+    } catch (e) {
+      toast({ title: "Action failed", description: e?.response?.data?.detail || "Try again.", variant: "destructive" });
+    } finally { setBusyId(null); }
+  };
+
+  return (
+    <div data-testid="admin-disputes">
+      <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
+        <div>
+          <h2 className="text-2xl font-bold flex items-center gap-2">
+            <AlertCircle className="h-5 w-5 text-[#FF211F]" /> Disputes
+          </h2>
+          <p className="text-sm text-neutral-500">Review buyer disputes. Refund credits the buyer wallet and cancels the order.</p>
+        </div>
+        <Select value={filter} onValueChange={setFilter}>
+          <SelectTrigger className="w-40" data-testid="dispute-filter"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All</SelectItem>
+            <SelectItem value="open">Open</SelectItem>
+            <SelectItem value="reviewing">Reviewing</SelectItem>
+            <SelectItem value="refunded">Refunded</SelectItem>
+            <SelectItem value="rejected">Rejected</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {disputes.length === 0 ? (
+        <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg p-10 text-center text-neutral-500 dark:text-neutral-400" data-testid="admin-disputes-empty">
+          No disputes in this bucket.
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {disputes.map((d) => {
+            const meta = DISPUTE_STATUS_BADGE[d.status] || DISPUTE_STATUS_BADGE.open;
+            const Icon = meta.Icon;
+            const closed = ["refunded", "rejected"].includes(d.status);
+            return (
+              <div
+                key={d.id}
+                className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-4"
+                data-testid={`admin-dispute-${d.id}`}
+              >
+                <div className="flex flex-wrap items-start gap-4">
+                  <img
+                    src={d.listing_image} alt=""
+                    className="h-16 w-16 rounded-lg object-cover bg-neutral-100 dark:bg-neutral-800"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full border ${meta.cls}`}>
+                        <Icon className="h-3 w-3" /> {meta.label}
+                      </span>
+                      <Badge variant="outline" className="text-xs">{DISPUTE_REASON_LABEL[d.reason] || d.reason}</Badge>
+                      <span className="text-xs text-neutral-500 dark:text-neutral-400">
+                        {new Date(d.created_at).toLocaleDateString()} · #{d.id.slice(0, 6)}
+                      </span>
+                    </div>
+                    <div className="mt-1 font-semibold text-neutral-900 dark:text-neutral-100 line-clamp-1">{d.listing_title}</div>
+                    <div className="text-xs text-neutral-500 dark:text-neutral-400">
+                      Buyer <span className="font-medium">{d.buyer_name}</span> · Order #{d.order_id.slice(0, 6)} · {formatPrice(d.amount)}
+                    </div>
+                  </div>
+                </div>
+                <p className="mt-3 text-sm text-neutral-700 dark:text-neutral-300 whitespace-pre-wrap">{d.description}</p>
+
+                {d.photos?.length > 0 && (
+                  <div className="mt-3 grid grid-cols-6 gap-2">
+                    {d.photos.map((url, i) => (
+                      <a
+                        key={i}
+                        href={url.startsWith("http") ? url : `${process.env.REACT_APP_BACKEND_URL}${url}?auth=${localStorage.getItem("mercari_token") || ""}`}
+                        target="_blank" rel="noreferrer"
+                        className="block aspect-square rounded-lg overflow-hidden bg-neutral-100 hover:ring-2 hover:ring-[#FF7A18]"
+                        data-testid={`admin-dispute-photo-${d.id}-${i}`}
+                      >
+                        <img
+                          src={url.startsWith("http") ? url : `${process.env.REACT_APP_BACKEND_URL}${url}?auth=${localStorage.getItem("mercari_token") || ""}`}
+                          alt="evidence" className="h-full w-full object-cover"
+                        />
+                      </a>
+                    ))}
+                  </div>
+                )}
+
+                {!closed ? (
+                  <div className="mt-4 grid md:grid-cols-2 gap-3">
+                    <Input
+                      placeholder="Buyer-facing resolution (optional)"
+                      value={resolutionById[d.id] ?? d.resolution ?? ""}
+                      onChange={(e) => setResolutionById({ ...resolutionById, [d.id]: e.target.value })}
+                      data-testid={`dispute-resolution-${d.id}`}
+                    />
+                    <Input
+                      placeholder="Internal notes (optional)"
+                      value={notesById[d.id] ?? d.admin_notes ?? ""}
+                      onChange={(e) => setNotesById({ ...notesById, [d.id]: e.target.value })}
+                      data-testid={`dispute-notes-${d.id}`}
+                    />
+                    <div className="md:col-span-2 flex flex-wrap gap-2">
+                      <Button
+                        size="sm" onClick={() => resolve(d, "refund")}
+                        className="bg-emerald-600 hover:bg-emerald-700"
+                        disabled={busyId === d.id}
+                        data-testid={`dispute-refund-${d.id}`}
+                      >
+                        <CheckCircle2 className="h-4 w-4 mr-1" /> Refund buyer
+                      </Button>
+                      <Button
+                        size="sm" variant="outline"
+                        onClick={() => resolve(d, "reject")}
+                        disabled={busyId === d.id}
+                        data-testid={`dispute-reject-${d.id}`}
+                      >
+                        <XCircle className="h-4 w-4 mr-1" /> Side with seller
+                      </Button>
+                      {d.status === "open" && (
+                        <Button
+                          size="sm" variant="outline"
+                          onClick={() => resolve(d, "review")}
+                          disabled={busyId === d.id}
+                          data-testid={`dispute-review-${d.id}`}
+                        >
+                          <ShieldAlert className="h-4 w-4 mr-1" /> Mark reviewing
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mt-3 text-xs text-neutral-500 border-t border-neutral-100 pt-2 space-y-1">
+                    {d.resolution && <div><span className="font-medium">Resolution:</span> {d.resolution}</div>}
+                    {d.admin_notes && <div><span className="font-medium">Notes:</span> {d.admin_notes}</div>}
+                    {d.resolved_at && <div>Closed on {new Date(d.resolved_at).toLocaleDateString()}</div>}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const Admin = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
@@ -737,6 +922,7 @@ const Admin = () => {
         <SidebarLink to="/admin/orders" icon={ShoppingBag}>Orders</SidebarLink>
         <SidebarLink to="/admin/categories" icon={FolderTree}>Categories</SidebarLink>
         <SidebarLink to="/admin/withdrawals" icon={Wallet}>Withdrawals</SidebarLink>
+        <SidebarLink to="/admin/disputes" icon={AlertCircle}>Disputes</SidebarLink>
         <SidebarLink to="/admin/seller-applications" icon={IdCard}>Seller applications</SidebarLink>
         <SidebarLink to="/admin/shelves" icon={LayoutGrid}>Homepage shelves</SidebarLink>
         <SidebarLink to="/admin/apify-sync" icon={Database}>Apify sync</SidebarLink>
@@ -751,6 +937,7 @@ const Admin = () => {
           <Route path="orders" element={<OrdersMgr />} />
           <Route path="categories" element={<CategoriesMgr />} />
           <Route path="withdrawals" element={<WithdrawalsMgr />} />
+          <Route path="disputes" element={<DisputesMgr />} />
           <Route path="seller-applications" element={<SellerApplicationsMgr />} />
           <Route path="shelves" element={<AdminShelves />} />
           <Route path="apify-sync" element={<ApifySync />} />

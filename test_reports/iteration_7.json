@@ -1,0 +1,41 @@
+{
+  "summary": "Phase 12 (Disputes Center + Featured Storefronts strip + Light/Dark theme toggle) validated end-to-end. Backend: 18/18 pytest cases pass (create/permissions/list/filter/review/refund with wallet delta/reject/duplicate/cannot-resolve-twice + featured-stores regression). Frontend: theme toggle cycles Sun/Moon, sets 'dark' class on <html>, persists to localStorage 'mercari-theme', survives reload; Featured Storefronts strip renders 2 cards on Home; /disputes page opens for buyer, dialog submit creates a card visible in Filed-by-me tab; /admin/disputes shows all disputes with filter dropdown; clicking Refund credits the buyer's wallet by the exact order amount ($9.99 → verified via GET /api/wallet). One CRITICAL backend bug was found and fixed during testing: Notification.type was a Literal that did not include 'dispute', causing every dispute create/resolve to raise 500 via the notify() call.",
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "POST /api/disputes, POST /api/admin/disputes/{id}/resolve", "issue": "Notification model's type Literal excluded 'dispute'; notify(...) inside dispute create/resolve raised pydantic ValidationError => HTTP 500 for every dispute action. FIXED in server.py line 419: added 'dispute' to the Literal.", "priority": "CRITICAL"}
+    ],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_phase12_disputes_featured.py",
+    "/app/test_reports/pytest/phase12_results.xml"
+  ],
+  "action_items": [
+    "The 'dispute' Literal fix is committed to server.py — nothing else pending. Main agent may want to widen Notification.type to a plain str (or add 'shipping', 'wallet' etc.) so the next feature phase doesn't hit the same 500. Consider a lint / test that hits every notify() code path."
+  ],
+  "critical_code_review_comments": [
+    "server.py line 419 (Notification.type Literal) is a foot-gun — any new notify(type=...) call must remember to extend the Literal. Recommend using a broader `str` field with validation via an enum constant list, or a helper wrapper that validates and warns.",
+    "server.py line 2588 refund debit: `float(order.get('seller_earnings') or amount)` treats a genuine 0.0 seller_earnings as falsy and falls back to full amount — could double-debit legitimate zero-earning sellers. Prefer `order['seller_earnings'] if 'seller_earnings' in order else amount`.",
+    "Disputes.jsx (line 159, 228, 234) and Admin.jsx (line 829, 835) append `?auth=<token>` to every image src. /api/files/<id> should ideally either be tokenless CDN URLs or use Authorization headers. Embedding tokens in <img src> leaks them into browser history / referrer / server access logs. Consider signed URLs or an <img> proxy.",
+    "server.py is now 2863 lines — split into per-domain routers still pending (flagged in iterations 5 and 6).",
+    "Dispute open list uses `open, reviewing` for the 'already-open' check but GET /disputes returns unlimited history — no pagination. Add limit/skip params.",
+    "Admin.jsx DisputesMgr uses generic bg-white / border-neutral-200 classes without dark: variants — the /admin/disputes page will look off if a dark-mode admin visits it (Header + shell go dark but the card panels stay light). Non-blocking cosmetic gap.",
+    "Header ThemeToggle is wrapped in `hidden md:flex nav` — mobile users cannot toggle theme. Consider adding it to the mobile menu."
+  ],
+  "updated_files": [
+    "/app/backend/server.py (Notification.type Literal extended with 'dispute')",
+    "/app/backend/tests/test_phase12_disputes_featured.py (new — 18 tests)"
+  ],
+  "success_rate": {"backend": "100% (18/18)", "frontend": "100% (theme, featured stores, disputes buyer create, admin refund with wallet delta all verified)"},
+  "test_credentials": "admin@mercari.local / admin123 (admin), fresh buyers registered per test with pattern e2e_buyer_<ts>@example.com / pass1234. Demo seller sophia_style@demo.local / demo1234 used to seed a listing if no active listings existed.",
+  "seed_data_creation": "Created a handful of TEST_disputable_* listings (via sophia_style) and 5+ TEST_ orders + disputes for buyer e2e_buyer_* users. Some disputes were resolved (refunded/rejected). This leaves cancelled orders and refunded/rejected disputes in the DB — not disruptive to future tests but noticeable in the admin queue.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Phase 12 is fully working after the Notification.type Literal fix. Regression tests: /app/backend/tests/test_phase{1..5,11,12}_*.py. To exercise buyer→dispute→refund E2E, use the pattern in test_phase12_disputes_featured.py: register a fresh buyer, POST /api/orders on any active listing not owned by them, POST /api/disputes, then as admin POST /api/admin/disputes/{id}/resolve with action='refund' and compare GET /api/wallet before/after (expect +order.amount). Theme testing: on desktop viewport, [data-testid='theme-toggle'] is the sole selector; on mobile it is currently hidden — flagged.",
+  "rca of the issue": "RCA: When Phase 12 introduced Dispute endpoints, the developer called `notify(user_id, 'dispute', ...)` in both create_dispute and admin_resolve_dispute, but the pre-existing Notification pydantic model (line 416-419 of server.py) restricted `type` to Literal['order','sale','message','review','payout','system']. Pydantic raised ValidationError inside notify(), which bubbled up as HTTP 500 to the caller — the client saw only 'Internal Server Error' with no hint. Reproduction: POST /api/disputes as a buyer on any eligible order → 500. Backend logs show 'Input should be order|sale|... input_value=dispute'. Mitigation applied: added 'dispute' to the Literal. Longer-term: replace the Literal with a str field validated by a NOTIFICATION_TYPES tuple, or centralize the allowed types so any new type is added in exactly one place."
+}

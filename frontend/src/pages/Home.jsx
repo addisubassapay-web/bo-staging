@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   ArrowRight, ShieldCheck, Truck, Headphones, RotateCcw, Flame, Zap,
-  CheckCircle2, Lock, Globe, Heart, Sparkles,
+  CheckCircle2, Lock, Globe, Heart, Sparkles, Store as StoreIcon, BadgeCheck,
 } from "lucide-react";
 
 const money = (n) => `$${Number(n).toFixed(2)}`;
@@ -240,6 +240,80 @@ const FeatureCards = () => (
   </section>
 );
 
+// -------------------- FEATURED STORES STRIP --------------------
+const TIER_META = {
+  gold:   { label: "Gold Verified",   ring: "ring-amber-300",   pill: "bg-amber-100 text-amber-800 border-amber-200" },
+  silver: { label: "Silver Verified", ring: "ring-slate-300",   pill: "bg-slate-100 text-slate-700 border-slate-200" },
+  bronze: { label: "Bronze Verified", ring: "ring-orange-300",  pill: "bg-orange-100 text-orange-800 border-orange-200" },
+  none:   { label: "New store",       ring: "ring-neutral-200", pill: "bg-neutral-100 text-neutral-600 border-neutral-200" },
+};
+
+const FeaturedStoresStrip = ({ stores }) => {
+  if (!stores || stores.length === 0) return null;
+  return (
+    <section className="max-w-7xl mx-auto px-4 mt-14" data-testid="featured-stores-section">
+      <div className="flex items-end justify-between mb-4 gap-4">
+        <div>
+          <h2 className="text-2xl sm:text-3xl font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+            <StoreIcon className="h-6 w-6 text-[#FF7A18]" /> Featured Storefronts
+          </h2>
+          <p className="text-sm text-neutral-500 dark:text-neutral-400">Handpicked sellers you&apos;ll love</p>
+        </div>
+        <Link to="/search" className="text-sm text-[#FF7A18] font-medium hover:underline flex items-center gap-1 whitespace-nowrap">
+          Discover more <ArrowRight className="h-3 w-3" />
+        </Link>
+      </div>
+      <div className="flex gap-4 overflow-x-auto pb-2 -mx-4 px-4 snap-x snap-mandatory scrollbar-hide" data-testid="featured-stores-strip">
+        {stores.map((s) => {
+          const tier = TIER_META[s.verified_tier] || TIER_META.none;
+          return (
+            <Link
+              key={s.id}
+              to={`/store/${s.slug}`}
+              className="snap-start shrink-0 w-64 group"
+              data-testid={`featured-store-${s.slug}`}
+            >
+              <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 overflow-hidden hover:shadow-lg hover:border-[#FF7A18] transition h-full">
+                <div className="h-24 bg-gradient-to-br from-[#FF7A18] via-[#FF5B22] to-[#FF211F] relative">
+                  {s.banner && (
+                    <img src={s.banner} alt="" className="absolute inset-0 h-full w-full object-cover opacity-70" />
+                  )}
+                </div>
+                <div className="p-4 -mt-8">
+                  <div className={`h-14 w-14 rounded-full bg-white dark:bg-neutral-900 ring-4 ${tier.ring} grid place-items-center overflow-hidden shadow`}>
+                    {s.logo ? (
+                      <img src={s.logo} alt={s.name} className="h-full w-full object-cover" />
+                    ) : (
+                      <StoreIcon className="h-6 w-6 text-neutral-500" />
+                    )}
+                  </div>
+                  <div className="mt-3 flex items-center gap-1.5">
+                    <div className="font-bold text-neutral-900 dark:text-neutral-100 truncate group-hover:text-[#FF211F] transition">
+                      {s.name}
+                    </div>
+                    {s.verified_tier !== "none" && <BadgeCheck className="h-4 w-4 text-[#FF7A18] shrink-0" />}
+                  </div>
+                  <div className="text-xs text-neutral-500 dark:text-neutral-400 line-clamp-1">
+                    {s.tagline || `/${s.slug}`}
+                  </div>
+                  <div className="mt-3 flex items-center justify-between text-[11px]">
+                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border ${tier.pill}`}>
+                      {tier.label}
+                    </span>
+                    <span className="text-neutral-500 dark:text-neutral-400 tabular-nums">
+                      {s.total_sales} sales
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </Link>
+          );
+        })}
+      </div>
+    </section>
+  );
+};
+
 // -------------------- MAIN PAGE --------------------
 const Home = () => {
   const [flash, setFlash] = useState([]);
@@ -248,6 +322,7 @@ const Home = () => {
   const [forYou, setForYou] = useState([]);
   const [recentlyViewed, setRecentlyViewed] = useState([]);
   const [shelves, setShelves] = useState([]);
+  const [featuredStores, setFeaturedStores] = useState([]);
   const [favIds, setFavIds] = useState(new Set());
 
   useEffect(() => {
@@ -255,6 +330,7 @@ const Home = () => {
     api.get("/listings", { params: { sort: "newest", limit: 12 } }).then((r) => setRecent(r.data)).catch(() => {});
     api.get("/listings", { params: { sort: "trending", limit: 12 } }).then((r) => setTrending(r.data)).catch(() => {});
     api.get("/shelves").then((r) => setShelves(r.data)).catch(() => {});
+    api.get("/stores-featured", { params: { limit: 12 } }).then((r) => setFeaturedStores(r.data)).catch(() => {});
     const token = localStorage.getItem("mercari_token");
     if (token) {
       api.get("/favorites").then((r) => setFavIds(new Set(r.data.map((l) => l.id)))).catch(() => {});
@@ -277,7 +353,7 @@ const Home = () => {
   const flashItems = useMemo(() => (flash.length ? flash : recent).slice(0, 10), [flash, recent]);
 
   return (
-    <div className="bg-white">
+    <div className="bg-white dark:bg-neutral-950">
       <HeroCarousel />
 
       {/* Recently Viewed (only for logged-in users with history) */}
@@ -328,6 +404,8 @@ const Home = () => {
       )}
 
       <TrustStrip />
+
+      <FeaturedStoresStrip stores={featuredStores} />
 
       {/* Category Shelves */}
       {shelves.length > 0 && (
