@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { ShieldCheck, CircleAlert } from "lucide-react";
+import { ShieldCheck, CircleAlert, Upload as UploadIcon, FileText, X as XIcon } from "lucide-react";
 
 const initialForm = {
   legal_name: "",
@@ -25,6 +25,7 @@ const initialForm = {
   phone: "",
   payout_method: "stripe_connect",
   id_document_note: "",
+  id_document_file_id: null,
 };
 
 const SellerApply = () => {
@@ -34,6 +35,29 @@ const SellerApply = () => {
   const [form, setForm] = useState(initialForm);
   const [existing, setExisting] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [idFile, setIdFile] = useState(null); // {id, url, size, content_type, filename}
+  const [uploading, setUploading] = useState(false);
+
+  const uploadIdDoc = async (file) => {
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const { data } = await api.post("/upload", fd, { headers: { "Content-Type": "multipart/form-data" } });
+      setIdFile({ ...data, filename: file.name });
+      setForm((f) => ({ ...f, id_document_file_id: data.id }));
+      toast({ title: "ID document uploaded", description: file.name });
+    } catch (err) {
+      toast({ title: "Upload failed", description: err.response?.data?.detail || "Try a smaller file", variant: "destructive" });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const removeIdDoc = () => {
+    setIdFile(null);
+    setForm((f) => ({ ...f, id_document_file_id: null }));
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -204,8 +228,39 @@ const SellerApply = () => {
             </Select>
           </div>
           <div>
-            <Label>ID document note (placeholder)</Label>
-            <Textarea value={form.id_document_note} onChange={set("id_document_note")} placeholder="Describe your government-issued ID (upload UI coming soon)" data-testid="apply-id-note" className="mt-1" rows={3} />
+            <Label>Government-issued ID</Label>
+            <p className="text-xs text-neutral-500 mt-0.5">Passport, driver&apos;s license, or national ID. Only the admin and you can view this. PDF/JPG/PNG, max 12MB.</p>
+            {!idFile ? (
+              <label className="mt-2 flex items-center gap-3 border border-dashed border-neutral-300 hover:border-[#FF211F] hover:bg-[#FFF3F2] rounded-lg p-4 cursor-pointer transition" data-testid="id-doc-upload">
+                <UploadIcon className="h-5 w-5 text-neutral-500" />
+                <div>
+                  <div className="text-sm font-medium">{uploading ? "Uploading…" : "Click to upload"}</div>
+                  <div className="text-xs text-neutral-500">PDF, JPG, PNG</div>
+                </div>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,application/pdf"
+                  className="hidden"
+                  onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadIdDoc(f); }}
+                  disabled={uploading}
+                />
+              </label>
+            ) : (
+              <div className="mt-2 flex items-center gap-3 border border-emerald-200 bg-emerald-50 rounded-lg p-3" data-testid="id-doc-uploaded">
+                <FileText className="h-5 w-5 text-emerald-700" />
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium truncate">{idFile.filename}</div>
+                  <div className="text-xs text-neutral-500">{Math.round(idFile.size / 1024)} KB · Encrypted storage</div>
+                </div>
+                <Button type="button" variant="ghost" size="sm" onClick={removeIdDoc} data-testid="id-doc-remove">
+                  <XIcon className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+          </div>
+          <div>
+            <Label>Additional notes (optional)</Label>
+            <Textarea value={form.id_document_note} onChange={set("id_document_note")} placeholder="Anything else our reviewers should know" data-testid="apply-id-note" className="mt-1" rows={2} />
           </div>
           <Button type="submit" disabled={submitting || !allReady} className="bg-[#FF211F] hover:bg-[#e01d1b] h-11 w-full" data-testid="apply-submit-btn">
             {submitting ? "Submitting…" : "Submit application"}

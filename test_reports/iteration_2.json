@@ -1,0 +1,41 @@
+{
+  "summary": "Phase 2 backend tests: all 32/32 pytest cases pass. Covered: (1) GET /api/users/{id}/public snapshot (fields present, no auth required, 404 on unknown); (2) POST /api/upload real Emergent object-storage upload (image success, .svg rejected 400, >12MB rejected 400, no-auth 401); (3) GET /api/files/{id} download via ?auth= query and Authorization Bearer, admin bypass, 401 no-auth, 403 unrelated user, 404 unknown; (4) POST /api/ai/listing-suggest with image_base64 AND image_url — verifies GPT-5.4 vision returns all required keys (title/description/category_slug/category_id/category_name/condition/brand/color/size/suggested_price_usd), category_slug coerced against DB slugs, category_id populated, 400 when neither field provided; (5) shipping labels — seller creates MOCK... tracking, idempotent 2nd call, non-seller 403, tracking has_label:false before label, events timeline w/ label_created first + current_status = last event, dev_mock:true, buyer can view, unrelated user 403; (6) seller/apply with id_document_file_id — upload → verify email/phone → apply → application persists file id and is returned by GET /api/seller/application; (7) regression: login, listings, categories, cart, favorites, orders, admin/stats (pending_seller_apps), chat/threads, auth/me. Real 400x400 JPEG (picsum) used for AI + upload tests per image_testing.md.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/seller/apply", "issue": "payout_method literal is 'stripe_connect' or 'bank_transfer', but the frontend/UI likely sends 'bank' or 'stripe' — worth double-checking the SellerApply.jsx form maps to the exact literals to avoid 500s on submit. (Backend correctly returns Pydantic 500 today; ideally a 422.)"},
+      {"endpoint": "GET /api/verify/status", "issue": "Referenced in some contexts but no such route exists — /api/auth/me currently carries verification flags. Confirm the frontend doesn't call /api/verify/status."}
+    ]
+  },
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_phase2_verify_upload_ai_shipping.py",
+    "/app/test_reports/pytest/phase2_results.xml"
+  ],
+  "action_items": [
+    "Verify SellerApply.jsx sends payout_method values that match backend Literal: 'stripe_connect' | 'bank_transfer'. Pydantic ValidationError currently surfaces as 500 (should be 422 for user input).",
+    "Notification on seller-approval still deep-links to /verify (carried over from Phase 1) — link to /profile or /seller once approved.",
+    "server.py is now 2307 lines — split into routers/modules (auth, listings, seller, verify, stripe, admin, storage, ai, shipping)."
+  ],
+  "critical_code_review_comments": [
+    "server.py grew to 2307 lines; exceeds the 700-line guideline. Split into modular routers to keep maintainable.",
+    "seller_apply raises Pydantic ValidationError as 500 instead of returning 422 — wrap payout_method conversion or let FastAPI's request-body validation catch this by validating payout_method inside SellerApplicationCreate rather than at SellerApplication instantiation.",
+    "/api/files/{file_id} uses `?auth=<token>` query parameter — tokens in query strings get logged in access logs/proxies. Prefer Authorization header or short-lived signed URLs; if the query fallback must stay for <img src=> usage, add a note and consider expiring signed tokens.",
+    "Storage helpers put_object/get_object are synchronous _requests calls inside async endpoints — will block the FastAPI event loop under load. Wrap in asyncio.to_thread() or use httpx.AsyncClient.",
+    "_extract_json regex uses greedy `\\{.*\\}` — good for GPT outputs today but will silently accept partial responses. Fine for mock/dev; harden later.",
+    "shipping tracking timeline is derived purely from order.created_at — no persisted events, so real integrations won't drop in cleanly. Consider persisting an events array on the order.",
+    "get_public_user returns 'email_verified' etc but not the literal 'email' — matches spec (safe), just documenting intentional omission for reviewers.",
+    "Upload accepts up to 12MB and reads the entire body into memory before size check — an attacker can still tie up worker memory pre-check. Enforce Content-Length pre-check or stream with a rolling byte cap.",
+    "AI endpoint blocks per-request on LlmChat.send_message with no rate limiting — add per-user throttling before production."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_phase2_verify_upload_ai_shipping.py (new)"
+  ],
+  "success_rate": {"backend": "100% (32/32)", "frontend": "not tested (backend-only iteration)"},
+  "test_credentials": "Admin admin@mercari.local/admin123. Tests register ephemeral users e2e_alt_*, e2e_buyer_*, e2e_other_*, e2e_sellerdoc_* per run.",
+  "seed_data_creation": "Each run creates: 1 admin listing ('TEST Phase2 Item ...'), 1 order (buyer=fresh e2e user), a few uploaded files under mercari-clone/uploads/<user>/*, a pending seller application for e2e_sellerdoc_*. Safe to leave in DB.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Phase 2 backend endpoints (public user, upload/download, AI listing suggest via Emergent LLM Key + GPT-5.4 vision, mocked shipping label + tracking, seller apply w/ id_document_file_id) all green. Uses pytest-xdist -n 2 --dist loadscope from /app/backend/pytest.ini — the module-scoped fixture `admin_listing_and_order` and class-based shared state (TestUploadDownload._admin_file_id, TestShippingLabel._first_tracking) rely on loadscope pinning all tests in a class to the same worker. Real product photo fetched from picsum.photos/id/1080/400/400.jpg at session start for AI + upload tests (per /app/image_testing.md). Frontend Phase 2 components (VerificationBadges, ShippingTracker, Sell.jsx AI suggest, SellerApply.jsx id-doc upload) still need UI verification in a later iteration.",
+  "rca of the issue": "N/A — no bugs found in this iteration. Two initial test failures were self-inflicted test-data issues fixed inside the test file: (a) called non-existent /api/verify/status (replaced with /api/auth/me sanity), (b) sent payout_method='bank' where SellerApplication requires literal 'bank_transfer' (test updated). Both surface a minor backend RCA: Pydantic instantiation errors in seller_apply escape as HTTP 500 instead of 422 — flagged in action_items."
+}

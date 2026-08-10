@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Camera, X, Upload, DollarSign } from "lucide-react";
+import { Camera, X, Upload, DollarSign, Sparkles } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
@@ -33,6 +33,65 @@ const Sell = () => {
     shipping_method: "Standard",
   });
   const [submitting, setSubmitting] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
+
+  const runAiFromImage = async (dataUrl) => {
+    setAiLoading(true);
+    try {
+      const { data } = await api.post("/ai/listing-suggest", { image_base64: dataUrl, hints: form.title || "" });
+      setForm((f) => ({
+        ...f,
+        title: data.title || f.title,
+        description: data.description || f.description,
+        category_id: data.category_id || f.category_id,
+        condition: data.condition || f.condition,
+        brand: data.brand || f.brand,
+        color: data.color || f.color,
+        size: data.size || f.size,
+        price: data.suggested_price_usd ? String(data.suggested_price_usd) : f.price,
+        original_price: data.original_price_usd ? String(data.original_price_usd) : f.original_price,
+      }));
+      toast({ title: "AI filled the listing", description: `Suggested price: $${data.suggested_price_usd || "—"}` });
+    } catch (err) {
+      toast({ title: "AI suggestion failed", description: err.response?.data?.detail || "Try a clearer photo", variant: "destructive" });
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const suggestFromFirstPhoto = async () => {
+    if (images.length === 0) {
+      toast({ title: "Add a photo first", variant: "destructive" });
+      return;
+    }
+    const first = images[0];
+    // If it's already a data URL / base64 → send as-is; if it's a URL → send as image_url
+    if (first.startsWith("data:")) {
+      await runAiFromImage(first);
+    } else {
+      setAiLoading(true);
+      try {
+        const { data } = await api.post("/ai/listing-suggest", { image_url: first, hints: form.title || "" });
+        setForm((f) => ({
+          ...f,
+          title: data.title || f.title,
+          description: data.description || f.description,
+          category_id: data.category_id || f.category_id,
+          condition: data.condition || f.condition,
+          brand: data.brand || f.brand,
+          color: data.color || f.color,
+          size: data.size || f.size,
+          price: data.suggested_price_usd ? String(data.suggested_price_usd) : f.price,
+          original_price: data.original_price_usd ? String(data.original_price_usd) : f.original_price,
+        }));
+        toast({ title: "AI filled the listing" });
+      } catch (err) {
+        toast({ title: "AI suggestion failed", description: err.response?.data?.detail || "Try a clearer photo", variant: "destructive" });
+      } finally {
+        setAiLoading(false);
+      }
+    }
+  };
 
   useEffect(() => {
     if (authLoading) return;
@@ -99,9 +158,25 @@ const Sell = () => {
       <form onSubmit={submit} className="mt-8 space-y-8">
         {/* Photos */}
         <section>
-          <Label className="text-base font-semibold">Photos <span className="text-[#FF211F]">*</span></Label>
-          <p className="text-sm text-neutral-500 mb-3">Add up to 8 photos. First photo is the cover.</p>
-          <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <Label className="text-base font-semibold">Photos <span className="text-[#FF211F]">*</span></Label>
+              <p className="text-sm text-neutral-500 mb-1">Add up to 8 photos. First photo is the cover.</p>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={suggestFromFirstPhoto}
+              disabled={aiLoading || images.length === 0}
+              className="gap-1.5 border-[#FF211F] text-[#FF211F] hover:bg-[#FFF3F2]"
+              data-testid="ai-suggest-btn"
+            >
+              <Sparkles className="h-4 w-4" />
+              {aiLoading ? "Analyzing…" : "AI-fill from photo"}
+            </Button>
+          </div>
+          <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 mt-3">
             {images.map((src, i) => (
               <div key={i} className="relative aspect-square rounded-lg overflow-hidden bg-neutral-100 group">
                 <img src={src} alt="" className="w-full h-full object-cover" />

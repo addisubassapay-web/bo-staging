@@ -10,6 +10,33 @@ import { Heart, ShoppingCart, MessageCircle, Truck, Shield, ChevronLeft, Share2,
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { ListingReviews } from "@/components/Reviews";
+import { VerificationBadges } from "@/components/VerificationBadges";
+
+const SellerBlock = ({ sellerId, sellerName, views }) => {
+  const [seller, setSeller] = useState(null);
+  useEffect(() => {
+    if (!sellerId) return;
+    api.get(`/users/${sellerId}/public`).then((r) => setSeller(r.data)).catch(() => {});
+  }, [sellerId]);
+  return (
+    <div className="flex items-start gap-3" data-testid="seller-block">
+      <div className="h-11 w-11 rounded-full bg-neutral-200 grid place-items-center font-semibold text-neutral-700">
+        {sellerName?.[0]?.toUpperCase()}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="font-medium text-neutral-900">{sellerName}</span>
+          {seller && <VerificationBadges user={seller} showLabels={false} />}
+        </div>
+        <div className="text-xs text-neutral-500 flex items-center gap-2 mt-0.5">
+          {seller && <span className="flex items-center gap-0.5"><Star className="h-3 w-3 fill-yellow-400 text-yellow-400" /> {seller.rating}</span>}
+          {seller && <span>· {seller.sales_count} sales</span>}
+          <span>· {views} views</span>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const AffiliateShareButton = ({ listingId }) => {
   const { user } = useAuth();
@@ -309,18 +336,7 @@ const ListingDetail = () => {
           </div>
 
           <div className="mt-6 border-t pt-6">
-            <div className="flex items-center gap-3">
-              <div className="h-11 w-11 rounded-full bg-neutral-200 grid place-items-center font-semibold text-neutral-700">
-                {listing.seller_name?.[0]?.toUpperCase()}
-              </div>
-              <div>
-                <div className="font-medium text-neutral-900">{listing.seller_name}</div>
-                <div className="text-xs text-neutral-500 flex items-center gap-2">
-                  <span className="flex items-center gap-0.5"><Star className="h-3 w-3 fill-yellow-400 text-yellow-400" /> 4.9</span>
-                  <span>· {listing.views_count} views</span>
-                </div>
-              </div>
-            </div>
+            <SellerBlock sellerId={listing.seller_id} sellerName={listing.seller_name} views={listing.views_count} />
           </div>
 
           <ListingReviews listingId={listing.id} />

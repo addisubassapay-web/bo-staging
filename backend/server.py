@@ -1,10 +1,15 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, Query, status
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, Query, status, UploadFile, File, Header, Response
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
+import base64
+import secrets
+import random
+import re
+import json as _json
 from pathlib import Path
 from pydantic import BaseModel, Field, EmailStr
 from typing import List, Optional, Literal
@@ -12,7 +17,9 @@ import uuid
 import asyncio
 from datetime import datetime, timezone, timedelta
 import jwt
+import requests as _requests
 from passlib.context import CryptContext
+from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
 
 from apify_sync import import_from_apify, simulate_live_update, get_sync_status
 
@@ -27,6 +34,16 @@ db = client[os.environ['DB_NAME']]
 JWT_SECRET = os.environ.get('JWT_SECRET', 'change-me')
 JWT_ALG = "HS256"
 JWT_EXPIRE_HOURS = 24 * 7
+
+EMERGENT_LLM_KEY = os.environ.get("EMERGENT_LLM_KEY", "")
+AI_MODEL_PROVIDER = "openai"
+AI_MODEL_NAME = "gpt-5.4"  # Set to gpt-5.6-luna, gpt-5.6-terra, gpt-5.6-sol etc. if desired
+
+# Emergent object storage
+STORAGE_BASE = (os.environ.get("INTEGRATION_PROXY_URL") or "").strip() or "https://integrations.emergentagent.com"
+STORAGE_URL = STORAGE_BASE.rstrip("/") + "/objstore/api/v1/storage"
+APP_NAME = "mercari-clone"
+_storage_key: Optional[str] = None
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 security = HTTPBearer(auto_error=False)
@@ -200,6 +217,12 @@ class Order(BaseModel):
     referral_payouts: List[dict] = []  # [{level, user_id, amount}]
     dropship_source_seller_id: Optional[str] = None
     dropship_source_earnings: float = 0.0
+    # Phase 2: Shipping (MOCKED EasyPost/Shippo)
+    tracking_number: Optional[str] = None
+    carrier: Optional[str] = None
+    label_url: Optional[str] = None
+    shipping_status: Optional[str] = None  # label_created, in_transit, delivered
+    estimated_delivery: Optional[str] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class OrderCreate(BaseModel):
@@ -382,6 +405,7 @@ class SellerApplication(BaseModel):
     phone: str = ""
     payout_method: Literal["stripe_connect", "bank_transfer"] = "stripe_connect"
     id_document_note: Optional[str] = ""  # placeholder; real flow would upload
+    id_document_file_id: Optional[str] = None  # points to /api/files/{id}
     status: Literal["pending", "approved", "rejected"] = "pending"
     admin_notes: Optional[str] = ""
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
@@ -402,6 +426,7 @@ class SellerApplicationCreate(BaseModel):
     phone: str = ""
     payout_method: str = "stripe_connect"
     id_document_note: Optional[str] = ""
+    id_document_file_id: Optional[str] = None
 
 class EmailSendRequest(BaseModel):
     email: Optional[str] = None  # optional override; defaults to user's account email
@@ -553,6 +578,26 @@ async def login(payload: UserLogin):
 @api_router.get("/auth/me", response_model=UserPublic)
 async def me(user: dict = Depends(get_current_user)):
     return UserPublic(**user)
+
+
+@api_router.get("/users/{user_id}/public")
+async def get_public_user(user_id: str):
+    """Public snapshot: verification badges, rating, sales — safe for anonymous viewing."""
+    u = await db.users.find_one({"id": user_id}, {"_id": 0, "password_hash": 0})
+    if not u:
+        raise HTTPException(404, "User not found")
+    return {
+        "id": u["id"],
+        "username": u.get("username"),
+        "avatar": u.get("avatar"),
+        "bio": u.get("bio", ""),
+        "rating": u.get("rating", 5.0),
+        "sales_count": u.get("sales_count", 0),
+        "email_verified": bool(u.get("email_verified")),
+        "phone_verified": bool(u.get("phone_verified")),
+        "seller_status": u.get("seller_status", "none"),
+        "created_at": u.get("created_at"),
+    }
 
 
 # =========================
@@ -1481,8 +1526,6 @@ async def public_sync_status():
 # Verification tokens are stored in the DB and returned in API responses (dev_mock=true)
 # so the frontend can auto-fill them for testing.
 # =========================
-import secrets
-import random
 
 def _now_utc() -> datetime:
     return datetime.now(timezone.utc)
@@ -1634,6 +1677,7 @@ async def seller_apply(payload: SellerApplicationCreate, user: dict = Depends(ge
         phone=payload.phone or fresh_user.get("phone", ""),
         payout_method=payload.payout_method,  # type: ignore
         id_document_note=payload.id_document_note or "",
+        id_document_file_id=payload.id_document_file_id,
     )
     await db.seller_applications.insert_one(app_doc.model_dump())
     await db.users.update_one({"id": user["id"]}, {"$set": {"seller_status": "pending"}})
@@ -1721,7 +1765,306 @@ async def admin_review_seller_app(app_id: str, updates: dict, admin: dict = Depe
     return {"ok": True, "status": new_status}
 
 
+# =========================
+# PHASE 2: OBJECT STORAGE (Emergent) — file upload for IDs, listing images
+# =========================
+def init_storage(force: bool = False) -> str:
+    global _storage_key
+    if _storage_key and not force:
+        return _storage_key
+    resp = _requests.post(f"{STORAGE_URL}/init", json={"emergent_key": EMERGENT_LLM_KEY}, timeout=30)
+    resp.raise_for_status()
+    _storage_key = resp.json()["storage_key"]
+    return _storage_key
 
+def put_object(path: str, data: bytes, content_type: str) -> dict:
+    key = init_storage()
+    resp = _requests.put(
+        f"{STORAGE_URL}/objects/{path}",
+        headers={"X-Storage-Key": key, "Content-Type": content_type},
+        data=data,
+        timeout=120,
+    )
+    if resp.status_code in (403, 404):
+        key = init_storage(force=True)
+        resp = _requests.put(
+            f"{STORAGE_URL}/objects/{path}",
+            headers={"X-Storage-Key": key, "Content-Type": content_type},
+            data=data,
+            timeout=120,
+        )
+    resp.raise_for_status()
+    return resp.json()
+
+def get_object(path: str):
+    key = init_storage()
+    resp = _requests.get(f"{STORAGE_URL}/objects/{path}", headers={"X-Storage-Key": key}, timeout=60)
+    if resp.status_code == 404:
+        key = init_storage(force=True)
+        resp = _requests.get(f"{STORAGE_URL}/objects/{path}", headers={"X-Storage-Key": key}, timeout=60)
+    resp.raise_for_status()
+    return resp.content, resp.headers.get("Content-Type", "application/octet-stream")
+
+
+ALLOWED_EXT = {"jpg", "jpeg", "png", "webp", "gif", "pdf"}
+MAX_UPLOAD_BYTES = 12 * 1024 * 1024  # 12 MB
+
+
+@api_router.post("/upload")
+async def upload_file(file: UploadFile = File(...), user: dict = Depends(get_current_user)):
+    filename = file.filename or "file"
+    ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else "bin"
+    if ext not in ALLOWED_EXT:
+        raise HTTPException(400, f"Unsupported file type .{ext}")
+    data = await file.read()
+    if len(data) > MAX_UPLOAD_BYTES:
+        raise HTTPException(400, f"File too large (max {MAX_UPLOAD_BYTES // (1024*1024)}MB)")
+    file_id = str(uuid.uuid4())
+    path = f"{APP_NAME}/uploads/{user['id']}/{file_id}.{ext}"
+    ct = file.content_type or "application/octet-stream"
+    try:
+        result = put_object(path, data, ct)
+    except Exception as e:
+        logger.error(f"Storage upload failed: {e}")
+        raise HTTPException(500, "Upload failed. Please try again.")
+    doc = {
+        "id": file_id,
+        "user_id": user["id"],
+        "storage_path": result["path"],
+        "original_filename": filename,
+        "content_type": ct,
+        "size": result.get("size", len(data)),
+        "is_deleted": False,
+        "created_at": _now_utc(),
+    }
+    await db.files.insert_one(doc)
+    return {"id": file_id, "url": f"/api/files/{file_id}", "size": doc["size"], "content_type": ct}
+
+
+@api_router.get("/files/{file_id}")
+async def download_file(file_id: str, auth: Optional[str] = Query(None), authorization: Optional[str] = Header(None)):
+    token = auth
+    if not token and authorization and authorization.lower().startswith("bearer "):
+        token = authorization.split(None, 1)[1]
+    if not token:
+        raise HTTPException(401, "Auth required")
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALG])
+        user_id = payload.get("sub")
+    except jwt.PyJWTError:
+        raise HTTPException(401, "Invalid token")
+    user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    if not user:
+        raise HTTPException(401, "User not found")
+    record = await db.files.find_one({"id": file_id, "is_deleted": False}, {"_id": 0})
+    if not record:
+        raise HTTPException(404, "File not found")
+    if record["user_id"] != user_id and user.get("role") != "admin":
+        raise HTTPException(403, "Not allowed")
+    data, ct = get_object(record["storage_path"])
+    return Response(content=data, media_type=record.get("content_type") or ct)
+
+
+# =========================
+# PHASE 3: AI LISTING ASSISTANT (GPT vision via Emergent LLM Key)
+# =========================
+class AIListingSuggestRequest(BaseModel):
+    image_base64: Optional[str] = None
+    image_url: Optional[str] = None
+    hints: Optional[str] = ""
+
+
+def _extract_json(text: str) -> dict:
+    text = (text or "").strip()
+    if text.startswith("```"):
+        text = re.sub(r"^```[a-zA-Z]*\s*", "", text)
+        text = re.sub(r"\s*```\s*$", "", text)
+    m = re.search(r"\{.*\}", text, re.DOTALL)
+    if not m:
+        raise ValueError("no JSON object found in AI response")
+    return _json.loads(m.group(0))
+
+
+@api_router.post("/ai/listing-suggest")
+async def ai_listing_suggest(payload: AIListingSuggestRequest, user: dict = Depends(get_current_user)):
+    if not payload.image_base64 and not payload.image_url:
+        raise HTTPException(400, "Provide image_base64 or image_url")
+    if not EMERGENT_LLM_KEY:
+        raise HTTPException(500, "AI service not configured")
+
+    image_b64 = payload.image_base64
+    if not image_b64:
+        try:
+            r = _requests.get(payload.image_url, timeout=25)
+            r.raise_for_status()
+            image_b64 = base64.b64encode(r.content).decode()
+        except Exception as e:
+            raise HTTPException(400, f"Could not fetch image_url: {e}")
+    if image_b64.startswith("data:") and "," in image_b64:
+        image_b64 = image_b64.split(",", 1)[1]
+
+    categories = await db.categories.find({}, {"_id": 0, "slug": 1, "name": 1, "id": 1}).to_list(50)
+    if not categories:
+        raise HTTPException(500, "No categories configured")
+    cat_slugs = [c["slug"] for c in categories]
+    cat_list = ", ".join([f"{c['slug']} ({c['name']})" for c in categories])
+
+    system_msg = (
+        "You are an expert Mercari listing assistant. Analyze the product photo and return "
+        "STRICT JSON only (no prose, no code fences) with keys: "
+        "title (string, max 60 chars, catchy), "
+        "description (string, 3-5 short lines, buyer-friendly, up to 400 chars), "
+        f"category_slug (one of: {cat_list}), "
+        "condition (one of: new|like_new|good|fair|poor), "
+        "brand (string, empty if unknown), "
+        "color (string, empty if unknown), "
+        "size (string, empty if not applicable), "
+        "suggested_price_usd (number), "
+        "original_price_usd (number, optional retail price). "
+        "Do not include any keys other than those listed. Do not wrap the JSON in code fences."
+    )
+    chat = LlmChat(
+        api_key=EMERGENT_LLM_KEY,
+        session_id=f"listing-suggest-{user['id']}-{uuid.uuid4().hex[:8]}",
+        system_message=system_msg,
+    ).with_model(AI_MODEL_PROVIDER, AI_MODEL_NAME)
+
+    hint_text = f"\n\nSeller hint: {payload.hints}" if payload.hints else ""
+    try:
+        response_text = await chat.send_message(UserMessage(
+            text=f"Analyze this product photo and generate the JSON listing.{hint_text}",
+            file_contents=[ImageContent(image_base64=image_b64)],
+        ))
+    except Exception as e:
+        logger.error(f"AI listing suggest failed: {e}")
+        raise HTTPException(500, f"AI request failed: {e}")
+
+    try:
+        data = _extract_json(response_text)
+    except Exception as e:
+        logger.error(f"AI JSON parse failed. Raw: {response_text!r}")
+        raise HTTPException(500, f"AI returned invalid JSON: {e}")
+
+    slug = str(data.get("category_slug", "other")).lower()
+    if slug not in cat_slugs:
+        slug = "other"
+    cat = next((c for c in categories if c["slug"] == slug), None) or categories[-1]
+    data["category_slug"] = slug
+    data["category_id"] = cat["id"]
+    data["category_name"] = cat["name"]
+    for k in ("suggested_price_usd", "original_price_usd"):
+        v = data.get(k)
+        if v is not None:
+            try:
+                data[k] = float(v)
+            except Exception:
+                data[k] = None
+    return data
+
+
+# =========================
+# PHASE 4: SHIPPING LABELS (MOCKED EasyPost/Shippo)
+# =========================
+class ShippingLabelResponse(BaseModel):
+    tracking_number: str
+    carrier: str
+    label_url: str
+    estimated_delivery: str
+    cost: float
+    dev_mock: bool = True
+
+
+@api_router.post("/orders/{order_id}/shipping-label", response_model=ShippingLabelResponse)
+async def create_shipping_label(order_id: str, user: dict = Depends(get_current_user)):
+    order = await db.orders.find_one({"id": order_id}, {"_id": 0})
+    if not order:
+        raise HTTPException(404, "Order not found")
+    if order["seller_id"] != user["id"] and user.get("role") != "admin":
+        raise HTTPException(403, "Only the seller can purchase a label")
+    if order.get("tracking_number"):
+        return ShippingLabelResponse(
+            tracking_number=order["tracking_number"],
+            carrier=order.get("carrier", "USPS"),
+            label_url=order.get("label_url", ""),
+            estimated_delivery=order.get("estimated_delivery", "2-5 business days"),
+            cost=float(order.get("shipping_fee", 0)),
+        )
+    carrier = random.choice(["USPS", "UPS", "FedEx"])
+    tracking = f"MOCK{uuid.uuid4().hex[:12].upper()}"
+    label_url = f"/mock-shipping/label/{tracking}.pdf"
+    est_delivery = (datetime.now(timezone.utc) + timedelta(days=random.randint(2, 5))).strftime("%A, %b %d")
+    await db.orders.update_one(
+        {"id": order_id},
+        {"$set": {
+            "tracking_number": tracking,
+            "carrier": carrier,
+            "label_url": label_url,
+            "shipping_status": "label_created",
+            "estimated_delivery": est_delivery,
+        }},
+    )
+    await notify(order["buyer_id"], "order", "Shipping label created",
+                 f"Tracking: {tracking} via {carrier}", "/profile?tab=orders")
+    logger.info(f"[MOCK] Shipping label created for order {order_id}: {carrier} {tracking}")
+    return ShippingLabelResponse(
+        tracking_number=tracking, carrier=carrier, label_url=label_url,
+        estimated_delivery=est_delivery, cost=float(order.get("shipping_fee", 0)),
+    )
+
+
+@api_router.get("/orders/{order_id}/tracking")
+async def get_tracking(order_id: str, user: dict = Depends(get_current_user)):
+    order = await db.orders.find_one({"id": order_id}, {"_id": 0})
+    if not order:
+        raise HTTPException(404, "Order not found")
+    if user["id"] not in (order.get("buyer_id"), order.get("seller_id")) and user.get("role") != "admin":
+        raise HTTPException(403, "Not allowed")
+    if not order.get("tracking_number"):
+        return {"has_label": False}
+    created = order.get("created_at")
+    if isinstance(created, str):
+        try:
+            created = datetime.fromisoformat(created.replace("Z", "+00:00"))
+        except Exception:
+            created = _now_utc()
+    if created and created.tzinfo is None:
+        created = created.replace(tzinfo=timezone.utc)
+    age_h = (_now_utc() - created).total_seconds() / 3600.0
+    carrier = order.get("carrier", "Carrier")
+    events = [{
+        "status": "label_created",
+        "at": created.isoformat(),
+        "location": "Origin facility",
+        "description": "Shipping label created",
+    }]
+    if age_h > 2:
+        events.append({"status": "picked_up", "at": (created + timedelta(hours=2)).isoformat(),
+                       "location": f"{carrier} origin hub", "description": "Package picked up by carrier"})
+    if age_h > 24:
+        events.append({"status": "in_transit", "at": (created + timedelta(hours=24)).isoformat(),
+                       "location": "Regional facility", "description": "In transit"})
+    if age_h > 72:
+        events.append({"status": "out_for_delivery", "at": (created + timedelta(hours=72)).isoformat(),
+                       "location": "Local hub", "description": "Out for delivery"})
+    if age_h > 96:
+        events.append({"status": "delivered", "at": (created + timedelta(hours=96)).isoformat(),
+                       "location": "Delivered", "description": "Delivered to recipient"})
+    return {
+        "has_label": True,
+        "tracking_number": order["tracking_number"],
+        "carrier": carrier,
+        "label_url": order.get("label_url"),
+        "estimated_delivery": order.get("estimated_delivery"),
+        "current_status": events[-1]["status"],
+        "events": events,
+        "dev_mock": True,
+    }
+
+
+# =========================
+# Seed
+# =========================
+@api_router.post("/seed")
 async def seed_data():
     """Idempotent seed. Only seeds when categories collection is empty."""
     existing = await db.categories.count_documents({})

@@ -8,6 +8,8 @@ import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { Star, Edit, Trash2, Package as PackageIcon } from "lucide-react";
 import { ReviewOrderCard } from "@/components/Reviews";
+import { VerificationBadges } from "@/components/VerificationBadges";
+import ShippingTracker from "@/components/ShippingTracker";
 
 const Profile = () => {
   const { user, loading: authLoading } = useAuth();
@@ -45,9 +47,10 @@ const Profile = () => {
           {user.username[0].toUpperCase()}
         </div>
         <div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <h1 className="text-2xl font-bold">{user.username}</h1>
             {user.role === "admin" && <Badge className="bg-[#FF211F] hover:bg-[#FF211F]">Admin</Badge>}
+            <VerificationBadges user={user} />
           </div>
           <div className="text-sm text-neutral-500 flex items-center gap-3 mt-1">
             <span className="flex items-center gap-1"><Star className="h-3 w-3 fill-yellow-400 text-yellow-400" /> {user.rating}</span>
@@ -124,6 +127,7 @@ const Profile = () => {
                     </div>
                   </div>
                   <div className="px-4 pb-4">
+                    <ShippingTracker orderId={o.id} />
                     <ReviewOrderCard order={o} />
                   </div>
                 </div>
@@ -138,17 +142,20 @@ const Profile = () => {
           ) : (
             <div className="space-y-3">
               {sales.map((o) => (
-                <div key={o.id} className="flex gap-4 border border-neutral-200 rounded-lg p-4">
-                  <img src={o.listing_image} alt="" className="h-20 w-20 rounded object-cover bg-neutral-100" />
-                  <div className="flex-1">
-                    <div className="font-medium">{o.listing_title}</div>
-                    <div className="text-sm text-neutral-500">Buyer: {o.buyer_name} · {new Date(o.created_at).toLocaleDateString()}</div>
-                    <Badge variant="secondary" className="mt-1 capitalize">{o.status}</Badge>
+                <div key={o.id} className="border border-neutral-200 rounded-lg p-4">
+                  <div className="flex gap-4">
+                    <img src={o.listing_image} alt="" className="h-20 w-20 rounded object-cover bg-neutral-100" />
+                    <div className="flex-1">
+                      <div className="font-medium">{o.listing_title}</div>
+                      <div className="text-sm text-neutral-500">Buyer: {o.buyer_name} · {new Date(o.created_at).toLocaleDateString()}</div>
+                      <Badge variant="secondary" className="mt-1 capitalize">{o.status}</Badge>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-semibold text-green-600">+{formatPrice(o.amount)}</div>
+                      <div className="text-xs text-neutral-500 font-mono">#{o.id.slice(0, 8)}</div>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <div className="font-semibold text-green-600">+{formatPrice(o.amount)}</div>
-                    <div className="text-xs text-neutral-500 font-mono">#{o.id.slice(0, 8)}</div>
-                  </div>
+                  <ShippingTracker orderId={o.id} canPurchase />
                 </div>
               ))}
             </div>

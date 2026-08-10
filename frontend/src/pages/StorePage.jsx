@@ -4,6 +4,7 @@ import api from "@/lib/api";
 import ProductCard from "@/components/ProductCard";
 import { Badge } from "@/components/ui/badge";
 import { Store as StoreIcon, Award, ShieldCheck } from "lucide-react";
+import { VerificationBadges } from "@/components/VerificationBadges";
 
 const tierMeta = {
   none: null,
@@ -16,6 +17,7 @@ const StorePage = () => {
   const { slug } = useParams();
   const [store, setStore] = useState(null);
   const [listings, setListings] = useState([]);
+  const [owner, setOwner] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -25,6 +27,12 @@ const StorePage = () => {
       api.get(`/stores/${slug}/listings`).then((r) => setListings(r.data)),
     ]).catch(() => {}).finally(() => setLoading(false));
   }, [slug]);
+
+  useEffect(() => {
+    if (store?.owner_id) {
+      api.get(`/users/${store.owner_id}/public`).then((r) => setOwner(r.data)).catch(() => {});
+    }
+  }, [store]);
 
   if (loading) return <div className="max-w-6xl mx-auto px-4 py-8">Loading…</div>;
   if (!store) return <div className="max-w-6xl mx-auto px-4 py-16 text-center text-neutral-600">Store not found.</div>;
@@ -50,6 +58,7 @@ const StorePage = () => {
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="text-2xl md:text-3xl font-bold">{store.name}</h1>
               {tier && <Badge className={tier.color}><Award className="h-3 w-3 mr-1" /> {tier.label}</Badge>}
+              {owner && <VerificationBadges user={owner} showLabels={false} />}
             </div>
             {store.tagline && <p className="text-neutral-600 text-sm">{store.tagline}</p>}
             <div className="flex gap-4 text-xs text-neutral-500 mt-1">
