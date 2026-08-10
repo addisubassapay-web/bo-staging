@@ -247,12 +247,14 @@ const Home = () => {
   const [trending, setTrending] = useState([]);
   const [forYou, setForYou] = useState([]);
   const [recentlyViewed, setRecentlyViewed] = useState([]);
+  const [shelves, setShelves] = useState([]);
   const [favIds, setFavIds] = useState(new Set());
 
   useEffect(() => {
     api.get("/flash-deals", { params: { limit: 10 } }).then((r) => setFlash(r.data)).catch(() => {});
     api.get("/listings", { params: { sort: "newest", limit: 12 } }).then((r) => setRecent(r.data)).catch(() => {});
     api.get("/listings", { params: { sort: "trending", limit: 12 } }).then((r) => setTrending(r.data)).catch(() => {});
+    api.get("/shelves").then((r) => setShelves(r.data)).catch(() => {});
     const token = localStorage.getItem("mercari_token");
     if (token) {
       api.get("/favorites").then((r) => setFavIds(new Set(r.data.map((l) => l.id)))).catch(() => {});
@@ -326,6 +328,34 @@ const Home = () => {
       )}
 
       <TrustStrip />
+
+      {/* Category Shelves */}
+      {shelves.length > 0 && (
+        <section className="max-w-7xl mx-auto px-4 mt-14 space-y-10" data-testid="category-shelves">
+          {shelves.map((sh) => (
+            <div key={sh.id}>
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h2 className="text-xl sm:text-2xl font-bold text-neutral-900">{sh.title}</h2>
+                  <p className="text-sm text-neutral-500">{sh.subtitle}</p>
+                </div>
+                <Link
+                  to={`/search?category_slug=${sh.category_slugs[0]}`}
+                  className="text-sm text-[#FF7A18] font-medium hover:underline flex items-center gap-1"
+                  data-testid={`shelf-see-${sh.id}`}
+                >
+                  See all <ArrowRight className="h-3 w-3" />
+                </Link>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-8 gap-3">
+                {sh.listings.slice(0, 8).map((l) => (
+                  <ProductCard key={l.id} listing={l} isFavorite={favIds.has(l.id)} onFavoriteChange={(id, isFav) => setFavIds((prev) => { const s = new Set(prev); isFav ? s.add(id) : s.delete(id); return s; })} />
+                ))}
+              </div>
+            </div>
+          ))}
+        </section>
+      )}
 
       {/* Trending Now */}
       <section className="max-w-7xl mx-auto px-4 mt-14">

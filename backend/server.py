@@ -24,6 +24,7 @@ from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
 from apify_sync import import_from_apify, simulate_live_update, get_sync_status
 from shipping_providers import get_provider as get_shipping_provider, next_stage_for_age, event_details
 from routers.search import router as search_router
+from routers.discovery import router as discovery_router
 
 
 ROOT_DIR = Path(__file__).parent
@@ -728,8 +729,27 @@ async def update_listing(listing_id: str, payload: ListingUpdate, user: dict = D
         if not cat:
             raise HTTPException(400, "Invalid category")
         updates["category_name"] = cat["name"]
+    price_drop_pct = 0
+    old_price = float(doc.get("price") or 0)
+    new_price = float(updates.get("price")) if "price" in updates else old_price
+    if old_price and new_price and new_price < old_price:
+        price_drop_pct = round((old_price - new_price) / old_price * 100)
     if updates:
         await db.listings.update_one({"id": listing_id}, {"$set": updates})
+    # Notify every user who has this listing favorited when price drops >=5%
+    if price_drop_pct >= 5:
+        fav_users = await db.favorites.find(
+            {"listing_id": listing_id}, {"_id": 0, "user_id": 1}
+        ).to_list(1000)
+        for f in fav_users:
+            if f["user_id"] == user["id"]:
+                continue
+            await notify(
+                f["user_id"], "system",
+                f"Price drop: -{price_drop_pct}% on a favourite",
+                f"{doc.get('title','Your favourite')} is now ${new_price:.2f} (was ${old_price:.2f}).",
+                f"/listing/{listing_id}",
+            )
     doc = await db.listings.find_one({"id": listing_id}, {"_id": 0})
     return Listing(**doc)
 
@@ -2473,6 +2493,7 @@ async def root():
 
 app.include_router(api_router)
 app.include_router(search_router, prefix="/api")
+app.include_router(discovery_router, prefix="/api")
 
 app.add_middleware(
     CORSMiddleware,

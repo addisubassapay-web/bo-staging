@@ -26,6 +26,12 @@ Exact replica of Mercari platform (mercari.com) — same color scheme (`#FF211F`
 
 ## Implemented (with dates)
 
+### Feb 2026 — Phase 7: Wishlist alerts, category shelves, seller dashboard redesign
+- **Buyer Wishlist Alerts** — `PUT /api/listings/{id}` now compares old vs new price; if the drop is 5% or more, every user who favorited the listing receives a `notify()` record with the new/old price. The existing global `BuyerProgressToast` surfaces it in-app instantly.
+- **Home Category Deep-Dive** — new `GET /api/shelves` endpoint (via `routers/discovery.py`) returns 5 curated shelves: Fashion of the day, Tech under $50, Home essentials, Beauty buzz, For the kids. Home renders a "Category Shelves" strip below Trust with 8 items per row and per-shelf "See all" deep links.
+- **Seller Dashboard Redesign** — new `GET /api/seller/dashboard` endpoint returns a 30-day earnings series, today/30d totals, wallet + pending payout, listings breakdown (active/sold/flash), engagement (views/likes), and 5 most-recent orders. `StoreAnalytics.jsx` now shows a gradient orange-red hero banner with 4 in-banner metrics, a live SVG sparkline chart (net of platform fees, no chart library), 4 tinted stat cards, Latest orders panel with product thumbnails, plus a Pro tips + Cash out side rail.
+- **Refactor step 2** — added `routers/discovery.py` (shelves + seller dashboard) alongside `routers/search.py`. `deps.py` gains lazy JWT secret loading (fix: prior tokens were rejected due to import-order race with `.env`).
+
 ### Feb 2026 — Phase 6: Discovery, Personalisation, Refactor step 1
 - **Recently Viewed row** on Home for logged-in users. Backend: `POST /api/recently-viewed/{id}` (called from `ListingDetail.jsx` on every view, keeps most-recent 24 per user) and `GET /api/recently-viewed`. Home shows a "Pick up where you left off" strip above the hero.
 - **Smart Bundles** — new `GET /api/listings/{id}/bundle` returns up to 6 other active listings from the same seller. `ListingDetail.jsx` renders a "Complete the look" row at the bottom.
