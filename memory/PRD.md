@@ -26,6 +26,13 @@ Exact replica of Mercari platform (mercari.com) — same color scheme (`#FF211F`
 
 ## Implemented (with dates)
 
+### Feb 2026 — Phase 6: Discovery, Personalisation, Refactor step 1
+- **Recently Viewed row** on Home for logged-in users. Backend: `POST /api/recently-viewed/{id}` (called from `ListingDetail.jsx` on every view, keeps most-recent 24 per user) and `GET /api/recently-viewed`. Home shows a "Pick up where you left off" strip above the hero.
+- **Smart Bundles** — new `GET /api/listings/{id}/bundle` returns up to 6 other active listings from the same seller. `ListingDetail.jsx` renders a "Complete the look" row at the bottom.
+- **Push On Deal Drop** — `rotate_flash_deals()` now creates a `notify()` record for every user who has favorited any listing newly promoted into the day's Flash Deals pool. The existing `BuyerProgressToast` provider surfaces the notification through the app-wide toast.
+- **Verified Seller Storefront Boost** — `ProductCard.jsx` fetches the seller's `/users/{id}/public` snapshot (cached in `sessionStorage`) and, if approved, renders a small gold-gradient shield in front of the title on every card in Trending / Flash Deals / For You / Recently Viewed grids.
+- **Refactor step 1** — created `/app/backend/routers/` package with `deps.py` (lazy `get_db`, `get_current_user`, `require_admin`, `now_utc`) and extracted the newest search+recommendations endpoints (`/search/suggest`, `/for-you`, `/recently-viewed`, `/listings/{id}/bundle`) into `routers/search.py`. Server.py shrank by ~120 lines. Pattern is established for the remaining router extractions (auth, listings, seller, verify, stripe, ai, shipping) — each future extraction just imports from `routers.deps`.
+
 ### Feb 2026 — Phase 5: Search, Personalization, Delight
 - **Search Suggestions** — new `GET /api/search/suggest?q=` endpoint returns `{items, queries}`. `SearchAutocomplete.jsx` renders a debounced dropdown under the header search bar with product rows (image + title + brand + price) plus brand/category quick-chips and a "See all results →" footer.
 - **Personal Flash Feed** — new `GET /api/for-you` endpoint returns listings scored against the user's favourites + purchase history (category + brand match) with a graceful trending fallback for cold-start users. Home page renders a "For You" row under Flash Deals with a Sparkles header.

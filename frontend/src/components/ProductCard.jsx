@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Heart } from "lucide-react";
+import { Heart, ShieldCheck } from "lucide-react";
 import { formatPrice } from "@/lib/api";
 import api from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
@@ -11,6 +11,23 @@ const ProductCard = ({ listing, isFavorite = false, onFavoriteChange }) => {
   const { toast } = useToast();
   const [fav, setFav] = useState(isFavorite);
   const [busy, setBusy] = useState(false);
+  const [sellerVerified, setSellerVerified] = useState(false);
+
+  useEffect(() => {
+    // Cheap client cache to avoid re-fetching seller info repeatedly
+    if (!listing?.seller_id) return;
+    const key = `mercari_seller_${listing.seller_id}`;
+    const cached = sessionStorage.getItem(key);
+    if (cached !== null) {
+      setSellerVerified(cached === "1");
+      return;
+    }
+    api.get(`/users/${listing.seller_id}/public`).then((r) => {
+      const v = r.data?.seller_status === "approved";
+      setSellerVerified(v);
+      sessionStorage.setItem(key, v ? "1" : "0");
+    }).catch(() => {});
+  }, [listing?.seller_id]);
 
   const toggleFav = async (e) => {
     e.preventDefault();
@@ -63,8 +80,17 @@ const ProductCard = ({ listing, isFavorite = false, onFavoriteChange }) => {
         </button>
       </div>
       <div className="mt-2 px-0.5">
-        <div className="text-sm text-neutral-800 line-clamp-2 leading-snug min-h-[2.5rem]">
-          {listing.title}
+        <div className="flex items-center gap-1.5 text-sm text-neutral-800 line-clamp-2 leading-snug min-h-[2.5rem]">
+          {sellerVerified && (
+            <span
+              title="Verified seller"
+              className="inline-flex items-center justify-center h-4 w-4 shrink-0 rounded-full bg-gradient-to-br from-yellow-300 to-amber-500 text-white shadow-sm ring-1 ring-amber-500/60"
+              data-testid="verified-seller-badge"
+            >
+              <ShieldCheck className="h-2.5 w-2.5" />
+            </span>
+          )}
+          <span>{listing.title}</span>
         </div>
         <div className="mt-1 flex items-center justify-between">
           <span className="font-semibold text-neutral-900">{formatPrice(listing.price)}</span>

@@ -11,6 +11,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { ListingReviews } from "@/components/Reviews";
 import { VerificationBadges } from "@/components/VerificationBadges";
+import ProductCard from "@/components/ProductCard";
 
 const SellerBlock = ({ sellerId, sellerName, views }) => {
   const [seller, setSeller] = useState(null);
@@ -156,6 +157,7 @@ const ListingDetail = () => {
   const [activeImg, setActiveImg] = useState(0);
   const [fav, setFav] = useState(false);
   const [inCart, setInCart] = useState(false);
+  const [bundle, setBundle] = useState([]);
 
   const load = () => {
     setLoading(true);
@@ -163,6 +165,7 @@ const ListingDetail = () => {
       .then((r) => setListing(r.data))
       .catch(() => toast({ title: "Listing not found", variant: "destructive" }))
       .finally(() => setLoading(false));
+    api.get(`/listings/${id}/bundle`, { params: { limit: 6 } }).then((r) => setBundle(r.data)).catch(() => setBundle([]));
   };
 
   useEffect(() => {
@@ -171,6 +174,7 @@ const ListingDetail = () => {
     if (user) {
       api.get("/favorites").then((r) => setFav(r.data.some((l) => l.id === id))).catch(() => {});
       api.get("/cart").then((r) => setInCart(r.data.some((l) => l.id === id))).catch(() => {});
+      api.post(`/recently-viewed/${id}`).catch(() => {});
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, user]);
@@ -342,6 +346,19 @@ const ListingDetail = () => {
           <ListingReviews listingId={listing.id} />
         </div>
       </div>
+
+      {/* Smart Bundles */}
+      {bundle.length > 0 && (
+        <div className="mt-14" data-testid="bundles-section">
+          <h2 className="text-xl font-bold text-neutral-900">Complete the look — more from this seller</h2>
+          <p className="text-sm text-neutral-500 mt-0.5">Bundle up and save on shipping.</p>
+          <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+            {bundle.map((l) => (
+              <ProductCard key={l.id} listing={l} />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

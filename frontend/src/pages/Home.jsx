@@ -246,6 +246,7 @@ const Home = () => {
   const [recent, setRecent] = useState([]);
   const [trending, setTrending] = useState([]);
   const [forYou, setForYou] = useState([]);
+  const [recentlyViewed, setRecentlyViewed] = useState([]);
   const [favIds, setFavIds] = useState(new Set());
 
   useEffect(() => {
@@ -256,6 +257,7 @@ const Home = () => {
     if (token) {
       api.get("/favorites").then((r) => setFavIds(new Set(r.data.map((l) => l.id)))).catch(() => {});
       api.get("/for-you", { params: { limit: 12 } }).then((r) => setForYou(r.data)).catch(() => {});
+      api.get("/recently-viewed", { params: { limit: 12 } }).then((r) => setRecentlyViewed(r.data)).catch(() => {});
     }
   }, []);
 
@@ -275,6 +277,24 @@ const Home = () => {
   return (
     <div className="bg-white">
       <HeroCarousel />
+
+      {/* Recently Viewed (only for logged-in users with history) */}
+      {recentlyViewed.length > 0 && (
+        <section className="max-w-7xl mx-auto px-4 mt-8" data-testid="recently-viewed-section">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <h2 className="text-lg sm:text-xl font-bold text-neutral-900">Pick up where you left off</h2>
+              <p className="text-xs text-neutral-500">Recently viewed</p>
+            </div>
+            <Link to="/search" className="text-xs text-[#FF7A18] font-medium hover:underline">Browse more</Link>
+          </div>
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-6 gap-3">
+            {recentlyViewed.slice(0, 12).map((l) => (
+              <ProductCard key={l.id} listing={l} isFavorite={favIds.has(l.id)} onFavoriteChange={(id, isFav) => setFavIds((prev) => { const s = new Set(prev); isFav ? s.add(id) : s.delete(id); return s; })} />
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Limited time badge */}
       <div className="max-w-7xl mx-auto px-4 mt-10 text-center">

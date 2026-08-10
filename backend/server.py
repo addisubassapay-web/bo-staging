@@ -23,6 +23,7 @@ from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
 
 from apify_sync import import_from_apify, simulate_live_update, get_sync_status
 from shipping_providers import get_provider as get_shipping_provider, next_stage_for_age, event_details
+from routers.search import router as search_router
 
 
 ROOT_DIR = Path(__file__).parent
@@ -2112,6 +2113,16 @@ async def rotate_flash_deals():
                 "flash_deal_discount_pct": pct,
             }},
         )
+        # Notify every user who favorited this listing
+        listing_snap = await db.listings.find_one({"id": lid}, {"_id": 0, "title": 1, "price": 1})
+        fav_users = await db.favorites.find({"listing_id": lid}, {"_id": 0, "user_id": 1}).to_list(500)
+        for f in fav_users:
+            await notify(
+                f["user_id"], "system",
+                f"Flash Deal: -{pct}% on a favourite",
+                f"{(listing_snap or {}).get('title','Your favourite')} is now on Flash Deals until midnight UTC.",
+                f"/listing/{lid}",
+            )
     logger.info(f"[flash-deals] activated {len(picks)} new deals until {ends_at.isoformat()}")
     return {"selected": len(picks), "active": active_count + len(picks), "ends_at": ends_at.isoformat()}
 
@@ -2158,83 +2169,6 @@ async def admin_rotate_flash_deals(_admin: dict = Depends(require_admin)):
     return await rotate_flash_deals()
 
 
-# =========================
-# Search suggestions + Personal recommendations
-# =========================
-@api_router.get("/search/suggest")
-async def search_suggest(q: str = "", limit: int = 8):
-    q = (q or "").strip()
-    if len(q) < 2:
-        return {"items": [], "queries": []}
-    rx = {"$regex": re.escape(q), "$options": "i"}
-    # Matching listings — return light fields for the dropdown
-    docs = await db.listings.find(
-        {"status": "active", "$or": [{"title": rx}, {"brand": rx}]},
-        {"_id": 0, "id": 1, "title": 1, "images": 1, "price": 1, "brand": 1, "category_name": 1},
-    ).limit(limit).to_list(limit)
-    items = [{
-        "id": d["id"],
-        "title": d["title"],
-        "image": (d.get("images") or [None])[0],
-        "price": d["price"],
-        "brand": d.get("brand") or "",
-        "category_name": d.get("category_name") or "",
-    } for d in docs]
-    # Related query suggestions — distinct brands & category names matching q
-    brand_matches = await db.listings.distinct("brand", {"brand": rx, "status": "active"})
-    cat_matches = await db.listings.distinct("category_name", {"category_name": rx, "status": "active"})
-    queries = [b for b in brand_matches if b][:4] + [c for c in cat_matches if c][:4]
-    return {"items": items, "queries": queries[:8]}
-
-
-@api_router.get("/for-you", response_model=List[Listing])
-async def for_you(limit: int = 12, user: dict = Depends(get_current_user)):
-    """Personalised feed based on the user's favorites + past purchases.
-    Picks category preferences, then returns other active listings in those categories
-    (excluding items already favorited/purchased by the user and their own listings).
-    Falls back to trending if the user has no history yet.
-    """
-    fav_docs = await db.favorites.find({"user_id": user["id"]}, {"_id": 0}).to_list(200)
-    fav_listing_ids = [f["listing_id"] for f in fav_docs]
-    order_docs = await db.orders.find({"buyer_id": user["id"]}, {"_id": 0, "listing_id": 1}).to_list(200)
-    order_listing_ids = [o["listing_id"] for o in order_docs if o.get("listing_id")]
-    seen_ids = list(set(fav_listing_ids + order_listing_ids))
-
-    if not seen_ids:
-        # Cold-start: return trending
-        docs = await db.listings.find(
-            {"status": "active", "seller_id": {"$ne": user["id"]}},
-            {"_id": 0},
-        ).sort([("views_count", -1), ("likes_count", -1)]).limit(limit).to_list(limit)
-        return [Listing(**d) for d in docs]
-
-    # Pull the categories the user has interacted with
-    hist = await db.listings.find(
-        {"id": {"$in": seen_ids}}, {"_id": 0, "category_id": 1, "brand": 1}
-    ).to_list(len(seen_ids))
-    cat_ids = list({h["category_id"] for h in hist if h.get("category_id")})
-    brands = list({h["brand"] for h in hist if h.get("brand")})
-    query = {
-        "status": "active",
-        "id": {"$nin": seen_ids},
-        "seller_id": {"$ne": user["id"]},
-        "$or": [{"category_id": {"$in": cat_ids}}, {"brand": {"$in": brands}}] if (cat_ids or brands) else [{}],
-    }
-    if not (cat_ids or brands):
-        query.pop("$or", None)
-    docs = await db.listings.find(query, {"_id": 0}).sort([
-        ("is_flash_deal", -1), ("views_count", -1), ("likes_count", -1)
-    ]).limit(limit).to_list(limit)
-    if len(docs) < limit:
-        # Backfill with generic trending
-        need = limit - len(docs)
-        extra = await db.listings.find(
-            {"status": "active", "id": {"$nin": seen_ids + [d["id"] for d in docs]},
-             "seller_id": {"$ne": user["id"]}},
-            {"_id": 0},
-        ).sort([("views_count", -1), ("likes_count", -1)]).limit(need).to_list(need)
-        docs.extend(extra)
-    return [Listing(**d) for d in docs]
 class ShippingLabelResponse(BaseModel):
     tracking_number: str
     carrier: str
@@ -2538,6 +2472,7 @@ async def root():
 
 
 app.include_router(api_router)
+app.include_router(search_router, prefix="/api")
 
 app.add_middleware(
     CORSMiddleware,
@@ -2573,6 +2508,8 @@ async def startup():
     await db.reviews.create_index("listing_id")
     await db.reviews.create_index([("order_id", 1), ("reviewer_id", 1)], unique=True)
     await db.messages.create_index([("listing_id", 1), ("sender_id", 1), ("receiver_id", 1)])
+    await db.recently_viewed.create_index([("user_id", 1), ("viewed_at", -1)])
+    await db.recently_viewed.create_index([("user_id", 1), ("listing_id", 1)], unique=True)
     await db.notifications.create_index([("user_id", 1), ("created_at", -1)])
 
     # Migrate existing users: add referral_code, wallet_balance if missing
