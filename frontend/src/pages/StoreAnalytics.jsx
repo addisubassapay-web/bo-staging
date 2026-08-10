@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import confetti from "canvas-confetti";
 import {
   TrendingUp, DollarSign, Package, Eye, Heart, Wallet, Clock,
-  ArrowUpRight, Sparkles, Zap, Target, PartyPopper,
+  ArrowUpRight, Sparkles, Zap, Target, PartyPopper, TrendingDown, Trophy,
 } from "lucide-react";
 
 const money = (n) => `$${Number(n || 0).toFixed(2)}`;
@@ -93,6 +93,96 @@ const StatCard = ({ icon: Icon, label, value, sub, tone = "orange", testid }) =>
       <div className="mt-3 text-xs uppercase tracking-wider text-neutral-500 font-medium">{label}</div>
       <div className="mt-1 text-2xl font-bold text-neutral-900">{value}</div>
       {sub && <div className="text-xs text-neutral-500 mt-1">{sub}</div>}
+    </div>
+  );
+};
+
+// -- Weekly Recap Card ------------------------------------------------------
+const WeeklyRecapCard = ({ recap, currentEarnings = 0 }) => {
+  const hasData = (recap.earnings || 0) > 0 || (recap.orders || 0) > 0;
+  const delta = recap.delta_pct_vs_current || 0;
+  const trendingUp = delta >= 0;
+  const weekLabel = recap.week_start
+    ? new Date(recap.week_start).toLocaleDateString(undefined, { month: "short", day: "numeric" })
+    : "";
+
+  return (
+    <div
+      className="mt-6 rounded-2xl border border-neutral-200 bg-white overflow-hidden"
+      data-testid="weekly-recap-card"
+    >
+      <div className="grid md:grid-cols-[minmax(0,1fr)_320px]">
+        {/* Left: recap summary */}
+        <div className="p-5 sm:p-6">
+          <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-neutral-500 font-medium">
+            <Trophy className="h-4 w-4 text-[#FF7A18]" /> Weekly recap
+            {weekLabel && <span className="text-neutral-400 normal-case tracking-normal">· week of {weekLabel}</span>}
+          </div>
+
+          {!hasData ? (
+            <div className="mt-4 text-neutral-600" data-testid="weekly-recap-empty">
+              <div className="text-lg font-bold text-neutral-900">No sales last week</div>
+              <div className="text-sm mt-1">{recap.suggestion || "List a fresh item this week to attract new shoppers."}</div>
+            </div>
+          ) : (
+            <>
+              <div className="mt-3 flex items-baseline gap-3 flex-wrap">
+                <div className="text-3xl sm:text-4xl font-extrabold text-neutral-900" data-testid="recap-earnings">
+                  {money(recap.earnings)}
+                </div>
+                <div className={`inline-flex items-center gap-1 text-sm font-medium rounded-full px-2 py-0.5 ${
+                  trendingUp
+                    ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                    : "bg-rose-50 text-rose-700 border border-rose-200"
+                }`}
+                data-testid="recap-delta"
+                >
+                  {trendingUp ? <ArrowUpRight className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}
+                  {trendingUp ? "+" : ""}{delta}% vs this week
+                </div>
+              </div>
+              <div className="text-sm text-neutral-500 mt-1">
+                <span className="font-medium text-neutral-700" data-testid="recap-orders">{recap.orders}</span> orders shipped ·
+                <span className="ml-1">This week so far: <span className="font-medium text-neutral-700">{money(currentEarnings)}</span></span>
+              </div>
+
+              <div className="mt-4 rounded-xl bg-gradient-to-r from-[#FFF7EF] to-white border border-orange-100 p-3 flex items-start gap-2">
+                <Sparkles className="h-4 w-4 text-[#FF7A18] mt-0.5 shrink-0" />
+                <p className="text-sm text-neutral-700" data-testid="recap-suggestion">{recap.suggestion}</p>
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Right: top product */}
+        <div className="bg-gradient-to-br from-neutral-50 to-white border-t md:border-t-0 md:border-l border-neutral-200 p-5 sm:p-6">
+          <div className="text-xs uppercase tracking-wider text-neutral-500 font-medium">Top seller last week</div>
+          {recap.top_product ? (
+            <Link
+              to={`/listing/${recap.top_product.id}`}
+              className="mt-3 flex gap-3 group"
+              data-testid="recap-top-product"
+            >
+              <img
+                src={recap.top_product.images?.[0]}
+                alt={recap.top_product.title}
+                className="h-20 w-20 rounded-xl object-cover bg-neutral-100 shrink-0"
+              />
+              <div className="min-w-0">
+                <div className="text-sm font-semibold text-neutral-900 line-clamp-2 group-hover:text-[#FF211F] transition">
+                  {recap.top_product.title}
+                </div>
+                <div className="text-base font-bold text-[#FF211F] mt-1">{money(recap.top_product.price)}</div>
+                <div className="text-[11px] text-neutral-500 mt-1">Tap to view listing</div>
+              </div>
+            </Link>
+          ) : (
+            <div className="mt-3 text-sm text-neutral-500" data-testid="recap-no-top-product">
+              Once you close orders, your best seller will appear here.
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 };
@@ -201,6 +291,11 @@ const StoreAnalytics = () => {
           <Sparkline series={data.series} />
         </div>
       </div>
+
+      {/* Weekly Recap */}
+      {data.weekly_recap && (
+        <WeeklyRecapCard recap={data.weekly_recap} currentEarnings={data.weekly?.earned || 0} />
+      )}
 
       {/* Stat grid */}
       <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">

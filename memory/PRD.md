@@ -26,6 +26,11 @@ Exact replica of Mercari platform (mercari.com) — same color scheme (`#FF211F`
 
 ## Implemented (with dates)
 
+### Feb 2026 — Phase 11: Sortable Storefronts + Weekly Recap Card
+- **Sortable Storefronts (Admin)** — `Admin.jsx > StoresMgr` rewritten with `@hello-pangea/dnd`. Drag handle on each row, live optimistic reorder, "Save order" button gated by dirty state. Persists via new `POST /api/admin/stores/reorder` which writes `featured_rank` on every store. `GET /api/admin/stores` and the new public `GET /api/stores-featured` both sort by `featured_rank` ascending so top-of-list shows first everywhere.
+- **Weekly Recap Card (Seller)** — new `WeeklyRecapCard` on `StoreAnalytics.jsx` (route `/store/analytics`) shows last week's earnings, orders count, top-selling product (linked), delta vs current week (+/- badge), and a personalized suggestion. Data comes from `weekly_recap` block already returned by `GET /api/seller/dashboard`. Empty state renders when no last-week sales.
+- **Tests**: 13/13 backend pytest pass (`/app/backend/tests/test_phase11_sortable_stores_recap.py`). Frontend flows verified by testing agent (iteration_6).
+
 ### Feb 2026 — Phase 10: DnD Shelves, Digest Modal, Goal Milestones
 - **Drag-and-Drop Shelves** — swapped arrow controls for full drag-and-drop via `@hello-pangea/dnd`. Rows highlight on drag, "Save order" button disables until dirty, then persists via `POST /api/admin/shelves/reorder`.
 - **Digest Preview Modal + Opt-out** — new `GET /api/wishlist-digest/preview` returns the user's opt-in flag + up-to-20 recent price drops + delivery cadence. `PUT /api/wishlist-digest/opt` toggles subscription. Users see a `DigestCard` on their profile with a Switch (auto-saves) and a Preview button that opens a full email-style modal with product thumbnails + Unsubscribe button. `wishlist_digest_loop` now respects `user.weekly_digest_opt_in`.

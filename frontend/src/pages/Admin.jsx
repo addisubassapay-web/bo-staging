@@ -10,7 +10,8 @@ import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { LayoutDashboard, Users, Package, ShoppingBag, FolderTree, Trash2, Star, Plus, Settings as SettingsIcon, Wallet, Store as StoreIcon, Save, Check, X as XIcon, Database, IdCard, LayoutGrid } from "lucide-react";
+import { LayoutDashboard, Users, Package, ShoppingBag, FolderTree, Trash2, Star, Plus, Settings as SettingsIcon, Wallet, Store as StoreIcon, Save, Check, X as XIcon, Database, IdCard, LayoutGrid, GripVertical } from "lucide-react";
+import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import AdminShelves from "@/pages/AdminShelves";
 import ApifySync from "@/pages/AdminApifySync";
 
@@ -506,69 +507,130 @@ const WithdrawalsMgr = () => {
 
 const StoresMgr = () => {
   const [stores, setStores] = useState([]);
+  const [dirty, setDirty] = useState(false);
+  const [saving, setSaving] = useState(false);
   const { toast } = useToast();
   const load = () => api.get("/admin/stores").then((r) => setStores(r.data));
   useEffect(() => { load(); }, []);
 
   const setTier = async (s, verified_tier) => {
-    await api.put(`/admin/stores/${s.id}`, { verified_tier });
-    toast({ title: `Verified tier updated` });
-    load();
+    setStores((prev) => prev.map((x) => (x.id === s.id ? { ...x, verified_tier } : x)));
+    try {
+      await api.put(`/admin/stores/${s.id}`, { verified_tier });
+      toast({ title: `Verified tier updated` });
+    } catch { load(); }
   };
   const toggleActive = async (s) => {
-    await api.put(`/admin/stores/${s.id}`, { is_active: !s.is_active });
-    load();
+    setStores((prev) => prev.map((x) => (x.id === s.id ? { ...x, is_active: !x.is_active } : x)));
+    try { await api.put(`/admin/stores/${s.id}`, { is_active: !s.is_active }); }
+    catch { load(); }
+  };
+
+  const onDragEnd = (result) => {
+    if (!result.destination || result.source.index === result.destination.index) return;
+    const copy = [...stores];
+    const [moved] = copy.splice(result.source.index, 1);
+    copy.splice(result.destination.index, 0, moved);
+    setStores(copy);
+    setDirty(true);
+  };
+
+  const saveOrder = async () => {
+    setSaving(true);
+    try {
+      await api.post("/admin/stores/reorder", { ids: stores.map((s) => s.id) });
+      toast({ title: "Storefront order saved" });
+      setDirty(false);
+    } catch {
+      toast({ title: "Save failed", variant: "destructive" });
+    } finally { setSaving(false); }
   };
 
   return (
-    <div>
-      <h2 className="text-2xl font-bold mb-4">Stores</h2>
-      <div className="bg-white border border-neutral-200 rounded-lg overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead className="bg-neutral-50 text-left">
-            <tr>
-              <th className="p-3">Store</th>
-              <th className="p-3">Slug</th>
-              <th className="p-3">Sales</th>
-              <th className="p-3">Followers</th>
-              <th className="p-3">Verified tier</th>
-              <th className="p-3">Status</th>
-              <th className="p-3">Created</th>
-            </tr>
-          </thead>
-          <tbody>
-            {stores.length === 0 && (
-              <tr><td colSpan={7} className="p-8 text-center text-neutral-500">No stores yet.</td></tr>
-            )}
-            {stores.map((s) => (
-              <tr key={s.id} className="border-t border-neutral-100">
-                <td className="p-3 font-medium">{s.name}</td>
-                <td className="p-3 text-neutral-600 font-mono text-xs">/{s.slug}</td>
-                <td className="p-3">{s.total_sales}</td>
-                <td className="p-3">{s.followers_count}</td>
-                <td className="p-3">
-                  <Select value={s.verified_tier} onValueChange={(v) => setTier(s, v)}>
-                    <SelectTrigger className="h-8 w-28"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">None</SelectItem>
-                      <SelectItem value="bronze">Bronze</SelectItem>
-                      <SelectItem value="silver">Silver</SelectItem>
-                      <SelectItem value="gold">Gold</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </td>
-                <td className="p-3">
-                  <div className="flex items-center gap-2">
-                    <Switch checked={s.is_active} onCheckedChange={() => toggleActive(s)} />
-                    <span className="text-xs text-neutral-500">{s.is_active ? "Active" : "Disabled"}</span>
-                  </div>
-                </td>
-                <td className="p-3 text-neutral-500 text-xs">{new Date(s.created_at).toLocaleDateString()}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+    <div data-testid="admin-stores">
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h2 className="text-2xl font-bold">Stores</h2>
+          <p className="text-sm text-neutral-500">Drag to reorder featured storefronts. Top of the list shows first everywhere.</p>
+        </div>
+        <Button
+          onClick={saveOrder}
+          disabled={saving || !dirty}
+          className="bg-[#FF211F] hover:bg-[#e01d1b] gap-1.5 disabled:opacity-40"
+          data-testid="save-store-order"
+        >
+          <Save className="h-4 w-4" /> {saving ? "Saving…" : dirty ? "Save order" : "Saved"}
+        </Button>
       </div>
+
+      {stores.length === 0 ? (
+        <div className="bg-white border border-neutral-200 rounded-lg p-8 text-center text-neutral-500">No stores yet.</div>
+      ) : (
+        <DragDropContext onDragEnd={onDragEnd}>
+          <Droppable droppableId="stores">
+            {(provided) => (
+              <div ref={provided.innerRef} {...provided.droppableProps} className="space-y-2">
+                {stores.map((s, i) => (
+                  <Draggable key={s.id} draggableId={s.id} index={i}>
+                    {(prov, snapshot) => (
+                      <div
+                        ref={prov.innerRef}
+                        {...prov.draggableProps}
+                        className={`flex items-center gap-3 bg-white border rounded-lg p-3 ${snapshot.isDragging ? "border-[#FF7A18] shadow-lg" : "border-neutral-200"}`}
+                        data-testid={`store-row-${s.id}`}
+                      >
+                        <span
+                          {...prov.dragHandleProps}
+                          className="cursor-grab active:cursor-grabbing text-neutral-400 hover:text-neutral-600"
+                          data-testid={`store-drag-${s.id}`}
+                        >
+                          <GripVertical className="h-4 w-4" />
+                        </span>
+                        <div className="w-8 h-8 rounded-lg bg-neutral-100 grid place-items-center overflow-hidden shrink-0">
+                          {s.logo ? (
+                            <img src={s.logo} alt="" className="w-full h-full object-cover" />
+                          ) : (
+                            <StoreIcon className="h-4 w-4 text-neutral-400" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0 grid sm:grid-cols-[minmax(0,1fr)_auto_auto_auto_auto] items-center gap-3">
+                          <div className="min-w-0">
+                            <div className="font-semibold truncate">{s.name}</div>
+                            <div className="text-xs text-neutral-500 font-mono truncate">/{s.slug}</div>
+                          </div>
+                          <div className="text-xs text-neutral-500 whitespace-nowrap">
+                            {s.total_sales} sales · {s.followers_count} followers
+                          </div>
+                          <Select value={s.verified_tier} onValueChange={(v) => setTier(s, v)}>
+                            <SelectTrigger className="h-8 w-28" data-testid={`store-tier-${s.id}`}><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">None</SelectItem>
+                              <SelectItem value="bronze">Bronze</SelectItem>
+                              <SelectItem value="silver">Silver</SelectItem>
+                              <SelectItem value="gold">Gold</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <div className="flex items-center gap-2">
+                            <Switch
+                              checked={s.is_active}
+                              onCheckedChange={() => toggleActive(s)}
+                              data-testid={`store-toggle-${s.id}`}
+                            />
+                            <span className="text-xs text-neutral-500">{s.is_active ? "Active" : "Off"}</span>
+                          </div>
+                          <div className="text-[11px] text-neutral-400 whitespace-nowrap">{new Date(s.created_at).toLocaleDateString()}</div>
+                        </div>
+                      </div>
+                    )}
+                  </Draggable>
+                ))}
+                {provided.placeholder}
+              </div>
+            )}
+          </Droppable>
+        </DragDropContext>
+      )}
+      <p className="text-xs text-neutral-500 mt-4">Drag rows to reorder, then Save. This controls the order storefronts appear on the Home page and any &ldquo;featured stores&rdquo; strips.</p>
     </div>
   );
 };

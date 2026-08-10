@@ -260,6 +260,7 @@ class Store(BaseModel):
     followers_count: int = 0
     total_sales: int = 0
     is_active: bool = True
+    featured_rank: int = 9999
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class StoreCreate(BaseModel):
@@ -1306,18 +1307,38 @@ async def admin_process_withdrawal(wd_id: str, updates: dict, _admin: dict = Dep
 
 @api_router.get("/admin/stores", response_model=List[Store])
 async def admin_stores(_admin: dict = Depends(require_admin)):
-    docs = await db.stores.find({}, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    docs = await db.stores.find({}, {"_id": 0}).sort([("featured_rank", 1), ("created_at", -1)]).to_list(1000)
     return [Store(**d) for d in docs]
 
 @api_router.put("/admin/stores/{store_id}")
 async def admin_update_store(store_id: str, updates: dict, _admin: dict = Depends(require_admin)):
-    allowed = {"verified_tier", "is_active", "name", "tagline"}
+    allowed = {"verified_tier", "is_active", "name", "tagline", "featured_rank"}
     filtered = {k: v for k, v in updates.items() if k in allowed}
     if not filtered:
         raise HTTPException(400, "No valid updates")
     await db.stores.update_one({"id": store_id}, {"$set": filtered})
     doc = await db.stores.find_one({"id": store_id}, {"_id": 0})
     return Store(**doc) if doc else {"ok": True}
+
+
+@api_router.post("/admin/stores/reorder")
+async def admin_reorder_stores(payload: dict, _admin: dict = Depends(require_admin)):
+    """Persist the drag-and-drop order for featured storefronts."""
+    ids = payload.get("ids") or []
+    if not isinstance(ids, list) or not ids:
+        raise HTTPException(400, "Provide ids: [store_id, ...] in desired order")
+    for i, sid in enumerate(ids):
+        await db.stores.update_one({"id": sid}, {"$set": {"featured_rank": i}})
+    return {"ok": True, "count": len(ids)}
+
+
+@api_router.get("/stores-featured", response_model=List[Store])
+async def public_featured_stores(limit: int = 12):
+    """Public list of active stores ordered by featured_rank (admin-controlled)."""
+    docs = await db.stores.find(
+        {"is_active": True}, {"_id": 0}
+    ).sort([("featured_rank", 1), ("created_at", -1)]).limit(max(1, min(limit, 50))).to_list(50)
+    return [Store(**d) for d in docs]
 
 @api_router.get("/admin/affiliate-links", response_model=List[AffiliateLink])
 async def admin_affiliate_links(_admin: dict = Depends(require_admin)):

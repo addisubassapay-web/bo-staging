@@ -144,6 +144,43 @@ async def seller_dashboard(user: dict = Depends(get_current_user)):
         "progress_pct": min(100, round(week_earnings / weekly_goal * 100)) if weekly_goal > 0 else 0,
     }
 
+    # Weekly recap: last week's totals + top-selling product + suggestion
+    last_week_start = week_start - timedelta(days=7)
+    last_week_end = week_start
+    last_orders = [o for o in orders if (
+        (o.get("created_at").replace(tzinfo=week_start.tzinfo) if hasattr(o.get("created_at"), "tzinfo") and o.get("created_at").tzinfo is None else o.get("created_at"))
+        and last_week_start <= (o.get("created_at").replace(tzinfo=week_start.tzinfo) if hasattr(o.get("created_at"), "tzinfo") and o.get("created_at").tzinfo is None else o.get("created_at")) < last_week_end
+    )]
+    last_week_earnings = round(sum(float(o.get("amount", 0)) - float(o.get("platform_fee", 0)) for o in last_orders), 2)
+    top_listing_id = None
+    if last_orders:
+        counts = {}
+        for o in last_orders:
+            lid = o.get("listing_id")
+            if lid: counts[lid] = counts.get(lid, 0) + 1
+        if counts:
+            top_listing_id = max(counts, key=counts.get)
+    top_product = None
+    if top_listing_id:
+        top_product = await db.listings.find_one(
+            {"id": top_listing_id}, {"_id": 0, "id": 1, "title": 1, "price": 1, "images": 1}
+        )
+    delta_pct = 0
+    if last_week_earnings > 0:
+        delta_pct = round((week_earnings - last_week_earnings) / last_week_earnings * 100)
+    weekly_recap = {
+        "week_start": last_week_start.isoformat(),
+        "earnings": last_week_earnings,
+        "orders": len(last_orders),
+        "top_product": top_product,
+        "delta_pct_vs_current": delta_pct,
+        "suggestion": (
+            f"Try boosting a similar item to '{top_product['title']}' this week."
+            if top_product else
+            "List a fresh item this week to attract new shoppers."
+        ),
+    }
+
     return {
         "series": series,
         "totals": {
@@ -164,6 +201,7 @@ async def seller_dashboard(user: dict = Depends(get_current_user)):
             "likes": total_likes,
         },
         "weekly": weekly,
+        "weekly_recap": weekly_recap,
         "recent_orders": recent,
     }
 
