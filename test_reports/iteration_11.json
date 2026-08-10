@@ -1,0 +1,35 @@
+{
+  "summary": "Phase 16 (per-category import breakdown card + incremental backend persist) fully verified. Backend: 6/6 pytest tests pass covering GET /api/admin/sync/status shape, POST /api/admin/sync/apify started/already_running/validation, and a mocked unit test proving that import_from_apify writes per_category to sync_state every 200 imports with a 'Classifying items — N/M processed' message. Frontend: All 4 UI phases pass on /admin/apify-sync — (A) empty+running shows 'Classifying items…' variant with correct testid, (B) seeded per_category renders CategoryBreakdownCard with rows sorted descending by count, correct percentages, correct total (1,800), gradient bars, and the live-refresh banner, (C) banner disappears when sync_running=false, (D) empty+not-running shows 'No category data yet'. sync_state was restored to per_category={}, sync_running=true after tests.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_phase16_apify_category.py",
+    "/app/test_reports/pytest/phase16_results.xml",
+    "/app/test_reports/phase16_A.png",
+    "/app/test_reports/phase16_B_filled_running.png",
+    "/app/test_reports/phase16_D_empty_stopped.png"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "apify_sync.py line 296: incremental persist uses `idx % 200 == 0` where idx increments only on successful builds — this correctly counts *successful imports* rather than *raw items processed*. The user-facing message 'Classifying items — {idx}/{total_raw} processed' is slightly misleading because idx counts successful imports while total_raw is raw item count. Not a functional bug, just a wording nit.",
+    "AdminApifySync.jsx `barPct = (count / max) * 100` uses `max = rows[0][1]` (the top row's value). Because rows are sorted descending, top row always renders full 100% width — this is intentional relative-scaling but worth noting for design review.",
+    "No regressions detected: POST /admin/sync/apify still returns {ok:true, started:true} / {ok:true, already_running:true}; GET /admin/sync/status shape unchanged; 5s auto-refresh interval visibly working (seed → 6.5s wait → UI reflected new state)."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_phase16_apify_category.py (new)"
+  ],
+  "success_rate": {"backend": "100% (6/6)", "frontend": "100% (all 4 phases)"},
+  "test_credentials": "admin@mercari.local / admin123 (from /app/memory/test_credentials.md). Note: LoginPage submit did not persist mercari_token via UI-only flow in this test run — used direct /api/auth/login + localStorage.setItem to obtain admin session. This did NOT fail login functionally (200 + role=admin returned); potentially a UI form submit binding worth double-checking in a future full-login regression, but out of scope for Phase 16.",
+  "seed_data_creation": "Directly mutated db.sync_state via mongosh: (1) per_category={electronics:620,women:480,men:410,home:200,kids:90}, sync_running:true for filled+running variant; (2) sync_running:false for stopped+filled variant; (3) per_category:{}, sync_running:false for stopped+empty variant. Restored to per_category:{}, sync_running:true at end.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Backend pytest suite at /app/backend/tests/test_phase16_apify_category.py is idempotent and safe to re-run. Login via UI (LoginPage form) did not persist token in this run — inconclusive; if you hit the same, use fetch('/api/auth/login')+localStorage.setItem('mercari_token', ...) as done here. sync_state has been restored to running=true with empty per_category — this reflects the real background sync that appears to be legitimately in-progress (started_at 2026-08-10T03:12:09Z, running for many hours). Main agent may want to inspect whether the actual Apify actor really is still running or if the state is stale.",
+  "rca of the issue": "N/A — no bugs found in Phase 16 feature under test."
+}

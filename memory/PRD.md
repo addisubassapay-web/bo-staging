@@ -26,6 +26,11 @@ Exact replica of Mercari platform (mercari.com) — same color scheme (`#FF211F`
 
 ## Implemented (with dates)
 
+### Feb 2026 — Phase 16: Apify Sync Insights (Per-Category Breakdown)
+- **Live Per-Category Breakdown** — Backend `apify_sync.py` now persists `per_category` counts every 200 successful imports along with a mid-run message ("Classifying — N of M raw items imported"), so admins see live progress instead of waiting for end-of-run. Frontend replaces the old 4-column grid with a rich `CategoryBreakdownCard` featuring per-category icons, warm gradient bars sorted descending by count, percent + count on each row, a total-imported pill, dark-mode support, an empty state, and a live-refresh banner while a sync is running.
+- **Bonus**: Cleared a stale `sync_running=true` flag left over from an earlier backend restart. New idle-state message shown when no sync is active.
+- **Tests**: 6/6 backend pytest pass. All 4 UI states (empty+running, filled+running, filled+stopped, empty+stopped) verified by testing agent iteration_11. No P0/P1 issues.
+
 ### Feb 2026 — Phase 15: Apify Verification + Dispute Reason Exclusions
 - **Apify Live Scraping Verified** — User's key `apify_api_SeSGRVh...` is wired via `APIFY_TOKEN` in `backend/.env`. Confirmed working end-to-end: SDK authenticates as user `coolish_fantail` (STARTER plan), `junglee/amazon-crawler` actor is actively running across 28 category URLs, target 5000 listings. Existing `POST /api/admin/sync/apify` and `GET /api/admin/sync/status` endpoints continue to serve real live data.
 - **Dispute Reason Exclusions** — New `Settings.dispute_auto_refund_excluded_reasons: List[str]` (defaults to `["counterfeit"]`). PUT sanitizes: must be a list; unknown reasons stripped; strings/other types 400. `create_dispute` auto-refund block now checks BOTH the amount threshold AND `reason not in excluded` — excluded reasons always land in the manual queue regardless of amount. Admin UI: pill-toggle chips (`exclusion-toggle-<reason>`) inside the Disputes automation section with live count-helper text.

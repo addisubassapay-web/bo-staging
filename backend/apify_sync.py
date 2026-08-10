@@ -270,6 +270,7 @@ async def import_from_apify(
     to_insert: List[Dict] = []
     per_cat: Dict[str, int] = {}
     idx = 0
+    total_raw = len(items)
     for it in items:
         # try to detect category from the actor's breadCrumbs, else round-robin
         slug_hit = None
@@ -291,6 +292,15 @@ async def import_from_apify(
             to_insert.append(listing)
             per_cat[slug_hit] = per_cat.get(slug_hit, 0) + 1
             idx += 1
+            # Persist per-category counts every 200 imports so mid-run status is live
+            if idx % 200 == 0:
+                await db.sync_state.update_one(
+                    {"id": "apify"},
+                    {"$set": {
+                        "per_category": dict(per_cat),
+                        "message": f"Classifying — {idx} of {total_raw} raw items imported",
+                    }},
+                )
 
     if to_insert:
         # feature ~40 items
