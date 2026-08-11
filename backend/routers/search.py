@@ -255,3 +255,38 @@ async def listing_bundle(listing_id: str, limit: int = 6):
         {"_id": 0},
     ).sort([("category_id", -1 if src.get("category_id") else 1), ("views_count", -1)]).limit(limit).to_list(limit)
     return docs
+
+
+@router.get("/listings/{listing_id}/similar")
+async def listing_similar(listing_id: str, limit: int = 12):
+    """You may also like — items in the same category with a similar price band, from any seller.
+    Falls back to popular items in the same category if too few similar-price matches."""
+    db = get_db()
+    src = await db.listings.find_one(
+        {"id": listing_id},
+        {"_id": 0, "seller_id": 1, "category_id": 1, "price": 1, "brand": 1},
+    )
+    if not src:
+        raise HTTPException(404, "Listing not found")
+    price = float(src.get("price") or 0)
+    # ±40% band, min $5 spread
+    spread = max(5.0, price * 0.4)
+    lo, hi = max(0.0, price - spread), price + spread
+    q_base = {
+        "id": {"$ne": listing_id},
+        "status": "active",
+        "category_id": src.get("category_id"),
+    }
+    close = await db.listings.find(
+        {**q_base, "price": {"$gte": lo, "$lte": hi}},
+        {"_id": 0},
+    ).sort([("views_count", -1), ("likes_count", -1)]).limit(limit).to_list(limit)
+    if len(close) < limit:
+        need = limit - len(close)
+        have_ids = [d["id"] for d in close]
+        rest = await db.listings.find(
+            {**q_base, "id": {"$nin": have_ids + [listing_id]}},
+            {"_id": 0},
+        ).sort([("views_count", -1), ("likes_count", -1)]).limit(need).to_list(need)
+        close.extend(rest)
+    return close

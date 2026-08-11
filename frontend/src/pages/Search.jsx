@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
-import { SlidersHorizontal, X, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Package } from "lucide-react";
+import { SlidersHorizontal, X, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Package, Wand2 } from "lucide-react";
+import VibeSearch from "@/components/VibeSearch";
 
 const PAGE_SIZES = [24, 48, 96];
 
@@ -30,6 +31,7 @@ const Search = () => {
   const size = PAGE_SIZES.includes(rawSize) ? rawSize : 24;
 
   const [priceRange, setPriceRange] = useState([Number(min) || 0, Number(max) || 500]);
+  const [vibeMode, setVibeMode] = useState(false);
 
   useEffect(() => {
     api.get("/categories").then((r) => setCategories(r.data)).catch(() => {});
@@ -104,6 +106,25 @@ const Search = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-3 sm:px-4 py-6" data-testid="search-page">
+      {/* Vibe mode toggle */}
+      <div className="mb-4 flex items-center justify-end">
+        <button
+          onClick={() => setVibeMode((v) => !v)}
+          className={`inline-flex items-center gap-1.5 px-4 h-9 rounded-full text-xs font-semibold transition ${
+            vibeMode
+              ? "bg-gradient-to-r from-[#FF7A18] to-[#FF211F] text-white shadow-sm"
+              : "bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-100"
+          }`}
+          data-testid="vibe-mode-toggle"
+        >
+          <Wand2 className="h-3.5 w-3.5" />
+          {vibeMode ? "Vibe search on" : "Try Vibe search"}
+          <span className={`text-[9px] px-1.5 rounded-full ${vibeMode ? "bg-white/25" : "bg-[#FF7A18] text-white"}`}>AI</span>
+        </button>
+      </div>
+
+      {vibeMode && <VibeSearch />}
+
       <div className="flex items-center justify-between gap-4 mb-8 flex-wrap">
         <div>
           <span className="inline-block text-[10px] uppercase tracking-[0.2em] font-semibold text-[#FF7A18] bg-[#FF7A18]/10 border border-[#FF7A18]/20 rounded-full px-3 py-1">

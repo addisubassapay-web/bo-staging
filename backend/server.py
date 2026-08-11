@@ -2229,6 +2229,127 @@ async def ai_listing_suggest(payload: AIListingSuggestRequest, user: dict = Depe
 
 
 # =========================
+# Vibe Search — LLM-powered vibe → filter translation
+# =========================
+class VibeSearchRequest(BaseModel):
+    vibe: str
+    limit: int = 24
+
+
+@api_router.post("/search/vibe")
+async def search_vibe(payload: VibeSearchRequest, request: Request):
+    """Translate a natural-language vibe ('cozy', 'minimalist retro', 'y2k glam') into
+    concrete filters using the Emergent LLM key, then return matching active listings.
+    Anonymous-friendly (no auth required)."""
+    vibe = (payload.vibe or "").strip()
+    if len(vibe) < 2:
+        raise HTTPException(400, "Vibe must be at least 2 characters")
+    if not EMERGENT_LLM_KEY:
+        raise HTTPException(500, "AI service not configured")
+
+    categories = await db.categories.find({}, {"_id": 0, "id": 1, "slug": 1, "name": 1}).to_list(50)
+    cat_slugs = [c["slug"] for c in categories]
+    cat_list = ", ".join(cat_slugs)
+
+    system_msg = (
+        "You translate free-form shopping 'vibes' into concrete Mercari filters. "
+        "Return STRICT JSON only (no prose, no code fences) with keys: "
+        "keywords (array of 2-5 BROAD single-word or 2-word search terms that commonly appear in product titles for this vibe — favor generic words like 'watch', 'sweater', 'lamp' over niche phrases), "
+        f"category_slugs (array of 1-3 slugs from this exact list: {cat_list}), "
+        "brand_hints (array of 0-4 brand names likely to match the vibe, empty array if unsure), "
+        "min_price (number or null), max_price (number or null), "
+        "explanation (short single-sentence summary of the vibe under 90 chars). "
+        "Do not include any other keys."
+    )
+    chat = LlmChat(
+        api_key=EMERGENT_LLM_KEY,
+        session_id=f"vibe-{uuid.uuid4().hex[:10]}",
+        system_message=system_msg,
+    ).with_model(AI_MODEL_PROVIDER, AI_MODEL_NAME)
+
+    try:
+        response_text = await chat.send_message(UserMessage(text=f"Vibe: {vibe}"))
+    except Exception as e:
+        logger.error(f"Vibe LLM failed: {e}")
+        raise HTTPException(500, f"AI request failed: {e}")
+
+    try:
+        parsed = _extract_json(response_text)
+    except Exception as e:
+        logger.error(f"Vibe JSON parse failed. Raw: {response_text!r}")
+        raise HTTPException(500, f"AI returned invalid JSON: {e}")
+
+    keywords = [str(k).strip() for k in (parsed.get("keywords") or []) if str(k).strip()][:4]
+    slug_list = [str(s).strip().lower() for s in (parsed.get("category_slugs") or [])]
+    picked_cat_ids = [c["id"] for c in categories if c["slug"] in slug_list][:3]
+    brand_hints = [str(b).strip() for b in (parsed.get("brand_hints") or []) if str(b).strip()][:4]
+    min_price = parsed.get("min_price")
+    max_price = parsed.get("max_price")
+    explanation = str(parsed.get("explanation") or "").strip()[:120]
+
+    # Build mongo query with graceful fallback if the strict combo yields too little
+    def build_query(include_or: bool, include_keywords: bool, include_price: bool) -> dict:
+        q: dict = {"status": "active"}
+        if include_or:
+            ors: list = []
+            if include_keywords:
+                for k in keywords:
+                    rx = {"$regex": re.escape(k), "$options": "i"}
+                    ors.extend([{"title": rx}, {"description": rx}])
+            for b in brand_hints:
+                ors.append({"brand": {"$regex": re.escape(b), "$options": "i"}})
+            if ors:
+                q["$or"] = ors
+        if picked_cat_ids:
+            q["category_id"] = {"$in": picked_cat_ids}
+        if include_price and (isinstance(min_price, (int, float)) or isinstance(max_price, (int, float))):
+            pr: dict = {}
+            if isinstance(min_price, (int, float)) and min_price > 0:
+                pr["$gte"] = float(min_price)
+            if isinstance(max_price, (int, float)) and max_price > 0:
+                pr["$lte"] = float(max_price)
+            if pr:
+                q["price"] = pr
+        return q
+
+    limit = max(1, min(int(payload.limit or 24), 60))
+    # Levels: strict → no price → no keywords → category only
+    levels = [
+        ("strict", True, True, True),
+        ("no-price", True, True, False),
+        ("no-keywords", True, False, False),
+        ("category-only", False, False, False),
+    ]
+    fallback_used = "strict"
+    docs: list = []
+    for name, inc_or, inc_kw, inc_pr in levels:
+        query = build_query(include_or=inc_or, include_keywords=inc_kw, include_price=inc_pr)
+        docs = await db.listings.find(query, {"_id": 0}).sort(
+            [("views_count", -1), ("likes_count", -1)]
+        ).limit(limit).to_list(limit)
+        fallback_used = name
+        if len(docs) >= max(6, limit // 3) or name == "category-only":
+            break
+
+    picked_categories = [
+        {"id": c["id"], "name": c["name"], "slug": c["slug"]}
+        for c in categories if c["slug"] in slug_list
+    ]
+
+    return {
+        "vibe": vibe,
+        "explanation": explanation,
+        "keywords": keywords,
+        "categories": picked_categories,
+        "brand_hints": brand_hints,
+        "price_range": {"min": min_price, "max": max_price},
+        "fallback": fallback_used,
+        "items": docs,
+        "total": len(docs),
+    }
+
+
+# =========================
 # PHASE 4: AI Photo Cleanup (Nano Banana image editing) + Flash Deals
 # =========================
 NANO_BANANA_MODEL = "gemini-3.1-flash-image-preview"

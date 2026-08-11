@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ListingReviews } from "@/components/Reviews";
 import { VerificationBadges } from "@/components/VerificationBadges";
 import ProductCard from "@/components/ProductCard";
+import SimilarItems from "@/components/SimilarItems";
 
 const SellerBlock = ({ sellerId, sellerName, views }) => {
   const [seller, setSeller] = useState(null);
@@ -366,6 +367,9 @@ const ListingDetail = () => {
           <ListingReviews listingId={listing.id} />
         </div>
       </div>
+
+      {/* You may also like */}
+      <SimilarItems listingId={listing.id} />
 
       {/* Smart Bundles */}
       {bundle.length > 0 && (

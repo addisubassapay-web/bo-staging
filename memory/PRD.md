@@ -26,6 +26,10 @@ Exact replica of Mercari platform (mercari.com) — same color scheme (`#FF211F`
 
 ## Implemented (with dates)
 
+### Feb 2026 — You May Also Like + Vibe Search (AI)
+- **You may also like** (`SimilarItems.jsx`, `GET /api/listings/{id}/similar`) — new horizontal scroll strip on every product detail page. Backend returns up to 12 active listings in the same category with prices in a ±40% band around the source (min $5 spread), sorted by views + likes; falls back to popular items in the same category when the tight band is thin. Left/right scroll controls, aspect-square cards, dark-mode compatible. Rendered above the existing "Complete the look" seller-bundle strip.
+- **Vibe Search** (`VibeSearch.jsx`, `POST /api/search/vibe`) — LLM-powered natural-language search on the Search page behind a "Try Vibe search" toggle. Emergent LLM Key + GPT-5.4 translates a vibe (e.g., "cozy minimalist home", "y2k retro glam") into structured filters — keywords, category slugs (from the 21-cat taxonomy), brand hints, price range, and a plain-english explanation. Backend runs a 4-level graceful fallback (strict → drop price → drop keywords → category only) so results are non-empty even when the LLM suggests niche brands/terms outside our inventory. UI shows the vibe-read explanation, chip breakdown of matched categories/keywords/brands, a "broadened" badge when fallback triggers, and a grid of matching products. 6 example vibes as click-to-run chips. Tested end-to-end via `testing_agent_v3_fork` iteration_14 — 100% pass across backend (4/4 pytest) + frontend flows.
+
 ### Feb 2026 — Modern Mercari-Style Navigation + Advanced Search + Expanded Categories
 - **New Header** (`Header.jsx`) faithful to mercari.com: slim top strip (marketplace, free returns, deals, Help/Login/Register), main bar with logo, Categories mega-menu button, prominent pill-shaped search bar (fills remaining space), and right-side action cluster (Sell gradient CTA, theme toggle, favorites, notifications, messages, cart, user avatar/sign-in). Category ribbon below shows all 21 categories horizontally scrollable.
 - **CategoryMegaMenu** (`CategoryMegaMenu.jsx`) — hover/click dropdown with 4 quick-link chips (Trending, New arrivals, Under $25, Most loved) and a 5-column grid of all 21 categories with lucide icons + hover accents.
@@ -37,7 +41,7 @@ Exact replica of Mercari platform (mercari.com) — same color scheme (`#FF211F`
   - `/api/search/trending` new — top brand queries from most-viewed active listings.
   - `/api/listings` & `/api/listings/count` now accept optional `brand` filter.
 - **MobileDrawer** revamped with a 2-column categories grid so all 21 are reachable on mobile.
-- Verified via `testing_agent_v3_fork` (iteration_13.json) and playwright screenshots: 22 category pills, mega-menu with all 4 chips + 21 grid entries, live suggestions returning brands/categories/items, trending chips visible on focus.
+- Verified via `testing_agent_v3_fork` (iteration_13.json) and playwright screenshots.
 
 
 ### Feb 2026 — Boost-my-score Hint + Product Detail Refresh
