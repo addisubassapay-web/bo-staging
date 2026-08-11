@@ -25,12 +25,13 @@ router = APIRouter()
 async def search_suggest(q: str = "", limit: int = 8):
     q = (q or "").strip()
     if len(q) < 2:
-        return {"items": [], "queries": []}
+        return {"items": [], "queries": [], "brands": [], "categories": []}
     db = get_db()
     rx = {"$regex": re.escape(q), "$options": "i"}
+    # Product matches
     docs = await db.listings.find(
         {"status": "active", "$or": [{"title": rx}, {"brand": rx}]},
-        {"_id": 0, "id": 1, "title": 1, "images": 1, "price": 1, "brand": 1, "category_name": 1},
+        {"_id": 0, "id": 1, "title": 1, "images": 1, "price": 1, "brand": 1, "category_name": 1, "category_id": 1},
     ).limit(limit).to_list(limit)
     items = [{
         "id": d["id"],
@@ -40,10 +41,135 @@ async def search_suggest(q: str = "", limit: int = 8):
         "brand": d.get("brand") or "",
         "category_name": d.get("category_name") or "",
     } for d in docs]
-    brand_matches = await db.listings.distinct("brand", {"brand": rx, "status": "active"})
-    cat_matches = await db.listings.distinct("category_name", {"category_name": rx, "status": "active"})
-    queries = [b for b in brand_matches if b][:4] + [c for c in cat_matches if c][:4]
-    return {"items": items, "queries": queries[:8]}
+    # Brand suggestions (with counts)
+    brand_pipe = [
+        {"$match": {"status": "active", "brand": rx}},
+        {"$group": {"_id": "$brand", "n": {"$sum": 1}}},
+        {"$sort": {"n": -1}},
+        {"$limit": 5},
+    ]
+    brand_agg = [b async for b in db.listings.aggregate(brand_pipe)]
+    brands = [{"name": b["_id"], "count": b["n"]} for b in brand_agg if b.get("_id")]
+    # Category suggestions (from taxonomy — safer than listing category_name text)
+    cat_docs = await db.categories.find(
+        {"$or": [{"name": rx}, {"slug": rx}]},
+        {"_id": 0, "id": 1, "name": 1, "slug": 1, "icon": 1},
+    ).limit(5).to_list(5)
+    categories = cat_docs
+    # Query token suggestions (unique titles containing q, first token span)
+    title_docs = await db.listings.find(
+        {"status": "active", "title": rx},
+        {"_id": 0, "title": 1},
+    ).limit(30).to_list(30)
+    seen: set = set()
+    query_tokens: list = []
+    ql = q.lower()
+    for d in title_docs:
+        t = (d.get("title") or "").lower()
+        # Take a phrase of 2-3 words centered on the query
+        idx = t.find(ql)
+        if idx == -1:
+            continue
+        # Expand to word boundaries and include a couple of following words
+        start = t.rfind(" ", 0, idx) + 1
+        end = idx + len(ql)
+        for _ in range(2):
+            ns = t.find(" ", end + 1)
+            if ns == -1:
+                break
+            end = ns
+        phrase = t[start:end].strip()
+        if 3 <= len(phrase) <= 40 and phrase not in seen:
+            seen.add(phrase)
+            query_tokens.append(phrase)
+        if len(query_tokens) >= 6:
+            break
+    return {
+        "items": items,
+        "queries": query_tokens,
+        "brands": brands,
+        "categories": categories,
+    }
+
+
+@router.get("/search/facets")
+async def search_facets(
+    q: str = "",
+    category_id: str = "",
+    condition: str = "",
+    min_price: float | None = None,
+    max_price: float | None = None,
+):
+    """Return aggregated brand counts + price range for the current search filters.
+    Powers advanced filter panel in Search page."""
+    db = get_db()
+    query: dict = {"status": "active"}
+    if q:
+        rx = {"$regex": re.escape(q), "$options": "i"}
+        query["$or"] = [{"title": rx}, {"description": rx}, {"brand": rx}]
+    if category_id:
+        query["category_id"] = category_id
+    if condition:
+        query["condition"] = condition
+    if min_price is not None or max_price is not None:
+        pr: dict = {}
+        if min_price is not None:
+            pr["$gte"] = min_price
+        if max_price is not None:
+            pr["$lte"] = max_price
+        query["price"] = pr
+
+    # Top brands
+    brand_pipe = [
+        {"$match": query},
+        {"$group": {"_id": "$brand", "n": {"$sum": 1}}},
+        {"$sort": {"n": -1}},
+        {"$limit": 20},
+    ]
+    brands = [
+        {"name": b["_id"], "count": b["n"]}
+        async for b in db.listings.aggregate(brand_pipe)
+        if b.get("_id")
+    ]
+    # Condition counts
+    cond_pipe = [
+        {"$match": query},
+        {"$group": {"_id": "$condition", "n": {"$sum": 1}}},
+        {"$sort": {"n": -1}},
+    ]
+    conditions = [
+        {"value": c["_id"], "count": c["n"]}
+        async for c in db.listings.aggregate(cond_pipe)
+        if c.get("_id")
+    ]
+    # Price bounds
+    price_pipe = [
+        {"$match": query},
+        {"$group": {"_id": None, "min": {"$min": "$price"}, "max": {"$max": "$price"}}},
+    ]
+    price_agg = [p async for p in db.listings.aggregate(price_pipe)]
+    price = {"min": 0, "max": 0}
+    if price_agg:
+        price = {"min": float(price_agg[0].get("min") or 0), "max": float(price_agg[0].get("max") or 0)}
+    total = await db.listings.count_documents(query)
+    return {"brands": brands, "conditions": conditions, "price": price, "total": total}
+
+
+@router.get("/search/trending")
+async def search_trending(limit: int = 8):
+    """Trending queries derived from the most popular active listings' brands + categories."""
+    db = get_db()
+    pipe = [
+        {"$match": {"status": "active"}},
+        {"$sort": {"views_count": -1, "likes_count": -1}},
+        {"$limit": 400},
+        {"$group": {"_id": "$brand", "n": {"$sum": "$views_count"}}},
+        {"$sort": {"n": -1}},
+        {"$limit": limit},
+    ]
+    brand_docs = [b async for b in db.listings.aggregate(pipe)]
+    trending = [b["_id"] for b in brand_docs if b.get("_id")][:limit]
+    return {"trending": trending}
 
 
 @router.get("/for-you")

@@ -26,6 +26,20 @@ Exact replica of Mercari platform (mercari.com) — same color scheme (`#FF211F`
 
 ## Implemented (with dates)
 
+### Feb 2026 — Modern Mercari-Style Navigation + Advanced Search + Expanded Categories
+- **New Header** (`Header.jsx`) faithful to mercari.com: slim top strip (marketplace, free returns, deals, Help/Login/Register), main bar with logo, Categories mega-menu button, prominent pill-shaped search bar (fills remaining space), and right-side action cluster (Sell gradient CTA, theme toggle, favorites, notifications, messages, cart, user avatar/sign-in). Category ribbon below shows all 21 categories horizontally scrollable.
+- **CategoryMegaMenu** (`CategoryMegaMenu.jsx`) — hover/click dropdown with 4 quick-link chips (Trending, New arrivals, Under $25, Most loved) and a 5-column grid of all 21 categories with lucide icons + hover accents.
+- **Advanced SearchAutocomplete** (`SearchAutocomplete.jsx`) — category scope selector (All / any of 21), debounced live suggestions (query tokens, brands with counts, categories from taxonomy, product items with images & prices), Recent searches persisted in localStorage (last 8), Trending queries from `/api/search/trending`, Escape/outside-click closes.
+- **Category expansion (12 → 21)** — Added: Shoes, Bags & Accessories, Jewelry & Watches, Pet Supplies, Automotive, Garden & Outdoor, Musical Instruments, Office & Craft, Collectibles. Backfilled into live DB and the `/seed` defaults.
+- **Backend endpoints**:
+  - `/api/search/suggest` now returns `{items, queries, brands (with counts), categories (from taxonomy)}`.
+  - `/api/search/facets` new — aggregated brand counts, condition counts, price bounds, total for current filter shape.
+  - `/api/search/trending` new — top brand queries from most-viewed active listings.
+  - `/api/listings` & `/api/listings/count` now accept optional `brand` filter.
+- **MobileDrawer** revamped with a 2-column categories grid so all 21 are reachable on mobile.
+- Verified via `testing_agent_v3_fork` (iteration_13.json) and playwright screenshots: 22 category pills, mega-menu with all 4 chips + 21 grid entries, live suggestions returning brands/categories/items, trending chips visible on focus.
+
+
 ### Feb 2026 — Boost-my-score Hint + Product Detail Refresh
 - **Boost my score hint** — New `BoostScoreHint` under the Trust meter (shown only when applicant is not yet fast-track eligible). Big "You're X points away from instant approval" headline, then a 2-column grid of tap-and-go actions sorted by biggest lift first — each row shows `+N` pts pill, action label, and CTA link (Verify email → `/verify`, Verify phone → `/verify`, Complete profile → `/profile`, Invite a friend → `/referrals`, Wait it out for account-age, Resolve disputes → `/disputes`). Wrapped in a soft warm-gradient panel so it feels like an offer, not a scold.
 - **Product Detail refresh** — `/listing/:id` completely modernized: kicker chip category, tracking-tight extra-bold title, 4xl tabular-nums price + strikethrough + emerald "-N% off" chip, pill-shaped condition/brand/size/color badges, ship + protection info in tone-coded rounded-xl cards, Buy Now button now a warm gradient (`from-[#FF7A18] to-[#FF211F]`) with price and red-glow shadow, all secondary CTAs pill-shaped, gallery main image in rounded-2xl with subtle ring/shadow (thumbnails use ring-offset when active), gradient-avatar Seller card, "Complete the look" bundle section gets the same kicker + tracking-tight treatment. Full dark-mode support.

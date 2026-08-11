@@ -1,0 +1,43 @@
+{
+  "summary": "End-to-end verification of Mercari-style navigation, category expansion (12 → 21), and advanced search. Backend: 6/6 new/updated endpoints pass (categories=21 incl. all 9 new slugs, /search/suggest returns items+queries+brands+categories, /search/facets returns brands+conditions+price+total, /search/trending returns list, /listings?brand=X filters by brand). Frontend: Header renders logo, Categories mega-menu button, advanced search bar with scope selector, Sell CTA, theme toggle, favorites, notifications, cart, sign-in — all present with data-testids. Search flows work: focus opens dropdown with 7 trending chips; typing 'watch' returns 6 query suggestions + 2 brand chips + 1 category chip + 6 product items + See-all link; scope picker lists All + 21 categories and label updates on select; submit navigates to /search?q=laptop&category=<uuid>; recent search 'laptop' persists in localStorage and shows on refocus; category pill navigation works. Mega menu opens on click and displays ALL 21 categories. Mobile drawer displays ALL 21 categories in a grid. Dark mode toggle present. Regression: home page (loading state observed), search page URL routing intact.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "Header CategoryRibbon",
+        "issue": "Ribbon renders only categories.slice(0,14) — with 21 categories this truncates 7 of the 9 newly added categories from the ribbon. Only 'Shoes' and 'Bags & Accessories' appear in the ribbon; Jewelry & Watches, Pet Supplies, Automotive, Garden & Outdoor, Musical Instruments, Office & Craft, Collectibles are NOT rendered as pills. The spec explicitly requires 'the newly added ones' to be visible in the ribbon. Ribbon container already has overflow-x-auto/scrollbar-hide, so removing the slice(0,14) is safe and lets the user horizontally scroll to all 21.",
+        "selector": "/app/frontend/src/components/Header.jsx line 384: categories.slice(0, 14).map(...)",
+        "priority": "MEDIUM"
+      },
+      {
+        "component": "CategoryMegaMenu quick-link chips",
+        "issue": "Spec says the mega menu should include quick-link chips 'Trending, New arrivals, Under $25, Most loved'. Only the label 'Trending' is present in the rendered DOM. 'New arrivals', 'Under $25', and 'Most loved' were not found in the page HTML.",
+        "selector": "/app/frontend/src/components/CategoryMegaMenu.jsx",
+        "priority": "MEDIUM"
+      }
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_search_nav.py",
+    "/app/test_reports/pytest/search_nav.xml"
+  ],
+  "action_items": [
+    "Header.jsx line 384: remove the .slice(0,14) so all 21 categories render in the horizontally scrollable ribbon (or bump to 21). Ensures the 7 missing new categories are user-reachable via the ribbon as spec'd.",
+    "CategoryMegaMenu.jsx: add the missing quick-link chips 'New arrivals', 'Under $25', 'Most loved' alongside 'Trending' so all four quick links from the spec are present."
+  ],
+  "critical_code_review_comments": [
+    "search.py /search/trending: derives 'trending queries' purely from brand aggregation of top-viewed listings. That means every trending chip is a brand name (matches the observation: Amazon Basics, Hanes, Casio, Apple, etc.). If future users expect actual search-query trends, this needs a real query-log collection.",
+    "search.py /search/suggest: 'queries' tokens are extracted by substring position + a fixed 2-word expansion. This produces phrases like the raw substring, sometimes with awkward truncation. Consider using an inverted-index / n-gram store or driving from actual submitted queries.",
+    "Header.jsx: keeps a local `q` state that is never wired to SearchAutocomplete's `onSubmit` (empty callback). Submission is fully handled inside SearchAutocomplete, so the wrapper state is dead code — safe to remove to reduce confusion.",
+    "SearchAutocomplete.jsx: dropdown open state ignores the input on outside click only via mousedown; keyboard Escape does not close the dropdown. Minor UX polish."
+  ],
+  "updated_files": ["/app/backend/tests/test_search_nav.py"],
+  "success_rate": {"backend": "100% (6/6)", "frontend": "~85% — all core flows work; ribbon truncation + missing 3 quick-links are the only gaps"},
+  "test_credentials": "admin@mercari.local / admin123 (not needed for these tests — public endpoints).",
+  "seed_data_creation": "None. Used existing seeded categories/listings.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Both bugs are small frontend-only patches. After fixing Header.jsx slice + adding 3 mega-menu chips, re-run the browser script and confirm: (a) all 21 cat-pill-* testids exist in the ribbon and (b) text 'New arrivals', 'Under $25', 'Most loved' present in the mega menu DOM. Backend test file /app/backend/tests/test_search_nav.py can be re-run as regression."
+}

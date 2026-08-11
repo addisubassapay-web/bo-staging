@@ -711,6 +711,7 @@ async def list_listings(
     min_price: Optional[float] = None,
     max_price: Optional[float] = None,
     condition: Optional[str] = None,
+    brand: Optional[str] = None,
     sort: str = "newest",
     featured: Optional[bool] = None,
     seller_id: Optional[str] = None,
@@ -720,7 +721,7 @@ async def list_listings(
 ):
     query = _build_listings_query(
         q=q, category_id=category_id, min_price=min_price, max_price=max_price,
-        condition=condition, featured=featured, seller_id=seller_id, status_filter=status_filter,
+        condition=condition, brand=brand, featured=featured, seller_id=seller_id, status_filter=status_filter,
     )
     sort_map = {
         "newest": [("created_at", -1)],
@@ -744,6 +745,7 @@ async def count_listings(
     min_price: Optional[float] = None,
     max_price: Optional[float] = None,
     condition: Optional[str] = None,
+    brand: Optional[str] = None,
     featured: Optional[bool] = None,
     seller_id: Optional[str] = None,
     status_filter: Optional[str] = "active",
@@ -751,7 +753,7 @@ async def count_listings(
     """Total item count for the same filter shape as /listings — used to render pagination."""
     query = _build_listings_query(
         q=q, category_id=category_id, min_price=min_price, max_price=max_price,
-        condition=condition, featured=featured, seller_id=seller_id, status_filter=status_filter,
+        condition=condition, brand=brand, featured=featured, seller_id=seller_id, status_filter=status_filter,
     )
     total = await db.listings.count_documents(query)
     return {"total": total}
@@ -766,6 +768,7 @@ def _build_listings_query(
     featured: Optional[bool],
     seller_id: Optional[str],
     status_filter: Optional[str],
+    brand: Optional[str] = None,
 ) -> dict:
     query: dict = {}
     if status_filter:
@@ -780,6 +783,8 @@ def _build_listings_query(
         query["category_id"] = category_id
     if condition:
         query["condition"] = condition
+    if brand:
+        query["brand"] = brand
     if seller_id:
         query["seller_id"] = seller_id
     if featured is not None:
@@ -3043,6 +3048,15 @@ async def seed_data():
         {"name": "Handmade", "slug": "handmade", "icon": "palette", "order": 10},
         {"name": "Vintage", "slug": "vintage", "icon": "clock", "order": 11},
         {"name": "Other", "slug": "other", "icon": "package", "order": 12},
+        {"name": "Shoes", "slug": "shoes", "icon": "footprints", "order": 13},
+        {"name": "Bags & Accessories", "slug": "bags-accessories", "icon": "briefcase", "order": 14},
+        {"name": "Jewelry & Watches", "slug": "jewelry-watches", "icon": "gem", "order": 15},
+        {"name": "Pet Supplies", "slug": "pet-supplies", "icon": "paw-print", "order": 16},
+        {"name": "Automotive", "slug": "automotive", "icon": "car", "order": 17},
+        {"name": "Garden & Outdoor", "slug": "garden-outdoor", "icon": "flower-2", "order": 18},
+        {"name": "Musical Instruments", "slug": "musical-instruments", "icon": "music", "order": 19},
+        {"name": "Office & Craft", "slug": "office-craft", "icon": "pen-tool", "order": 20},
+        {"name": "Collectibles", "slug": "collectibles", "icon": "medal", "order": 21},
     ]
     cat_docs = [Category(**c).model_dump() for c in categories_data]
     await db.categories.insert_many(cat_docs)
