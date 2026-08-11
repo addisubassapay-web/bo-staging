@@ -128,7 +128,10 @@ const SellerApply = () => {
       </div>
 
       {trust && (
-        <TrustScoreCard trust={trust} />
+        <>
+          <TrustScoreCard trust={trust} />
+          {!trust.auto_approve_eligible && <BoostScoreHint trust={trust} />}
+        </>
       )}
 
       <div className="grid sm:grid-cols-2 gap-3">
@@ -356,6 +359,68 @@ const PayoutPreviewCard = ({ tier, previewOnly = false }) => {
       </div>
 
       <div className="mt-3 text-[11px] text-neutral-500 dark:text-neutral-400">💡 {scenarios.note}</div>
+    </div>
+  );
+};
+
+const BoostScoreHint = ({ trust }) => {
+  const remaining = Math.max(0, trust.auto_approve_threshold - trust.score);
+  // Sorted actions by max earnable points (largest lift first)
+  const actions = trust.signals
+    .filter((s) => s.earned < s.weight)
+    .map((s) => {
+      const meta = {
+        email_verified:   { label: "Verify email",       to: "/verify", cta: "Verify now" },
+        phone_verified:   { label: "Verify phone",       to: "/verify", cta: "Verify now" },
+        profile_complete: { label: "Complete profile",   to: "/profile", cta: "Update" },
+        has_referrals:    { label: "Invite a friend",    to: "/referrals", cta: "Get link" },
+        account_age:      { label: "Keep your account active", to: "/profile", cta: "Wait it out", passive: true },
+        no_open_disputes: { label: "Resolve open disputes", to: "/disputes", cta: "Review" },
+      }[s.key] || { label: s.label, to: "/profile", cta: "Go" };
+      return { ...meta, gap: s.weight - s.earned, key: s.key };
+    })
+    .sort((a, b) => b.gap - a.gap);
+
+  if (actions.length === 0) return null;
+
+  return (
+    <div
+      className="rounded-2xl border border-[#FF7A18]/25 bg-gradient-to-br from-[#FFF7EF] to-white dark:from-[#FF7A18]/10 dark:to-neutral-900 p-5 sm:p-6 shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
+      data-testid="boost-score-hint"
+    >
+      <div className="flex items-start gap-3 flex-wrap">
+        <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#FF7A18] to-[#FF211F] text-white grid place-items-center shadow-lg shadow-[#FF211F]/20 shrink-0">
+          <Zap className="h-5 w-5" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="text-xs uppercase tracking-wider font-semibold text-[#FF211F]">Boost your score</div>
+          <div className="mt-0.5 text-lg sm:text-xl font-extrabold text-neutral-900 dark:text-neutral-100 tracking-tight">
+            You&apos;re <span className="text-[#FF211F] tabular-nums" data-testid="boost-points-remaining">{remaining}</span> point{remaining === 1 ? "" : "s"} away from instant approval
+          </div>
+          <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
+            Tap the fastest lifts below — each one instantly bumps your score.
+          </p>
+        </div>
+      </div>
+      <div className="mt-4 grid sm:grid-cols-2 gap-2.5">
+        {actions.map((a) => (
+          <Link
+            key={a.key}
+            to={a.to}
+            className="group flex items-center gap-3 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-3 hover:border-[#FF7A18] hover:shadow-[0_10px_24px_-16px_rgba(255,33,31,0.28)] hover:-translate-y-0.5 transition-all duration-200"
+            data-testid={`boost-action-${a.key}`}
+          >
+            <span className="inline-flex h-8 w-8 rounded-lg bg-[#FF7A18]/10 text-[#FF211F] items-center justify-center font-extrabold text-sm tabular-nums shrink-0">
+              +{a.gap}
+            </span>
+            <div className="flex-1 min-w-0">
+              <div className="font-semibold text-neutral-900 dark:text-neutral-100 truncate">{a.label}</div>
+              <div className="text-[11px] text-neutral-500 dark:text-neutral-400">Worth up to +{a.gap} pts</div>
+            </div>
+            <span className="text-xs font-semibold text-[#FF7A18] group-hover:text-[#FF211F] whitespace-nowrap">{a.cta} →</span>
+          </Link>
+        ))}
+      </div>
     </div>
   );
 };

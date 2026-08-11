@@ -21,15 +21,15 @@ const SellerBlock = ({ sellerId, sellerName, views }) => {
   }, [sellerId]);
   return (
     <div className="flex items-start gap-3" data-testid="seller-block">
-      <div className="h-11 w-11 rounded-full bg-neutral-200 grid place-items-center font-semibold text-neutral-700">
+      <div className="h-11 w-11 rounded-full bg-gradient-to-br from-[#FF7A18] to-[#FF211F] text-white grid place-items-center font-bold shadow-sm shrink-0">
         {sellerName?.[0]?.toUpperCase()}
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="font-medium text-neutral-900">{sellerName}</span>
+          <span className="font-semibold text-neutral-900 dark:text-neutral-100">{sellerName}</span>
           {seller && <VerificationBadges user={seller} showLabels={false} />}
         </div>
-        <div className="text-xs text-neutral-500 flex items-center gap-2 mt-0.5">
+        <div className="text-xs text-neutral-500 dark:text-neutral-400 flex items-center gap-2 mt-0.5">
           {seller && <span className="flex items-center gap-0.5"><Star className="h-3 w-3 fill-yellow-400 text-yellow-400" /> {seller.rating}</span>}
           {seller && <span>· {seller.sales_count} sales</span>}
           <span>· {views} views</span>
@@ -239,17 +239,18 @@ const ListingDetail = () => {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6">
-      <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-sm text-neutral-600 mb-4 hover:text-neutral-900">
+      <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-sm text-neutral-600 dark:text-neutral-400 mb-5 hover:text-neutral-900 dark:hover:text-neutral-100 transition">
         <ChevronLeft className="h-4 w-4" /> Back
       </button>
 
-      <div className="grid md:grid-cols-2 gap-8">
+      <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
+        {/* Gallery */}
         <div>
-          <div className="relative aspect-square rounded-lg overflow-hidden bg-neutral-100">
+          <div className="relative aspect-square rounded-2xl overflow-hidden bg-neutral-100 dark:bg-neutral-800 ring-1 ring-black/[0.04] dark:ring-white/10 shadow-[0_4px_20px_-8px_rgba(0,0,0,0.15)]">
             <img src={listing.images?.[activeImg]} alt={listing.title} className="w-full h-full object-cover" />
             {isSold && (
-              <div className="absolute inset-0 bg-black/50 grid place-items-center">
-                <span className="bg-white text-neutral-900 font-bold px-4 py-2 rounded">SOLD</span>
+              <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/45 to-black/30 grid place-items-center backdrop-blur-[1px]">
+                <span className="bg-white text-neutral-900 font-bold tracking-wide px-4 py-1.5 rounded-full text-sm shadow-lg uppercase">Sold</span>
               </div>
             )}
           </div>
@@ -259,7 +260,7 @@ const ListingDetail = () => {
                 <button
                   key={i}
                   onClick={() => setActiveImg(i)}
-                  className={`aspect-square rounded overflow-hidden border-2 ${activeImg === i ? "border-[#FF211F]" : "border-transparent"}`}
+                  className={`aspect-square rounded-xl overflow-hidden ring-2 transition ${activeImg === i ? "ring-[#FF211F] ring-offset-2 ring-offset-white dark:ring-offset-neutral-950" : "ring-transparent hover:ring-neutral-200 dark:hover:ring-neutral-700"}`}
                 >
                   <img src={img} alt="" className="w-full h-full object-cover" />
                 </button>
@@ -268,48 +269,67 @@ const ListingDetail = () => {
           )}
         </div>
 
+        {/* Info column */}
         <div>
-          <div className="flex items-start justify-between gap-4">
-            <h1 className="text-2xl font-bold text-neutral-900">{listing.title}</h1>
-            <button onClick={() => { navigator.clipboard.writeText(window.location.href); toast({ title: "Link copied" }); }} className="text-neutral-500 hover:text-neutral-900">
-              <Share2 className="h-5 w-5" />
+          <span className="inline-block text-[10px] uppercase tracking-[0.2em] font-semibold text-[#FF7A18] bg-[#FF7A18]/10 border border-[#FF7A18]/20 rounded-full px-3 py-1">
+            {listing.category_name}
+          </span>
+          <div className="mt-2 flex items-start justify-between gap-4">
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">{listing.title}</h1>
+            <button
+              onClick={() => { navigator.clipboard.writeText(window.location.href); toast({ title: "Link copied" }); }}
+              className="h-10 w-10 rounded-full grid place-items-center border border-neutral-200 dark:border-neutral-800 text-neutral-500 dark:text-neutral-300 hover:text-[#FF211F] hover:border-[#FF7A18] transition shrink-0"
+              aria-label="Share"
+              data-testid="share-btn"
+            >
+              <Share2 className="h-4 w-4" />
             </button>
           </div>
 
           <div className="mt-3 flex items-baseline gap-3">
-            <span className="text-3xl font-bold text-neutral-900">{formatPrice(listing.price)}</span>
+            <span className="text-4xl font-extrabold text-neutral-900 dark:text-neutral-100 tabular-nums">{formatPrice(listing.price)}</span>
             {listing.original_price && listing.original_price > listing.price && (
-              <span className="text-neutral-400 line-through">{formatPrice(listing.original_price)}</span>
+              <>
+                <span className="text-neutral-400 dark:text-neutral-500 line-through tabular-nums">{formatPrice(listing.original_price)}</span>
+                <span className="text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-500/15 border border-emerald-200 dark:border-emerald-500/30 rounded-full px-2 py-0.5">
+                  -{Math.round((1 - listing.price / listing.original_price) * 100)}% off
+                </span>
+              </>
             )}
           </div>
 
           <div className="mt-4 flex flex-wrap gap-2">
-            <Badge variant="secondary">{conditionLabel(listing.condition)}</Badge>
-            <Badge variant="secondary">{listing.category_name}</Badge>
-            {listing.brand && <Badge variant="secondary">{listing.brand}</Badge>}
-            {listing.size && <Badge variant="secondary">Size {listing.size}</Badge>}
-            {listing.color && <Badge variant="secondary">{listing.color}</Badge>}
+            <Badge variant="secondary" className="rounded-full">{conditionLabel(listing.condition)}</Badge>
+            {listing.brand && <Badge variant="secondary" className="rounded-full">{listing.brand}</Badge>}
+            {listing.size && <Badge variant="secondary" className="rounded-full">Size {listing.size}</Badge>}
+            {listing.color && <Badge variant="secondary" className="rounded-full">{listing.color}</Badge>}
           </div>
 
-          <div className="mt-5 space-y-2 text-sm text-neutral-700">
-            <div className="flex items-center gap-2">
-              <Truck className="h-4 w-4 text-neutral-500" />
-              {listing.shipping_paid_by === "seller" ? "Free shipping" : "Buyer pays shipping"} · {listing.shipping_method}
+          <div className="mt-5 grid sm:grid-cols-2 gap-2 text-sm">
+            <div className="flex items-center gap-2 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-3 py-2">
+              <div className="h-7 w-7 rounded-lg bg-sky-50 dark:bg-sky-500/15 text-sky-600 dark:text-sky-300 grid place-items-center"><Truck className="h-3.5 w-3.5" /></div>
+              <span className="text-neutral-700 dark:text-neutral-300">{listing.shipping_paid_by === "seller" ? "Free shipping" : "Buyer pays shipping"}</span>
             </div>
-            <div className="flex items-center gap-2">
-              <Shield className="h-4 w-4 text-neutral-500" />
-              Protected by Mercari Buyer Protection
+            <div className="flex items-center gap-2 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-3 py-2">
+              <div className="h-7 w-7 rounded-lg bg-emerald-50 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-300 grid place-items-center"><Shield className="h-3.5 w-3.5" /></div>
+              <span className="text-neutral-700 dark:text-neutral-300">Buyer Protection</span>
             </div>
           </div>
 
           {!isOwn && !isSold && (
-            <div className="mt-6 space-y-2">
-              <Button onClick={buyNow} className="w-full h-12 bg-[#FF211F] hover:bg-[#e01d1b] text-base font-semibold">Buy now</Button>
+            <div className="mt-6 space-y-2.5">
+              <Button
+                onClick={buyNow}
+                className="w-full h-12 bg-gradient-to-r from-[#FF7A18] to-[#FF211F] hover:brightness-105 text-white text-base font-bold rounded-full shadow-lg shadow-[#FF211F]/25"
+                data-testid="buy-now-btn"
+              >
+                Buy now · {formatPrice(listing.price)}
+              </Button>
               <div className="grid grid-cols-2 gap-2">
-                <Button onClick={addToCart} variant="outline" className="h-11" disabled={inCart}>
+                <Button onClick={addToCart} variant="outline" className="h-11 rounded-full" disabled={inCart} data-testid="add-to-cart-btn">
                   <ShoppingCart className="h-4 w-4 mr-2" /> {inCart ? "In cart" : "Add to cart"}
                 </Button>
-                <Button onClick={toggleFav} variant="outline" className="h-11">
+                <Button onClick={toggleFav} variant="outline" className="h-11 rounded-full" data-testid="fav-toggle-btn">
                   <Heart className={`h-4 w-4 mr-2 ${fav ? "fill-[#FF211F] text-[#FF211F]" : ""}`} />
                   {fav ? "Saved" : "Save"}
                 </Button>
@@ -318,28 +338,28 @@ const ListingDetail = () => {
                 <AffiliateShareButton listingId={listing.id} />
                 <DropshipImportButton listing={listing} onImported={(id) => navigate(`/listing/${id}`)} />
               </div>
-              <Button variant="ghost" className="w-full h-11" onClick={() => { if (!user) { navigate("/login"); return; } navigate(`/chat/${listing.id}/${listing.seller_id}`); }}>
+              <Button variant="ghost" className="w-full h-11 rounded-full" onClick={() => { if (!user) { navigate("/login"); return; } navigate(`/chat/${listing.id}/${listing.seller_id}`); }}>
                 <MessageCircle className="h-4 w-4 mr-2" /> Message seller
               </Button>
             </div>
           )}
           {isOwn && (
-            <div className="mt-6 p-4 bg-neutral-50 border border-neutral-200 rounded-lg text-sm">
-              This is your listing. Manage it from your <Link to="/profile?tab=listings" className="text-[#FF211F] font-medium hover:underline">profile</Link>.
+            <div className="mt-6 p-4 rounded-2xl bg-orange-50 dark:bg-[#FF7A18]/10 border border-orange-200 dark:border-orange-500/30 text-sm text-neutral-700 dark:text-neutral-200">
+              This is your listing. Manage it from your <Link to="/profile?tab=listings" className="text-[#FF211F] font-semibold hover:underline">profile</Link>.
             </div>
           )}
           {isSold && !isOwn && (
-            <div className="mt-6 p-4 bg-neutral-100 border border-neutral-200 rounded-lg text-sm text-neutral-600">
+            <div className="mt-6 p-4 rounded-2xl bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-sm text-neutral-600 dark:text-neutral-300">
               This item has been sold.
             </div>
           )}
 
-          <div className="mt-8 border-t pt-6">
-            <h2 className="font-semibold text-neutral-900 mb-2">Description</h2>
-            <p className="text-neutral-700 whitespace-pre-line leading-relaxed">{listing.description}</p>
+          <div className="mt-8 border-t border-neutral-200 dark:border-neutral-800 pt-6">
+            <h2 className="font-bold text-neutral-900 dark:text-neutral-100 mb-2">Description</h2>
+            <p className="text-neutral-700 dark:text-neutral-300 whitespace-pre-line leading-relaxed">{listing.description}</p>
           </div>
 
-          <div className="mt-6 border-t pt-6">
+          <div className="mt-6 rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
             <SellerBlock sellerId={listing.seller_id} sellerName={listing.seller_name} views={listing.views_count} />
           </div>
 
@@ -349,10 +369,13 @@ const ListingDetail = () => {
 
       {/* Smart Bundles */}
       {bundle.length > 0 && (
-        <div className="mt-14" data-testid="bundles-section">
-          <h2 className="text-xl font-bold text-neutral-900">Complete the look — more from this seller</h2>
-          <p className="text-sm text-neutral-500 mt-0.5">Bundle up and save on shipping.</p>
-          <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div className="mt-16 sm:mt-20" data-testid="bundles-section">
+          <span className="inline-block text-[10px] uppercase tracking-[0.2em] font-semibold text-[#FF7A18] bg-[#FF7A18]/10 border border-[#FF7A18]/20 rounded-full px-3 py-1">
+            Bundle & save
+          </span>
+          <h2 className="mt-2 text-2xl sm:text-3xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">Complete the look</h2>
+          <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">More from this seller — bundle up and save on shipping.</p>
+          <div className="mt-5 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
             {bundle.map((l) => (
               <ProductCard key={l.id} listing={l} />
             ))}
