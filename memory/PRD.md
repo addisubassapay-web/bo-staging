@@ -26,6 +26,14 @@ Exact replica of Mercari platform (mercari.com) — same color scheme (`#FF211F`
 
 ## Implemented (with dates)
 
+### Feb 2026 — Modern Design Polish
+- **ProductCard rebuilt**: rounded-2xl surfaces, soft-shadow → warm-glow hover lift, image zoom to 1.06 with ease-out, gradient SOLD overlay + white pill, favorite heart fades in on hover (stays red when active), extra-bold prices with tabular-nums, focus-visible ring for keyboard nav.
+- **Home sections modernized**: Every major shelf/section now has a kicker chip ("CATALOG" / "WHY SHOP HERE" / "LIVE NOW" / "FRESH DROPS"), tracking-tight extra-bold H2 titles, animated "See all →" arrows that slide on hover, `mt-16 sm:mt-20` rhythm, and consistent `gap-3 sm:gap-4` grids across mobile/desktop.
+- **TrustStrip redesigned**: warm-toned icon tiles with dark-mode variants (emerald/sky/orange/violet), rounded-2xl feature cards, hover-lift shadow.
+- **RequestBanner redesigned**: rounded-3xl gradient panel with decorative blur blobs, glowing shadow, hover animation on primary CTA.
+- **Search / All-products header**: kicker chip + tracking-tight H1, cleaner controls row.
+- **Design guidelines committed**: `/app/design_guidelines.md` captures brand palette, surfaces, typography, spacing rhythm, interactions, and dark-mode rules so future work stays consistent.
+
 ### Feb 2026 — Paginated Category & Product Browsing
 - **New paginated Search/Category page** — `/search` now shows all catalog products page-by-page. URL-driven state: `?category=<id>&size=24|48|96&page=N&sort=...`. Header displays "Showing X–Y of TOTAL items" and the selected category name.
 - **Pagination controls** — First / Previous / smart-window page numbers (with ellipsis) / Next / Last, all with data-testids. Auto-scroll to top on page change. Any filter change resets to page 1.

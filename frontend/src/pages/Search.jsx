@@ -104,10 +104,13 @@ const Search = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-3 sm:px-4 py-6" data-testid="search-page">
-      <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
+      <div className="flex items-center justify-between gap-4 mb-8 flex-wrap">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
-            <Package className="h-6 w-6 text-[#FF7A18]" /> {headerTitle}
+          <span className="inline-block text-[10px] uppercase tracking-[0.2em] font-semibold text-[#FF7A18] bg-[#FF7A18]/10 border border-[#FF7A18]/20 rounded-full px-3 py-1">
+            {q ? "Search" : categoryName ? "Category" : "Catalog"}
+          </span>
+          <h1 className="mt-2 text-2xl sm:text-4xl font-extrabold text-neutral-900 dark:text-neutral-100 tracking-tight flex items-center gap-2">
+            {headerTitle}
           </h1>
           <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1" data-testid="results-summary">
             {loading ? "Loading…" : total === 0

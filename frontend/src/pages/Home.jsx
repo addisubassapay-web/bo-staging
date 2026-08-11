@@ -272,28 +272,43 @@ const FlashDeals = ({ items, onFav, favIds }) => {
 
 // -------------------- TRUST STRIP --------------------
 const TrustStrip = () => (
-  <section className="max-w-7xl mx-auto px-4 mt-14">
+  <section className="max-w-7xl mx-auto px-4 mt-16 sm:mt-20">
     <div className="text-center">
-      <h2 className="text-3xl font-bold text-neutral-900">Why millions trust us</h2>
-      <p className="text-neutral-500 mt-1">Safe shopping experience with global protection</p>
+      <span className="inline-block text-[10px] uppercase tracking-[0.2em] font-semibold text-[#FF7A18] bg-[#FF7A18]/10 border border-[#FF7A18]/20 rounded-full px-3 py-1">
+        Why shop here
+      </span>
+      <h2 className="mt-3 text-3xl sm:text-4xl font-extrabold text-neutral-900 dark:text-neutral-100 tracking-tight">Why millions trust us</h2>
+      <p className="text-neutral-500 dark:text-neutral-400 mt-2">Safe shopping, worldwide, with buyer protection on every order.</p>
     </div>
-    <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
       {[
-        { icon: Lock, title: "Secure Payments", body: "Encrypted checkout & buyer protection", bg: "bg-emerald-50 text-emerald-700 border-emerald-100" },
-        { icon: Truck, title: "Fast Global Delivery", body: "Tracked shipping worldwide", bg: "bg-sky-50 text-sky-700 border-sky-100" },
-        { icon: RotateCcw, title: "Easy Returns", body: "7-30 day hassle-free returns", bg: "bg-orange-50 text-orange-700 border-orange-100" },
-        { icon: Headphones, title: "24/7 Support", body: "Instant help anytime you need", bg: "bg-violet-50 text-violet-700 border-violet-100" },
-      ].map((f, i) => (
-        <div key={i} className={`border ${f.bg.split(" ").pop()} bg-white rounded-xl p-5`} data-testid={`trust-${i}`}>
-          <div className={`h-10 w-10 rounded-lg grid place-items-center ${f.bg}`}>
-            <f.icon className="h-5 w-5" />
+        { icon: Lock, title: "Secure Payments", body: "Encrypted checkout & buyer protection", tone: "emerald" },
+        { icon: Truck, title: "Fast Global Delivery", body: "Tracked shipping worldwide", tone: "sky" },
+        { icon: RotateCcw, title: "Easy Returns", body: "7-30 day hassle-free returns", tone: "orange" },
+        { icon: Headphones, title: "24/7 Support", body: "Instant help anytime you need", tone: "violet" },
+      ].map((f, i) => {
+        const tones = {
+          emerald: "text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-500/15",
+          sky:     "text-sky-700 dark:text-sky-300 bg-sky-50 dark:bg-sky-500/15",
+          orange:  "text-orange-700 dark:text-orange-300 bg-orange-50 dark:bg-orange-500/15",
+          violet:  "text-violet-700 dark:text-violet-300 bg-violet-50 dark:bg-violet-500/15",
+        };
+        return (
+          <div
+            key={i}
+            className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_12px_28px_-16px_rgba(255,33,31,0.25)] hover:-translate-y-0.5 hover:border-[#FF7A18]/40 transition-all duration-300"
+            data-testid={`trust-${i}`}
+          >
+            <div className={`h-11 w-11 rounded-xl grid place-items-center ${tones[f.tone]}`}>
+              <f.icon className="h-5 w-5" />
+            </div>
+            <div className="font-semibold text-neutral-900 dark:text-neutral-100 mt-3.5">{f.title}</div>
+            <div className="text-sm text-neutral-500 dark:text-neutral-400 mt-0.5">{f.body}</div>
           </div>
-          <div className="font-semibold text-neutral-900 mt-3">{f.title}</div>
-          <div className="text-sm text-neutral-500">{f.body}</div>
-        </div>
-      ))}
+        );
+      })}
     </div>
-    <div className="mt-6 border-t border-neutral-200 pt-5 grid grid-cols-2 md:grid-cols-4 gap-3 text-sm text-neutral-600">
+    <div className="mt-6 border-t border-neutral-200 dark:border-neutral-800 pt-5 grid grid-cols-2 md:grid-cols-4 gap-3 text-sm text-neutral-600 dark:text-neutral-300">
       {["Verified Sellers", "Secure Checkout", "Global Shipping", "Buyer Protection"].map((t) => (
         <div key={t} className="flex items-center justify-center gap-2">
           <CheckCircle2 className="h-4 w-4 text-emerald-500" />
@@ -306,16 +321,29 @@ const TrustStrip = () => (
 
 // -------------------- CANT FIND PRODUCT CTA --------------------
 const RequestBanner = () => (
-  <section className="max-w-7xl mx-auto px-4 mt-14">
-    <div className="rounded-2xl bg-gradient-to-r from-[#FF7A18] to-[#FF211F] text-white text-center px-6 py-12 shadow-lg">
-      <div className="mx-auto h-14 w-14 rounded-xl bg-white/20 grid place-items-center mb-4">
-        <Sparkles className="h-7 w-7" />
-      </div>
-      <h2 className="text-3xl sm:text-4xl font-bold">Can&apos;t Find Your Product?</h2>
-      <p className="mt-2 text-white/90 max-w-2xl mx-auto">Send us your request and our team will try to source it for you from global suppliers.</p>
-      <div className="mt-6 flex items-center justify-center gap-3 flex-wrap">
-        <Link to="/chat"><Button className="bg-white text-[#FF211F] hover:bg-neutral-100 h-11 px-6 rounded-lg font-semibold" data-testid="cta-request-product">Request Product</Button></Link>
-        <Link to="/chat"><Button variant="outline" className="h-11 px-6 rounded-lg bg-transparent border-2 border-white text-white hover:bg-white/20 font-semibold">Contact Support</Button></Link>
+  <section className="max-w-7xl mx-auto px-4 mt-16 sm:mt-20">
+    <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-[#FF7A18] via-[#FF5722] to-[#FF211F] text-white text-center px-6 py-14 shadow-[0_20px_50px_-20px_rgba(255,33,31,0.55)]">
+      {/* Decorative blobs */}
+      <div className="pointer-events-none absolute -top-16 -left-10 h-52 w-52 rounded-full bg-white/15 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-20 -right-16 h-64 w-64 rounded-full bg-black/20 blur-3xl" />
+      <div className="relative">
+        <div className="mx-auto h-14 w-14 rounded-2xl bg-white/20 backdrop-blur grid place-items-center mb-4 ring-1 ring-white/30">
+          <Sparkles className="h-7 w-7" />
+        </div>
+        <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight">Can&apos;t Find Your Product?</h2>
+        <p className="mt-3 text-white/90 max-w-2xl mx-auto text-sm sm:text-base">Send us your request and our team will source it for you from global suppliers.</p>
+        <div className="mt-7 flex items-center justify-center gap-3 flex-wrap">
+          <Link to="/chat">
+            <Button className="bg-white text-[#FF211F] hover:bg-neutral-100 h-11 px-6 rounded-full font-semibold shadow-lg gap-1.5 group" data-testid="cta-request-product">
+              Request Product <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
+            </Button>
+          </Link>
+          <Link to="/chat">
+            <Button variant="outline" className="h-11 px-6 rounded-full bg-white/10 backdrop-blur border-2 border-white/70 text-white hover:bg-white hover:text-[#FF7A18] font-semibold">
+              Contact Support
+            </Button>
+          </Link>
+        </div>
       </div>
     </div>
   </section>
@@ -509,23 +537,23 @@ const Home = () => {
 
       {/* Category Shelves */}
       {shelves.length > 0 && (
-        <section className="max-w-7xl mx-auto px-4 mt-14 space-y-10" data-testid="category-shelves">
+        <section className="max-w-7xl mx-auto px-4 mt-16 space-y-12" data-testid="category-shelves">
           {shelves.map((sh) => (
             <div key={sh.id}>
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-end justify-between mb-5 gap-4">
                 <div>
-                  <h2 className="text-xl sm:text-2xl font-bold text-neutral-900">{sh.title}</h2>
-                  <p className="text-sm text-neutral-500">{sh.subtitle}</p>
+                  <h2 className="text-xl sm:text-2xl font-extrabold text-neutral-900 dark:text-neutral-100 tracking-tight">{sh.title}</h2>
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-0.5">{sh.subtitle}</p>
                 </div>
                 <Link
                   to={`/search?category_slug=${sh.category_slugs[0]}`}
-                  className="text-sm text-[#FF7A18] font-medium hover:underline flex items-center gap-1"
+                  className="text-sm text-[#FF7A18] font-semibold hover:text-[#FF211F] transition flex items-center gap-1 whitespace-nowrap group"
                   data-testid={`shelf-see-${sh.id}`}
                 >
-                  See all <ArrowRight className="h-3 w-3" />
+                  See all <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
                 </Link>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-8 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-8 gap-3 sm:gap-4">
                 {sh.listings.slice(0, 8).map((l) => (
                   <ProductCard key={l.id} listing={l} isFavorite={favIds.has(l.id)} onFavoriteChange={(id, isFav) => setFavIds((prev) => { const s = new Set(prev); isFav ? s.add(id) : s.delete(id); return s; })} />
                 ))}
@@ -536,19 +564,22 @@ const Home = () => {
       )}
 
       {/* Trending Now */}
-      <section className="max-w-7xl mx-auto px-4 mt-14">
-        <div className="flex items-center justify-between mb-5">
+      <section className="max-w-7xl mx-auto px-4 mt-16 sm:mt-20">
+        <div className="flex items-end justify-between mb-6 gap-4">
           <div>
-            <h2 className="text-2xl sm:text-3xl font-bold text-[#FF211F] flex items-center gap-2">
+            <span className="inline-block text-[10px] uppercase tracking-[0.2em] font-semibold text-[#FF211F] bg-[#FF211F]/10 border border-[#FF211F]/20 rounded-full px-3 py-1">
+              Live now
+            </span>
+            <h2 className="mt-2 text-2xl sm:text-3xl font-extrabold text-[#FF211F] flex items-center gap-2 tracking-tight">
               <Flame className="h-6 w-6" /> Trending Now
             </h2>
-            <p className="text-sm text-neutral-500">Based on popularity &amp; engagement</p>
+            <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">Based on popularity &amp; engagement</p>
           </div>
-          <Link to="/search?sort=trending" className="text-sm text-[#FF7A18] font-medium hover:underline flex items-center gap-1">
-            Live Feed <ArrowRight className="h-3 w-3" />
+          <Link to="/search?sort=trending" className="text-sm text-[#FF7A18] font-semibold hover:text-[#FF211F] transition flex items-center gap-1 whitespace-nowrap group">
+            Live Feed <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
           </Link>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
           {trending.slice(0, 12).map((l) => (
             <ProductCard key={l.id} listing={l} isFavorite={favIds.has(l.id)} onFavoriteChange={(id, isFav) => setFavIds((prev) => { const s = new Set(prev); isFav ? s.add(id) : s.delete(id); return s; })} />
           ))}
@@ -557,14 +588,20 @@ const Home = () => {
 
       {/* Just listed */}
       {recent.length > 0 && (
-        <section className="max-w-7xl mx-auto px-4 mt-14">
-          <div className="flex items-center justify-between mb-5">
-            <h2 className="text-2xl sm:text-3xl font-bold text-neutral-900">Just listed</h2>
-            <Link to="/search?sort=newest" className="text-sm text-[#FF7A18] font-medium hover:underline flex items-center gap-1">
-              View more <ArrowRight className="h-3 w-3" />
+        <section className="max-w-7xl mx-auto px-4 mt-16 sm:mt-20">
+          <div className="flex items-end justify-between mb-6 gap-4">
+            <div>
+              <span className="inline-block text-[10px] uppercase tracking-[0.2em] font-semibold text-neutral-500 dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-full px-3 py-1">
+                Fresh drops
+              </span>
+              <h2 className="mt-2 text-2xl sm:text-3xl font-extrabold text-neutral-900 dark:text-neutral-100 tracking-tight">Just listed</h2>
+              <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">The latest items on Mercari Global</p>
+            </div>
+            <Link to="/search?sort=newest" className="text-sm text-[#FF7A18] font-semibold hover:text-[#FF211F] transition flex items-center gap-1 whitespace-nowrap group">
+              View more <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
             </Link>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
             {recent.slice(0, 12).map((l) => (
               <ProductCard key={l.id} listing={l} isFavorite={favIds.has(l.id)} onFavoriteChange={(id, isFav) => setFavIds((prev) => { const s = new Set(prev); isFav ? s.add(id) : s.delete(id); return s; })} />
             ))}
