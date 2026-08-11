@@ -26,6 +26,12 @@ Exact replica of Mercari platform (mercari.com) — same color scheme (`#FF211F`
 
 ## Implemented (with dates)
 
+### Feb 2026 — Cart, Checkout & Storefront Refresh
+- **Cart page** — kicker chip + tracking-tight H1, item count subtitle, cart rows now rounded-2xl with warm hover-glow, tabular-nums prices, pill-shaped Checkout CTA with red glow shadow, empty state ringed with dashed border and centered CTA. Fully dark-mode ready.
+- **Checkout page** — same header language, sections wrapped in rounded-2xl cards with soft shadows, payment section has emerald "Demo" pill and lock-icon tile, order summary sticky on desktop with clear divider rhythm, extra-bold total. Success screen redesigned: gradient emerald tick badge with blur-glow, warm CTA row (Share/View orders/Keep shopping), summary card with clean divider and tabular-nums amount.
+- **Storefront (`/store/:slug`) rebuilt** — gradient hero (`from-[#FF7A18] via-[#FF5722] to-[#FF211F]`) with optional banner overlay and decorative blur blobs, logo circle in a rounded-2xl ringed avatar overlapping the hero, tier badge, stat pills (Sales / Followers / Since) with tone-coded icons, buyer-protection ribbon, kicker chip on the "Store listings" section, and a working sort dropdown (Newest / Price asc/desc / Most popular). Empty state polished with dashed border.
+- **Lint**: clean across Cart, Checkout, StorePage.
+
 ### Feb 2026 — Modern Design Polish
 - **ProductCard rebuilt**: rounded-2xl surfaces, soft-shadow → warm-glow hover lift, image zoom to 1.06 with ease-out, gradient SOLD overlay + white pill, favorite heart fades in on hover (stays red when active), extra-bold prices with tabular-nums, focus-visible ring for keyboard nav.
 - **Home sections modernized**: Every major shelf/section now has a kicker chip ("CATALOG" / "WHY SHOP HERE" / "LIVE NOW" / "FRESH DROPS"), tracking-tight extra-bold H2 titles, animated "See all →" arrows that slide on hover, `mt-16 sm:mt-20` rhythm, and consistent `gap-3 sm:gap-4` grids across mobile/desktop.

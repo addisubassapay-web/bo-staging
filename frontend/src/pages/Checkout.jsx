@@ -74,22 +74,34 @@ const Checkout = () => {
     return (
       <div className="max-w-lg mx-auto px-4 py-16 text-center" data-testid="checkout-success">
         <div className="relative inline-block">
-          <CheckCircle2 className="h-16 w-16 mx-auto text-green-500" />
-          <span className="absolute -top-1 -right-1 text-2xl">🎉</span>
+          <div className="absolute inset-0 rounded-full bg-emerald-500/20 blur-2xl scale-125" />
+          <div className="relative h-20 w-20 mx-auto rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 grid place-items-center shadow-xl">
+            <CheckCircle2 className="h-10 w-10 text-white" />
+          </div>
+          <span className="absolute -top-1 -right-2 text-2xl">🎉</span>
         </div>
-        <h1 className="text-3xl font-bold mt-4">Score! Order placed</h1>
-        <p className="text-neutral-600 mt-2">We&apos;ve notified {done.seller_name}. You&apos;ll get updates as your item ships.</p>
-        <div className="mt-6 bg-neutral-50 rounded-lg p-4 text-left text-sm">
-          <div className="flex justify-between"><span>Order ID</span><span className="font-mono">{done.id.slice(0, 8)}</span></div>
-          <div className="flex justify-between mt-1"><span>Item</span><span>{done.listing_title}</span></div>
-          <div className="flex justify-between mt-1"><span>Amount</span><span className="font-semibold">{formatPrice(done.amount + done.shipping_fee)}</span></div>
+        <h1 className="text-3xl sm:text-4xl font-extrabold mt-5 tracking-tight text-neutral-900 dark:text-neutral-100">Score! Order placed</h1>
+        <p className="text-neutral-500 dark:text-neutral-400 mt-2">We&apos;ve notified {done.seller_name}. You&apos;ll get updates as your item ships.</p>
+        <div className="mt-6 rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4 text-left text-sm space-y-1.5 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+          <div className="flex justify-between text-neutral-700 dark:text-neutral-300">
+            <span>Order ID</span>
+            <span className="font-mono text-xs">{done.id.slice(0, 8)}</span>
+          </div>
+          <div className="flex justify-between text-neutral-700 dark:text-neutral-300">
+            <span>Item</span>
+            <span className="text-right ml-2 line-clamp-1 max-w-[220px]">{done.listing_title}</span>
+          </div>
+          <div className="flex justify-between font-extrabold text-neutral-900 dark:text-neutral-100 text-base pt-1.5 border-t border-neutral-100 dark:border-neutral-800 mt-2">
+            <span>Amount</span>
+            <span className="tabular-nums">{formatPrice(done.amount + done.shipping_fee)}</span>
+          </div>
         </div>
         <div className="mt-6 flex gap-2 justify-center flex-wrap">
-          <Button variant="outline" onClick={doShare} className="gap-1.5" data-testid="checkout-share-btn">
+          <Button variant="outline" onClick={doShare} className="gap-1.5 rounded-full" data-testid="checkout-share-btn">
             <Share2 className="h-4 w-4" /> Share your win
           </Button>
-          <Button variant="outline" onClick={() => navigate("/profile?tab=orders")}>View orders</Button>
-          <Button className="bg-[#FF211F] hover:bg-[#e01d1b]" onClick={() => navigate("/")}>Keep shopping</Button>
+          <Button variant="outline" className="rounded-full" onClick={() => navigate("/profile?tab=orders")}>View orders</Button>
+          <Button className="bg-[#FF211F] hover:bg-[#e01d1b] rounded-full shadow-lg shadow-[#FF211F]/20" onClick={() => navigate("/")}>Keep shopping</Button>
         </div>
       </div>
     );
@@ -99,12 +111,18 @@ const Checkout = () => {
   const total = listing.price + shippingFee;
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-6">Checkout</h1>
+    <div className="max-w-5xl mx-auto px-4 py-8" data-testid="checkout-page">
+      <div className="mb-8">
+        <span className="inline-block text-[10px] uppercase tracking-[0.2em] font-semibold text-[#FF7A18] bg-[#FF7A18]/10 border border-[#FF7A18]/20 rounded-full px-3 py-1">
+          Checkout
+        </span>
+        <h1 className="mt-2 text-3xl sm:text-4xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">Almost yours</h1>
+        <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">Enter your shipping details and place the order.</p>
+      </div>
       <form onSubmit={place} className="grid lg:grid-cols-[1fr_360px] gap-8">
-        <div className="space-y-6">
-          <section className="border border-neutral-200 rounded-lg p-5">
-            <h2 className="font-semibold mb-4">Shipping address</h2>
+        <div className="space-y-4">
+          <section className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+            <h2 className="font-bold text-lg mb-4 text-neutral-900 dark:text-neutral-100">Shipping address</h2>
             <div className="grid sm:grid-cols-2 gap-3">
               <div className="sm:col-span-2"><Label>Full name</Label><Input value={address.full_name} onChange={(e) => setAddress({ ...address, full_name: e.target.value })} required className="mt-1" /></div>
               <div className="sm:col-span-2"><Label>Street address</Label><Input value={address.street} onChange={(e) => setAddress({ ...address, street: e.target.value })} required className="mt-1" /></div>
@@ -115,38 +133,57 @@ const Checkout = () => {
             </div>
           </section>
 
-          <section className="border border-neutral-200 rounded-lg p-5">
+          <section className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
             <div className="flex items-center gap-2 mb-4">
-              <Lock className="h-4 w-4 text-neutral-500" />
-              <h2 className="font-semibold">Payment (demo)</h2>
+              <div className="h-8 w-8 rounded-lg bg-emerald-50 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-300 grid place-items-center">
+                <Lock className="h-4 w-4" />
+              </div>
+              <h2 className="font-bold text-lg text-neutral-900 dark:text-neutral-100">Payment</h2>
+              <span className="ml-auto text-[10px] uppercase tracking-wider font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-500/15 border border-emerald-200 dark:border-emerald-500/30 rounded-full px-2 py-0.5">
+                Demo
+              </span>
             </div>
             <div className="space-y-3">
-              <div><Label>Card number</Label><Input value={card.number} onChange={(e) => setCard({ ...card, number: e.target.value })} className="mt-1" /></div>
+              <div><Label>Card number</Label><Input value={card.number} onChange={(e) => setCard({ ...card, number: e.target.value })} className="mt-1 tabular-nums" /></div>
               <div className="grid grid-cols-2 gap-3">
-                <div><Label>Expiry</Label><Input value={card.exp} onChange={(e) => setCard({ ...card, exp: e.target.value })} className="mt-1" /></div>
-                <div><Label>CVC</Label><Input value={card.cvc} onChange={(e) => setCard({ ...card, cvc: e.target.value })} className="mt-1" /></div>
+                <div><Label>Expiry</Label><Input value={card.exp} onChange={(e) => setCard({ ...card, exp: e.target.value })} className="mt-1 tabular-nums" /></div>
+                <div><Label>CVC</Label><Input value={card.cvc} onChange={(e) => setCard({ ...card, cvc: e.target.value })} className="mt-1 tabular-nums" /></div>
               </div>
-              <p className="text-xs text-neutral-500">This is a demo. No real payment is processed.</p>
+              <p className="text-xs text-neutral-500 dark:text-neutral-400">🔒 This is a demo. No real payment is processed.</p>
             </div>
           </section>
         </div>
 
-        <div className="border border-neutral-200 rounded-lg p-5 h-fit sticky top-20">
-          <h2 className="font-semibold mb-4">Order summary</h2>
-          <div className="flex gap-3 mb-4">
-            <img src={listing.images?.[0]} alt="" className="h-16 w-16 rounded object-cover" />
-            <div className="text-sm">
-              <div className="font-medium line-clamp-2">{listing.title}</div>
-              <div className="text-neutral-500 text-xs">by {listing.seller_name}</div>
+        <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5 h-fit lg:sticky lg:top-24 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+          <h2 className="font-bold text-lg mb-4 text-neutral-900 dark:text-neutral-100">Order summary</h2>
+          <div className="flex gap-3 mb-4 pb-4 border-b border-neutral-100 dark:border-neutral-800">
+            <img src={listing.images?.[0]} alt="" className="h-16 w-16 rounded-xl object-cover ring-1 ring-black/[0.04] dark:ring-white/10" />
+            <div className="text-sm min-w-0">
+              <div className="font-semibold line-clamp-2 text-neutral-900 dark:text-neutral-100">{listing.title}</div>
+              <div className="text-neutral-500 dark:text-neutral-400 text-xs mt-0.5">by {listing.seller_name}</div>
             </div>
           </div>
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between"><span>Item</span><span>{formatPrice(listing.price)}</span></div>
-            <div className="flex justify-between"><span>Shipping</span><span>{formatPrice(shippingFee)}</span></div>
-            <div className="h-px bg-neutral-200 my-2" />
-            <div className="flex justify-between font-semibold text-base"><span>Total</span><span>{formatPrice(total)}</span></div>
+          <div className="space-y-2.5 text-sm">
+            <div className="flex justify-between text-neutral-700 dark:text-neutral-300">
+              <span>Item</span>
+              <span className="tabular-nums font-medium">{formatPrice(listing.price)}</span>
+            </div>
+            <div className="flex justify-between text-neutral-700 dark:text-neutral-300">
+              <span>Shipping</span>
+              <span className="tabular-nums font-medium">{formatPrice(shippingFee)}</span>
+            </div>
+            <div className="h-px bg-neutral-200 dark:bg-neutral-800 my-3" />
+            <div className="flex justify-between font-extrabold text-lg text-neutral-900 dark:text-neutral-100">
+              <span>Total</span>
+              <span className="tabular-nums">{formatPrice(total)}</span>
+            </div>
           </div>
-          <Button type="submit" disabled={placing} className="w-full mt-4 bg-[#FF211F] hover:bg-[#e01d1b] h-11">
+          <Button
+            type="submit"
+            disabled={placing}
+            className="w-full mt-5 bg-[#FF211F] hover:bg-[#e01d1b] rounded-full h-11 shadow-lg shadow-[#FF211F]/20 disabled:opacity-60"
+            data-testid="place-order-btn"
+          >
             {placing ? "Placing order…" : `Pay ${formatPrice(total)}`}
           </Button>
         </div>

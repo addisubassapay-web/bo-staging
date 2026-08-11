@@ -31,33 +31,52 @@ const Cart = () => {
   if (loading) return <div className="max-w-4xl mx-auto px-4 py-8">Loading…</div>;
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-6">Your cart</h1>
+    <div className="max-w-5xl mx-auto px-4 py-8" data-testid="cart-page">
+      <div className="mb-8">
+        <span className="inline-block text-[10px] uppercase tracking-[0.2em] font-semibold text-[#FF7A18] bg-[#FF7A18]/10 border border-[#FF7A18]/20 rounded-full px-3 py-1">
+          Cart
+        </span>
+        <h1 className="mt-2 text-3xl sm:text-4xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">Your cart</h1>
+        {items.length > 0 && (
+          <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
+            {items.length} {items.length === 1 ? "item" : "items"} ready to check out
+          </p>
+        )}
+      </div>
 
       {items.length === 0 ? (
-        <div className="text-center py-20 border border-dashed rounded-xl">
-          <ShoppingBag className="h-12 w-12 mx-auto text-neutral-300 mb-3" />
-          <p className="text-neutral-600">Your cart is empty.</p>
-          <Link to="/search"><Button className="mt-4 bg-[#FF211F] hover:bg-[#e01d1b]">Start shopping</Button></Link>
+        <div className="text-center py-20 rounded-2xl border border-dashed border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900" data-testid="cart-empty">
+          <ShoppingBag className="h-12 w-12 mx-auto text-neutral-300 dark:text-neutral-600 mb-3" />
+          <p className="text-neutral-600 dark:text-neutral-300">Your cart is empty.</p>
+          <Link to="/search"><Button className="mt-4 bg-[#FF211F] hover:bg-[#e01d1b] rounded-full h-11 px-6">Start shopping</Button></Link>
         </div>
       ) : (
         <div className="grid lg:grid-cols-[1fr_360px] gap-8">
           <div className="space-y-3">
             {items.map((item) => (
-              <div key={item.id} className="flex gap-4 border border-neutral-200 rounded-lg p-3">
-                <Link to={`/listing/${item.id}`} className="h-24 w-24 rounded-md overflow-hidden bg-neutral-100 shrink-0">
+              <div
+                key={item.id}
+                className="flex gap-4 rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-3 shadow-[0_1px_2px_rgba(0,0,0,0.04)] hover:border-[#FF7A18]/40 hover:shadow-[0_10px_24px_-14px_rgba(255,33,31,0.2)] transition-all duration-300"
+                data-testid={`cart-item-${item.id}`}
+              >
+                <Link to={`/listing/${item.id}`} className="h-24 w-24 rounded-xl overflow-hidden bg-neutral-100 dark:bg-neutral-800 shrink-0 ring-1 ring-black/[0.04] dark:ring-white/10">
                   <img src={item.images?.[0]} alt="" className="w-full h-full object-cover" />
                 </Link>
                 <div className="flex-1 min-w-0">
-                  <Link to={`/listing/${item.id}`} className="font-medium text-neutral-900 line-clamp-2 hover:text-[#FF211F]">{item.title}</Link>
-                  <div className="text-xs text-neutral-500 mt-1">Sold by {item.seller_name}</div>
-                  <div className="text-xs text-neutral-500">
+                  <Link to={`/listing/${item.id}`} className="font-semibold text-neutral-900 dark:text-neutral-100 line-clamp-2 hover:text-[#FF211F] transition">{item.title}</Link>
+                  <div className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">Sold by {item.seller_name}</div>
+                  <div className="text-xs text-neutral-500 dark:text-neutral-400">
                     {item.shipping_paid_by === "seller" ? "Free shipping" : `Shipping: ${formatPrice(5.99)}`}
                   </div>
                 </div>
                 <div className="flex flex-col items-end justify-between">
-                  <div className="font-semibold">{formatPrice(item.price)}</div>
-                  <button onClick={() => remove(item.id)} className="text-neutral-400 hover:text-[#FF211F]">
+                  <div className="font-extrabold text-neutral-900 dark:text-neutral-100 tabular-nums">{formatPrice(item.price)}</div>
+                  <button
+                    onClick={() => remove(item.id)}
+                    className="text-neutral-400 hover:text-[#FF211F] transition"
+                    aria-label="Remove from cart"
+                    data-testid={`cart-remove-${item.id}`}
+                  >
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
@@ -65,22 +84,37 @@ const Cart = () => {
             ))}
           </div>
 
-          <div className="border border-neutral-200 rounded-lg p-5 h-fit">
-            <h2 className="font-semibold mb-4">Order summary</h2>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between"><span>Subtotal</span><span>{formatPrice(subtotal)}</span></div>
-              <div className="flex justify-between"><span>Shipping</span><span>{formatPrice(shipping)}</span></div>
-              <div className="flex justify-between"><span>Tax</span><span className="text-neutral-500">Calculated at checkout</span></div>
-              <div className="h-px bg-neutral-200 my-2" />
-              <div className="flex justify-between font-semibold text-base"><span>Total</span><span>{formatPrice(subtotal + shipping)}</span></div>
+          <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5 h-fit shadow-[0_1px_2px_rgba(0,0,0,0.04)] lg:sticky lg:top-24" data-testid="order-summary">
+            <h2 className="font-bold text-lg mb-4 text-neutral-900 dark:text-neutral-100">Order summary</h2>
+            <div className="space-y-2.5 text-sm">
+              <div className="flex justify-between text-neutral-700 dark:text-neutral-300">
+                <span>Subtotal</span>
+                <span className="tabular-nums font-medium">{formatPrice(subtotal)}</span>
+              </div>
+              <div className="flex justify-between text-neutral-700 dark:text-neutral-300">
+                <span>Shipping</span>
+                <span className="tabular-nums font-medium">{formatPrice(shipping)}</span>
+              </div>
+              <div className="flex justify-between text-neutral-700 dark:text-neutral-300">
+                <span>Tax</span>
+                <span className="text-neutral-500 dark:text-neutral-400 text-xs">Calculated at checkout</span>
+              </div>
+              <div className="h-px bg-neutral-200 dark:bg-neutral-800 my-3" />
+              <div className="flex justify-between font-extrabold text-lg text-neutral-900 dark:text-neutral-100">
+                <span>Total</span>
+                <span className="tabular-nums">{formatPrice(subtotal + shipping)}</span>
+              </div>
             </div>
             <Button
               onClick={() => navigate(`/checkout/${items[0].id}`)}
-              className="w-full mt-4 bg-[#FF211F] hover:bg-[#e01d1b] h-11"
+              className="w-full mt-5 bg-[#FF211F] hover:bg-[#e01d1b] rounded-full h-11 shadow-lg shadow-[#FF211F]/20"
+              data-testid="checkout-btn"
             >
               Checkout ({items.length})
             </Button>
-            <p className="text-[11px] text-neutral-500 mt-3 text-center">Demo checkout — no real payment is charged.</p>
+            <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-3 text-center">
+              🔒 Secure demo checkout — no real payment is charged.
+            </p>
           </div>
         </div>
       )}
