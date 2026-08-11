@@ -718,6 +718,55 @@ async def list_listings(
     limit: int = 60,
     skip: int = 0,
 ):
+    query = _build_listings_query(
+        q=q, category_id=category_id, min_price=min_price, max_price=max_price,
+        condition=condition, featured=featured, seller_id=seller_id, status_filter=status_filter,
+    )
+    sort_map = {
+        "newest": [("created_at", -1)],
+        "oldest": [("created_at", 1)],
+        "price_asc": [("price", 1)],
+        "price_desc": [("price", -1)],
+        "popular": [("likes_count", -1), ("views_count", -1)],
+        "trending": [("views_count", -1), ("likes_count", -1), ("created_at", -1)],
+    }
+    limit = max(1, min(int(limit), 96))
+    skip = max(0, int(skip))
+    cursor = db.listings.find(query, {"_id": 0}).sort(sort_map.get(sort, sort_map["newest"])).skip(skip).limit(limit)
+    docs = await cursor.to_list(limit)
+    return [Listing(**d) for d in docs]
+
+
+@api_router.get("/listings/count")
+async def count_listings(
+    q: Optional[str] = None,
+    category_id: Optional[str] = None,
+    min_price: Optional[float] = None,
+    max_price: Optional[float] = None,
+    condition: Optional[str] = None,
+    featured: Optional[bool] = None,
+    seller_id: Optional[str] = None,
+    status_filter: Optional[str] = "active",
+):
+    """Total item count for the same filter shape as /listings — used to render pagination."""
+    query = _build_listings_query(
+        q=q, category_id=category_id, min_price=min_price, max_price=max_price,
+        condition=condition, featured=featured, seller_id=seller_id, status_filter=status_filter,
+    )
+    total = await db.listings.count_documents(query)
+    return {"total": total}
+
+
+def _build_listings_query(
+    q: Optional[str],
+    category_id: Optional[str],
+    min_price: Optional[float],
+    max_price: Optional[float],
+    condition: Optional[str],
+    featured: Optional[bool],
+    seller_id: Optional[str],
+    status_filter: Optional[str],
+) -> dict:
     query: dict = {}
     if status_filter:
         query["status"] = status_filter
@@ -742,18 +791,7 @@ async def list_listings(
         if max_price is not None:
             pr["$lte"] = max_price
         query["price"] = pr
-
-    sort_map = {
-        "newest": [("created_at", -1)],
-        "oldest": [("created_at", 1)],
-        "price_asc": [("price", 1)],
-        "price_desc": [("price", -1)],
-        "popular": [("likes_count", -1), ("views_count", -1)],
-        "trending": [("views_count", -1), ("likes_count", -1), ("created_at", -1)],
-    }
-    cursor = db.listings.find(query, {"_id": 0}).sort(sort_map.get(sort, sort_map["newest"])).skip(skip).limit(limit)
-    docs = await cursor.to_list(limit)
-    return [Listing(**d) for d in docs]
+    return query
 
 @api_router.get("/listings/{listing_id}", response_model=Listing)
 async def get_listing(listing_id: str):

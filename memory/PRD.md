@@ -26,6 +26,14 @@ Exact replica of Mercari platform (mercari.com) — same color scheme (`#FF211F`
 
 ## Implemented (with dates)
 
+### Feb 2026 — Paginated Category & Product Browsing
+- **New paginated Search/Category page** — `/search` now shows all catalog products page-by-page. URL-driven state: `?category=<id>&size=24|48|96&page=N&sort=...`. Header displays "Showing X–Y of TOTAL items" and the selected category name.
+- **Pagination controls** — First / Previous / smart-window page numbers (with ellipsis) / Next / Last, all with data-testids. Auto-scroll to top on page change. Any filter change resets to page 1.
+- **Page-size selector** — 24 / 48 / 96 per page.
+- **Backend** — `/api/listings` now clamps `limit` to `[1, 96]` and `skip` to `>=0`. New `/api/listings/count` endpoint returns the total for the same filter shape (`q`, `category_id`, price, condition, featured, seller_id, `status_filter`). Route ordered before `/listings/{listing_id}` so it doesn't collide. Filter logic extracted into `_build_listings_query` helper (single source of truth).
+- **Verified**: 2,608 real Amazon products → 109 pages at 24/page. Category filter (Women) narrows to 564 items → 24 pages. Detail route still resolves correctly; page 1 vs page 2 return distinct items.
+- **Bug fixed during rollout**: `parseInt(null)` returning NaN caused a 422 blank state — clamped the raw parse before checking membership.
+
 ### Feb 2026 — Real Amazon Catalog Replaces Mock Listings
 - **Removed 100% of mock listings.** Deleted 1,748 seed/demo/TEST listings and replaced them with **2,611 real Amazon products** imported from the previously-completed Apify dataset (`4l18Zx7sRwgZJBbBy`, 2,694 raw items). All catalog data now originates from the connected Apify Amazon crawler — real titles (Brooks Adrenaline GTS 25, Marc Jacobs Tote Bag, Citizen watches, Lamicall accessories), real prices (up to $1,045), real breadcrumb-classified categories, real high-resolution images.
 - **Disabled the seed mock-listings block.** `POST /api/seed` no longer inserts sample listings; it seeds categories, admin, and demo sellers only, and returns a note pointing to `/api/admin/sync/apify` for real product data.
