@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Heart, ShieldCheck, TrendingDown } from "lucide-react";
-import { formatPrice } from "@/lib/api";
 import api from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
+import { useCurrency } from "@/context/CurrencyContext";
 import { useToast } from "@/hooks/use-toast";
 
 const ProductCard = ({ listing, isFavorite = false, onFavoriteChange }) => {
   const { user } = useAuth();
+  const { format } = useCurrency();
   const { toast } = useToast();
   const [fav, setFav] = useState(isFavorite);
   const [busy, setBusy] = useState(false);
@@ -126,11 +127,11 @@ const ProductCard = ({ listing, isFavorite = false, onFavoriteChange }) => {
         <div className="mt-1.5 flex items-baseline justify-between gap-2">
           <div className="flex items-baseline gap-1.5 min-w-0">
             <span className="font-extrabold text-neutral-900 dark:text-neutral-100 tabular-nums">
-              {formatPrice(listing.price)}
+              {format(listing.price)}
             </span>
             {priceDropRecent && (
               <span className="text-xs text-neutral-400 dark:text-neutral-500 line-through tabular-nums">
-                ${priceDropRecent.prev.toFixed(2)}
+                {format(priceDropRecent.prev)}
               </span>
             )}
           </div>

@@ -2236,6 +2236,98 @@ class VibeSearchRequest(BaseModel):
     limit: int = 24
 
 
+class ImageSearchRequest(BaseModel):
+    image_base64: str
+    limit: int = 24
+
+
+@api_router.post("/search/image")
+async def search_by_image(payload: ImageSearchRequest):
+    """Reverse-image style search. Sends the photo to the LLM to extract 3-5
+    broad search keywords + a category slug, then runs a listings search."""
+    if not EMERGENT_LLM_KEY:
+        raise HTTPException(500, "AI service not configured")
+    b64 = (payload.image_base64 or "").strip()
+    if not b64:
+        raise HTTPException(400, "image_base64 is required")
+    if b64.startswith("data:") and "," in b64:
+        b64 = b64.split(",", 1)[1]
+
+    categories = await db.categories.find({}, {"_id": 0, "id": 1, "slug": 1, "name": 1}).to_list(50)
+    cat_list = ", ".join([c["slug"] for c in categories])
+
+    system_msg = (
+        "You are a visual product identifier. Look at the photo and return STRICT JSON "
+        "only (no prose, no code fences) with keys: "
+        "keywords (array of 2-5 broad single-word or 2-word terms that appear in similar product titles), "
+        f"category_slug (one slug from: {cat_list}), "
+        "description (short 1-sentence description of what you see, max 90 chars). "
+        "Do not include any other keys."
+    )
+    chat = LlmChat(
+        api_key=EMERGENT_LLM_KEY,
+        session_id=f"img-search-{uuid.uuid4().hex[:10]}",
+        system_message=system_msg,
+    ).with_model(AI_MODEL_PROVIDER, AI_MODEL_NAME)
+    try:
+        raw = await chat.send_message(UserMessage(
+            text="Identify this product and return the JSON.",
+            file_contents=[ImageContent(image_base64=b64)],
+        ))
+    except Exception as e:
+        logger.error(f"Image search LLM failed: {e}")
+        raise HTTPException(500, f"AI request failed: {e}")
+    try:
+        parsed = _extract_json(raw)
+    except Exception as e:
+        raise HTTPException(500, f"AI returned invalid JSON: {e}")
+
+    keywords = [str(k).strip() for k in (parsed.get("keywords") or []) if str(k).strip()][:5]
+    slug = str(parsed.get("category_slug") or "").lower()
+    cat = next((c for c in categories if c["slug"] == slug), None)
+    description = str(parsed.get("description") or "").strip()[:100]
+
+    # Build query
+    q: dict = {"status": "active"}
+    if keywords:
+        ors = []
+        for k in keywords:
+            rx = {"$regex": re.escape(k), "$options": "i"}
+            ors.extend([{"title": rx}, {"brand": rx}])
+        q["$or"] = ors
+    if cat:
+        q["category_id"] = cat["id"]
+
+    limit = max(1, min(int(payload.limit or 24), 60))
+    docs = await db.listings.find(q, {"_id": 0}).sort(
+        [("views_count", -1), ("likes_count", -1)]
+    ).limit(limit).to_list(limit)
+    if len(docs) < 6 and cat:
+        # Fallback: category only
+        docs = await db.listings.find(
+            {"status": "active", "category_id": cat["id"]}, {"_id": 0}
+        ).sort([("views_count", -1)]).limit(limit).to_list(limit)
+
+    return {
+        "description": description,
+        "keywords": keywords,
+        "category": {"id": cat["id"], "name": cat["name"], "slug": cat["slug"]} if cat else None,
+        "items": docs,
+        "total": len(docs),
+    }
+
+
+# ---- Currency mock rates (USD base). Static table; wire up ExchangeRate API when live rates are needed. ----
+@api_router.get("/currency/rates")
+async def currency_rates():
+    return {
+        "base": "USD",
+        "updated_at": "2026-02-11T00:00:00Z",
+        "source": "mocked-static",
+        "rates": {"USD": 1.0, "EUR": 0.92, "GBP": 0.78, "JPY": 155.0, "INR": 83.2, "CAD": 1.36},
+    }
+
+
 @api_router.post("/search/vibe")
 async def search_vibe(payload: VibeSearchRequest, request: Request):
     """Translate a natural-language vibe ('cozy', 'minimalist retro', 'y2k glam') into

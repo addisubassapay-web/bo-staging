@@ -3,6 +3,8 @@ import "./App.css";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/context/AuthContext";
 import { ThemeProvider } from "@/context/ThemeContext";
+import { CurrencyProvider } from "@/context/CurrencyContext";
+import { LanguageProvider } from "@/context/LanguageContext";
 import { Toaster } from "@/components/ui/toaster";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -34,44 +36,48 @@ import Disputes from "@/pages/Disputes";
 function App() {
   return (
     <ThemeProvider>
-      <div className="App min-h-screen flex flex-col bg-white text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100 transition-colors">
-        <BrowserRouter>
-          <AuthProvider>
-            <Header />
-            <BuyerProgressToast />
-            <main className="flex-1">
-              <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/search" element={<Search />} />
-                <Route path="/listing/:id" element={<ListingDetail />} />
-                <Route path="/sell" element={<Sell />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
-                <Route path="/cart" element={<Cart />} />
-                <Route path="/checkout/:id" element={<Checkout />} />
-                <Route path="/favorites" element={<Favorites />} />
-                <Route path="/profile" element={<Profile />} />
-                <Route path="/wallet" element={<Wallet />} />
-                <Route path="/affiliate" element={<Affiliate />} />
-                <Route path="/referrals" element={<Referrals />} />
-                <Route path="/my/store" element={<StoreManage />} />
-                <Route path="/store/analytics" element={<StoreAnalytics />} />
-                <Route path="/store/:slug" element={<StorePage />} />
-                <Route path="/chat" element={<ChatThreads />} />
-                <Route path="/chat/:listingId/:otherId" element={<ChatRoom />} />
-                <Route path="/verify" element={<Verification />} />
-                <Route path="/seller/apply" element={<SellerApply />} />
-                <Route path="/listing/:id/edit" element={<EditListing />} />
-                <Route path="/disputes" element={<Disputes />} />
-                <Route path="/r/:code" element={<AffiliateRedirect />} />
-                <Route path="/admin/*" element={<Admin />} />
-              </Routes>
-            </main>
-            <Footer />
-            <Toaster />
-          </AuthProvider>
-        </BrowserRouter>
-      </div>
+      <LanguageProvider>
+        <CurrencyProvider>
+          <div className="App min-h-screen flex flex-col bg-white text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100 transition-colors">
+            <BrowserRouter>
+              <AuthProvider>
+                <Header />
+                <BuyerProgressToast />
+                <main className="flex-1">
+                  <Routes>
+                    <Route path="/" element={<Home />} />
+                    <Route path="/search" element={<Search />} />
+                    <Route path="/listing/:id" element={<ListingDetail />} />
+                    <Route path="/sell" element={<Sell />} />
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/register" element={<Register />} />
+                    <Route path="/cart" element={<Cart />} />
+                    <Route path="/checkout/:id" element={<Checkout />} />
+                    <Route path="/favorites" element={<Favorites />} />
+                    <Route path="/profile" element={<Profile />} />
+                    <Route path="/wallet" element={<Wallet />} />
+                    <Route path="/affiliate" element={<Affiliate />} />
+                    <Route path="/referrals" element={<Referrals />} />
+                    <Route path="/my/store" element={<StoreManage />} />
+                    <Route path="/store/analytics" element={<StoreAnalytics />} />
+                    <Route path="/store/:slug" element={<StorePage />} />
+                    <Route path="/chat" element={<ChatThreads />} />
+                    <Route path="/chat/:listingId/:otherId" element={<ChatRoom />} />
+                    <Route path="/verify" element={<Verification />} />
+                    <Route path="/seller/apply" element={<SellerApply />} />
+                    <Route path="/listing/:id/edit" element={<EditListing />} />
+                    <Route path="/disputes" element={<Disputes />} />
+                    <Route path="/r/:code" element={<AffiliateRedirect />} />
+                    <Route path="/admin/*" element={<Admin />} />
+                  </Routes>
+                </main>
+                <Footer />
+                <Toaster />
+              </AuthProvider>
+            </BrowserRouter>
+          </div>
+        </CurrencyProvider>
+      </LanguageProvider>
     </ThemeProvider>
   );
 }
