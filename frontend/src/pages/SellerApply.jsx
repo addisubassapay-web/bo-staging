@@ -161,14 +161,19 @@ const SellerApply = () => {
             </div>
           )}
           {existing.status === "approved" && (
-            <Button className="mt-4 bg-[#FF211F] hover:bg-[#e01d1b]" onClick={() => navigate("/sell")} data-testid="approved-start-selling">
-              Start selling
-            </Button>
+            <>
+              <Button className="mt-4 bg-[#FF211F] hover:bg-[#e01d1b] rounded-full h-11 shadow-lg shadow-[#FF211F]/20" onClick={() => navigate("/sell")} data-testid="approved-start-selling">
+                Start selling
+              </Button>
+              <PayoutPreviewCard tier={trust?.tier} />
+            </>
           )}
         </div>
       )}
 
       {(!existing || existing.status === "rejected") && (
+        <>
+        <PayoutPreviewCard tier={trust?.tier} previewOnly />
         <form onSubmit={submit} className="space-y-4 bg-white border border-neutral-200 rounded-xl p-6" data-testid="seller-apply-form">
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
@@ -279,7 +284,78 @@ const SellerApply = () => {
             {submitting ? "Submitting…" : trust?.auto_approve_eligible ? "Submit — you'll be instantly approved" : "Submit application"}
           </Button>
         </form>
+        </>
       )}
+    </div>
+  );
+};
+
+const PayoutPreviewCard = ({ tier, previewOnly = false }) => {
+  // Simple, transparent projection based on tier — pure frontend estimate.
+  const t = tier || "new";
+  const scenarios = {
+    elite:   { lo: 800,  hi: 2200, note: "Elite trust unlocks Featured Storefront spots." },
+    trusted: { lo: 400,  hi: 1200, note: "Trusted sellers see 1.6x average conversion." },
+    new:     { lo: 150,  hi: 600,  note: "Complete verification steps to lift these numbers." },
+  }[t];
+  const feePct = 10; // platform fee %
+  const midpoint = Math.round((scenarios.lo + scenarios.hi) / 2);
+  const platformFee = Math.round(midpoint * (feePct / 100));
+  const payout = midpoint - platformFee;
+
+  return (
+    <div
+      className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5 sm:p-6 shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
+      data-testid="payout-preview-card"
+    >
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <div className="text-xs uppercase tracking-wider text-neutral-500 dark:text-neutral-400 font-medium flex items-center gap-1.5">
+            <Zap className="h-3.5 w-3.5 text-[#FF7A18]" /> Weekly earnings preview
+          </div>
+          <div className="mt-1 text-3xl sm:text-4xl font-extrabold text-neutral-900 dark:text-neutral-100 tabular-nums" data-testid="payout-preview-range">
+            ${scenarios.lo.toLocaleString()} – ${scenarios.hi.toLocaleString()}
+          </div>
+          <div className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+            {previewOnly ? "Estimate after you're approved · " : ""}Based on the {t} tier and category average.
+          </div>
+        </div>
+        <div className="text-right">
+          <div className="text-xs uppercase tracking-wider text-neutral-500 dark:text-neutral-400 font-medium">Payout cadence</div>
+          <div className="mt-1 text-sm font-semibold text-neutral-900 dark:text-neutral-100">Every Monday</div>
+          <div className="text-[11px] text-neutral-400">Direct to your bank</div>
+        </div>
+      </div>
+
+      {/* Fee breakdown bar */}
+      <div className="mt-4">
+        <div className="h-2.5 rounded-full overflow-hidden bg-neutral-100 dark:bg-neutral-800 flex">
+          <div className="h-full bg-gradient-to-r from-emerald-400 to-emerald-500" style={{ width: `${100 - feePct}%` }} />
+          <div className="h-full bg-gradient-to-r from-[#FF7A18] to-[#FF211F]" style={{ width: `${feePct}%` }} />
+        </div>
+        <div className="mt-2 flex justify-between text-[11px] uppercase tracking-wider">
+          <span className="text-emerald-700 dark:text-emerald-300 font-semibold">You keep {100 - feePct}%</span>
+          <span className="text-[#FF211F] font-semibold">Platform fee {feePct}%</span>
+        </div>
+      </div>
+
+      {/* Example row */}
+      <div className="mt-4 grid grid-cols-3 gap-3 text-sm">
+        <div className="rounded-xl bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-100 dark:border-neutral-800 p-3">
+          <div className="text-[10px] uppercase tracking-wider text-neutral-500 dark:text-neutral-400">Midpoint sales</div>
+          <div className="mt-0.5 font-extrabold text-neutral-900 dark:text-neutral-100 tabular-nums">${midpoint.toLocaleString()}</div>
+        </div>
+        <div className="rounded-xl bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-100 dark:border-neutral-800 p-3">
+          <div className="text-[10px] uppercase tracking-wider text-neutral-500 dark:text-neutral-400">Platform fee</div>
+          <div className="mt-0.5 font-extrabold text-[#FF211F] tabular-nums">-${platformFee.toLocaleString()}</div>
+        </div>
+        <div className="rounded-xl bg-emerald-50 dark:bg-emerald-500/15 border border-emerald-100 dark:border-emerald-500/30 p-3">
+          <div className="text-[10px] uppercase tracking-wider text-emerald-700 dark:text-emerald-300">Your payout</div>
+          <div className="mt-0.5 font-extrabold text-emerald-700 dark:text-emerald-300 tabular-nums">${payout.toLocaleString()}</div>
+        </div>
+      </div>
+
+      <div className="mt-3 text-[11px] text-neutral-500 dark:text-neutral-400">💡 {scenarios.note}</div>
     </div>
   );
 };

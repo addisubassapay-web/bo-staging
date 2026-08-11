@@ -26,6 +26,12 @@ Exact replica of Mercari platform (mercari.com) — same color scheme (`#FF211F`
 
 ## Implemented (with dates)
 
+### Feb 2026 — Print Shipping Label + Seller Payout Preview
+- **Printable Shipping Label** — New `GET /api/orders/{id}/label.svg` renders a 4×6-style SVG label with brand header band, carrier + tracking, ship-to + from blocks, deterministic barcode (from tracking hash), QR-code-style 16×16 block with corner finder patterns, and footer. Auth-gated via `Authorization: Bearer` OR `?auth=` query param so the same URL can render inline in a new tab. The existing `POST /api/orders/{id}/shipping-label` mock adapter now stamps `label_url = /api/orders/{id}/label.svg` so the "Print label" button opens a real printable page instead of a dead placeholder path. `ShippingTracker` shows a new `Print label` button (data-testid `view-label-<orderId>`) whenever a tracking number exists.
+- **Seller Payout Preview** — New `PayoutPreviewCard` on `/seller/apply`, shown both in preview mode (before approval) and in the approved state. Displays weekly earnings range keyed to the applicant's trust tier (elite $800-$2,200 · trusted $400-$1,200 · new $150-$600), payout cadence (Every Monday · Direct to your bank), a two-tone fee-split bar (You keep 90% / Platform 10%), and a 3-column breakdown (midpoint sales · platform fee · your payout) using tabular-nums. Tier-specific tip line explains what unlocks the higher tier.
+- **Fast-track auto-approval** (Phase 17): unchanged and verified — `POST /api/seller/apply` still auto-approves score ≥ 80 + no open disputes; low-trust flows continue to the admin queue.
+- **Lint**: clean across backend + all touched frontend files.
+
 ### Feb 2026 — Seller Onboarding + Trust-Score Auto-Approval
 - **Trust Score endpoint** — `GET /api/seller/trust-score` returns a 0-100 breakdown across 6 signals: email verified (25), phone verified (25), account age > 7 days (15), no open disputes (15), has referrals (10), profile complete — bio + avatar (10). Tiers: elite (≥80), trusted (≥60), new (<60). `auto_approve_eligible` requires score ≥ 80 AND no open disputes (dispute veto).
 - **Fast-track auto-approval** — `POST /api/seller/apply` now checks the Trust Score first. Eligible applicants are approved on submit with `admin_notes = "Auto-approved via Trust Score (…)"`, `reviewed_by = "system:trust_score"`, user role updated to seller, and a 🎉 notification pushed. Everyone else falls into the existing admin review queue with the standard "application submitted" note.

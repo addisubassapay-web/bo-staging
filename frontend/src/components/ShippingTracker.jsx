@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Truck, Package, MapPin, CheckCircle2, Clock } from "lucide-react";
+import { Truck, Package, MapPin, CheckCircle2, Clock, Printer } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const STATUS_LABELS = {
@@ -93,13 +93,30 @@ const ShippingTracker = ({ orderId, canPurchase = false, canAdvance = false }) =
           {data.estimated_delivery && <>ETA {data.estimated_delivery}</>}
         </div>
       </div>
-      {canAdvance && data.current_status !== "delivered" && (
-        <div className="mt-2 flex justify-end">
+      <div className="mt-2 flex justify-end gap-2 flex-wrap">
+        {data.tracking_number && (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              const t = localStorage.getItem("mercari_token") || "";
+              window.open(
+                `${process.env.REACT_APP_BACKEND_URL}/api/orders/${orderId}/label.svg?auth=${encodeURIComponent(t)}`,
+                "_blank",
+              );
+            }}
+            className="gap-1.5"
+            data-testid={`view-label-${orderId}`}
+          >
+            <Printer className="h-3.5 w-3.5" /> Print label
+          </Button>
+        )}
+        {canAdvance && data.current_status !== "delivered" && (
           <Button size="sm" variant="outline" onClick={advance} disabled={advancing} data-testid={`advance-${orderId}`}>
             {advancing ? "Advancing…" : "Mark next stage →"}
           </Button>
-        </div>
-      )}
+        )}
+      </div>
       <div className="mt-3 space-y-2">
         {data.events.slice().reverse().map((e, i) => {
           const s = STATUS_LABELS[e.status] || STATUS_LABELS.label_created;
