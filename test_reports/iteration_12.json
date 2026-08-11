@@ -1,0 +1,42 @@
+{
+  "summary": "Phase 17 Trust-Score Auto-Approval tested end-to-end. Backend contract, admin baseline (score=40, tier=new), dispute veto, verification gate, duplicate guard, and manual queue + admin approve-via-PUT all pass. Frontend TrustScoreCard renders correctly with all 6 signals, tier badge, gradient bar, submit copy. However, the fast-track auto-approval path is BROKEN because the `account_age` signal is silently always 0 due to a tz-aware vs tz-naive datetime subtraction that raises TypeError which is caught by a bare except. This caps a fully-eligible user's score at 75/100 (25+25+0+15+0+10) so they never hit the 80 threshold via the spec'd 'verified + old account + profile' path.",
+  "backend_issues": {
+    "critical": [
+      {
+        "endpoint": "GET /api/seller/trust-score",
+        "issue": "account_age signal never earns points. In _compute_trust_score() (server.py ~line 1823-1834), `created_at` is fetched via Motor which returns tz-naive datetimes by default (BSON strips tzinfo). Subtracting `datetime.now(timezone.utc) - created` (aware minus naive) raises TypeError, which the bare `except Exception` swallows, leaving age_days=0. Result: a fully-verified user with old account + phone + bio + avatar gets score=75, auto_approve_eligible=False — fast-track path in spec is unreachable. UI also displays 'Account is 0 day(s) old' for the admin account (which is >30 days old per DB).",
+        "priority": "HIGH"
+      }
+    ],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_phase17_trust_score.py",
+    "/app/test_reports/pytest/phase17.xml"
+  ],
+  "action_items": [
+    "Fix account_age computation in _compute_trust_score: either (a) make Motor tz_aware via CodecOptions(tz_aware=True, tzinfo=timezone.utc) on the AsyncIOMotorClient, or (b) coerce `created` to tz-aware inside the function before subtracting (e.g., `if created.tzinfo is None: created = created.replace(tzinfo=timezone.utc)`). Remove the bare `except Exception` so future signal bugs aren't hidden.",
+    "After the fix, verify a fresh user with email_verified=true, phone_verified=true, bio+avatar set, created_at 30 days back returns score=90 and auto_approve_eligible=true, and POST /api/seller/apply immediately returns status='approved' with admin_notes starting 'Auto-approved via Trust Score' and reviewed_by='system:trust_score'."
+  ],
+  "critical_code_review_comments": [
+    "server.py _compute_trust_score: bare `except Exception: age_days=0` masks the tz bug and any future parsing regression. Log or narrow the except.",
+    "server.py: created_at is stored as tz-aware UTC (via _now_utc()) but Motor is not configured tz_aware, so all downstream tz-aware math against created_at is fragile across the codebase.",
+    "Route ordering: /api/seller/trust-score is declared before /api/seller/apply — no collision (verified: GET vs POST + different paths).",
+    "SellerApply.jsx: submit button text change to 'Submit — you\\'ll be instantly approved' driven by trust.auto_approve_eligible works; however because the backend never returns eligible=true today for the spec'd fast-track user, this UX path is effectively dead in practice."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_phase17_trust_score.py (new)"
+  ],
+  "success_rate": {"backend": "86% (6/7)", "frontend": "100%"},
+  "test_credentials": "admin@mercari.local / admin123",
+  "seed_data_creation": "Created ephemeral TEST_ prefixed users via /api/auth/register + direct pymongo mutations on users/disputes collections for trust-score seed states.",
+  "retest_needed": true,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "After main agent fixes tz handling in _compute_trust_score, rerun /app/backend/tests/test_phase17_trust_score.py — the failing test TestFastTrackApproval::test_high_trust_user_auto_approved should then pass (asserts score>=80, status=approved, admin_notes prefix, reviewed_by='system:trust_score', user.seller_status='approved', notification with 'approved to sell'). All other tests already green.",
+  "rca of the issue": "In server.py _compute_trust_score (~line 1823), `created = user.get('created_at')` returns a tz-naive datetime from Motor (Motor default codec is tz_aware=False). The subtraction `datetime.now(timezone.utc) - created` throws TypeError('can't subtract offset-naive and offset-aware datetimes'). The surrounding `try/except Exception` sets age_days=0. Consequently the account_age (weight 15) signal never contributes, blocking users from reaching the 80 threshold via the spec'd path. Fix: normalize created to tz-aware in the function, e.g. `if isinstance(created, datetime) and created.tzinfo is None: created = created.replace(tzinfo=timezone.utc)`, or enable tz_aware on the Motor client globally."
+}

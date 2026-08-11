@@ -1805,6 +1805,77 @@ async def verify_phone_confirm(payload: PhoneConfirmRequest, user: dict = Depend
 
 
 # ---------- Seller Application ----------
+async def _compute_trust_score(user_id: str) -> dict:
+    """Trust Score 0-100 with per-signal breakdown. High scores auto-approve seller applications."""
+    user = await db.users.find_one({"id": user_id}, {"_id": 0}) or {}
+    signals: List[dict] = []
+
+    def add(key: str, label: str, earned: int, weight: int, hint: str = ""):
+        signals.append({"key": key, "label": label, "earned": earned, "weight": weight, "hint": hint})
+
+    add("email_verified", "Email verified",
+        25 if user.get("email_verified") else 0, 25,
+        "Verify your email in /verify")
+    add("phone_verified", "Phone verified",
+        25 if user.get("phone_verified") else 0, 25,
+        "Verify your phone in /verify")
+
+    created = user.get("created_at")
+    age_days = 0
+    if isinstance(created, datetime):
+        # Motor returns tz-naive datetimes by default (BSON strips tzinfo). Normalize to UTC-aware
+        # so the subtraction below never raises TypeError.
+        if created.tzinfo is None:
+            created = created.replace(tzinfo=timezone.utc)
+        age_days = (datetime.now(timezone.utc) - created).days
+    elif isinstance(created, str):
+        try:
+            parsed = datetime.fromisoformat(created.replace("Z", "+00:00"))
+            if parsed.tzinfo is None:
+                parsed = parsed.replace(tzinfo=timezone.utc)
+            age_days = (datetime.now(timezone.utc) - parsed).days
+        except ValueError:
+            age_days = 0
+    add("account_age", "Account age > 7 days",
+        15 if age_days >= 7 else 0, 15,
+        f"Account is {age_days} day(s) old")
+
+    open_disputes = await db.disputes.count_documents(
+        {"buyer_id": user_id, "status": {"$in": ["open", "reviewing"]}}
+    )
+    add("no_open_disputes", "No open disputes filed",
+        15 if open_disputes == 0 else 0, 15,
+        f"{open_disputes} open dispute(s)")
+
+    referral_count = await db.users.count_documents({"referred_by": user_id})
+    add("has_referrals", "Referred at least 1 friend",
+        10 if referral_count >= 1 else 0, 10,
+        f"{referral_count} referral(s)")
+
+    profile_complete = bool((user.get("bio") or "").strip()) and bool(user.get("avatar"))
+    add("profile_complete", "Complete profile (bio + avatar)",
+        10 if profile_complete else 0, 10,
+        "Fill your bio and add an avatar")
+
+    total = sum(s["earned"] for s in signals)
+    max_total = sum(s["weight"] for s in signals)
+    tier = "elite" if total >= 80 else "trusted" if total >= 60 else "new"
+    return {
+        "score": total,
+        "max": max_total,
+        "tier": tier,
+        "auto_approve_threshold": 80,
+        "auto_approve_eligible": total >= 80 and open_disputes == 0,
+        "signals": signals,
+    }
+
+
+@api_router.get("/seller/trust-score")
+async def seller_trust_score(user: dict = Depends(get_current_user)):
+    """Preview the Trust Score so applicants know if they'll be fast-tracked."""
+    return await _compute_trust_score(user["id"])
+
+
 @api_router.post("/seller/apply", response_model=SellerApplication)
 async def seller_apply(payload: SellerApplicationCreate, user: dict = Depends(get_current_user)):
     # Require email + phone verification before applying
@@ -1823,6 +1894,11 @@ async def seller_apply(payload: SellerApplicationCreate, user: dict = Depends(ge
         raise HTTPException(400, "You already have a pending application")
 
     tax_id_last4 = (payload.tax_id or "").strip()[-4:]  # keep only last 4 digits (mock)
+
+    # Compute trust score to decide fast-track vs manual review
+    ts = await _compute_trust_score(user["id"])
+    auto_approve = ts["auto_approve_eligible"]
+
     app_doc = SellerApplication(
         user_id=user["id"],
         user_email=user["email"],
@@ -1841,11 +1917,33 @@ async def seller_apply(payload: SellerApplicationCreate, user: dict = Depends(ge
         payout_method=payload.payout_method,  # type: ignore
         id_document_note=payload.id_document_note or "",
         id_document_file_id=payload.id_document_file_id,
+        status="approved" if auto_approve else "pending",
+        admin_notes=(
+            f"Auto-approved via Trust Score ({ts['score']}/{ts['max']}, tier={ts['tier']})"
+            if auto_approve else ""
+        ),
+        reviewed_at=datetime.now(timezone.utc) if auto_approve else None,
+        reviewed_by="system:trust_score" if auto_approve else None,
     )
     await db.seller_applications.insert_one(app_doc.model_dump())
-    await db.users.update_one({"id": user["id"]}, {"$set": {"seller_status": "pending"}})
-    await notify(user["id"], "system", "Seller application submitted",
-                 "We'll review your application shortly.", "/profile")
+
+    if auto_approve:
+        await db.users.update_one(
+            {"id": user["id"]},
+            {"$set": {"seller_status": "approved", "role": "user"}},
+        )
+        await notify(
+            user["id"], "system", "You're approved to sell! 🎉",
+            f"Trust Score {ts['score']}/100 qualified you for instant approval. Start listing now.",
+            "/sell",
+        )
+    else:
+        await db.users.update_one({"id": user["id"]}, {"$set": {"seller_status": "pending"}})
+        await notify(
+            user["id"], "system", "Seller application submitted",
+            f"Trust Score {ts['score']}/100 — we'll review your application shortly.",
+            "/profile",
+        )
     return app_doc
 
 @api_router.get("/seller/application", response_model=Optional[SellerApplication])

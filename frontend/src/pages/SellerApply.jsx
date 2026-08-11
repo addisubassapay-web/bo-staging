@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { ShieldCheck, CircleAlert, Upload as UploadIcon, FileText, X as XIcon } from "lucide-react";
+import { ShieldCheck, CircleAlert, Upload as UploadIcon, FileText, X as XIcon, Zap, Sparkles, Check, Circle } from "lucide-react";
 
 const initialForm = {
   legal_name: "",
@@ -37,6 +37,12 @@ const SellerApply = () => {
   const [submitting, setSubmitting] = useState(false);
   const [idFile, setIdFile] = useState(null); // {id, url, size, content_type, filename}
   const [uploading, setUploading] = useState(false);
+  const [trust, setTrust] = useState(null);
+
+  useEffect(() => {
+    if (!user) return;
+    api.get("/seller/trust-score").then((r) => setTrust(r.data)).catch(() => {});
+  }, [user]);
 
   const uploadIdDoc = async (file) => {
     setUploading(true);
@@ -114,15 +120,22 @@ const SellerApply = () => {
   return (
     <div className="max-w-3xl mx-auto px-4 py-10 space-y-6" data-testid="seller-apply-page">
       <div>
-        <h1 className="text-3xl font-bold">Sell on Mercari</h1>
-        <p className="text-neutral-600 mt-1">Tell us about your business so we can enable payouts and verified badges.</p>
+        <span className="inline-block text-[10px] uppercase tracking-[0.2em] font-semibold text-[#FF7A18] bg-[#FF7A18]/10 border border-[#FF7A18]/20 rounded-full px-3 py-1">
+          Become a seller
+        </span>
+        <h1 className="mt-2 text-3xl sm:text-4xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">Sell on Mercari</h1>
+        <p className="text-neutral-500 dark:text-neutral-400 mt-1">List items, set your prices, ship worldwide, and get paid. High-trust accounts are approved instantly.</p>
       </div>
+
+      {trust && (
+        <TrustScoreCard trust={trust} />
+      )}
 
       <div className="grid sm:grid-cols-2 gap-3">
         {readyChecks.map((c, i) => (
-          <div key={i} className={`border rounded-lg p-3 flex items-center gap-2 ${c.ok ? "border-emerald-200 bg-emerald-50" : "border-neutral-200 bg-white"}`}>
+          <div key={i} className={`border rounded-lg p-3 flex items-center gap-2 ${c.ok ? "border-emerald-200 bg-emerald-50 dark:bg-emerald-500/15 dark:border-emerald-500/30" : "border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900"}`}>
             {c.ok ? <ShieldCheck className="h-4 w-4 text-emerald-600" /> : <CircleAlert className="h-4 w-4 text-neutral-400" />}
-            <span className={c.ok ? "text-emerald-800 text-sm" : "text-neutral-700 text-sm"}>{c.label}</span>
+            <span className={c.ok ? "text-emerald-800 dark:text-emerald-200 text-sm" : "text-neutral-700 dark:text-neutral-300 text-sm"}>{c.label}</span>
           </div>
         ))}
       </div>
@@ -262,11 +275,96 @@ const SellerApply = () => {
             <Label>Additional notes (optional)</Label>
             <Textarea value={form.id_document_note} onChange={set("id_document_note")} placeholder="Anything else our reviewers should know" data-testid="apply-id-note" className="mt-1" rows={2} />
           </div>
-          <Button type="submit" disabled={submitting || !allReady} className="bg-[#FF211F] hover:bg-[#e01d1b] h-11 w-full" data-testid="apply-submit-btn">
-            {submitting ? "Submitting…" : "Submit application"}
+          <Button type="submit" disabled={submitting || !allReady} className="bg-[#FF211F] hover:bg-[#e01d1b] rounded-full h-11 w-full shadow-lg shadow-[#FF211F]/20" data-testid="apply-submit-btn">
+            {submitting ? "Submitting…" : trust?.auto_approve_eligible ? "Submit — you'll be instantly approved" : "Submit application"}
           </Button>
         </form>
       )}
+    </div>
+  );
+};
+
+const TrustScoreCard = ({ trust }) => {
+  const pct = trust.max > 0 ? Math.min(100, (trust.score / trust.max) * 100) : 0;
+  const eligible = trust.auto_approve_eligible;
+  const tierMeta = {
+    elite:   { label: "Elite trust",   cls: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30" },
+    trusted: { label: "Trusted",       cls: "bg-sky-500/15 text-sky-700 dark:text-sky-300 border-sky-500/30" },
+    new:     { label: "Getting started", cls: "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30" },
+  }[trust.tier] || { label: "New", cls: "bg-neutral-200 text-neutral-700" };
+
+  return (
+    <div
+      className="relative overflow-hidden rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5 sm:p-6 shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
+      data-testid="trust-score-card"
+    >
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <div className="text-xs uppercase tracking-wider text-neutral-500 dark:text-neutral-400 font-medium flex items-center gap-1.5">
+            <Sparkles className="h-3.5 w-3.5 text-[#FF7A18]" /> Trust score
+          </div>
+          <div className="flex items-baseline gap-3 mt-1">
+            <div className="text-4xl sm:text-5xl font-extrabold text-neutral-900 dark:text-neutral-100 tabular-nums" data-testid="trust-score-value">
+              {trust.score}
+              <span className="text-lg text-neutral-400 dark:text-neutral-500 font-medium">/{trust.max}</span>
+            </div>
+            <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full border ${tierMeta.cls}`}>
+              {tierMeta.label}
+            </span>
+          </div>
+        </div>
+        <div className="text-right">
+          {eligible ? (
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500 text-white text-xs font-bold px-3 py-1 shadow shadow-emerald-500/30" data-testid="trust-fast-track-badge">
+              <Zap className="h-3.5 w-3.5" /> Instant approval on submit
+            </div>
+          ) : (
+            <div className="text-xs text-neutral-500 dark:text-neutral-400 max-w-[180px]">
+              Reach <b>{trust.auto_approve_threshold}</b> for instant approval — otherwise our team reviews within 24h.
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Progress bar */}
+      <div className="mt-4 h-2 rounded-full bg-neutral-100 dark:bg-neutral-800 overflow-hidden">
+        <div
+          className={`h-full rounded-full transition-all duration-700 ease-out ${
+            eligible
+              ? "bg-gradient-to-r from-emerald-400 to-emerald-500"
+              : "bg-gradient-to-r from-[#FF7A18] to-[#FF211F]"
+          }`}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+
+      {/* Signal breakdown */}
+      <ul className="mt-4 grid sm:grid-cols-2 gap-x-4 gap-y-2">
+        {trust.signals.map((s) => (
+          <li
+            key={s.key}
+            className="flex items-center gap-2 text-sm"
+            data-testid={`trust-signal-${s.key}`}
+          >
+            {s.earned > 0 ? (
+              <span className="inline-flex h-5 w-5 rounded-full bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 items-center justify-center shrink-0">
+                <Check className="h-3 w-3" />
+              </span>
+            ) : (
+              <span className="inline-flex h-5 w-5 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-400 dark:text-neutral-500 items-center justify-center shrink-0">
+                <Circle className="h-2.5 w-2.5" />
+              </span>
+            )}
+            <span className={`flex-1 min-w-0 ${s.earned > 0 ? "text-neutral-800 dark:text-neutral-200" : "text-neutral-500 dark:text-neutral-400"}`}>
+              {s.label}
+              {s.earned === 0 && s.hint && <span className="text-[11px] text-neutral-400 dark:text-neutral-500 block truncate">{s.hint}</span>}
+            </span>
+            <span className={`text-xs tabular-nums shrink-0 ${s.earned > 0 ? "text-emerald-600 dark:text-emerald-300 font-semibold" : "text-neutral-400"}`}>
+              +{s.earned}/{s.weight}
+            </span>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 };

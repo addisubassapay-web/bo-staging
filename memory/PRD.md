@@ -26,6 +26,13 @@ Exact replica of Mercari platform (mercari.com) — same color scheme (`#FF211F`
 
 ## Implemented (with dates)
 
+### Feb 2026 — Seller Onboarding + Trust-Score Auto-Approval
+- **Trust Score endpoint** — `GET /api/seller/trust-score` returns a 0-100 breakdown across 6 signals: email verified (25), phone verified (25), account age > 7 days (15), no open disputes (15), has referrals (10), profile complete — bio + avatar (10). Tiers: elite (≥80), trusted (≥60), new (<60). `auto_approve_eligible` requires score ≥ 80 AND no open disputes (dispute veto).
+- **Fast-track auto-approval** — `POST /api/seller/apply` now checks the Trust Score first. Eligible applicants are approved on submit with `admin_notes = "Auto-approved via Trust Score (…)"`, `reviewed_by = "system:trust_score"`, user role updated to seller, and a 🎉 notification pushed. Everyone else falls into the existing admin review queue with the standard "application submitted" note.
+- **Trust Score meter card** on `/seller/apply` — 4xl/5xl score, tier chip, gradient progress bar (emerald when eligible, warm brand when not), per-signal grid with earned/weight pips, "Instant approval on submit" badge when eligible, dynamic submit button copy.
+- **Bug fixed by testing agent (HIGH)**: `_compute_trust_score` account-age computation was silently failing because Motor returns tz-naive datetimes while `datetime.now(timezone.utc)` is tz-aware — bare `except` hid the TypeError, capping fully-qualified users at 75/100. Fixed by normalising to UTC-aware inside the function and removing the broad except. Admin now correctly scores 55/100 with `age_earned=15`.
+- **Regression preserved**: Existing email + phone verification gate, duplicate pending guard, and the admin manual approval PUT flow all unchanged. Shipping-provider adapter (mock EasyPost/Shippo) untouched.
+
 ### Feb 2026 — Cart, Checkout & Storefront Refresh
 - **Cart page** — kicker chip + tracking-tight H1, item count subtitle, cart rows now rounded-2xl with warm hover-glow, tabular-nums prices, pill-shaped Checkout CTA with red glow shadow, empty state ringed with dashed border and centered CTA. Fully dark-mode ready.
 - **Checkout page** — same header language, sections wrapped in rounded-2xl cards with soft shadows, payment section has emerald "Demo" pill and lock-icon tile, order summary sticky on desktop with clear divider rhythm, extra-bold total. Success screen redesigned: gradient emerald tick badge with blur-glow, warm CTA row (Share/View orders/Keep shopping), summary card with clean divider and tabular-nums amount.
