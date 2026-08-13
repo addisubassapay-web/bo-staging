@@ -1,0 +1,33 @@
+{
+  "summary": "Verified buyer-journey i18n (EN/ES/FR/JA) across Home, Cart, Checkout, ListingDetail via Playwright + logged-in demo user. Language picker switches strings live, updates document.documentElement.lang, persists across full reload via localStorage 'mercari_lang'. Home hero greeting, Flash Deals, Just listed, Trending Now, Why-trust-us, Can't find your product, For You — all translate in 4 languages. Cart title + order-summary (Subtotal/Shipping/Tax/Total/Checkout) translate in 4 languages. Checkout Almost-yours title, Shipping-address & fields, Payment fields, Pay button — all translate in 4 languages. ListingDetail Back/Buy-now/Add-to-cart/Description translate in 4 languages. Currency + language mix works (USD/EUR displays alongside JA/ES etc.). Only failure: SimilarItems section still renders hardcoded English strings even though translation keys exist and useLang() is imported.",
+  "backend_issues": { "critical": [], "minor": [] },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "SimilarItems.jsx",
+        "issue": "Hardcoded English strings 'Handpicked for you', 'You may also like', and 'Similar picks in this category — matched by price and popularity.' are not wrapped in t(). Component imports useLang and destructures t but never calls it in JSX. Dictionary already contains similar.kicker / similar.title / similar.subtitle in all 4 languages — just need to replace the literals with {t('similar.kicker')}, {t('similar.title')}, {t('similar.subtitle')}.",
+        "selector": "[data-testid='similar-items-section']",
+        "priority": "MEDIUM"
+      }
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [
+    "Fix SimilarItems.jsx: replace the 3 hardcoded English strings with t('similar.kicker'), t('similar.title'), t('similar.subtitle'). Keys already exist in LanguageContext for en/es/fr/ja."
+  ],
+  "critical_code_review_comments": [
+    "SimilarItems.jsx imports useLang() but never invokes t() — dead import, translation contract violated.",
+    "LanguageContext.jsx is now 729 lines and >180 keys — consider splitting into per-namespace files (home.json, cart.json, checkout.json, listing.json) per locale for maintainability.",
+    "Cart empty-state translation could not be verified end-to-end because demo user's cart persists across sessions. Consider a small 'Clear cart' data-testid affordance for QA or an empty-cart demo user."
+  ],
+  "updated_files": [],
+  "success_rate": { "backend": "n/a", "frontend": "~92% (11 of 12 acceptance points fully verified)" },
+  "test_credentials": "sophia_style@demo.local / demo1234 (Demo user button on login page auto-fills)",
+  "seed_data_creation": "Added one listing to demo user's cart during test to verify filled-cart summary translations.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "All translation acceptance points pass except SimilarItems section title/kicker/subtitle which are hardcoded in English. After fix, retest ListingDetail by loading any /listing/:id, switching lang via [data-testid=lang-picker-btn] -> lang-option-{es|fr|ja}, scrolling to bottom and asserting 'Selección para ti'/'También te puede gustar' (es), 'Sélectionné pour vous'/'Vous pourriez aussi aimer' (fr), 'あなたへおすすめ'/'こちらもおすすめ' (ja). Home/Cart/Checkout translations all verified — no need to retest unless the dictionary is refactored.",
+  "rca of the issue": "In /app/frontend/src/components/SimilarItems.jsx the JSX literals on lines 39, 42, 45 were never migrated to t() calls even though the useLang hook was wired in (line 12). Fix: replace 'Handpicked for you' -> {t('similar.kicker')}, 'You may also like' -> {t('similar.title')}, and 'Similar picks in this category — matched by price and popularity.' -> {t('similar.subtitle')}. Repro: open any /listing/:id, switch language to es/fr/ja via top-strip Language Picker, scroll to the 'You may also like' strip — the kicker/title/subtitle remain in English while the rest of the page translates."
+}

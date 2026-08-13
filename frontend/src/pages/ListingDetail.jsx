@@ -13,6 +13,7 @@ import { ListingReviews } from "@/components/Reviews";
 import { VerificationBadges } from "@/components/VerificationBadges";
 import ProductCard from "@/components/ProductCard";
 import SimilarItems from "@/components/SimilarItems";
+import { useLang } from "@/context/LanguageContext";
 
 const SellerBlock = ({ sellerId, sellerName, views }) => {
   const [seller, setSeller] = useState(null);
@@ -152,6 +153,7 @@ const ListingDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { t } = useLang();
   const { toast } = useToast();
   const [listing, setListing] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -241,7 +243,7 @@ const ListingDetail = () => {
   return (
     <div className="max-w-6xl mx-auto px-4 py-6">
       <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-sm text-neutral-600 dark:text-neutral-400 mb-5 hover:text-neutral-900 dark:hover:text-neutral-100 transition">
-        <ChevronLeft className="h-4 w-4" /> Back
+        <ChevronLeft className="h-4 w-4" /> {t("listing.back")}
       </button>
 
       <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
@@ -278,9 +280,9 @@ const ListingDetail = () => {
           <div className="mt-2 flex items-start justify-between gap-4">
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">{listing.title}</h1>
             <button
-              onClick={() => { navigator.clipboard.writeText(window.location.href); toast({ title: "Link copied" }); }}
+              onClick={() => { navigator.clipboard.writeText(window.location.href); toast({ title: t("listing.linkCopied") }); }}
               className="h-10 w-10 rounded-full grid place-items-center border border-neutral-200 dark:border-neutral-800 text-neutral-500 dark:text-neutral-300 hover:text-[#FF211F] hover:border-[#FF7A18] transition shrink-0"
-              aria-label="Share"
+              aria-label={t("listing.share")}
               data-testid="share-btn"
             >
               <Share2 className="h-4 w-4" />
@@ -309,11 +311,11 @@ const ListingDetail = () => {
           <div className="mt-5 grid sm:grid-cols-2 gap-2 text-sm">
             <div className="flex items-center gap-2 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-3 py-2">
               <div className="h-7 w-7 rounded-lg bg-sky-50 dark:bg-sky-500/15 text-sky-600 dark:text-sky-300 grid place-items-center"><Truck className="h-3.5 w-3.5" /></div>
-              <span className="text-neutral-700 dark:text-neutral-300">{listing.shipping_paid_by === "seller" ? "Free shipping" : "Buyer pays shipping"}</span>
+              <span className="text-neutral-700 dark:text-neutral-300">{listing.shipping_paid_by === "seller" ? t("listing.freeShipping") : t("listing.buyerPays")}</span>
             </div>
             <div className="flex items-center gap-2 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-3 py-2">
               <div className="h-7 w-7 rounded-lg bg-emerald-50 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-300 grid place-items-center"><Shield className="h-3.5 w-3.5" /></div>
-              <span className="text-neutral-700 dark:text-neutral-300">Buyer Protection</span>
+              <span className="text-neutral-700 dark:text-neutral-300">{t("listing.buyerProtection")}</span>
             </div>
           </div>
 
@@ -324,15 +326,15 @@ const ListingDetail = () => {
                 className="w-full h-12 bg-gradient-to-r from-[#FF7A18] to-[#FF211F] hover:brightness-105 text-white text-base font-bold rounded-full shadow-lg shadow-[#FF211F]/25"
                 data-testid="buy-now-btn"
               >
-                Buy now · {formatPrice(listing.price)}
+                {t("listing.buyNow")} · {formatPrice(listing.price)}
               </Button>
               <div className="grid grid-cols-2 gap-2">
                 <Button onClick={addToCart} variant="outline" className="h-11 rounded-full" disabled={inCart} data-testid="add-to-cart-btn">
-                  <ShoppingCart className="h-4 w-4 mr-2" /> {inCart ? "In cart" : "Add to cart"}
+                  <ShoppingCart className="h-4 w-4 mr-2" /> {inCart ? t("listing.inCart") : t("listing.addToCart")}
                 </Button>
                 <Button onClick={toggleFav} variant="outline" className="h-11 rounded-full" data-testid="fav-toggle-btn">
                   <Heart className={`h-4 w-4 mr-2 ${fav ? "fill-[#FF211F] text-[#FF211F]" : ""}`} />
-                  {fav ? "Saved" : "Save"}
+                  {fav ? t("listing.saved") : t("listing.save")}
                 </Button>
               </div>
               <div className="grid grid-cols-2 gap-2">
@@ -340,23 +342,23 @@ const ListingDetail = () => {
                 <DropshipImportButton listing={listing} onImported={(id) => navigate(`/listing/${id}`)} />
               </div>
               <Button variant="ghost" className="w-full h-11 rounded-full" onClick={() => { if (!user) { navigate("/login"); return; } navigate(`/chat/${listing.id}/${listing.seller_id}`); }}>
-                <MessageCircle className="h-4 w-4 mr-2" /> Message seller
+                <MessageCircle className="h-4 w-4 mr-2" /> {t("listing.messageSeller")}
               </Button>
             </div>
           )}
           {isOwn && (
             <div className="mt-6 p-4 rounded-2xl bg-orange-50 dark:bg-[#FF7A18]/10 border border-orange-200 dark:border-orange-500/30 text-sm text-neutral-700 dark:text-neutral-200">
-              This is your listing. Manage it from your <Link to="/profile?tab=listings" className="text-[#FF211F] font-semibold hover:underline">profile</Link>.
+              {t("listing.yourListing")} <Link to="/profile?tab=listings" className="text-[#FF211F] font-semibold hover:underline">{t("listing.profile")}</Link>.
             </div>
           )}
           {isSold && !isOwn && (
             <div className="mt-6 p-4 rounded-2xl bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-sm text-neutral-600 dark:text-neutral-300">
-              This item has been sold.
+              {t("listing.itemSold")}
             </div>
           )}
 
           <div className="mt-8 border-t border-neutral-200 dark:border-neutral-800 pt-6">
-            <h2 className="font-bold text-neutral-900 dark:text-neutral-100 mb-2">Description</h2>
+            <h2 className="font-bold text-neutral-900 dark:text-neutral-100 mb-2">{t("listing.description")}</h2>
             <p className="text-neutral-700 dark:text-neutral-300 whitespace-pre-line leading-relaxed">{listing.description}</p>
           </div>
 

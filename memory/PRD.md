@@ -26,7 +26,23 @@ Exact replica of Mercari platform (mercari.com) — same color scheme (`#FF211F`
 
 ## Implemented (with dates)
 
+### Feb 2026 — Full-App Language Coverage (Home / Cart / Checkout / ListingDetail)
+- **Dictionary expansion**: `LanguageContext.jsx` grew from ~40 → 180+ keys across 4 locales (EN / ES / FR / JA) covering the entire buyer journey — greeting, hero CTAs, Flash Deals, Trending, Just Listed, For You, Trust strip, Request banner, Cart order summary, Checkout shipping + payment forms + success screen, ListingDetail CTAs (Buy/Add-to-cart/Save/Message seller), Description, Bundle strip, and SimilarItems.
+- **Pages migrated**: `Home.jsx`, `Cart.jsx`, `Checkout.jsx`, `ListingDetail.jsx`, `SimilarItems.jsx` now consume `useLang().t()` for every visible string; data-driven content (product titles/prices/user names) stays as-is.
+- **Persistence**: language stored in localStorage (`mercari_lang`) and applied to `<html lang>` for a11y.
+- Verified via `testing_agent_v3_fork` iteration_16 — all 4 languages work across Home/Cart/Checkout/ListingDetail. Post-report fix applied to `SimilarItems.jsx` (kicker/title/subtitle now translated).
+
 ### Feb 2026 — Header Superpowers: Voice/Image Search + Command Palette + Multi-Currency + Multi-Language + Compact Sticky
+- **Global 3-stroke nav** (`GlobalNavMenu.jsx`) — persistent top-left button opens a slide-out panel listing every main page (Home, Browse, Cart, Favorites, Sell, Messages, Wallet, Disputes, My Store, Analytics, Referrals, Affiliate, Verification, Profile, Admin).
+- **Command Palette ⌘K** (`CommandPalette.jsx`) — global keyboard shortcut opens a full-screen search overlay with arrow-key navigable rows: main pages + live product suggestions from `/search/suggest`. Header has a dedicated ⌘K button too.
+- **Voice + Image + Live counter + Vibe hint** (`SearchAutocomplete.jsx`) — mic uses `window.SpeechRecognition`, camera uploads a photo to `POST /api/search/image` (Emergent LLM vision → keywords + category → listings query with category-only fallback), a debounced "X matches" live counter appears while typing, and a rotating vibe hint chip cycles through 6 vibes when idle.
+- **Mini-cart flyout** (`MiniCart.jsx`) — hover the cart icon for a preview panel with up to 6 items, remove, subtotal in the selected currency, View cart / Checkout CTAs.
+- **Multi-currency** (`CurrencyContext.jsx`, `GET /api/currency/rates`) — USD/EUR/GBP/JPY/INR/CAD picker in the top strip; `format()` reformats prices site-wide via Intl.NumberFormat. Rates from mocked backend endpoint. Persisted in localStorage.
+- **Multi-language** (`LanguageContext.jsx`) — EN / ES / FR / JA dictionary. Persisted in localStorage.
+- **Compact sticky header** — scroll past ~200px collapses top strip + category ribbon, shrinks main bar `h-20 → h-14`, adds subtle shadow (40px hysteresis prevents flicker).
+- **LiveSyncBadge countdown** — dynamic `Xh Ym Ns ago · next in Ns` that ticks every second.
+
+
 - **Global 3-stroke nav** (`GlobalNavMenu.jsx`) — persistent top-left button opens a slide-out panel listing every main page (Home, Browse, Cart, Favorites, Sell, Messages, Wallet, Disputes, My Store, Analytics, Referrals, Affiliate, Verification, Profile, Admin).
 - **Command Palette ⌘K** (`CommandPalette.jsx`) — global keyboard shortcut opens a full-screen search overlay with arrow-key navigable rows: main pages + live product suggestions from `/search/suggest`. Header has a dedicated ⌘K button (`header-cp-btn`) too.
 - **Voice + Image + Live counter + Vibe hint** (`SearchAutocomplete.jsx`) — mic uses `window.SpeechRecognition`, camera uploads a photo to new `POST /api/search/image` (Emergent LLM key vision → keywords + category → listings query, with category-only fallback), a debounced "X matches" live counter appears while typing, and a rotating vibe hint chip cycles through 6 vibes when idle.

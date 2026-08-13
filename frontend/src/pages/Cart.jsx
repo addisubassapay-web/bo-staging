@@ -1,14 +1,18 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import api, { formatPrice } from "@/lib/api";
+import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Trash2, ShoppingBag } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { useCurrency } from "@/context/CurrencyContext";
+import { useLang } from "@/context/LanguageContext";
 import { useToast } from "@/hooks/use-toast";
 
 const Cart = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
+  const { format } = useCurrency();
+  const { t } = useLang();
   const { toast } = useToast();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -22,7 +26,7 @@ const Cart = () => {
   const remove = async (id) => {
     await api.delete(`/cart/${id}`);
     setItems((prev) => prev.filter((i) => i.id !== id));
-    toast({ title: "Removed from cart" });
+    toast({ title: t("cart.removed") });
   };
 
   const subtotal = items.reduce((s, i) => s + i.price, 0);
@@ -34,12 +38,12 @@ const Cart = () => {
     <div className="max-w-5xl mx-auto px-4 py-8" data-testid="cart-page">
       <div className="mb-8">
         <span className="inline-block text-[10px] uppercase tracking-[0.2em] font-semibold text-[#FF7A18] bg-[#FF7A18]/10 border border-[#FF7A18]/20 rounded-full px-3 py-1">
-          Cart
+          {t("cart.kicker")}
         </span>
-        <h1 className="mt-2 text-3xl sm:text-4xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">Your cart</h1>
+        <h1 className="mt-2 text-3xl sm:text-4xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">{t("cart.title")}</h1>
         {items.length > 0 && (
           <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
-            {items.length} {items.length === 1 ? "item" : "items"} ready to check out
+            {items.length} {items.length === 1 ? t("cart.item") : t("cart.items")} {t("cart.readyToCheckout")}
           </p>
         )}
       </div>
@@ -47,8 +51,8 @@ const Cart = () => {
       {items.length === 0 ? (
         <div className="text-center py-20 rounded-2xl border border-dashed border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900" data-testid="cart-empty">
           <ShoppingBag className="h-12 w-12 mx-auto text-neutral-300 dark:text-neutral-600 mb-3" />
-          <p className="text-neutral-600 dark:text-neutral-300">Your cart is empty.</p>
-          <Link to="/search"><Button className="mt-4 bg-[#FF211F] hover:bg-[#e01d1b] rounded-full h-11 px-6">Start shopping</Button></Link>
+          <p className="text-neutral-600 dark:text-neutral-300">{t("cart.emptyLong")}</p>
+          <Link to="/search"><Button className="mt-4 bg-[#FF211F] hover:bg-[#e01d1b] rounded-full h-11 px-6">{t("cta.startShopping")}</Button></Link>
         </div>
       ) : (
         <div className="grid lg:grid-cols-[1fr_360px] gap-8">
@@ -64,13 +68,13 @@ const Cart = () => {
                 </Link>
                 <div className="flex-1 min-w-0">
                   <Link to={`/listing/${item.id}`} className="font-semibold text-neutral-900 dark:text-neutral-100 line-clamp-2 hover:text-[#FF211F] transition">{item.title}</Link>
-                  <div className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">Sold by {item.seller_name}</div>
+                  <div className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">{t("cart.soldBy")} {item.seller_name}</div>
                   <div className="text-xs text-neutral-500 dark:text-neutral-400">
-                    {item.shipping_paid_by === "seller" ? "Free shipping" : `Shipping: ${formatPrice(5.99)}`}
+                    {item.shipping_paid_by === "seller" ? t("cart.freeShipping") : `${t("cart.shippingLabel")} ${format(5.99)}`}
                   </div>
                 </div>
                 <div className="flex flex-col items-end justify-between">
-                  <div className="font-extrabold text-neutral-900 dark:text-neutral-100 tabular-nums">{formatPrice(item.price)}</div>
+                  <div className="font-extrabold text-neutral-900 dark:text-neutral-100 tabular-nums">{format(item.price)}</div>
                   <button
                     onClick={() => remove(item.id)}
                     className="text-neutral-400 hover:text-[#FF211F] transition"
@@ -85,24 +89,24 @@ const Cart = () => {
           </div>
 
           <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5 h-fit shadow-[0_1px_2px_rgba(0,0,0,0.04)] lg:sticky lg:top-24" data-testid="order-summary">
-            <h2 className="font-bold text-lg mb-4 text-neutral-900 dark:text-neutral-100">Order summary</h2>
+            <h2 className="font-bold text-lg mb-4 text-neutral-900 dark:text-neutral-100">{t("cart.orderSummary")}</h2>
             <div className="space-y-2.5 text-sm">
               <div className="flex justify-between text-neutral-700 dark:text-neutral-300">
-                <span>Subtotal</span>
-                <span className="tabular-nums font-medium">{formatPrice(subtotal)}</span>
+                <span>{t("cart.subtotal")}</span>
+                <span className="tabular-nums font-medium">{format(subtotal)}</span>
               </div>
               <div className="flex justify-between text-neutral-700 dark:text-neutral-300">
-                <span>Shipping</span>
-                <span className="tabular-nums font-medium">{formatPrice(shipping)}</span>
+                <span>{t("cart.shipping")}</span>
+                <span className="tabular-nums font-medium">{format(shipping)}</span>
               </div>
               <div className="flex justify-between text-neutral-700 dark:text-neutral-300">
-                <span>Tax</span>
-                <span className="text-neutral-500 dark:text-neutral-400 text-xs">Calculated at checkout</span>
+                <span>{t("cart.tax")}</span>
+                <span className="text-neutral-500 dark:text-neutral-400 text-xs">{t("cart.taxNote")}</span>
               </div>
               <div className="h-px bg-neutral-200 dark:bg-neutral-800 my-3" />
               <div className="flex justify-between font-extrabold text-lg text-neutral-900 dark:text-neutral-100">
-                <span>Total</span>
-                <span className="tabular-nums">{formatPrice(subtotal + shipping)}</span>
+                <span>{t("cart.total")}</span>
+                <span className="tabular-nums">{format(subtotal + shipping)}</span>
               </div>
             </div>
             <Button
@@ -110,10 +114,10 @@ const Cart = () => {
               className="w-full mt-5 bg-[#FF211F] hover:bg-[#e01d1b] rounded-full h-11 shadow-lg shadow-[#FF211F]/20"
               data-testid="checkout-btn"
             >
-              Checkout ({items.length})
+              {t("cart.checkout")} ({items.length})
             </Button>
             <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-3 text-center">
-              🔒 Secure demo checkout — no real payment is charged.
+              {t("cart.secureDemo")}
             </p>
           </div>
         </div>

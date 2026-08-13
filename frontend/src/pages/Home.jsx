@@ -4,6 +4,8 @@ import api from "@/lib/api";
 import ProductCard from "@/components/ProductCard";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useLang } from "@/context/LanguageContext";
+import { useCurrency } from "@/context/CurrencyContext";
 import {
   ArrowRight, ShieldCheck, Truck, Headphones, RotateCcw, Flame, Zap,
   CheckCircle2, Lock, Globe, Heart, Sparkles, Store as StoreIcon, BadgeCheck,
@@ -47,17 +49,20 @@ const HERO_HIGHLIGHTS = [
 ];
 
 const HeroCarousel = () => {
+  const { t } = useLang();
   const [idx, setIdx] = useState(0);
   const [paused, setPaused] = useState(false);
   useEffect(() => {
     if (paused) return;
-    const t = setInterval(() => setIdx((i) => (i + 1) % HERO_SLIDES.length), 5500);
-    return () => clearInterval(t);
+    const time = setInterval(() => setIdx((i) => (i + 1) % HERO_SLIDES.length), 5500);
+    return () => clearInterval(time);
   }, [paused]);
   const s = HERO_SLIDES[idx];
 
   const now = new Date().getHours();
-  const greeting = now < 12 ? "Good morning" : now < 18 ? "Good afternoon" : "Good evening";
+  const greeting = now < 12 ? t("home.greeting.morning") : now < 18 ? t("home.greeting.afternoon") : t("home.greeting.evening");
+
+  const trustLabels = [t("home.trust.buyer"), t("home.trust.fast"), t("home.trust.verified"), t("home.trust.loved")];
 
   return (
     <section
@@ -72,10 +77,10 @@ const HeroCarousel = () => {
           <span className="inline-flex h-6 sm:h-7 items-center gap-1.5 rounded-full bg-gradient-to-r from-[#FF7A18]/10 to-[#FF211F]/10 dark:from-[#FF7A18]/20 dark:to-[#FF211F]/20 border border-orange-200/70 dark:border-orange-500/30 px-2.5 text-[#FF211F] dark:text-orange-300 font-medium">
             <Sparkles className="h-3.5 w-3.5" /> {greeting}
           </span>
-          <span className="text-neutral-500 dark:text-neutral-400 hidden sm:inline">— warm picks curated for you today</span>
+          <span className="text-neutral-500 dark:text-neutral-400 hidden sm:inline">{t("home.greeting.suffix")}</span>
         </div>
         <span className="text-xs text-neutral-500 dark:text-neutral-400 hidden md:inline">
-          {HERO_SLIDES.length} featured stories · auto-rotates every few seconds
+          {HERO_SLIDES.length} {t("home.stories")}
         </span>
       </div>
 
@@ -128,7 +133,7 @@ const HeroCarousel = () => {
                 className="bg-white text-[#FF211F] hover:bg-[#FF7A18] hover:text-white h-11 sm:h-12 px-5 sm:px-6 rounded-full font-semibold shadow-lg gap-2 transition-all group"
                 data-testid="hero-shop-now"
               >
-                Shop Now
+                {t("cta.shopNow")}
                 <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
               </Button>
             </Link>
@@ -243,6 +248,7 @@ const FlashCard = ({ l, onFavChange, isFav }) => {
 };
 
 const FlashDeals = ({ items, onFav, favIds }) => {
+  const { t } = useLang();
   const endsAt = items?.[0]?.flash_deal_ends_at || null;
   const countdown = useMidnightCountdown(endsAt);
   if (!items?.length) return null;
@@ -252,12 +258,12 @@ const FlashDeals = ({ items, onFav, favIds }) => {
         <div className="flex items-start sm:items-center justify-between flex-wrap gap-3">
           <div>
             <h2 className="text-2xl sm:text-3xl font-extrabold text-[#FF211F] flex items-center gap-2">
-              <Zap className="h-6 w-6" /> Flash Deals
+              <Zap className="h-6 w-6" /> {t("home.flashTitle")}
             </h2>
-            <p className="text-sm text-neutral-600">Limited time offers — ends at midnight UTC</p>
+            <p className="text-sm text-neutral-600">{t("home.flashSubtitle")}</p>
           </div>
           <div className="bg-neutral-900 text-white px-4 py-2 rounded-full text-sm font-semibold" data-testid="flash-countdown">
-            Ends in: <span className="text-orange-400 font-mono">{countdown}</span>
+            {t("home.endsIn")} <span className="text-orange-400 font-mono">{countdown}</span>
           </div>
         </div>
         <div className="mt-5 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
@@ -271,21 +277,23 @@ const FlashDeals = ({ items, onFav, favIds }) => {
 };
 
 // -------------------- TRUST STRIP --------------------
-const TrustStrip = () => (
+const TrustStrip = () => {
+  const { t } = useLang();
+  return (
   <section className="max-w-7xl mx-auto px-4 mt-16 sm:mt-20">
     <div className="text-center">
       <span className="inline-block text-[10px] uppercase tracking-[0.2em] font-semibold text-[#FF7A18] bg-[#FF7A18]/10 border border-[#FF7A18]/20 rounded-full px-3 py-1">
-        Why shop here
+        {t("home.whyKicker")}
       </span>
-      <h2 className="mt-3 text-3xl sm:text-4xl font-extrabold text-neutral-900 dark:text-neutral-100 tracking-tight">Why millions trust us</h2>
-      <p className="text-neutral-500 dark:text-neutral-400 mt-2">Safe shopping, worldwide, with buyer protection on every order.</p>
+      <h2 className="mt-3 text-3xl sm:text-4xl font-extrabold text-neutral-900 dark:text-neutral-100 tracking-tight">{t("home.whyTitle")}</h2>
+      <p className="text-neutral-500 dark:text-neutral-400 mt-2">{t("home.whySubtitle")}</p>
     </div>
     <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
       {[
-        { icon: Lock, title: "Secure Payments", body: "Encrypted checkout & buyer protection", tone: "emerald" },
-        { icon: Truck, title: "Fast Global Delivery", body: "Tracked shipping worldwide", tone: "sky" },
-        { icon: RotateCcw, title: "Easy Returns", body: "7-30 day hassle-free returns", tone: "orange" },
-        { icon: Headphones, title: "24/7 Support", body: "Instant help anytime you need", tone: "violet" },
+        { icon: Lock, title: t("home.securePayments"), body: t("home.securePaymentsBody"), tone: "emerald" },
+        { icon: Truck, title: t("home.fastDeliveryTitle"), body: t("home.fastDeliveryBody"), tone: "sky" },
+        { icon: RotateCcw, title: t("home.easyReturns"), body: t("home.easyReturnsBody"), tone: "orange" },
+        { icon: Headphones, title: t("home.support24"), body: t("home.support24Body"), tone: "violet" },
       ].map((f, i) => {
         const tones = {
           emerald: "text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-500/15",
@@ -309,18 +317,21 @@ const TrustStrip = () => (
       })}
     </div>
     <div className="mt-6 border-t border-neutral-200 dark:border-neutral-800 pt-5 grid grid-cols-2 md:grid-cols-4 gap-3 text-sm text-neutral-600 dark:text-neutral-300">
-      {["Verified Sellers", "Secure Checkout", "Global Shipping", "Buyer Protection"].map((t) => (
-        <div key={t} className="flex items-center justify-center gap-2">
+      {[t("home.verifiedSellers"), t("home.secureCheckout"), t("home.globalShipping"), t("home.buyerProtection")].map((label) => (
+        <div key={label} className="flex items-center justify-center gap-2">
           <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-          <span>{t}</span>
+          <span>{label}</span>
         </div>
       ))}
     </div>
   </section>
-);
+  );
+};
 
 // -------------------- CANT FIND PRODUCT CTA --------------------
-const RequestBanner = () => (
+const RequestBanner = () => {
+  const { t } = useLang();
+  return (
   <section className="max-w-7xl mx-auto px-4 mt-16 sm:mt-20">
     <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-[#FF7A18] via-[#FF5722] to-[#FF211F] text-white text-center px-6 py-14 shadow-[0_20px_50px_-20px_rgba(255,33,31,0.55)]">
       {/* Decorative blobs */}
@@ -330,24 +341,25 @@ const RequestBanner = () => (
         <div className="mx-auto h-14 w-14 rounded-2xl bg-white/20 backdrop-blur grid place-items-center mb-4 ring-1 ring-white/30">
           <Sparkles className="h-7 w-7" />
         </div>
-        <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight">Can&apos;t Find Your Product?</h2>
-        <p className="mt-3 text-white/90 max-w-2xl mx-auto text-sm sm:text-base">Send us your request and our team will source it for you from global suppliers.</p>
+        <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight">{t("home.cantFind")}</h2>
+        <p className="mt-3 text-white/90 max-w-2xl mx-auto text-sm sm:text-base">{t("home.requestBody")}</p>
         <div className="mt-7 flex items-center justify-center gap-3 flex-wrap">
           <Link to="/chat">
             <Button className="bg-white text-[#FF211F] hover:bg-neutral-100 h-11 px-6 rounded-full font-semibold shadow-lg gap-1.5 group" data-testid="cta-request-product">
-              Request Product <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
+              {t("cta.requestProduct")} <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
             </Button>
           </Link>
           <Link to="/chat">
             <Button variant="outline" className="h-11 px-6 rounded-full bg-white/10 backdrop-blur border-2 border-white/70 text-white hover:bg-white hover:text-[#FF7A18] font-semibold">
-              Contact Support
+              {t("cta.contactSupport")}
             </Button>
           </Link>
         </div>
       </div>
     </div>
   </section>
-);
+  );
+};
 
 // -------------------- FEATURE CARDS --------------------
 const FeatureCards = () => (
@@ -444,6 +456,7 @@ const FeaturedStoresStrip = ({ stores }) => {
 
 // -------------------- MAIN PAGE --------------------
 const Home = () => {
+  const { t } = useLang();
   const [flash, setFlash] = useState([]);
   const [recent, setRecent] = useState([]);
   const [trending, setTrending] = useState([]);
@@ -489,10 +502,10 @@ const Home = () => {
         <section className="max-w-7xl mx-auto px-4 mt-8" data-testid="recently-viewed-section">
           <div className="flex items-center justify-between mb-3">
             <div>
-              <h2 className="text-lg sm:text-xl font-bold text-neutral-900">Pick up where you left off</h2>
-              <p className="text-xs text-neutral-500">Recently viewed</p>
+              <h2 className="text-lg sm:text-xl font-bold text-neutral-900">{t("home.pickup")}</h2>
+              <p className="text-xs text-neutral-500">{t("home.recent")}</p>
             </div>
-            <Link to="/search" className="text-xs text-[#FF7A18] font-medium hover:underline">Browse more</Link>
+            <Link to="/search" className="text-xs text-[#FF7A18] font-medium hover:underline">{t("cta.browseMore")}</Link>
           </div>
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-6 gap-3">
             {recentlyViewed.slice(0, 12).map((l) => (
@@ -568,15 +581,15 @@ const Home = () => {
         <div className="flex items-end justify-between mb-6 gap-4">
           <div>
             <span className="inline-block text-[10px] uppercase tracking-[0.2em] font-semibold text-[#FF211F] bg-[#FF211F]/10 border border-[#FF211F]/20 rounded-full px-3 py-1">
-              Live now
+              {t("home.liveNow")}
             </span>
             <h2 className="mt-2 text-2xl sm:text-3xl font-extrabold text-[#FF211F] flex items-center gap-2 tracking-tight">
-              <Flame className="h-6 w-6" /> Trending Now
+              <Flame className="h-6 w-6" /> {t("home.trendingNow")}
             </h2>
-            <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">Based on popularity &amp; engagement</p>
+            <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">{t("home.trendingSub")}</p>
           </div>
           <Link to="/search?sort=trending" className="text-sm text-[#FF7A18] font-semibold hover:text-[#FF211F] transition flex items-center gap-1 whitespace-nowrap group">
-            Live Feed <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
+            {t("cta.liveFeed")} <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
           </Link>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
@@ -592,13 +605,13 @@ const Home = () => {
           <div className="flex items-end justify-between mb-6 gap-4">
             <div>
               <span className="inline-block text-[10px] uppercase tracking-[0.2em] font-semibold text-neutral-500 dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-full px-3 py-1">
-                Fresh drops
+                {t("home.freshDrops")}
               </span>
-              <h2 className="mt-2 text-2xl sm:text-3xl font-extrabold text-neutral-900 dark:text-neutral-100 tracking-tight">Just listed</h2>
-              <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">The latest items on Mercari Global</p>
+              <h2 className="mt-2 text-2xl sm:text-3xl font-extrabold text-neutral-900 dark:text-neutral-100 tracking-tight">{t("home.justListed")}</h2>
+              <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">{t("home.justListedSub")}</p>
             </div>
             <Link to="/search?sort=newest" className="text-sm text-[#FF7A18] font-semibold hover:text-[#FF211F] transition flex items-center gap-1 whitespace-nowrap group">
-              View more <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
+              {t("cta.viewMore")} <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
             </Link>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">

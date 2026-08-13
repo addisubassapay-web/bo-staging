@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import api from "@/lib/api";
 import ProductCard from "@/components/ProductCard";
+import { useLang } from "@/context/LanguageContext";
 import { Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
 
 /**
@@ -8,6 +9,7 @@ import { Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
  * Powered by GET /api/listings/{id}/similar (same category + ±40% price band + popularity).
  */
 const SimilarItems = ({ listingId }) => {
+  const { t } = useLang();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const scrollRef = React.useRef(null);
@@ -34,13 +36,13 @@ const SimilarItems = ({ listingId }) => {
       <div className="flex items-end justify-between gap-3 flex-wrap">
         <div>
           <span className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.2em] font-semibold text-[#FF7A18] bg-[#FF7A18]/10 border border-[#FF7A18]/20 rounded-full px-3 py-1">
-            <Sparkles className="h-3 w-3" /> Handpicked for you
+            <Sparkles className="h-3 w-3" /> {t("similar.kicker")}
           </span>
           <h2 className="mt-2 text-2xl sm:text-3xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">
-            You may also like
+            {t("similar.title")}
           </h2>
           <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
-            Similar picks in this category — matched by price and popularity.
+            {t("similar.subtitle")}
           </p>
         </div>
         <div className="flex items-center gap-2">
