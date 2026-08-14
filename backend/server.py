@@ -81,6 +81,7 @@ class User(UserBase):
     referral_code: str = Field(default_factory=lambda: uuid.uuid4().hex[:8].upper())
     referred_by: Optional[str] = None  # user_id who referred this user
     wallet_balance: float = 0.0
+    wallet_frozen_balance: float = 0.0  # earnings held until delivery is confirmed
     store_id: Optional[str] = None
     # Phase 1: Trust & Payments
     email_verified: bool = False
@@ -108,6 +109,7 @@ class UserPublic(BaseModel):
     referral_code: Optional[str] = None
     referred_by: Optional[str] = None
     wallet_balance: float = 0.0
+    wallet_frozen_balance: float = 0.0
     store_id: Optional[str] = None
     email_verified: bool = False
     email_verified_at: Optional[datetime] = None
@@ -236,6 +238,9 @@ class Order(BaseModel):
     label_url: Optional[str] = None
     shipping_status: Optional[str] = None  # label_created, in_transit, delivered
     estimated_delivery: Optional[str] = None
+    estimated_delivery_at: Optional[datetime] = None  # projected arrival date (order.created_at + delivery_days_estimate)
+    delivery_confirmed_at: Optional[datetime] = None  # set when buyer or auto-release marks delivery
+    funds_released: bool = False  # true once seller/dropship-source frozen earnings are released to available balance
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class OrderCreate(BaseModel):
@@ -297,7 +302,7 @@ class AffiliateLinkCreate(BaseModel):
 class WalletTransaction(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     user_id: str
-    type: Literal["sale", "affiliate", "referral", "dropship", "withdrawal", "adjustment", "bonus"]
+    type: Literal["sale", "sale_frozen", "sale_released", "affiliate", "referral", "dropship", "dropship_frozen", "dropship_released", "withdrawal", "adjustment", "bonus", "refund"]
     amount: float  # positive = credit, negative = debit
     balance_after: float
     description: str = ""
@@ -340,6 +345,8 @@ class Settings(BaseModel):
     referral_levels_enabled: bool = True
     dispute_auto_refund_threshold: float = 0.0  # auto-refund disputes below this amount ($). 0 disables.
     dispute_auto_refund_excluded_reasons: List[str] = Field(default_factory=lambda: ["counterfeit"])
+    delivery_days_estimate: int = 7  # admin-set global ETA (days) shown to buyers and used to project delivery.
+    delivery_auto_release_days: int = 14  # if buyer doesn't confirm, auto-release frozen funds after N days from order.
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
@@ -577,17 +584,61 @@ async def get_settings() -> dict:
     # Merge defaults for any newly introduced fields so callers never see None
     return {**defaults, **doc}
 
-async def credit_wallet(user_id: str, amount: float, tx_type: str, description: str, related_id: Optional[str] = None):
+async def credit_wallet(
+    user_id: str,
+    amount: float,
+    tx_type: str,
+    description: str,
+    related_id: Optional[str] = None,
+    frozen: bool = False,
+):
+    """Credit or debit a user's wallet. When frozen=True the amount goes into
+    wallet_frozen_balance instead of the available wallet_balance. Debits are
+    always applied against the available balance."""
     if amount == 0:
         return
     user = await db.users.find_one({"id": user_id}, {"_id": 0})
     if not user:
         return
-    new_balance = round(user.get("wallet_balance", 0.0) + amount, 2)
-    await db.users.update_one({"id": user_id}, {"$set": {"wallet_balance": new_balance}})
+    if frozen and amount > 0:
+        new_frozen = round(user.get("wallet_frozen_balance", 0.0) + amount, 2)
+        await db.users.update_one(
+            {"id": user_id}, {"$set": {"wallet_frozen_balance": new_frozen}}
+        )
+        balance_after = new_frozen  # tx record shows frozen balance after credit
+    else:
+        new_balance = round(user.get("wallet_balance", 0.0) + amount, 2)
+        await db.users.update_one({"id": user_id}, {"$set": {"wallet_balance": new_balance}})
+        balance_after = new_balance
     tx = WalletTransaction(
         user_id=user_id, type=tx_type, amount=amount,
-        balance_after=new_balance, description=description, related_id=related_id
+        balance_after=balance_after, description=description, related_id=related_id,
+        status="pending" if frozen else "completed",
+    )
+    await db.wallet_txs.insert_one(tx.model_dump())
+
+
+async def release_frozen(user_id: str, amount: float, description: str, related_id: Optional[str] = None, tx_type: str = "sale_released"):
+    """Move `amount` from user's frozen balance into their available balance and log a tx."""
+    if amount <= 0:
+        return
+    user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    if not user:
+        return
+    frozen = float(user.get("wallet_frozen_balance", 0.0))
+    take = min(frozen, round(amount, 2))
+    if take <= 0:
+        return
+    new_frozen = round(frozen - take, 2)
+    new_balance = round(user.get("wallet_balance", 0.0) + take, 2)
+    await db.users.update_one(
+        {"id": user_id},
+        {"$set": {"wallet_frozen_balance": new_frozen, "wallet_balance": new_balance}},
+    )
+    tx = WalletTransaction(
+        user_id=user_id, type=tx_type, amount=take,
+        balance_after=new_balance, description=description, related_id=related_id,
+        status="completed",
     )
     await db.wallet_txs.insert_one(tx.model_dump())
 
@@ -1014,14 +1065,19 @@ async def create_order(payload: OrderCreate, user: dict = Depends(get_current_us
         referral_payouts=referral_payouts,
         dropship_source_seller_id=dropship_source_seller_id,
         dropship_source_earnings=dropship_source_earnings,
+        estimated_delivery_at=datetime.now(timezone.utc) + timedelta(days=int(settings.get("delivery_days_estimate", 7))),
     )
     await db.orders.insert_one(order.model_dump())
     await db.listings.update_one({"id": listing["id"]}, {"$set": {"status": "sold"}})
     await db.users.update_one({"id": listing["seller_id"]}, {"$inc": {"sales_count": 1}})
     await db.cart_items.delete_many({"listing_id": listing["id"]})
 
-    # Credit wallets
-    await credit_wallet(listing["seller_id"], seller_earnings, "sale", f"Sale: {listing['title']}", order.id)
+    # Credit wallets — seller & dropship-source earnings are FROZEN until delivery is confirmed.
+    # Affiliate + referral commissions release immediately (they're marketing rewards, not merchandise).
+    await credit_wallet(
+        listing["seller_id"], seller_earnings, "sale_frozen",
+        f"Sale (held until delivery): {listing['title']}", order.id, frozen=True,
+    )
     if affiliate_user_id and affiliate_earnings > 0:
         await credit_wallet(affiliate_user_id, affiliate_earnings, "affiliate", f"Affiliate commission: {listing['title']}", order.id)
         await db.affiliate_links.update_one(
@@ -1029,7 +1085,10 @@ async def create_order(payload: OrderCreate, user: dict = Depends(get_current_us
             {"$inc": {"conversions": 1, "earnings": affiliate_earnings}},
         )
     if dropship_source_seller_id and dropship_source_earnings > 0:
-        await credit_wallet(dropship_source_seller_id, dropship_source_earnings, "dropship", f"Dropship sale: {listing['title']}", order.id)
+        await credit_wallet(
+            dropship_source_seller_id, dropship_source_earnings, "dropship_frozen",
+            f"Dropship sale (held until delivery): {listing['title']}", order.id, frozen=True,
+        )
     for rp in referral_payouts:
         await credit_wallet(rp["user_id"], rp["amount"], "referral", f"Referral L{rp['level']} bonus", order.id)
 
@@ -1038,14 +1097,78 @@ async def create_order(payload: OrderCreate, user: dict = Depends(get_current_us
         await db.stores.update_one({"id": listing["store_id"]}, {"$inc": {"total_sales": 1}})
 
     # Notifications
-    await notify(listing["seller_id"], "sale", f"You sold {listing['title']}!", f"Earnings: ${seller_earnings:.2f}", f"/listing/{listing['id']}")
-    await notify(user["id"], "order", f"Order placed: {listing['title']}", f"You paid ${amount + shipping_fee:.2f}", f"/profile?tab=orders")
+    eta_days = int(settings.get("delivery_days_estimate", 7))
+    await notify(listing["seller_id"], "sale", f"You sold {listing['title']}!",
+                 f"Earnings ${seller_earnings:.2f} are held until the buyer confirms delivery (est. {eta_days} days).",
+                 f"/listing/{listing['id']}")
+    await notify(user["id"], "order", f"Order placed: {listing['title']}",
+                 f"You paid ${amount + shipping_fee:.2f} · arrives in ~{eta_days} days",
+                 f"/profile?tab=orders")
     if affiliate_user_id:
         await notify(affiliate_user_id, "payout", f"Affiliate commission earned", f"+${affiliate_earnings:.2f} from your link", "/affiliate")
     if dropship_source_seller_id:
-        await notify(dropship_source_seller_id, "sale", f"Dropship sale: {listing['title']}", f"Earnings: ${dropship_source_earnings:.2f}", None)
+        await notify(dropship_source_seller_id, "sale",
+                     f"Dropship sale: {listing['title']}",
+                     f"Earnings ${dropship_source_earnings:.2f} are held until delivery is confirmed.", None)
 
     return order
+
+
+@api_router.post("/orders/{order_id}/confirm-delivery", response_model=Order)
+async def confirm_delivery(order_id: str, user: dict = Depends(get_current_user)):
+    """Buyer confirms they received the item. Releases the seller's (and dropship
+    source's) frozen earnings into their available wallet balance. Admins may also
+    call this to force-release. Idempotent — repeat calls are no-ops."""
+    order = await db.orders.find_one({"id": order_id}, {"_id": 0})
+    if not order:
+        raise HTTPException(404, "Order not found")
+    is_buyer = order.get("buyer_id") == user["id"]
+    is_admin = user.get("role") == "admin"
+    if not (is_buyer or is_admin):
+        raise HTTPException(403, "Only the buyer or an admin can confirm delivery")
+    if order.get("funds_released"):
+        return Order(**order)
+
+    now = datetime.now(timezone.utc)
+    updates: dict = {
+        "delivery_confirmed_at": now.isoformat(),
+        "funds_released": True,
+        "status": "delivered",
+        "shipping_status": "delivered",
+    }
+    await db.orders.update_one({"id": order_id}, {"$set": updates})
+
+    # Release frozen earnings.
+    if float(order.get("seller_earnings", 0.0)) > 0:
+        await release_frozen(
+            order["seller_id"], float(order["seller_earnings"]),
+            f"Released: {order.get('listing_title','sale')}", order_id, tx_type="sale_released",
+        )
+        await notify(
+            order["seller_id"], "wallet",
+            f"Funds released: {order.get('listing_title','')}",
+            f"${float(order['seller_earnings']):.2f} moved from frozen to available.",
+            "/wallet",
+        )
+    if order.get("dropship_source_seller_id") and float(order.get("dropship_source_earnings", 0.0)) > 0:
+        await release_frozen(
+            order["dropship_source_seller_id"], float(order["dropship_source_earnings"]),
+            f"Dropship released: {order.get('listing_title','sale')}", order_id, tx_type="dropship_released",
+        )
+        await notify(
+            order["dropship_source_seller_id"], "wallet",
+            f"Dropship funds released: {order.get('listing_title','')}",
+            f"${float(order['dropship_source_earnings']):.2f} moved from frozen to available.",
+            "/wallet",
+        )
+    await notify(
+        order["buyer_id"], "order",
+        f"Delivery confirmed: {order.get('listing_title','')}",
+        "Thanks! Your seller has been paid out.",
+        "/profile?tab=orders",
+    )
+    fresh = await db.orders.find_one({"id": order_id}, {"_id": 0})
+    return Order(**fresh)
 
 
 # =========================
@@ -1274,8 +1397,11 @@ async def my_referrals(user: dict = Depends(get_current_user)):
 async def get_wallet(user: dict = Depends(get_current_user)):
     txs = await db.wallet_txs.find({"user_id": user["id"]}, {"_id": 0}).sort("created_at", -1).to_list(200)
     pending_wd = await db.withdrawals.find({"user_id": user["id"], "status": {"$in": ["pending", "approved"]}}, {"_id": 0}).to_list(100)
+    # Refresh from DB to be safe with concurrent orders
+    fresh = await db.users.find_one({"id": user["id"]}, {"_id": 0, "wallet_balance": 1, "wallet_frozen_balance": 1}) or {}
     return {
-        "balance": user.get("wallet_balance", 0.0),
+        "balance": fresh.get("wallet_balance", user.get("wallet_balance", 0.0)),
+        "frozen_balance": fresh.get("wallet_frozen_balance", 0.0),
         "transactions": [WalletTransaction(**t).model_dump() for t in txs],
         "pending_withdrawals": [WithdrawalRequest(**w).model_dump() for w in pending_wd],
     }
@@ -1362,6 +1488,16 @@ async def import_listing(payload: ImportPayload, user: dict = Depends(get_curren
 # =========================
 # ADMIN: Settings, Withdrawals, Stores, Affiliate
 # =========================
+@api_router.get("/settings/public")
+async def public_settings():
+    """Non-sensitive settings that anonymous users may need (buyer-facing UI)."""
+    s = await get_settings()
+    return {
+        "delivery_days_estimate": s.get("delivery_days_estimate", 7),
+        "delivery_auto_release_days": s.get("delivery_auto_release_days", 14),
+    }
+
+
 @api_router.get("/admin/settings")
 async def admin_get_settings(_admin: dict = Depends(require_admin)):
     return await get_settings()
@@ -1375,6 +1511,7 @@ async def admin_update_settings(updates: dict, _admin: dict = Depends(require_ad
         "affiliate_mode", "store_mode", "withdrawal_mode", "listing_mode",
         "semi_threshold", "referral_levels_enabled", "dispute_auto_refund_threshold",
         "dispute_auto_refund_excluded_reasons",
+        "delivery_days_estimate", "delivery_auto_release_days",
     }
     filtered = {k: v for k, v in updates.items() if k in allowed}
     # Sanitize the exclusion list — only accept known dispute reasons

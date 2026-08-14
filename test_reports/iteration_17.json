@@ -1,0 +1,30 @@
+{
+  "summary": "Full backend + frontend testing of wallet freeze/release + admin delivery settings. Backend: 9/9 pytest cases pass (public settings shape, admin update propagates, order creates frozen entries with ETA, non-buyer/admin gets 403 on confirm-delivery, buyer confirm-delivery releases funds & sets delivered, idempotent double-confirm safe, wallet endpoint shape). Frontend: admin /admin/settings inputs (delivery-days-input, auto-release-days-input) render, save persists and is reflected on /api/settings/public (12->7 restored). Checkout page shows green ETA block 'Arrives in ~7 days · by Aug 21' with freeze note. Buyer Profile /profile?tab=orders shows order-eta-<id> chip '~7 days' and confirm-delivery-<id> button; clicking accepts dialog, backend order flips to status=delivered/funds_released=true, ETA + button vanish from UI. Sophia wallet-frozen-chip shows 'Frozen: $7.18 · released after delivery is confirmed' after a fresh sale. Profile /profile?tab=sales shows 36 seller-frozen chips ('Funds frozen · releases on delivery'). Wallet tx labels for Held/Released/Frozen render.",
+  "backend_issues": { "critical": [], "minor": [] },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_wallet_freeze_release.py",
+    "/app/test_reports/pytest/iter17_wallet.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "server.py is 3579 lines — long overdue for split into routers (orders/wallet/admin/listings). Not blocking but maintainability concern.",
+    "confirm-delivery uses raw dict updates for delivery_confirmed_at as ISO string while other datetime fields are datetime objects — mostly harmless due to mongo bson coercion but inconsistent (line 1134 vs order.model_dump()).",
+    "Admin PUT /api/admin/settings silently drops unknown keys — acceptable but could return 400 for stricter validation.",
+    "GET /api/settings/public exposes only delivery fields — if more public settings are added in future ensure sensitive ones (referral %, platform_fee_pct) stay behind admin gate."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_wallet_freeze_release.py (new)"
+  ],
+  "success_rate": { "backend": "100% (9/9)", "frontend": "100% (5/5 UI acceptance points)" },
+  "test_credentials": "sophia_style@demo.local / demo1234 (buyer+seller); admin@mercari.local / admin123",
+  "seed_data_creation": "Placed 2 orders during test — one on Amazon-scraped listing (later confirmed-delivered via UI) and one on sophia's listing from a freshly registered e2e buyer to produce frozen balance for sophia's wallet.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "All 11 acceptance points pass. Iteration 17 wallet-freeze test file /app/backend/tests/test_wallet_freeze_release.py can be reused as regression. Note the delivery_days_estimate is persisted globally — if tests run in parallel they may race; test restores to 7 in teardown. Sophia currently has ~36 frozen sales because dev test orders were seeded but never confirmed — that's expected fixture state, not a bug.",
+  "rca of the issue": "No issues found; all functionality works as described in the request."
+}

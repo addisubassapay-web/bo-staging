@@ -26,7 +26,22 @@ Exact replica of Mercari platform (mercari.com) — same color scheme (`#FF211F`
 
 ## Implemented (with dates)
 
-### Feb 2026 — Full-App Language Coverage (Home / Cart / Checkout / ListingDetail)
+### Feb 2026 — Wallet Freeze/Release + Admin-Set Delivery ETA
+- **User model**: added `wallet_frozen_balance` alongside `wallet_balance` (available).
+- **Settings**: new `delivery_days_estimate` (default 7) and `delivery_auto_release_days` (default 14), both admin-controlled via `PUT /api/admin/settings`.
+- **Order model**: new `estimated_delivery_at` (order.created_at + delivery_days_estimate), `delivery_confirmed_at`, `funds_released`.
+- **credit_wallet(frozen=True)** routes sale + dropship earnings to `wallet_frozen_balance`. Affiliate + referral commissions release immediately (they're marketing rewards). New tx types: `sale_frozen`, `sale_released`, `dropship_frozen`, `dropship_released`.
+- **`POST /api/orders/{id}/confirm-delivery`** (buyer or admin) — flips order to `delivered`, sets `funds_released=true`, and moves frozen amount into the seller's (and dropship source's) available balance. Idempotent.
+- **`GET /api/settings/public`** — non-sensitive settings for buyer UI (delivery days + auto-release days).
+- **Frontend**:
+  - **Wallet page** — Frozen chip on the balance card, new tx-type labels (Sale (frozen), Sale released, Dropship (frozen), Dropship released, Refund).
+  - **Profile → Purchases** — each order shows a live "Arrives in ~N days" chip + a green "Confirm delivery" button that releases funds.
+  - **Profile → Sales** — each sale shows "Funds frozen · releases on delivery" until confirmed, then "Paid out".
+  - **Checkout** — green ETA block "Arrives in ~7 days · by Aug 21" with note that seller earnings stay frozen until confirmation.
+  - **Admin → Settings** — new "Delivery & fund release" section with two inputs (delivery days + auto-release days).
+- Verified end-to-end via `testing_agent_v3_fork` iteration_17: 9/9 backend pytest + 5/5 frontend acceptance — zero action items.
+
+
 - **Dictionary expansion**: `LanguageContext.jsx` grew from ~40 → 180+ keys across 4 locales (EN / ES / FR / JA) covering the entire buyer journey — greeting, hero CTAs, Flash Deals, Trending, Just Listed, For You, Trust strip, Request banner, Cart order summary, Checkout shipping + payment forms + success screen, ListingDetail CTAs (Buy/Add-to-cart/Save/Message seller), Description, Bundle strip, and SimilarItems.
 - **Pages migrated**: `Home.jsx`, `Cart.jsx`, `Checkout.jsx`, `ListingDetail.jsx`, `SimilarItems.jsx` now consume `useLang().t()` for every visible string; data-driven content (product titles/prices/user names) stays as-is.
 - **Persistence**: language stored in localStorage (`mercari_lang`) and applied to `<html lang>` for a11y.

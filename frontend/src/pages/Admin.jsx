@@ -410,6 +410,45 @@ const SettingsMgr = () => {
           </div>
         </section>
 
+        <section className="bg-white border border-neutral-200 rounded-lg p-5" data-testid="settings-delivery-section">
+          <h3 className="font-semibold mb-1">Delivery & fund release</h3>
+          <p className="text-sm text-neutral-500 mb-3">
+            Estimated shipping window shown to buyers on checkout & orders. Seller earnings stay frozen until the buyer confirms delivery, or the auto-release window elapses.
+          </p>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div>
+              <Label>Delivery days estimate</Label>
+              <Input
+                type="number"
+                min={1}
+                step={1}
+                value={settings.delivery_days_estimate ?? 7}
+                onChange={(e) => set("delivery_days_estimate", parseInt(e.target.value, 10) || 7)}
+                className="mt-1"
+                data-testid="delivery-days-input"
+              />
+              <p className="text-xs text-neutral-500 mt-1">
+                Buyers see &quot;Arrives in ~{settings.delivery_days_estimate ?? 7} days&quot; on checkout & orders.
+              </p>
+            </div>
+            <div>
+              <Label>Auto-release after (days)</Label>
+              <Input
+                type="number"
+                min={1}
+                step={1}
+                value={settings.delivery_auto_release_days ?? 14}
+                onChange={(e) => set("delivery_auto_release_days", parseInt(e.target.value, 10) || 14)}
+                className="mt-1"
+                data-testid="auto-release-days-input"
+              />
+              <p className="text-xs text-neutral-500 mt-1">
+                If the buyer doesn&apos;t confirm delivery within this window, seller funds are released automatically.
+              </p>
+            </div>
+          </div>
+        </section>
+
         <section className="bg-white border border-neutral-200 rounded-lg p-5">
           <h3 className="font-semibold mb-3">Wallet & payouts</h3>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">

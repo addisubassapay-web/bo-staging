@@ -8,15 +8,20 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { Wallet as WalletIcon, ArrowDownRight, ArrowUpRight, Clock, CheckCircle2, XCircle } from "lucide-react";
+import { Wallet as WalletIcon, ArrowDownRight, ArrowUpRight, Clock, CheckCircle2, XCircle, Snowflake } from "lucide-react";
 
 const typeMeta = {
   sale: { label: "Sale", color: "text-green-600" },
+  sale_frozen: { label: "Sale (frozen)", color: "text-amber-600" },
+  sale_released: { label: "Sale released", color: "text-emerald-600" },
   affiliate: { label: "Affiliate", color: "text-blue-600" },
   referral: { label: "Referral", color: "text-purple-600" },
   dropship: { label: "Dropship", color: "text-teal-600" },
+  dropship_frozen: { label: "Dropship (frozen)", color: "text-amber-600" },
+  dropship_released: { label: "Dropship released", color: "text-emerald-600" },
   bonus: { label: "Bonus", color: "text-amber-600" },
   adjustment: { label: "Adjustment", color: "text-neutral-600" },
+  refund: { label: "Refund", color: "text-blue-600" },
   withdrawal: { label: "Withdrawal", color: "text-red-600" },
 };
 
@@ -80,7 +85,14 @@ const Wallet = () => {
       <div className="grid md:grid-cols-3 gap-4 mb-8">
         <div className="md:col-span-2 bg-gradient-to-br from-[#FF211F] to-[#c81816] text-white rounded-xl p-6">
           <div className="text-sm opacity-90">Available balance</div>
-          <div className="text-4xl font-bold mt-2">{formatPrice(data.balance)}</div>
+          <div className="text-4xl font-bold mt-2" data-testid="wallet-available">{formatPrice(data.balance)}</div>
+          {data.frozen_balance > 0 && (
+            <div className="mt-3 inline-flex items-center gap-1.5 text-xs bg-white/15 backdrop-blur-sm rounded-full px-3 py-1" data-testid="wallet-frozen-chip">
+              <Snowflake className="h-3.5 w-3.5" />
+              <span>Frozen: <span className="font-semibold tabular-nums">{formatPrice(data.frozen_balance)}</span></span>
+              <span className="opacity-80">· released after delivery is confirmed</span>
+            </div>
+          )}
           <div className="mt-4 flex gap-2">
             <Dialog open={wdOpen} onOpenChange={setWdOpen}>
               <DialogTrigger asChild>

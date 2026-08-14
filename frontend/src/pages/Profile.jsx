@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { Star, Edit, Trash2, Package as PackageIcon } from "lucide-react";
+import { Star, Edit, Trash2, Package as PackageIcon, CheckCircle2, Snowflake, Truck } from "lucide-react";
 import { ReviewOrderCard } from "@/components/Reviews";
 import { VerificationBadges } from "@/components/VerificationBadges";
 import ShippingTracker from "@/components/ShippingTracker";
@@ -35,6 +35,17 @@ const Profile = () => {
     await api.delete(`/listings/${id}`);
     setListings((prev) => prev.filter((l) => l.id !== id));
     toast({ title: "Listing deleted" });
+  };
+
+  const confirmDelivery = async (orderId) => {
+    if (!window.confirm("Confirm you received this item? This will release the seller's payment.")) return;
+    try {
+      const { data } = await api.post(`/orders/${orderId}/confirm-delivery`);
+      setOrders((prev) => prev.map((o) => (o.id === orderId ? data : o)));
+      toast({ title: "Delivery confirmed", description: "Seller has been paid out." });
+    } catch (e) {
+      toast({ title: "Could not confirm", description: e?.response?.data?.detail || "Try again", variant: "destructive" });
+    }
   };
 
   const setStatus = (v) => setParams({ tab: v });
@@ -117,14 +128,31 @@ const Profile = () => {
             <div className="text-center py-16 border border-dashed rounded-xl text-neutral-600">No purchases yet.</div>
           ) : (
             <div className="space-y-3">
-              {orders.map((o) => (
-                <div key={o.id} className="border border-neutral-200 rounded-lg">
+              {orders.map((o) => {
+                const eta = o.estimated_delivery_at ? new Date(o.estimated_delivery_at) : null;
+                const daysLeft = eta ? Math.max(0, Math.ceil((eta - new Date()) / (1000 * 60 * 60 * 24))) : null;
+                const canConfirm = !o.funds_released && o.status !== "cancelled";
+                return (
+                <div key={o.id} className="border border-neutral-200 rounded-lg" data-testid={`buyer-order-${o.id}`}>
                   <div className="flex gap-4 p-4">
                     <img src={o.listing_image} alt="" className="h-20 w-20 rounded object-cover bg-neutral-100" />
                     <div className="flex-1">
                       <Link to={`/listing/${o.listing_id}`} className="font-medium hover:text-[#FF211F]">{o.listing_title}</Link>
                       <div className="text-sm text-neutral-500">Seller: {o.seller_name} · {new Date(o.created_at).toLocaleDateString()}</div>
-                      <Badge variant="secondary" className="mt-1 capitalize">{o.status}</Badge>
+                      <div className="mt-1 flex items-center gap-2 flex-wrap">
+                        <Badge variant="secondary" className="capitalize">{o.status}</Badge>
+                        {eta && !o.funds_released && (
+                          <span className="inline-flex items-center gap-1 text-xs text-neutral-600 bg-neutral-100 rounded-full px-2 py-0.5" data-testid={`order-eta-${o.id}`}>
+                            <Truck className="h-3 w-3" />
+                            {daysLeft > 0 ? `Arrives in ~${daysLeft} day${daysLeft === 1 ? "" : "s"}` : `Expected any day now`}
+                          </span>
+                        )}
+                        {o.funds_released && (
+                          <span className="inline-flex items-center gap-1 text-xs text-emerald-700 bg-emerald-50 rounded-full px-2 py-0.5">
+                            <CheckCircle2 className="h-3 w-3" /> Delivered
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <div className="text-right">
                       <div className="font-semibold">{formatPrice(o.amount + o.shipping_fee)}</div>
@@ -133,10 +161,25 @@ const Profile = () => {
                   </div>
                   <div className="px-4 pb-4">
                     <ShippingTracker orderId={o.id} />
+                    {canConfirm && (
+                      <div className="mt-3 flex items-center justify-between gap-3 flex-wrap bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">
+                        <div className="text-xs text-emerald-800">
+                          Received your item? Confirming releases the seller&apos;s frozen payment.
+                        </div>
+                        <Button
+                          size="sm"
+                          onClick={() => confirmDelivery(o.id)}
+                          className="bg-emerald-600 hover:bg-emerald-700 rounded-full"
+                          data-testid={`confirm-delivery-${o.id}`}
+                        >
+                          <CheckCircle2 className="h-4 w-4 mr-1.5" /> Confirm delivery
+                        </Button>
+                      </div>
+                    )}
                     <ReviewOrderCard order={o} />
                   </div>
                 </div>
-              ))}
+              );})}
             </div>
           )}
         </TabsContent>
@@ -147,16 +190,28 @@ const Profile = () => {
           ) : (
             <div className="space-y-3">
               {sales.map((o) => (
-                <div key={o.id} className="border border-neutral-200 rounded-lg p-4">
+                <div key={o.id} className="border border-neutral-200 rounded-lg p-4" data-testid={`seller-order-${o.id}`}>
                   <div className="flex gap-4">
                     <img src={o.listing_image} alt="" className="h-20 w-20 rounded object-cover bg-neutral-100" />
                     <div className="flex-1">
                       <div className="font-medium">{o.listing_title}</div>
                       <div className="text-sm text-neutral-500">Buyer: {o.buyer_name} · {new Date(o.created_at).toLocaleDateString()}</div>
-                      <Badge variant="secondary" className="mt-1 capitalize">{o.status}</Badge>
+                      <div className="mt-1 flex items-center gap-2 flex-wrap">
+                        <Badge variant="secondary" className="capitalize">{o.status}</Badge>
+                        {!o.funds_released && (
+                          <span className="inline-flex items-center gap-1 text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5" data-testid={`seller-frozen-${o.id}`}>
+                            <Snowflake className="h-3 w-3" /> Funds frozen · releases on delivery
+                          </span>
+                        )}
+                        {o.funds_released && (
+                          <span className="inline-flex items-center gap-1 text-xs text-emerald-700 bg-emerald-50 rounded-full px-2 py-0.5">
+                            <CheckCircle2 className="h-3 w-3" /> Paid out
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <div className="text-right">
-                      <div className="font-semibold text-green-600">+{formatPrice(o.amount)}</div>
+                      <div className={`font-semibold ${o.funds_released ? "text-green-600" : "text-amber-600"}`}>+{formatPrice(o.seller_earnings || o.amount)}</div>
                       <div className="text-xs text-neutral-500 font-mono">#{o.id.slice(0, 8)}</div>
                     </div>
                   </div>

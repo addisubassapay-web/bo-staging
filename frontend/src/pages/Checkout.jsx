@@ -18,6 +18,7 @@ const Checkout = () => {
   const { format } = useCurrency();
   const { t } = useLang();
   const { toast } = useToast();
+  const [publicSettings, setPublicSettings] = useState({ delivery_days_estimate: 7 });
   const [listing, setListing] = useState(null);
   const [address, setAddress] = useState({ full_name: "", street: "", city: "", state: "", zip: "", country: "USA" });
   const [card, setCard] = useState({ number: "4242 4242 4242 4242", exp: "12/28", cvc: "123" });
@@ -28,6 +29,7 @@ const Checkout = () => {
     if (authLoading) return;
     if (!user) { navigate("/login"); return; }
     api.get(`/listings/${id}`).then((r) => setListing(r.data));
+    api.get("/settings/public").then((r) => setPublicSettings(r.data)).catch(() => {});
   }, [id, user, authLoading, navigate]);
 
   const place = async (e) => {
@@ -113,6 +115,9 @@ const Checkout = () => {
 
   const shippingFee = listing.shipping_paid_by === "buyer" ? 5.99 : 0;
   const total = listing.price + shippingFee;
+  const deliveryDays = publicSettings.delivery_days_estimate || 7;
+  const eta = new Date(Date.now() + deliveryDays * 24 * 60 * 60 * 1000);
+  const etaLabel = eta.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8" data-testid="checkout-page">
@@ -175,6 +180,13 @@ const Checkout = () => {
             <div className="flex justify-between text-neutral-700 dark:text-neutral-300">
               <span>{t("cart.shipping")}</span>
               <span className="tabular-nums font-medium">{format(shippingFee)}</span>
+            </div>
+            <div className="rounded-lg bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 px-3 py-2 text-xs text-emerald-800 dark:text-emerald-200 flex items-center gap-2" data-testid="checkout-delivery-eta">
+              <Lock className="h-3.5 w-3.5 shrink-0" />
+              <div>
+                <div className="font-semibold">Arrives in ~{deliveryDays} days · by {etaLabel}</div>
+                <div className="opacity-80 mt-0.5">Seller earnings stay frozen until you confirm delivery.</div>
+              </div>
             </div>
             <div className="h-px bg-neutral-200 dark:bg-neutral-800 my-3" />
             <div className="flex justify-between font-extrabold text-lg text-neutral-900 dark:text-neutral-100">
