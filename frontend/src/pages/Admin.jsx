@@ -10,7 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { LayoutDashboard, Users, Package, ShoppingBag, FolderTree, Trash2, Star, Plus, Settings as SettingsIcon, Wallet, Store as StoreIcon, Save, Check, X as XIcon, Database, IdCard, LayoutGrid, GripVertical, AlertCircle, ShieldAlert, CheckCircle2, XCircle, Clock, MessageCircle, ChevronDown, ChevronUp, Bitcoin } from "lucide-react";
+import { LayoutDashboard, Users, Package, ShoppingBag, FolderTree, Trash2, Star, Plus, Settings as SettingsIcon, Wallet, Store as StoreIcon, Save, Check, X as XIcon, Database, IdCard, LayoutGrid, GripVertical, AlertCircle, ShieldAlert, CheckCircle2, XCircle, Clock, MessageCircle, ChevronDown, ChevronUp, Bitcoin, CheckSquare, Square as SquareIcon } from "lucide-react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import AdminShelves from "@/pages/AdminShelves";
 import ApifySync from "@/pages/AdminApifySync";
@@ -786,11 +786,17 @@ const SellerApplicationsMgr = () => {
   const [apps, setApps] = useState([]);
   const [filter, setFilter] = useState("pending");
   const [notesById, setNotesById] = useState({});
+  const [selected, setSelected] = useState(new Set());
+  const [bulkNotes, setBulkNotes] = useState("");
+  const [bulkBusy, setBulkBusy] = useState(false);
   const { toast } = useToast();
 
   const load = () => {
     const params = filter && filter !== "all" ? { status_filter: filter } : {};
-    api.get("/admin/seller-applications", { params }).then((r) => setApps(r.data));
+    api.get("/admin/seller-applications", { params }).then((r) => {
+      setApps(r.data);
+      setSelected(new Set());
+    });
   };
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [filter]);
 
@@ -805,9 +811,41 @@ const SellerApplicationsMgr = () => {
     }
   };
 
+  const pendingApps = apps.filter((a) => a.status === "pending");
+  const toggle = (id) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+  const selectAllPending = () => setSelected(new Set(pendingApps.map((a) => a.id)));
+  const clearSelected = () => setSelected(new Set());
+
+  const bulkReview = async (status) => {
+    if (selected.size === 0) return;
+    if (!window.confirm(`${status === "approved" ? "Approve" : "Reject"} ${selected.size} application${selected.size === 1 ? "" : "s"}?`)) return;
+    setBulkBusy(true);
+    try {
+      const { data } = await api.post("/admin/seller-applications/bulk-review", {
+        ids: Array.from(selected), status, admin_notes: bulkNotes,
+      });
+      toast({
+        title: `${data.processed} ${status}`,
+        description: data.skipped_count ? `${data.skipped_count} skipped (already reviewed)` : "All done.",
+      });
+      setBulkNotes("");
+      load();
+    } catch (err) {
+      toast({ title: "Bulk review failed", description: err.response?.data?.detail || "Try again", variant: "destructive" });
+    } finally {
+      setBulkBusy(false);
+    }
+  };
+
   return (
     <div data-testid="admin-seller-apps">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
         <h2 className="text-2xl font-bold">Seller applications</h2>
         <Select value={filter} onValueChange={setFilter}>
           <SelectTrigger className="w-40" data-testid="apps-filter"><SelectValue /></SelectTrigger>
@@ -819,12 +857,66 @@ const SellerApplicationsMgr = () => {
           </SelectContent>
         </Select>
       </div>
+
+      {pendingApps.length > 0 && (
+        <div className="mb-4 sticky top-2 z-10 rounded-xl border border-neutral-200 bg-white/95 backdrop-blur p-3 flex flex-col sm:flex-row sm:items-center gap-2 shadow-sm" data-testid="apps-bulk-bar">
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              type="button"
+              onClick={selected.size === pendingApps.length ? clearSelected : selectAllPending}
+              className="min-h-[36px] px-3 rounded-full text-xs font-semibold border border-neutral-200 hover:border-emerald-500 hover:text-emerald-600 transition"
+              data-testid="apps-select-all"
+            >
+              {selected.size === pendingApps.length ? "Clear all" : `Select all pending (${pendingApps.length})`}
+            </button>
+            <span className="text-xs text-neutral-600 font-semibold" data-testid="apps-selected-count">
+              {selected.size} selected
+            </span>
+          </div>
+          <Input
+            placeholder="Bulk notes (optional, applied to all)"
+            value={bulkNotes}
+            onChange={(e) => setBulkNotes(e.target.value)}
+            className="flex-1 min-w-0 h-10"
+            data-testid="apps-bulk-notes"
+          />
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              onClick={() => bulkReview("approved")}
+              disabled={selected.size === 0 || bulkBusy}
+              className="min-h-[40px] bg-emerald-600 hover:bg-emerald-700"
+              data-testid="apps-bulk-approve"
+            ><Check className="h-4 w-4 mr-1" /> {bulkBusy ? "Working…" : "Approve selected"}</Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => bulkReview("rejected")}
+              disabled={selected.size === 0 || bulkBusy}
+              className="min-h-[40px]"
+              data-testid="apps-bulk-reject"
+            ><XIcon className="h-4 w-4 mr-1" /> Reject</Button>
+          </div>
+        </div>
+      )}
+
       {apps.length === 0 && <div className="text-neutral-500 text-sm">No applications match this filter.</div>}
       <div className="space-y-3">
         {apps.map((a) => (
-          <div key={a.id} className="bg-white border border-neutral-200 rounded-lg p-4" data-testid={`app-row-${a.id}`}>
-            <div className="flex items-start justify-between gap-4">
-              <div>
+          <div key={a.id} className={`bg-white border rounded-lg p-4 transition ${selected.has(a.id) ? "border-emerald-500 ring-2 ring-emerald-500/20" : "border-neutral-200"}`} data-testid={`app-row-${a.id}`}>
+            <div className="flex items-start gap-3">
+              {a.status === "pending" && (
+                <button
+                  type="button"
+                  onClick={() => toggle(a.id)}
+                  className="min-h-[44px] min-w-[44px] grid place-items-center -m-2 shrink-0"
+                  aria-label={selected.has(a.id) ? "Deselect" : "Select"}
+                  data-testid={`app-check-${a.id}`}
+                >
+                  {selected.has(a.id) ? <CheckSquare className="h-5 w-5 text-emerald-600" /> : <SquareIcon className="h-5 w-5 text-neutral-400" />}
+                </button>
+              )}
+              <div className="flex-1 min-w-0">
                 <div className="font-semibold">{a.legal_name} <span className="text-neutral-400 text-sm">({a.user_username})</span></div>
                 <div className="text-xs text-neutral-500">{a.user_email} · {a.business_type} · {a.business_name || "—"}</div>
                 <div className="text-xs text-neutral-500 mt-1">
@@ -833,7 +925,7 @@ const SellerApplicationsMgr = () => {
                 <div className="text-xs text-neutral-500 mt-1">Tax ID: {a.tax_id || "—"} · Payout: {a.payout_method} · Phone: {a.phone}</div>
                 <div className="text-xs text-neutral-400 mt-1">Submitted {new Date(a.created_at).toLocaleString()}</div>
               </div>
-              <Badge className={`capitalize ${a.status === "pending" ? "bg-amber-100 text-amber-800" : a.status === "approved" ? "bg-emerald-100 text-emerald-800" : "bg-red-100 text-red-800"} hover:opacity-100`}>{a.status}</Badge>
+              <Badge className={`capitalize ${a.status === "pending" ? "bg-amber-100 text-amber-800" : a.status === "approved" ? "bg-emerald-100 text-emerald-800" : "bg-red-100 text-red-800"} hover:opacity-100 shrink-0`}>{a.status}</Badge>
             </div>
             {a.status === "pending" && (
               <div className="mt-3 flex flex-col sm:flex-row gap-2 sm:items-center">

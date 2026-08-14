@@ -26,6 +26,15 @@ Exact replica of Mercari platform (mercari.com) — same color scheme (`#FF211F`
 
 ## Implemented (with dates)
 
+### Feb 2026 — Admin Bulk Approve Seller Applications
+- **New endpoint** `POST /api/admin/seller-applications/bulk-review` — approves or rejects up to 100 pending applications in a single call. Applies shared `admin_notes` to all, sets `seller_status` on each user, and fires the same per-user approval/rejection notifications as the single endpoint. Returns `{processed, skipped_count, skipped[]}` with per-item `reason` (`not_found`, `already_approved`, `already_rejected`).
+- **`SellerApplicationsMgr` UI upgrade**:
+  - Sticky top toolbar that appears whenever there is at least one pending application.
+  - **"Select all pending (N)"** / **"Clear all"** toggle · live selected-count · shared bulk-notes input · **"Approve selected"** (emerald) + **"Reject"** buttons.
+  - Each pending row now has a 44×44 checkbox; selected rows highlight with an emerald ring so admins see exactly what's about to change.
+  - Row-level Approve/Reject buttons remain for one-off decisions.
+- **End-to-end verified**: 3 seeded pending apps → bulk-approved → 200 `processed: 3, skipped_count: 0`. Re-run returned 200 `processed: 0` with 3 × `already_approved`. Empty ids returned 400 "Select at least one application"; invalid status returned 400 "Invalid status". Frontend screenshot on 1200-wide viewport confirms sticky bar, notes field, active/disabled button states.
+
 ### Feb 2026 — Seller Gating + Bulk Resell Publishing
 - **Backend gate on `/api/listings/import`** — now returns 403 with "Complete seller verification and approval to resell listings" for any user whose `seller_status != "approved"` (admins bypass). Combined with the existing `/api/listings` (create) gate, all selling + reselling entrypoints are now consistent.
 - **New `POST /api/listings/import/bulk`** — publishes up to 20 catalog items in one call. Same gate + tier-based markup cap enforcement. Returns `{published_count, skipped_count, published[], skipped[]}` with per-item skip reasons (`not_found_or_inactive`, `own_listing`, `already_imported`, `already_in_your_store`, `markup_exceeds_cap`). Supports a `default_markup_pct` fallback.

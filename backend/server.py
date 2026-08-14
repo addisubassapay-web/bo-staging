@@ -2695,6 +2695,47 @@ async def admin_review_seller_app(app_id: str, updates: dict, admin: dict = Depe
     return {"ok": True, "status": new_status}
 
 
+@api_router.post("/admin/seller-applications/bulk-review")
+async def admin_bulk_review_seller_apps(payload: dict, admin: dict = Depends(require_admin)):
+    """Approve or reject a batch of pending seller applications in one call."""
+    ids = payload.get("ids") or []
+    new_status = payload.get("status")
+    notes = str(payload.get("admin_notes", "")).strip()[:500]
+    if new_status not in ("approved", "rejected"):
+        raise HTTPException(400, "Invalid status")
+    if not isinstance(ids, list) or not ids:
+        raise HTTPException(400, "Select at least one application")
+    if len(ids) > 100:
+        raise HTTPException(400, "Review up to 100 applications at a time")
+
+    processed = 0
+    skipped: List[dict] = []
+    for app_id in ids:
+        doc = await db.seller_applications.find_one({"id": app_id}, {"_id": 0})
+        if not doc:
+            skipped.append({"id": app_id, "reason": "not_found"}); continue
+        if doc.get("status") != "pending":
+            skipped.append({"id": app_id, "reason": f"already_{doc.get('status')}"}); continue
+        await db.seller_applications.update_one(
+            {"id": app_id},
+            {"$set": {
+                "status": new_status,
+                "admin_notes": notes,
+                "reviewed_at": _now_utc(),
+                "reviewed_by": admin["id"],
+            }},
+        )
+        await db.users.update_one({"id": doc["user_id"]}, {"$set": {"seller_status": new_status}})
+        if new_status == "approved":
+            await notify(doc["user_id"], "system", "Seller application approved",
+                         "You can now sell on Mercari. Connect your payout method.", "/verify")
+        else:
+            await notify(doc["user_id"], "system", "Seller application rejected",
+                         notes or "See admin notes.", "/profile")
+        processed += 1
+    return {"processed": processed, "skipped_count": len(skipped), "skipped": skipped, "status": new_status}
+
+
 # =========================
 # PHASE 2: OBJECT STORAGE (Emergent) — file upload for IDs, listing images
 # =========================
