@@ -112,6 +112,10 @@ class UserPublic(BaseModel):
     wallet_frozen_balance: float = 0.0
     store_id: Optional[str] = None
     email_verified: bool = False
+    # Seller badge & resell caps ----------------------------------------
+    # `badge` is auto-derived from sales_count + rating unless the admin
+    # sets `resell_markup_override` — a hard cap (%) that bypasses the tier table.
+    resell_markup_override: Optional[float] = None
     email_verified_at: Optional[datetime] = None
     phone: Optional[str] = None
     phone_verified: bool = False
@@ -347,6 +351,8 @@ class Settings(BaseModel):
     dispute_auto_refund_excluded_reasons: List[str] = Field(default_factory=lambda: ["counterfeit"])
     delivery_days_estimate: int = 7  # admin-set global ETA (days) shown to buyers and used to project delivery.
     delivery_auto_release_days: int = 14  # if buyer doesn't confirm, auto-release frozen funds after N days from order.
+    # Resell markup caps (%) per seller badge. Admin-tunable.
+    resell_markup_caps: dict = Field(default_factory=lambda: {"new": 25.0, "bronze": 50.0, "silver": 80.0, "gold": 120.0})
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
@@ -1579,12 +1585,60 @@ class ImportPayload(BaseModel):
     listing_id: str
     markup_pct: float  # percentage on top of base price
 
+def compute_seller_badge(user: dict) -> str:
+    """Auto-tier a seller based on sales_count + rating. Admin badge override
+    (via user.resell_markup_override) skips this and applies a hard cap directly."""
+    sales = int(user.get("sales_count", 0) or 0)
+    rating = float(user.get("rating", 5.0) or 0.0)
+    if sales >= 50 and rating >= 4.7:
+        return "gold"
+    if sales >= 20 and rating >= 4.5:
+        return "silver"
+    if sales >= 5 and rating >= 4.0:
+        return "bronze"
+    return "new"
+
+
+async def resolve_max_markup(user: dict) -> tuple[float, str]:
+    """Return (max_markup_pct, badge_or_override_label) for the given seller."""
+    override = user.get("resell_markup_override")
+    if override is not None:
+        try:
+            return float(override), "override"
+        except Exception:
+            pass
+    settings = await get_settings()
+    caps = settings.get("resell_markup_caps") or {"new": 25.0, "bronze": 50.0, "silver": 80.0, "gold": 120.0}
+    badge = compute_seller_badge(user)
+    return float(caps.get(badge, 25.0)), badge
+
+
+@api_router.get("/seller/resell-info")
+async def seller_resell_info(user: dict = Depends(get_current_user)):
+    """What's this seller allowed to mark up an imported item by, and why?"""
+    max_pct, badge = await resolve_max_markup(user)
+    settings = await get_settings()
+    return {
+        "badge": compute_seller_badge(user),
+        "applied": badge,  # "override" if admin set a manual cap, else the badge name
+        "max_markup_pct": max_pct,
+        "platform_fee_pct": settings.get("platform_fee_pct", 8.0),
+        "resell_markup_caps": settings.get("resell_markup_caps"),
+        "sales_count": int(user.get("sales_count", 0) or 0),
+        "rating": float(user.get("rating", 5.0) or 0.0),
+        "override_active": user.get("resell_markup_override") is not None,
+    }
+
+
 @api_router.post("/listings/import", response_model=Listing)
 async def import_listing(payload: ImportPayload, user: dict = Depends(get_current_user)):
+    # Cap by the seller's badge OR admin override; never above the global dropship_max_markup_pct.
     settings = await get_settings()
-    max_mk = settings.get("dropship_max_markup_pct", 100.0)
+    global_cap = float(settings.get("dropship_max_markup_pct", 100.0))
+    seller_cap, _ = await resolve_max_markup(user)
+    max_mk = min(global_cap, seller_cap)
     if payload.markup_pct < 0 or payload.markup_pct > max_mk:
-        raise HTTPException(400, f"Markup must be between 0 and {max_mk}%")
+        raise HTTPException(400, f"Markup must be between 0 and {max_mk:g}% for your seller tier")
     original = await db.listings.find_one({"id": payload.listing_id, "status": "active"}, {"_id": 0})
     if not original:
         raise HTTPException(404, "Source listing not available")
@@ -1645,6 +1699,7 @@ async def admin_update_settings(updates: dict, _admin: dict = Depends(require_ad
         "semi_threshold", "referral_levels_enabled", "dispute_auto_refund_threshold",
         "dispute_auto_refund_excluded_reasons",
         "delivery_days_estimate", "delivery_auto_release_days",
+        "resell_markup_caps",
     }
     filtered = {k: v for k, v in updates.items() if k in allowed}
     # Sanitize the exclusion list — only accept known dispute reasons

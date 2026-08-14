@@ -26,6 +26,15 @@ Exact replica of Mercari platform (mercari.com) — same color scheme (`#FF211F`
 
 ## Implemented (with dates)
 
+### Feb 2026 — Sell-Page Resell Mode with Badge-Tiered Markup Caps
+- **User model** — new `resell_markup_override` field (admin-set hard cap that bypasses tier logic).
+- **Settings** — new `resell_markup_caps` dict per badge (`new: 25%`, `bronze: 50%`, `silver: 80%`, `gold: 120%`), tunable via `PUT /api/admin/settings`.
+- **Backend helpers** — `compute_seller_badge()` auto-tiers on (sales_count, rating): New → Bronze (≥5 sales, ≥4.0) → Silver (≥20, ≥4.5) → Gold (≥50, ≥4.7). `resolve_max_markup()` returns override if set, else the tier cap.
+- **New endpoint** `GET /api/seller/resell-info` — returns `{badge, applied, max_markup_pct, platform_fee_pct, resell_markup_caps, sales_count, rating, override_active}`.
+- **`POST /api/listings/import` enforcement** — validates markup against `min(global dropship cap, seller tier cap)`.
+- **Frontend `/sell`** — added a rounded segmented **"New listing" ⇄ "Resell existing item"** toggle at the top of the page.
+- **`ResellFromCatalog.jsx`** — resell mode shows the seller's tier badge + max % + progression hint, a live catalog search (debounced against `/search/suggest`), a picked-source card with Change, a markup input with 5/10/20/35/50% presets, over-cap error, and a live earnings preview (base → markup → buyer pays → platform fee → source-seller cut → your earnings + margin %). Publish button posts to `/listings/import` and routes to the new reseller listing.
+
 ### Feb 2026 — Profile Hero Modernization + Payout Dashboard + Dropship Earnings Preview
 - **Profile hero redesigned** (`Profile.jsx`) — replaced the flat neutral header with a full-bleed gradient card (orange→red) featuring decorative blur blobs, subtle grid pattern, a rounded-square avatar with ring, chips for verification/role/tenure, 4 glass-morphic stat cards (Available / Frozen / Lifetime sales / Listings), 4 quick-action CTAs (Sell / Payout dashboard / Wallet / Share), and a copyable referral-code strip. Fully dark-mode compatible; hero data auto-loads from `/api/wallet`.
 - **Payout Dashboard** (`/seller/payouts`, `PayoutDashboard.jsx`, `GET /api/wallet/payout-dashboard?days=…`) — new standalone view that aggregates available balance, frozen amount, pending withdrawals, and lifetime total on gradient stat cards; a Recharts area chart plots frozen-in vs released vs withdrawn over a 7/30/90/180-day window; window totals row + Top-5 selling listings + Next-expected-release card + "Request withdrawal" CTA. Wallet page has a new "Open payout dashboard →" button.
