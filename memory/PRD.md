@@ -26,6 +26,16 @@ Exact replica of Mercari platform (mercari.com) — same color scheme (`#FF211F`
 
 ## Implemented (with dates)
 
+### Feb 2026 — AI-Curated Suggested-For-Me Bulk Resell
+- **New endpoint `GET /api/seller/resell-suggestions?limit=10`** — returns personalized picks scored by:
+  1. **Category preference** from the seller's own active listings (+1.0 each) and completed orders (+2.5 each).
+  2. **Popularity** (`likes_count × 1.0 + views_count × 0.05`).
+  3. **Diversity** via round-robin weaving across the seller's top 3–4 categories.
+  4. **Exclusions** — own listings, already-imported source ids, inactive items.
+  New/empty sellers fall back to catalog-wide popular categories with a `fallback: true` flag. Each pick includes a human-readable `reason` (e.g. "Your top category · 89 favorites", "Hot in this category · 86 favorites"), `wholesale_cost` (tier-based), `score`, and category badge. The response also returns a natural-language `reason` summary ("Top-selling items in Women, Other, Men — your best categories so far.") and `top_categories`.
+- **`ResellFromCatalog.jsx`** — added a third mode tab **"For me"** (wand icon). Selecting it fetches suggestions, auto-selects all 10 for one-tap publishing, and renders a gradient hero card (Smart picks + reason + category chips + Refresh) followed by a scrollable list with per-row emerald checkbox, image, price, category badge, and orange "why this" reason line. Reuses the existing sticky publish bar + `/listings/import/bulk` endpoint.
+- **End-to-end verified**: Sophia (silver-tier) → 200, 10 picks weaved across Women/Other/Men/Electronics with real reasoning strings. Unapproved user → 403 "Complete seller verification and approval to see suggestions". Mobile screenshots (390×844) confirm the whole flow: mode toggle → hero card → 10 pre-selected picks → sticky publish bar.
+
 ### Feb 2026 — Admin Bulk Approve Seller Applications
 - **New endpoint** `POST /api/admin/seller-applications/bulk-review` — approves or rejects up to 100 pending applications in a single call. Applies shared `admin_notes` to all, sets `seller_status` on each user, and fires the same per-user approval/rejection notifications as the single endpoint. Returns `{processed, skipped_count, skipped[]}` with per-item `reason` (`not_found`, `already_approved`, `already_rejected`).
 - **`SellerApplicationsMgr` UI upgrade**:

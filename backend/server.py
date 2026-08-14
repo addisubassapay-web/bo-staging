@@ -1889,6 +1889,148 @@ async def seller_resell_info(user: dict = Depends(get_current_user)):
     }
 
 
+@api_router.get("/seller/resell-suggestions")
+async def seller_resell_suggestions(
+    user: dict = Depends(get_current_user),
+    limit: int = Query(10, ge=1, le=20),
+):
+    """AI-curated bulk resell picks. Scores products by:
+       (a) match to the seller's top categories (own listings + sales history),
+       (b) popularity (likes + views),
+       (c) diversity across the seller's top 3 categories,
+       excluding own listings, already-imported items, and already-in-store sources.
+    """
+    if user.get("role") != "admin" and user.get("seller_status") != "approved":
+        raise HTTPException(403, "Complete seller verification and approval to see suggestions")
+
+    # --- (1) Compute category preference weights from seller history ---
+    cat_weights: dict = {}
+    async for l in db.listings.find({"seller_id": user["id"], "status": "active"}, {"_id": 0, "category_id": 1, "category_name": 1}):
+        cid = l.get("category_id")
+        if cid:
+            cat_weights[cid] = cat_weights.get(cid, 0) + 1.0
+    async for o in db.orders.find({"seller_id": user["id"], "status": {"$in": ["paid", "delivered", "completed"]}}, {"_id": 0, "listing_id": 1}):
+        lst = await db.listings.find_one({"id": o["listing_id"]}, {"_id": 0, "category_id": 1})
+        if lst and lst.get("category_id"):
+            cat_weights[lst["category_id"]] = cat_weights.get(lst["category_id"], 0) + 2.5
+
+    # Fallback for brand-new sellers: use catalog-wide popular categories
+    fallback = False
+    if not cat_weights:
+        fallback = True
+        popular_cats = await db.listings.aggregate([
+            {"$match": {"status": "active"}},
+            {"$group": {"_id": "$category_id", "count": {"$sum": 1}, "likes": {"$sum": "$likes_count"}}},
+            {"$sort": {"likes": -1, "count": -1}},
+            {"$limit": 4},
+        ]).to_list(4)
+        for pc in popular_cats:
+            if pc["_id"]:
+                cat_weights[pc["_id"]] = float(pc["likes"] or 0) + float(pc["count"] or 0) * 0.1
+
+    top_cats = [c for c, _ in sorted(cat_weights.items(), key=lambda x: -x[1])[:4]]
+    if not top_cats:
+        return {"suggestions": [], "reason": "No suggestions yet — publish a couple of listings first.", "fallback": True, "top_categories": []}
+
+    # --- (2) Fetch candidate products from top cats, exclude own + already imported ---
+    already_source = {d["imported_from_id"] async for d in db.listings.find(
+        {"seller_id": user["id"], "imported_from_id": {"$ne": None}},
+        {"_id": 0, "imported_from_id": 1},
+    ) if d.get("imported_from_id")}
+
+    pool_by_cat: dict = {}
+    for cid in top_cats:
+        docs = await db.listings.find(
+            {
+                "status": "active",
+                "category_id": cid,
+                "seller_id": {"$ne": user["id"]},
+                "imported_from_id": None,
+                "id": {"$nin": list(already_source)} if already_source else {"$exists": True},
+            },
+            {"_id": 0, "id": 1, "title": 1, "price": 1, "images": 1, "brand": 1, "category_id": 1,
+             "category_name": 1, "likes_count": 1, "views_count": 1, "created_at": 1},
+        ).sort([("likes_count", -1), ("views_count", -1)]).limit(20).to_list(20)
+        pool_by_cat[cid] = docs
+
+    # --- (3) Score + weave for diversity across top 3 categories ---
+    settings = await get_settings()
+    discounts = settings.get("resell_wholesale_discounts") or {"new": 0.0, "bronze": 5.0, "silver": 10.0, "gold": 15.0}
+    ws_pct = float(discounts.get(compute_seller_badge(user), 0.0))
+
+    weight_sum = sum(cat_weights.values()) or 1.0
+    picks: List[dict] = []
+    picked_ids: set = set()
+    # Round-robin across top cats to ensure diversity
+    idx = 0
+    while len(picks) < limit and any(pool_by_cat[c] for c in top_cats):
+        cid = top_cats[idx % len(top_cats)]
+        idx += 1
+        pool = pool_by_cat[cid]
+        while pool:
+            candidate = pool.pop(0)
+            if candidate["id"] in picked_ids:
+                continue
+            pop = float(candidate.get("likes_count", 0) or 0) * 1.0 + float(candidate.get("views_count", 0) or 0) * 0.05
+            cat_score = (cat_weights.get(cid, 0.0) / weight_sum) * 100.0
+            score = round(cat_score + pop, 2)
+            price = float(candidate.get("price", 0) or 0)
+            picks.append({
+                "id": candidate["id"],
+                "title": candidate.get("title", ""),
+                "price": price,
+                "image": (candidate.get("images") or [None])[0],
+                "brand": candidate.get("brand", ""),
+                "category_id": candidate.get("category_id"),
+                "category_name": candidate.get("category_name", ""),
+                "likes_count": int(candidate.get("likes_count", 0) or 0),
+                "views_count": int(candidate.get("views_count", 0) or 0),
+                "wholesale_cost": round(price * (1 - ws_pct / 100.0), 2),
+                "score": score,
+                "reason": _pick_reason(cid, cat_weights, candidate, fallback),
+            })
+            picked_ids.add(candidate["id"])
+            break  # move to next cat in round-robin
+
+    # Build human-readable summary
+    cat_names = {}
+    async for c in db.categories.find({"id": {"$in": top_cats}}, {"_id": 0, "id": 1, "name": 1}):
+        cat_names[c["id"]] = c.get("name", "")
+    friendly = [cat_names.get(c, c) for c in top_cats[:3] if cat_names.get(c)]
+
+    if fallback:
+        summary = "Trending picks to get you started — you can un-select any before publishing."
+    elif len(friendly) >= 2:
+        summary = f"Top-selling items in {', '.join(friendly)} — your best categories so far."
+    elif friendly:
+        summary = f"Top-selling items in {friendly[0]} — your best category so far."
+    else:
+        summary = "Curated picks based on your store activity."
+
+    return {
+        "suggestions": picks,
+        "reason": summary,
+        "top_categories": [{"id": c, "name": cat_names.get(c, "")} for c in top_cats[:3]],
+        "wholesale_discount_pct": ws_pct,
+        "fallback": fallback,
+    }
+
+
+def _pick_reason(cid: str, cat_weights: dict, listing: dict, fallback: bool) -> str:
+    likes = int(listing.get("likes_count", 0) or 0)
+    if fallback:
+        if likes > 5: return f"Trending — {likes} favorites"
+        return "Popular pick"
+    is_top = cid == max(cat_weights, key=cat_weights.get)
+    if is_top and likes >= 3:
+        return f"Your top category · {likes} favorites"
+    if is_top:
+        return "Your top category"
+    if likes >= 3:
+        return f"Hot in this category · {likes} favorites"
+    return "Fits your store's mix"
+
+
 @api_router.post("/listings/import", response_model=Listing)
 async def import_listing(payload: ImportPayload, user: dict = Depends(get_current_user)):
     # Gate: only approved sellers (or admins) can resell/import listings.

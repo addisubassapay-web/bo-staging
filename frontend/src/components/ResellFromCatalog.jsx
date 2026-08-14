@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import {
   Search, Package as PackageIcon, Award, Loader2, ArrowRight, ShieldCheck,
-  FolderTree, Sparkles, TrendingDown, CheckSquare, Square, Rocket,
+  FolderTree, Sparkles, TrendingDown, CheckSquare, Square, Rocket, Wand2,
 } from "lucide-react";
 import { StorefrontShareDialog } from "@/components/StorefrontShare";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -90,6 +90,8 @@ const ResellFromCatalog = () => {
   const [bulkMarkup, setBulkMarkup] = useState(20);
   const [bulkPublishing, setBulkPublishing] = useState(false);
   const [bulkResult, setBulkResult] = useState(null); // {published, skipped}
+  const [suggestions, setSuggestions] = useState(null); // {suggestions:[], reason, top_categories, fallback}
+  const [sugLoading, setSugLoading] = useState(false);
 
   useEffect(() => {
     api.get("/seller/resell-info").then((r) => setInfo(r.data)).catch(() => {});
@@ -186,6 +188,21 @@ const ResellFromCatalog = () => {
     }
   };
 
+  const loadSuggestions = async () => {
+    setSugLoading(true);
+    try {
+      const { data } = await api.get("/seller/resell-suggestions", { params: { limit: 10 } });
+      setSuggestions(data);
+      // Auto-select all suggested picks (up to 20 max)
+      setBulkSelected((data.suggestions || []).map((s) => ({ id: s.id, title: s.title, price: s.price, image: s.image })));
+    } catch (e) {
+      toast({ title: "Could not load suggestions", description: e?.response?.data?.detail || "Try again", variant: "destructive" });
+      setSuggestions({ suggestions: [], reason: "" });
+    } finally {
+      setSugLoading(false);
+    }
+  };
+
   const badgeMeta = BADGE_META[info?.applied] || BADGE_META.new;
 
   return (
@@ -232,6 +249,14 @@ const ResellFromCatalog = () => {
           data-testid="resell-mode-search"
         >
           <Search className="h-4 w-4" /> Search
+        </button>
+        <button
+          type="button"
+          onClick={() => { setMode("suggested"); setPicked(null); setBulkResult(null); loadSuggestions(); }}
+          className={`flex-1 sm:flex-none min-h-[44px] px-4 rounded-full text-sm font-medium transition-colors flex items-center justify-center gap-1.5 ${mode === "suggested" ? "bg-white dark:bg-neutral-900 text-[#FF211F] shadow-sm" : "text-neutral-700 dark:text-neutral-300"}`}
+          data-testid="resell-mode-suggested"
+        >
+          <Wand2 className="h-4 w-4" /> For me
         </button>
       </div>
 
@@ -388,6 +413,134 @@ const ResellFromCatalog = () => {
             <ul className="mt-3 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 overflow-hidden max-h-96 overflow-y-auto" data-testid="resell-search-results">
               {results.map((it) => <ProductRow key={it.id} p={it} />)}
             </ul>
+          )}
+        </div>
+      )}
+
+      {/* Suggested-for-me mode */}
+      {mode === "suggested" && (
+        <div className="space-y-3">
+          <div className="rounded-2xl border border-[#FF7A18]/30 bg-gradient-to-br from-[#FF7A18]/5 to-[#FF211F]/5 dark:from-[#FF7A18]/10 dark:to-[#FF211F]/10 p-4 sm:p-5" data-testid="resell-suggested-card">
+            <div className="flex items-start gap-3">
+              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#FF7A18] to-[#FF211F] grid place-items-center shrink-0 shadow-sm">
+                <Wand2 className="h-5 w-5 text-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-bold text-neutral-900 dark:text-neutral-100">Smart picks for your store</div>
+                <div className="text-xs text-neutral-600 dark:text-neutral-300 mt-0.5">
+                  {sugLoading ? "Analyzing your history…" : (suggestions?.reason || "AI-curated 10 products, pre-selected for you.")}
+                </div>
+                {suggestions?.top_categories?.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {suggestions.top_categories.slice(0, 3).map((c) => (
+                      <span key={c.id} className="text-[10px] bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-full px-2 py-0.5 font-medium text-neutral-600 dark:text-neutral-300">
+                        {c.name}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={loadSuggestions}
+                disabled={sugLoading}
+                className="min-h-[36px] px-3 rounded-full text-xs font-semibold border border-neutral-300 dark:border-neutral-700 hover:border-[#FF211F] hover:text-[#FF211F] transition disabled:opacity-40 shrink-0"
+                data-testid="resell-suggested-refresh"
+              >
+                {sugLoading ? "…" : "Refresh"}
+              </button>
+            </div>
+          </div>
+
+          {sugLoading ? (
+            <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-10 flex flex-col items-center gap-2 text-sm text-neutral-500">
+              <Loader2 className="h-5 w-5 animate-spin" /> Building your personalised picks…
+            </div>
+          ) : (suggestions?.suggestions?.length ?? 0) === 0 ? (
+            <div className="rounded-2xl border border-dashed border-neutral-300 dark:border-neutral-700 p-8 text-center text-sm text-neutral-500 dark:text-neutral-400">
+              <PackageIcon className="h-8 w-8 mx-auto text-neutral-300 mb-2" />
+              {suggestions ? "No suggestions available yet — publish a couple of listings first, then come back." : "Loading suggestions…"}
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 overflow-hidden" data-testid="resell-suggestions-list">
+              <div className="px-4 py-2 border-b border-neutral-100 dark:border-neutral-800 text-xs text-neutral-500 flex items-center justify-between gap-2">
+                <span className="flex items-center gap-1.5"><Sparkles className="h-3.5 w-3.5 text-[#FF7A18]" /> {suggestions.suggestions.length} picks · pre-selected</span>
+                <span className="font-semibold text-emerald-600">{bulkSelected.length} selected</span>
+              </div>
+              <ul className="max-h-[500px] overflow-y-auto">
+                {suggestions.suggestions.map((s) => {
+                  const isChecked = bulkSelected.some((x) => x.id === s.id);
+                  return (
+                    <li key={s.id} className={`flex items-center gap-3 p-3 border-b border-neutral-100 dark:border-neutral-800 last:border-b-0 ${isChecked ? "bg-emerald-50/60 dark:bg-emerald-950/20" : ""}`} data-testid={`sug-row-${s.id}`}>
+                      <button
+                        type="button"
+                        onClick={() => setBulkSelected((prev) => isChecked ? prev.filter((x) => x.id !== s.id) : [...prev, { id: s.id, title: s.title, price: s.price, image: s.image }])}
+                        className="min-h-[44px] min-w-[44px] grid place-items-center shrink-0 -ml-1"
+                        aria-label={isChecked ? "Deselect" : "Select"}
+                        data-testid={`sug-check-${s.id}`}
+                      >
+                        {isChecked ? <CheckSquare className="h-5 w-5 text-emerald-600" /> : <Square className="h-5 w-5 text-neutral-400" />}
+                      </button>
+                      <img src={s.image} alt="" className="h-14 w-14 rounded-lg object-cover bg-neutral-100 dark:bg-neutral-800 shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium text-neutral-900 dark:text-neutral-100 line-clamp-1">{s.title}</div>
+                        <div className="text-xs text-neutral-500 mt-0.5 flex items-center gap-2 flex-wrap">
+                          <span className="font-semibold text-neutral-800 dark:text-neutral-200 tabular-nums">{formatPrice(s.price)}</span>
+                          <span className="text-[10px] text-neutral-500">· {s.category_name}</span>
+                        </div>
+                        <div className="mt-1 text-[10px] font-medium text-[#FF7A18] flex items-center gap-1">
+                          <Wand2 className="h-3 w-3" /> {s.reason}
+                        </div>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
+
+          {bulkSelected.length > 0 && (
+            <div className="sticky bottom-3 z-10 rounded-2xl border border-emerald-300 dark:border-emerald-800 bg-white dark:bg-neutral-900 shadow-lg p-3 sm:p-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-3" data-testid="suggested-publish-bar">
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">Publish {bulkSelected.length} smart pick{bulkSelected.length === 1 ? "" : "s"} to your store</div>
+                <div className="text-xs text-neutral-500 mt-0.5">Shared markup applied to all — un-tick anything you don&apos;t want.</div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <div className="relative">
+                  <Input
+                    type="number"
+                    inputMode="decimal"
+                    min={0}
+                    max={maxMk}
+                    value={bulkMarkup}
+                    onChange={(e) => setBulkMarkup(e.target.value)}
+                    className="h-11 w-24 text-base pr-8"
+                    data-testid="suggested-markup-input"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-neutral-500">%</span>
+                </div>
+                <Button
+                  type="button"
+                  onClick={doBulkPublish}
+                  disabled={bulkPublishing || bulkSelected.length === 0 || bulkSelected.length > 20 || Number(bulkMarkup) < 0 || Number(bulkMarkup) > maxMk}
+                  className="min-h-[44px] bg-gradient-to-r from-[#FF7A18] to-[#FF211F] hover:brightness-110 text-white gap-1.5 rounded-full px-5"
+                  data-testid="suggested-publish-btn"
+                >
+                  {bulkPublishing ? (<><Loader2 className="h-4 w-4 animate-spin" /> Publishing…</>) : (<><Rocket className="h-4 w-4" /> Publish picks</>)}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {bulkResult && (
+            <div className="rounded-2xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/20 p-4 text-sm" data-testid="suggested-result">
+              <div className="font-semibold text-emerald-800 dark:text-emerald-200 flex items-center gap-1.5">
+                <ShieldCheck className="h-4 w-4" /> {bulkResult.published_count} smart picks live in your store
+              </div>
+              {bulkResult.skipped_count > 0 && (
+                <div className="text-xs text-neutral-600 dark:text-neutral-300 mt-1">{bulkResult.skipped_count} skipped (already in your store or unavailable).</div>
+              )}
+            </div>
           )}
         </div>
       )}
