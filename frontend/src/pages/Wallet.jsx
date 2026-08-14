@@ -4,11 +4,16 @@ import api, { formatPrice } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { Wallet as WalletIcon, ArrowDownRight, ArrowUpRight, Clock, CheckCircle2, XCircle, Snowflake } from "lucide-react";
+import {
+  Wallet as WalletIcon, ArrowDownRight, ArrowUpRight, Clock, CheckCircle2, XCircle,
+  Snowflake, Copy, Check, Bitcoin, Building2, Plus, Minus,
+} from "lucide-react";
 
 const typeMeta = {
   sale: { label: "Sale", color: "text-green-600" },
@@ -20,28 +25,390 @@ const typeMeta = {
   dropship_frozen: { label: "Dropship (frozen)", color: "text-amber-600" },
   dropship_released: { label: "Dropship released", color: "text-emerald-600" },
   bonus: { label: "Bonus", color: "text-amber-600" },
-  adjustment: { label: "Adjustment", color: "text-neutral-600" },
+  adjustment: { label: "Deposit", color: "text-green-600" },
   refund: { label: "Refund", color: "text-blue-600" },
   withdrawal: { label: "Withdrawal", color: "text-red-600" },
 };
 
 const statusIcon = (s) => {
-  if (s === "paid") return <CheckCircle2 className="h-4 w-4 text-green-500" />;
+  if (s === "paid" || s === "approved") return <CheckCircle2 className="h-4 w-4 text-green-500" />;
   if (s === "rejected") return <XCircle className="h-4 w-4 text-red-500" />;
   return <Clock className="h-4 w-4 text-amber-500" />;
+};
+
+const statusBadgeClass = (s) => {
+  if (s === "paid" || s === "approved") return "bg-green-100 text-green-700";
+  if (s === "rejected") return "bg-red-100 text-red-700";
+  return "bg-amber-100 text-amber-700";
+};
+
+const QR_SIZE = 180;
+const qrUrl = (data) => `https://api.qrserver.com/v1/create-qr-code/?size=${QR_SIZE}x${QR_SIZE}&margin=0&data=${encodeURIComponent(data || "")}`;
+
+const CopyBtn = ({ text, testid }) => {
+  const [copied, setCopied] = useState(false);
+  const doCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch (e) { /* ignored */ }
+  };
+  return (
+    <button
+      type="button"
+      onClick={doCopy}
+      className="min-h-[44px] min-w-[44px] px-3 rounded-lg border border-neutral-200 bg-white hover:border-[#FF211F] hover:text-[#FF211F] active:scale-95 transition-all flex items-center gap-1.5 text-sm font-medium"
+      data-testid={testid}
+      aria-label="Copy"
+    >
+      {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+      <span className="hidden sm:inline">{copied ? "Copied" : "Copy"}</span>
+    </button>
+  );
+};
+
+const DepositDialog = ({ open, onOpenChange, methods, onSubmitted }) => {
+  const { toast } = useToast();
+  const cryptoList = Object.entries(methods?.crypto_addresses || {});
+  const manualList = methods?.manual_payment_methods || [];
+  const hasCrypto = cryptoList.length > 0;
+  const hasManual = manualList.length > 0;
+  const [tab, setTab] = useState(hasCrypto ? "crypto" : (hasManual ? "manual" : "crypto"));
+  const [currency, setCurrency] = useState(cryptoList[0]?.[0] || "");
+  const [manualId, setManualId] = useState(manualList[0]?.id || "");
+  const [amount, setAmount] = useState("");
+  const [reference, setReference] = useState("");
+  const [note, setNote] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    setTab(hasCrypto ? "crypto" : (hasManual ? "manual" : "crypto"));
+    setCurrency(cryptoList[0]?.[0] || "");
+    setManualId(manualList[0]?.id || "");
+    setAmount("");
+    setReference("");
+    setNote("");
+  }, [open]);
+
+  const selectedAddress = currency ? (methods?.crypto_addresses || {})[currency] : "";
+  const selectedManual = manualList.find((m) => m.id === manualId);
+
+  const submit = async () => {
+    const amt = parseFloat(amount);
+    if (!amt || amt <= 0) { toast({ title: "Enter a valid amount", variant: "destructive" }); return; }
+    if (tab === "crypto") {
+      if (!currency) { toast({ title: "Choose a cryptocurrency", variant: "destructive" }); return; }
+      if (!reference.trim()) { toast({ title: "Transaction hash is required", variant: "destructive" }); return; }
+    } else {
+      if (!manualId) { toast({ title: "Choose a payment method", variant: "destructive" }); return; }
+    }
+    setSubmitting(true);
+    try {
+      await api.post("/wallet/deposit", {
+        amount: amt,
+        method: tab,
+        currency: tab === "crypto" ? currency : manualId,
+        reference: reference.trim(),
+        note: note.trim(),
+      });
+      toast({ title: "Deposit submitted", description: "An admin will review and credit your wallet once confirmed." });
+      onSubmitted?.();
+      onOpenChange(false);
+    } catch (e) {
+      toast({ title: "Failed", description: e?.response?.data?.detail || "Try again", variant: "destructive" });
+    } finally { setSubmitting(false); }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg sm:max-w-xl max-h-[90vh] overflow-y-auto" data-testid="deposit-dialog">
+        <DialogHeader><DialogTitle>Deposit funds</DialogTitle></DialogHeader>
+
+        {(!hasCrypto && !hasManual) ? (
+          <div className="py-8 text-center text-sm text-neutral-500">
+            No deposit methods are configured yet. Please contact support.
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="inline-flex bg-neutral-100 rounded-full p-1 w-full sm:w-auto">
+              {hasCrypto && (
+                <button
+                  type="button"
+                  onClick={() => setTab("crypto")}
+                  className={`flex-1 sm:flex-none min-h-[44px] px-4 rounded-full text-sm font-medium transition-colors flex items-center justify-center gap-1.5 ${tab === "crypto" ? "bg-white text-[#FF211F] shadow-sm" : "text-neutral-700"}`}
+                  data-testid="deposit-tab-crypto"
+                >
+                  <Bitcoin className="h-4 w-4" /> Crypto
+                </button>
+              )}
+              {hasManual && (
+                <button
+                  type="button"
+                  onClick={() => setTab("manual")}
+                  className={`flex-1 sm:flex-none min-h-[44px] px-4 rounded-full text-sm font-medium transition-colors flex items-center justify-center gap-1.5 ${tab === "manual" ? "bg-white text-[#FF211F] shadow-sm" : "text-neutral-700"}`}
+                  data-testid="deposit-tab-manual"
+                >
+                  <Building2 className="h-4 w-4" /> Bank / Other
+                </button>
+              )}
+            </div>
+
+            {tab === "crypto" && hasCrypto && (
+              <div className="space-y-4">
+                <div>
+                  <Label className="text-sm">Cryptocurrency</Label>
+                  <Select value={currency} onValueChange={setCurrency}>
+                    <SelectTrigger className="h-11 mt-1.5" data-testid="deposit-currency-select">
+                      <SelectValue placeholder="Choose currency" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {cryptoList.map(([k]) => (
+                        <SelectItem key={k} value={k}>{k}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {selectedAddress && (
+                  <div className="border border-neutral-200 rounded-xl p-4 bg-neutral-50 flex flex-col sm:flex-row gap-4 items-center sm:items-start">
+                    <img
+                      src={qrUrl(selectedAddress)}
+                      alt={`${currency} QR code`}
+                      width={QR_SIZE}
+                      height={QR_SIZE}
+                      className="rounded-lg bg-white p-2 shrink-0"
+                      data-testid="deposit-qr"
+                    />
+                    <div className="w-full min-w-0 flex-1 space-y-2">
+                      <div className="text-xs uppercase tracking-wider text-neutral-500 font-semibold">{currency} address</div>
+                      <div className="font-mono text-xs break-all bg-white border border-neutral-200 rounded-lg p-2.5" data-testid="deposit-address">{selectedAddress}</div>
+                      <div className="flex gap-2">
+                        <CopyBtn text={selectedAddress} testid="deposit-copy-address" />
+                      </div>
+                      <p className="text-[11px] text-neutral-500 leading-relaxed">
+                        Send only <b>{currency}</b> to this address. Sending any other asset may result in permanent loss.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-sm">Amount (USD)</Label>
+                    <Input type="number" inputMode="decimal" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" className="h-11 mt-1.5 text-base" data-testid="deposit-amount" />
+                  </div>
+                  <div>
+                    <Label className="text-sm">Transaction hash</Label>
+                    <Input value={reference} onChange={(e) => setReference(e.target.value)} placeholder="0x..." className="h-11 mt-1.5 text-base font-mono text-xs" data-testid="deposit-reference" />
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-sm">Note (optional)</Label>
+                  <Textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} placeholder="Anything the admin should know" className="mt-1.5 text-base" data-testid="deposit-note" />
+                </div>
+              </div>
+            )}
+
+            {tab === "manual" && hasManual && (
+              <div className="space-y-4">
+                <div>
+                  <Label className="text-sm">Payment method</Label>
+                  <Select value={manualId} onValueChange={setManualId}>
+                    <SelectTrigger className="h-11 mt-1.5" data-testid="deposit-manual-select">
+                      <SelectValue placeholder="Choose method" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {manualList.map((m) => (
+                        <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {selectedManual && (
+                  <div className="border border-neutral-200 rounded-xl p-4 bg-neutral-50" data-testid="deposit-manual-instructions">
+                    <div className="text-xs uppercase tracking-wider text-neutral-500 font-semibold mb-2">Instructions</div>
+                    <pre className="whitespace-pre-wrap font-sans text-sm text-neutral-800 leading-relaxed break-words">{selectedManual.instructions || "No instructions provided."}</pre>
+                    {selectedManual.instructions && (
+                      <div className="mt-3">
+                        <CopyBtn text={selectedManual.instructions} testid="deposit-copy-instructions" />
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-sm">Amount (USD)</Label>
+                    <Input type="number" inputMode="decimal" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" className="h-11 mt-1.5 text-base" data-testid="deposit-amount-manual" />
+                  </div>
+                  <div>
+                    <Label className="text-sm">Reference / payment id (optional)</Label>
+                    <Input value={reference} onChange={(e) => setReference(e.target.value)} placeholder="e.g. bank ref, receipt #" className="h-11 mt-1.5 text-base" data-testid="deposit-reference-manual" />
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-sm">Note (optional)</Label>
+                  <Textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} placeholder="Anything the admin should know" className="mt-1.5 text-base" data-testid="deposit-note-manual" />
+                </div>
+              </div>
+            )}
+
+            <p className="text-[11px] text-neutral-500">
+              Deposits are reviewed by an admin. Your wallet will be credited once payment is confirmed.
+            </p>
+          </div>
+        )}
+
+        <DialogFooter className="gap-2 flex-col sm:flex-row">
+          <Button variant="outline" onClick={() => onOpenChange(false)} className="min-h-[44px] w-full sm:w-auto">Cancel</Button>
+          {(hasCrypto || hasManual) && (
+            <Button onClick={submit} disabled={submitting} className="min-h-[44px] bg-[#FF211F] hover:bg-[#e01d1b] w-full sm:w-auto" data-testid="deposit-submit">
+              {submitting ? "Submitting…" : "Submit deposit"}
+            </Button>
+          )}
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+const WithdrawDialog = ({ open, onOpenChange, methods, onSubmitted }) => {
+  const { toast } = useToast();
+  const cryptoList = Object.keys(methods?.crypto_addresses || {});
+  const hasCrypto = cryptoList.length > 0;
+  const [tab, setTab] = useState(hasCrypto ? "crypto" : "manual");
+  const [cryptoCcy, setCryptoCcy] = useState(cryptoList[0] || "USDT");
+  const [walletAddress, setWalletAddress] = useState("");
+  const [amount, setAmount] = useState("");
+  const [accountInfo, setAccountInfo] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    setTab(hasCrypto ? "crypto" : "manual");
+    setCryptoCcy(cryptoList[0] || "USDT");
+    setWalletAddress("");
+    setAmount("");
+    setAccountInfo("");
+  }, [open]);
+
+  const submit = async () => {
+    const amt = parseFloat(amount);
+    if (!amt || amt <= 0) { toast({ title: "Enter a valid amount", variant: "destructive" }); return; }
+    let info = "";
+    let method = "bank_transfer";
+    if (tab === "crypto") {
+      if (!walletAddress.trim()) { toast({ title: "Enter your wallet address", variant: "destructive" }); return; }
+      info = `${cryptoCcy}: ${walletAddress.trim()}`;
+      method = "crypto";
+    } else {
+      if (!accountInfo.trim()) { toast({ title: "Enter payout details", variant: "destructive" }); return; }
+      info = accountInfo.trim();
+      method = "bank_transfer";
+    }
+    setSubmitting(true);
+    try {
+      await api.post("/wallet/withdraw", { amount: amt, method, account_info: info });
+      toast({ title: "Withdrawal requested", description: "An admin will review and process it." });
+      onSubmitted?.();
+      onOpenChange(false);
+    } catch (e) {
+      toast({ title: "Failed", description: e?.response?.data?.detail || "Try again", variant: "destructive" });
+    } finally { setSubmitting(false); }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto" data-testid="withdraw-dialog">
+        <DialogHeader><DialogTitle>Request withdrawal</DialogTitle></DialogHeader>
+
+        <div className="space-y-4">
+          <div className="inline-flex bg-neutral-100 rounded-full p-1 w-full sm:w-auto">
+            {hasCrypto && (
+              <button
+                type="button"
+                onClick={() => setTab("crypto")}
+                className={`flex-1 sm:flex-none min-h-[44px] px-4 rounded-full text-sm font-medium transition-colors flex items-center justify-center gap-1.5 ${tab === "crypto" ? "bg-white text-[#FF211F] shadow-sm" : "text-neutral-700"}`}
+                data-testid="withdraw-tab-crypto"
+              ><Bitcoin className="h-4 w-4" /> Crypto</button>
+            )}
+            <button
+              type="button"
+              onClick={() => setTab("manual")}
+              className={`flex-1 sm:flex-none min-h-[44px] px-4 rounded-full text-sm font-medium transition-colors flex items-center justify-center gap-1.5 ${tab === "manual" ? "bg-white text-[#FF211F] shadow-sm" : "text-neutral-700"}`}
+              data-testid="withdraw-tab-manual"
+            ><Building2 className="h-4 w-4" /> Bank / Other</button>
+          </div>
+
+          <div>
+            <Label className="text-sm">Amount (USD)</Label>
+            <Input type="number" inputMode="decimal" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" className="h-11 mt-1.5 text-base" data-testid="withdraw-amount" />
+          </div>
+
+          {tab === "crypto" ? (
+            <>
+              <div>
+                <Label className="text-sm">Cryptocurrency</Label>
+                <Select value={cryptoCcy} onValueChange={setCryptoCcy}>
+                  <SelectTrigger className="h-11 mt-1.5" data-testid="withdraw-currency-select">
+                    <SelectValue placeholder="Choose currency" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(hasCrypto ? cryptoList : ["USDT", "USDC", "BTC", "ETH"]).map((k) => (
+                      <SelectItem key={k} value={k}>{k}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-sm">Your {cryptoCcy} wallet address</Label>
+                <Input value={walletAddress} onChange={(e) => setWalletAddress(e.target.value)} placeholder={`Paste your ${cryptoCcy} address`} className="h-11 mt-1.5 text-base font-mono text-xs" data-testid="withdraw-wallet-address" />
+                <p className="text-[11px] text-neutral-500 mt-1.5">Double-check the address — payouts to a wrong address cannot be recovered.</p>
+              </div>
+            </>
+          ) : (
+            <div>
+              <Label className="text-sm">Payout details</Label>
+              <Textarea value={accountInfo} onChange={(e) => setAccountInfo(e.target.value)} rows={4} placeholder="Bank name, account number, PayPal email, or any payout details" className="mt-1.5 text-base" data-testid="withdraw-account-info" />
+            </div>
+          )}
+
+          <p className="text-[11px] text-neutral-500">Withdrawals are processed by admin. Mocked payout — no real money is transferred.</p>
+        </div>
+
+        <DialogFooter className="gap-2 flex-col sm:flex-row">
+          <Button variant="outline" onClick={() => onOpenChange(false)} className="min-h-[44px] w-full sm:w-auto">Cancel</Button>
+          <Button onClick={submit} disabled={submitting} className="min-h-[44px] bg-[#FF211F] hover:bg-[#e01d1b] w-full sm:w-auto" data-testid="withdraw-submit">
+            {submitting ? "Submitting…" : "Request payout"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
 };
 
 const Wallet = () => {
   const { user, loading, refresh } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
   const [data, setData] = useState(null);
+  const [methods, setMethods] = useState({ crypto_addresses: {}, manual_payment_methods: [] });
+  const [deposits, setDeposits] = useState([]);
+  const [dpOpen, setDpOpen] = useState(false);
   const [wdOpen, setWdOpen] = useState(false);
-  const [amount, setAmount] = useState("");
-  const [accountInfo, setAccountInfo] = useState("");
-  const [submitting, setSubmitting] = useState(false);
 
-  const load = () => api.get("/wallet").then((r) => setData(r.data));
+  const load = async () => {
+    const [w, m, d] = await Promise.allSettled([
+      api.get("/wallet"),
+      api.get("/wallet/payment-methods"),
+      api.get("/wallet/deposits"),
+    ]);
+    if (w.status === "fulfilled") setData(w.value.data);
+    if (m.status === "fulfilled") setMethods(m.value.data || { crypto_addresses: {}, manual_payment_methods: [] });
+    if (d.status === "fulfilled") setDeposits(d.value.data || []);
+  };
 
   useEffect(() => {
     if (loading) return;
@@ -49,23 +416,9 @@ const Wallet = () => {
     load();
   }, [user, loading, navigate]);
 
-  const requestWithdrawal = async () => {
-    const amt = parseFloat(amount);
-    if (!amt || amt <= 0) { toast({ title: "Enter a valid amount", variant: "destructive" }); return; }
-    setSubmitting(true);
-    try {
-      await api.post("/wallet/withdraw", { amount: amt, account_info: accountInfo });
-      toast({ title: "Withdrawal requested", description: "An admin will review and process it." });
-      setWdOpen(false);
-      setAmount("");
-      setAccountInfo("");
-      await refresh();
-      await load();
-    } catch (err) {
-      toast({ title: "Failed", description: err.response?.data?.detail || "Try again", variant: "destructive" });
-    } finally {
-      setSubmitting(false);
-    }
+  const afterMutation = async () => {
+    await refresh();
+    await load();
   };
 
   if (!data) return <div className="max-w-4xl mx-auto px-4 py-8">Loading…</div>;
@@ -75,54 +428,47 @@ const Wallet = () => {
     return acc;
   }, {});
 
+  const pendingDeposits = deposits.filter((d) => d.status === "pending");
+
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
+    <div className="max-w-4xl mx-auto px-4 py-6 sm:py-8">
       <div className="flex items-center gap-2 mb-6">
         <WalletIcon className="h-6 w-6 text-[#FF211F]" />
-        <h1 className="text-3xl font-bold">Wallet</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold">Wallet</h1>
       </div>
 
       <div className="grid md:grid-cols-3 gap-4 mb-8">
-        <div className="md:col-span-2 bg-gradient-to-br from-[#FF211F] to-[#c81816] text-white rounded-xl p-6">
+        <div className="md:col-span-2 bg-gradient-to-br from-[#FF211F] to-[#c81816] text-white rounded-xl p-5 sm:p-6">
           <div className="text-sm opacity-90">Available balance</div>
-          <div className="text-4xl font-bold mt-2" data-testid="wallet-available">{formatPrice(data.balance)}</div>
+          <div className="text-3xl sm:text-4xl font-bold mt-2" data-testid="wallet-available">{formatPrice(data.balance)}</div>
           {data.frozen_balance > 0 && (
             <div className="mt-3 inline-flex items-center gap-1.5 text-xs bg-white/15 backdrop-blur-sm rounded-full px-3 py-1" data-testid="wallet-frozen-chip">
               <Snowflake className="h-3.5 w-3.5" />
               <span>Frozen: <span className="font-semibold tabular-nums">{formatPrice(data.frozen_balance)}</span></span>
-              <span className="opacity-80">· released after delivery is confirmed</span>
+              <span className="opacity-80 hidden sm:inline">· released after delivery is confirmed</span>
             </div>
           )}
           <div className="mt-4 flex gap-2 flex-wrap">
-            <Dialog open={wdOpen} onOpenChange={setWdOpen}>
-              <DialogTrigger asChild>
-                <Button variant="secondary" className="bg-white text-[#FF211F] hover:bg-neutral-100">Withdraw</Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader><DialogTitle>Request withdrawal</DialogTitle></DialogHeader>
-                <div className="space-y-3">
-                  <div><Label>Amount</Label><Input type="number" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" /></div>
-                  <div><Label>Account info (bank, PayPal, etc.)</Label><Input value={accountInfo} onChange={(e) => setAccountInfo(e.target.value)} placeholder="Optional — admin will see this" /></div>
-                  <p className="text-xs text-neutral-500">Withdrawals are processed by admin. Mocked payout — no real money is transferred.</p>
-                </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setWdOpen(false)}>Cancel</Button>
-                  <Button className="bg-[#FF211F] hover:bg-[#e01d1b]" onClick={requestWithdrawal} disabled={submitting}>
-                    {submitting ? "Submitting…" : "Request"}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+            <Button
+              onClick={() => setDpOpen(true)}
+              className="min-h-[44px] bg-white text-[#FF211F] hover:bg-neutral-100 font-semibold"
+              data-testid="wallet-deposit-btn"
+            ><Plus className="h-4 w-4 mr-1" /> Deposit</Button>
+            <Button
+              onClick={() => setWdOpen(true)}
+              className="min-h-[44px] bg-white/20 hover:bg-white/30 text-white border border-white/40"
+              data-testid="wallet-withdraw-btn"
+            ><Minus className="h-4 w-4 mr-1" /> Withdraw</Button>
             <Link to="/seller/payouts">
-              <Button variant="secondary" className="bg-white/20 hover:bg-white/30 text-white border border-white/40" data-testid="wallet-open-dashboard">
-                Open payout dashboard →
+              <Button className="min-h-[44px] bg-white/20 hover:bg-white/30 text-white border border-white/40" data-testid="wallet-open-dashboard">
+                Payout dashboard →
               </Button>
             </Link>
           </div>
         </div>
 
-        <div className="bg-white border border-neutral-200 rounded-xl p-5">
-          <div className="text-xs uppercase text-neutral-500 mb-2">Earnings by source</div>
+        <div className="bg-white border border-neutral-200 rounded-xl p-4 sm:p-5">
+          <div className="text-xs uppercase text-neutral-500 mb-2 font-semibold tracking-wider">Earnings by source</div>
           {Object.keys(earnedByType).length === 0 ? (
             <div className="text-sm text-neutral-500">No earnings yet.</div>
           ) : (
@@ -137,6 +483,29 @@ const Wallet = () => {
           )}
         </div>
       </div>
+
+      {(deposits.length > 0) && (
+        <div className="mb-8">
+          <h2 className="font-semibold mb-3">Deposit requests</h2>
+          <div className="space-y-2">
+            {deposits.slice(0, 6).map((d) => (
+              <div key={d.id} className="flex items-center justify-between border border-neutral-200 rounded-lg p-3 flex-wrap gap-2" data-testid={`deposit-row-${d.id}`}>
+                <div className="flex items-center gap-3 min-w-0">
+                  {statusIcon(d.status)}
+                  <div className="min-w-0">
+                    <div className="font-medium">{formatPrice(d.amount)} <span className="text-xs text-neutral-500 font-normal">· {d.method === "crypto" ? (d.currency || "crypto") : "manual"}</span></div>
+                    <div className="text-xs text-neutral-500 truncate max-w-[60vw]">{new Date(d.created_at).toLocaleDateString()} {d.reference && `· ${d.reference.slice(0, 20)}${d.reference.length > 20 ? "…" : ""}`}</div>
+                  </div>
+                </div>
+                <Badge variant="secondary" className={`capitalize ${statusBadgeClass(d.status)}`}>{d.status}</Badge>
+              </div>
+            ))}
+          </div>
+          {pendingDeposits.length > 0 && (
+            <p className="text-xs text-neutral-500 mt-2">{pendingDeposits.length} pending review by admin.</p>
+          )}
+        </div>
+      )}
 
       {data.pending_withdrawals?.length > 0 && (
         <div className="mb-8">
@@ -163,37 +532,61 @@ const Wallet = () => {
         {data.transactions.length === 0 ? (
           <div className="text-center py-10 border border-dashed rounded-xl text-neutral-500">No transactions yet.</div>
         ) : (
-          <div className="border border-neutral-200 rounded-lg overflow-hidden">
-            <table className="w-full text-sm">
-              <thead className="bg-neutral-50 text-left">
-                <tr>
-                  <th className="p-3">Type</th>
-                  <th className="p-3">Description</th>
-                  <th className="p-3 text-right">Amount</th>
-                  <th className="p-3 text-right">Balance</th>
-                  <th className="p-3 text-right">Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.transactions.map((t) => (
-                  <tr key={t.id} className="border-t border-neutral-100">
-                    <td className="p-3">
-                      <Badge variant="secondary" className={typeMeta[t.type]?.color || ""}>{typeMeta[t.type]?.label || t.type}</Badge>
-                    </td>
-                    <td className="p-3 text-neutral-700">{t.description}</td>
-                    <td className={`p-3 text-right font-medium ${t.amount >= 0 ? "text-green-600" : "text-red-600"}`}>
-                      {t.amount >= 0 ? <ArrowDownRight className="h-3 w-3 inline mr-0.5" /> : <ArrowUpRight className="h-3 w-3 inline mr-0.5" />}
-                      {formatPrice(Math.abs(t.amount))}
-                    </td>
-                    <td className="p-3 text-right text-neutral-600">{formatPrice(t.balance_after)}</td>
-                    <td className="p-3 text-right text-neutral-500 text-xs">{new Date(t.created_at).toLocaleDateString()}</td>
+          <>
+            {/* Desktop table */}
+            <div className="hidden sm:block border border-neutral-200 rounded-lg overflow-hidden">
+              <table className="w-full text-sm">
+                <thead className="bg-neutral-50 text-left">
+                  <tr>
+                    <th className="p-3">Type</th>
+                    <th className="p-3">Description</th>
+                    <th className="p-3 text-right">Amount</th>
+                    <th className="p-3 text-right">Balance</th>
+                    <th className="p-3 text-right">Date</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {data.transactions.map((t) => (
+                    <tr key={t.id} className="border-t border-neutral-100">
+                      <td className="p-3">
+                        <Badge variant="secondary" className={typeMeta[t.type]?.color || ""}>{typeMeta[t.type]?.label || t.type}</Badge>
+                      </td>
+                      <td className="p-3 text-neutral-700">{t.description}</td>
+                      <td className={`p-3 text-right font-medium ${t.amount >= 0 ? "text-green-600" : "text-red-600"}`}>
+                        {t.amount >= 0 ? <ArrowDownRight className="h-3 w-3 inline mr-0.5" /> : <ArrowUpRight className="h-3 w-3 inline mr-0.5" />}
+                        {formatPrice(Math.abs(t.amount))}
+                      </td>
+                      <td className="p-3 text-right text-neutral-600">{formatPrice(t.balance_after)}</td>
+                      <td className="p-3 text-right text-neutral-500 text-xs">{new Date(t.created_at).toLocaleDateString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {/* Mobile cards */}
+            <div className="sm:hidden space-y-2">
+              {data.transactions.map((t) => (
+                <div key={t.id} className="border border-neutral-200 rounded-lg p-3">
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <Badge variant="secondary" className={typeMeta[t.type]?.color || ""}>{typeMeta[t.type]?.label || t.type}</Badge>
+                    <span className={`font-semibold ${t.amount >= 0 ? "text-green-600" : "text-red-600"}`}>
+                      {t.amount >= 0 ? "+" : "-"}{formatPrice(Math.abs(t.amount))}
+                    </span>
+                  </div>
+                  <div className="text-sm text-neutral-700">{t.description}</div>
+                  <div className="flex justify-between mt-1 text-xs text-neutral-500">
+                    <span>Balance: {formatPrice(t.balance_after)}</span>
+                    <span>{new Date(t.created_at).toLocaleDateString()}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
         )}
       </div>
+
+      <DepositDialog open={dpOpen} onOpenChange={setDpOpen} methods={methods} onSubmitted={afterMutation} />
+      <WithdrawDialog open={wdOpen} onOpenChange={setWdOpen} methods={methods} onSubmitted={afterMutation} />
     </div>
   );
 };

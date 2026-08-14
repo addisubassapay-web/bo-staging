@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, Query, status, UploadFile, File, Header, Response, Request
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, Query, status, UploadFile, File, Header, Response, Request, Body
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
@@ -355,7 +355,36 @@ class Settings(BaseModel):
     delivery_auto_release_days: int = 14  # if buyer doesn't confirm, auto-release frozen funds after N days from order.
     # Resell markup caps (%) per seller badge. Admin-tunable.
     resell_markup_caps: dict = Field(default_factory=lambda: {"new": 25.0, "bronze": 50.0, "silver": 80.0, "gold": 120.0})
+    # Crypto deposit addresses shown to users on the Wallet page. Empty string = hidden.
+    crypto_addresses: dict = Field(default_factory=lambda: {"BTC": "", "ETH": "", "USDC": "", "USDT": ""})
+    # Admin-managed manual payment methods (bank transfer, mobile money, PayPal link, etc.)
+    # Each item: {id, name, instructions, icon, active}
+    manual_payment_methods: List[dict] = Field(default_factory=list)
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class DepositRequest(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    user_name: str
+    amount: float
+    method: Literal["crypto", "manual"] = "crypto"
+    currency: Optional[str] = None  # BTC/ETH/USDC/USDT for crypto, or manual method id
+    reference: str = ""  # tx hash for crypto, or bank reference / payment id for manual
+    note: str = ""
+    screenshot_url: Optional[str] = None
+    status: Literal["pending", "approved", "rejected"] = "pending"
+    admin_note: str = ""
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    processed_at: Optional[datetime] = None
+
+class DepositRequestCreate(BaseModel):
+    amount: float
+    method: Literal["crypto", "manual"] = "crypto"
+    currency: Optional[str] = None
+    reference: str = ""
+    note: Optional[str] = ""
+    screenshot_url: Optional[str] = None
 
 
 class Message(BaseModel):
@@ -1594,6 +1623,165 @@ async def request_withdrawal(payload: WithdrawalRequestCreate, user: dict = Depe
         await credit_wallet(user["id"], -payload.amount, "withdrawal", f"Withdrawal #{wd.id[:8]}", wd.id)
 
     return wd
+
+
+# =========================
+# DEPOSITS (Crypto + Manual)
+# =========================
+@api_router.get("/wallet/payment-methods")
+async def get_payment_methods(_user: dict = Depends(get_current_user)):
+    """User-facing: active crypto addresses & active manual methods for deposits."""
+    s = await get_settings()
+    crypto = {k: v for k, v in (s.get("crypto_addresses") or {}).items() if v}
+    manual = [m for m in (s.get("manual_payment_methods") or []) if m.get("active", True)]
+    return {"crypto_addresses": crypto, "manual_payment_methods": manual}
+
+
+@api_router.post("/wallet/deposit", response_model=DepositRequest)
+async def create_deposit(payload: DepositRequestCreate, user: dict = Depends(get_current_user)):
+    if not payload.amount or payload.amount <= 0:
+        raise HTTPException(400, "Enter a valid amount")
+    if payload.method == "crypto":
+        if not payload.currency:
+            raise HTTPException(400, "Choose a cryptocurrency")
+        s = await get_settings()
+        addr = (s.get("crypto_addresses") or {}).get(payload.currency, "")
+        if not addr:
+            raise HTTPException(400, f"{payload.currency} deposits are not enabled")
+        if not payload.reference.strip():
+            raise HTTPException(400, "Transaction hash is required for crypto deposits")
+    else:
+        if not payload.currency:
+            raise HTTPException(400, "Choose a payment method")
+        s = await get_settings()
+        methods = s.get("manual_payment_methods") or []
+        match = next((m for m in methods if m.get("id") == payload.currency and m.get("active", True)), None)
+        if not match:
+            raise HTTPException(400, "Payment method not available")
+
+    dep = DepositRequest(
+        user_id=user["id"], user_name=user.get("username", ""),
+        amount=round(float(payload.amount), 2),
+        method=payload.method, currency=payload.currency,
+        reference=payload.reference.strip(),
+        note=(payload.note or "").strip(),
+        screenshot_url=payload.screenshot_url,
+    )
+    await db.deposits.insert_one(dep.model_dump())
+    await notify(
+        user["id"], "wallet",
+        f"Deposit submitted — ${dep.amount:.2f}",
+        "We're reviewing your deposit. You'll be credited once confirmed.",
+        "/wallet",
+    )
+    return dep
+
+
+@api_router.get("/wallet/deposits", response_model=List[DepositRequest])
+async def my_deposits(user: dict = Depends(get_current_user)):
+    docs = await db.deposits.find({"user_id": user["id"]}, {"_id": 0}).sort("created_at", -1).to_list(100)
+    return [DepositRequest(**d) for d in docs]
+
+
+@api_router.get("/admin/settings/payment-methods")
+async def admin_get_payment_methods(_admin: dict = Depends(require_admin)):
+    s = await get_settings()
+    return {
+        "crypto_addresses": s.get("crypto_addresses") or {"BTC": "", "ETH": "", "USDC": "", "USDT": ""},
+        "manual_payment_methods": s.get("manual_payment_methods") or [],
+    }
+
+
+@api_router.put("/admin/settings/payment-methods")
+async def admin_update_payment_methods(payload: dict, _admin: dict = Depends(require_admin)):
+    updates: dict = {}
+    if "crypto_addresses" in payload:
+        ca = payload["crypto_addresses"]
+        if not isinstance(ca, dict):
+            raise HTTPException(400, "crypto_addresses must be an object")
+        updates["crypto_addresses"] = {str(k).upper()[:10]: str(v).strip() for k, v in ca.items()}
+    if "manual_payment_methods" in payload:
+        mpm = payload["manual_payment_methods"]
+        if not isinstance(mpm, list):
+            raise HTTPException(400, "manual_payment_methods must be a list")
+        clean = []
+        for m in mpm:
+            if not isinstance(m, dict):
+                continue
+            name = str(m.get("name", "")).strip()
+            if not name:
+                continue
+            clean.append({
+                "id": str(m.get("id") or uuid.uuid4().hex[:10]),
+                "name": name[:120],
+                "instructions": str(m.get("instructions", "")).strip()[:2000],
+                "icon": str(m.get("icon", "")).strip()[:60],
+                "active": bool(m.get("active", True)),
+            })
+        updates["manual_payment_methods"] = clean
+    if not updates:
+        raise HTTPException(400, "Nothing to update")
+    updates["updated_at"] = datetime.now(timezone.utc)
+    await db.settings.update_one({"id": "global"}, {"$set": updates}, upsert=True)
+    return await admin_get_payment_methods(_admin=_admin)
+
+
+@api_router.get("/admin/deposits/pending", response_model=List[DepositRequest])
+async def admin_list_deposits(
+    _admin: dict = Depends(require_admin),
+    status_filter: Optional[str] = None,
+):
+    q: dict = {}
+    if status_filter:
+        q["status"] = status_filter
+    docs = await db.deposits.find(q, {"_id": 0}).sort("created_at", -1).to_list(500)
+    return [DepositRequest(**d) for d in docs]
+
+
+@api_router.post("/admin/deposits/{dep_id}/approve")
+async def admin_approve_deposit(dep_id: str, _admin: dict = Depends(require_admin)):
+    dep = await db.deposits.find_one({"id": dep_id}, {"_id": 0})
+    if not dep:
+        raise HTTPException(404, "Deposit not found")
+    if dep["status"] != "pending":
+        raise HTTPException(400, f"Deposit is already {dep['status']}")
+    await db.deposits.update_one(
+        {"id": dep_id},
+        {"$set": {"status": "approved", "processed_at": datetime.now(timezone.utc)}},
+    )
+    label = dep.get("currency") or dep.get("method", "deposit")
+    await credit_wallet(
+        dep["user_id"], float(dep["amount"]), "adjustment",
+        f"Deposit approved — {label}", dep_id,
+    )
+    await notify(
+        dep["user_id"], "wallet",
+        f"Deposit approved — ${float(dep['amount']):.2f}",
+        "Funds have been credited to your wallet.",
+        "/wallet",
+    )
+    return {"ok": True, "status": "approved"}
+
+
+@api_router.post("/admin/deposits/{dep_id}/reject")
+async def admin_reject_deposit(dep_id: str, payload: dict = Body(default={}), _admin: dict = Depends(require_admin)):
+    dep = await db.deposits.find_one({"id": dep_id}, {"_id": 0})
+    if not dep:
+        raise HTTPException(404, "Deposit not found")
+    if dep["status"] != "pending":
+        raise HTTPException(400, f"Deposit is already {dep['status']}")
+    reason = str(payload.get("reason", "")).strip()[:500]
+    await db.deposits.update_one(
+        {"id": dep_id},
+        {"$set": {"status": "rejected", "admin_note": reason, "processed_at": datetime.now(timezone.utc)}},
+    )
+    await notify(
+        dep["user_id"], "wallet",
+        f"Deposit rejected — ${float(dep['amount']):.2f}",
+        reason or "Please review the payment details and resubmit.",
+        "/wallet",
+    )
+    return {"ok": True, "status": "rejected"}
 
 
 # =========================

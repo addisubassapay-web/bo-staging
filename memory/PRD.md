@@ -26,6 +26,27 @@ Exact replica of Mercari platform (mercari.com) — same color scheme (`#FF211F`
 
 ## Implemented (with dates)
 
+### Feb 2026 — Crypto & Manual Deposit System + Admin Payment Methods Panel
+- **`Settings` model** extended with `crypto_addresses` (BTC/ETH/USDC/USDT — blank = hidden) and `manual_payment_methods` (list of `{id, name, instructions, icon, active}`).
+- **`DepositRequest` model** — `{id, user_id, user_name, amount, method: crypto|manual, currency, reference, note, screenshot_url, status: pending|approved|rejected, admin_note, created_at, processed_at}`.
+- **New endpoints:**
+  - `GET /api/wallet/payment-methods` — user-facing: active crypto + active manual methods.
+  - `POST /api/wallet/deposit` — user submits deposit claim (validates amount, currency, tx-hash for crypto).
+  - `GET /api/wallet/deposits` — user's deposit history.
+  - `GET /api/admin/settings/payment-methods` / `PUT` — admin CRUD (sanitizes list items).
+  - `GET /api/admin/deposits/pending` — admin list (optional `status_filter`).
+  - `POST /api/admin/deposits/{id}/approve` — credits wallet as an `adjustment` tx + notifies user.
+  - `POST /api/admin/deposits/{id}/reject` — with reason, notifies user.
+- **Frontend `Wallet.jsx`** (rewritten, fully responsive w/ 44×44 touch targets):
+  - Header with Deposit / Withdraw / Payout dashboard buttons.
+  - **Deposit dialog** — Crypto tab (currency select → live QR from `api.qrserver.com` + copy-address + amount + tx-hash) & Bank/Other tab (method select + rendered instructions + copy).
+  - **Withdraw dialog** — Crypto tab (currency + external wallet address input) & Bank/Other tab (free-form payout details).
+  - Deposit requests list (approved/pending/rejected badges), mobile card view for transactions, desktop table on ≥sm.
+- **Admin panel** — new `/admin/payment-methods` route + sidebar link (Bitcoin icon). Two tabs: **Methods** (crypto addresses + Add/Toggle/Delete manual methods with textarea instructions) and **Pending** (approve/reject with reason). Live counter badge on Pending tab.
+- **Backend verified via curl:** create → pending → approve → wallet +$50 ✅ · reject with reason ✅ · re-approve returns 400 ✅ · missing tx-hash returns 400 ✅.
+- **Frontend verified via screenshots** on iPhone 390×844 (mobile) and 1440×900 (desktop) — deposit dialog with QR, admin panel Methods & Pending tabs.
+- Testing status: self-tested end-to-end (curl + screenshots). No `testing_agent_v3_fork` run for this iteration.
+
 ### Feb 2026 — Admin Per-User Resell Cap + Badge Progress + Full Regression
 - **Admin → Users** now has a "Resell cap %" column (`resell-cap-input-<userId>`). Entering a number 0–500 sets `resell_markup_override` on that user (hard-cap that bypasses tier logic); blanking it reverts to the badge-tier cap. Persists on blur with a success toast. `PUT /api/admin/users/{id}` accepts and validates the new field; non-admin returns 403; out-of-range/non-numeric returns 400.
 - **Profile hero badge progress bar** (`BadgeProgress` in `Profile.jsx`) — fetches `/api/seller/resell-info`, shows tier chip + max % + a gradient progress bar with New/Bronze/Silver/Gold stops and % to next tier, plus a hint like "Unlock Gold with 4 more sales." Top-tier users see the celebratory copy.

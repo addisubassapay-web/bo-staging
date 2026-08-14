@@ -10,10 +10,11 @@ import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { LayoutDashboard, Users, Package, ShoppingBag, FolderTree, Trash2, Star, Plus, Settings as SettingsIcon, Wallet, Store as StoreIcon, Save, Check, X as XIcon, Database, IdCard, LayoutGrid, GripVertical, AlertCircle, ShieldAlert, CheckCircle2, XCircle, Clock, MessageCircle, ChevronDown, ChevronUp } from "lucide-react";
+import { LayoutDashboard, Users, Package, ShoppingBag, FolderTree, Trash2, Star, Plus, Settings as SettingsIcon, Wallet, Store as StoreIcon, Save, Check, X as XIcon, Database, IdCard, LayoutGrid, GripVertical, AlertCircle, ShieldAlert, CheckCircle2, XCircle, Clock, MessageCircle, ChevronDown, ChevronUp, Bitcoin } from "lucide-react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import AdminShelves from "@/pages/AdminShelves";
 import ApifySync from "@/pages/AdminApifySync";
+import AdminPaymentMethods from "@/pages/AdminPaymentMethods";
 
 const SidebarLink = ({ to, icon: Icon, children }) => (
   <NavLink
@@ -1174,6 +1175,7 @@ const Admin = () => {
         <SidebarLink to="/admin/orders" icon={ShoppingBag}>Orders</SidebarLink>
         <SidebarLink to="/admin/categories" icon={FolderTree}>Categories</SidebarLink>
         <SidebarLink to="/admin/withdrawals" icon={Wallet}>Withdrawals</SidebarLink>
+        <SidebarLink to="/admin/payment-methods" icon={Bitcoin}>Payment methods</SidebarLink>
         <SidebarLink to="/admin/disputes" icon={AlertCircle}>Disputes</SidebarLink>
         <SidebarLink to="/admin/seller-applications" icon={IdCard}>Seller applications</SidebarLink>
         <SidebarLink to="/admin/shelves" icon={LayoutGrid}>Homepage shelves</SidebarLink>
@@ -1189,6 +1191,7 @@ const Admin = () => {
           <Route path="orders" element={<OrdersMgr />} />
           <Route path="categories" element={<CategoriesMgr />} />
           <Route path="withdrawals" element={<WithdrawalsMgr />} />
+          <Route path="payment-methods" element={<AdminPaymentMethods />} />
           <Route path="disputes" element={<DisputesMgr />} />
           <Route path="seller-applications" element={<SellerApplicationsMgr />} />
           <Route path="shelves" element={<AdminShelves />} />
