@@ -7,12 +7,57 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Camera, X, Upload, DollarSign, Sparkles, Wand2, PackagePlus, PenLine } from "lucide-react";
+import { Camera, X, Upload, DollarSign, Sparkles, Wand2, PackagePlus, PenLine, Lock, ShieldCheck, Clock as ClockIcon } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import ResellFromCatalog from "@/components/ResellFromCatalog";
+import { Link } from "react-router-dom";
 
 const PLACEHOLDER_SEEDS = ["seed1", "seed2", "seed3", "seed4", "seed5", "seed6", "seed7", "seed8"];
+
+const SellerGate = ({ status }) => {
+  const cases = {
+    none: {
+      icon: Lock, color: "bg-[#FFF3F2] text-[#FF211F]", title: "Selling is limited to verified sellers",
+      body: "Take 2 minutes to submit your seller application. Once an admin approves you, listing (new items) and reselling (catalog items) both unlock instantly.",
+      cta: { to: "/seller/apply", label: "Apply to sell", primary: true },
+    },
+    pending: {
+      icon: ClockIcon, color: "bg-amber-100 text-amber-700",
+      title: "Application under review",
+      body: "Your seller application is with the admin team. You'll get a notification the moment you're approved and this page will unlock.",
+      cta: { to: "/seller/apply", label: "View my application", primary: false },
+    },
+    rejected: {
+      icon: Lock, color: "bg-red-100 text-red-700",
+      title: "Application not approved",
+      body: "Please review the admin's notes and reapply with the requested changes to unlock selling and reselling.",
+      cta: { to: "/seller/apply", label: "Update & resubmit", primary: true },
+    },
+  };
+  const c = cases[status] || cases.none;
+  const Icon = c.icon;
+  return (
+    <div className="mt-6 rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-6 sm:p-8 text-center" data-testid={`seller-gate-${status || "none"}`}>
+      <div className={`h-14 w-14 rounded-full mx-auto grid place-items-center ${c.color}`}><Icon className="h-6 w-6" /></div>
+      <h2 className="mt-4 text-xl sm:text-2xl font-bold text-neutral-900 dark:text-neutral-100">{c.title}</h2>
+      <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-300 max-w-md mx-auto">{c.body}</p>
+      <ul className="mt-5 grid gap-2 text-sm text-neutral-600 dark:text-neutral-300 max-w-md mx-auto text-left">
+        <li className="flex items-start gap-2"><ShieldCheck className="h-4 w-4 mt-0.5 text-emerald-600 shrink-0" /> Publish your own items with instant photos + AI descriptions</li>
+        <li className="flex items-start gap-2"><ShieldCheck className="h-4 w-4 mt-0.5 text-emerald-600 shrink-0" /> Resell any catalog product to your storefront with tier-based wholesale discounts</li>
+        <li className="flex items-start gap-2"><ShieldCheck className="h-4 w-4 mt-0.5 text-emerald-600 shrink-0" /> Bulk publish up to 20 items at once</li>
+      </ul>
+      <Link to={c.cta.to}>
+        <Button
+          className={`min-h-[48px] rounded-full mt-6 px-6 gap-1.5 ${c.cta.primary ? "bg-[#FF211F] hover:bg-[#e01d1b] text-white" : "bg-neutral-100 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-100 hover:bg-neutral-200"}`}
+          data-testid="seller-gate-cta"
+        >
+          {c.cta.label}
+        </Button>
+      </Link>
+    </div>
+  );
+};
 
 const Sell = () => {
   const navigate = useNavigate();
@@ -140,13 +185,10 @@ const Sell = () => {
   useEffect(() => {
     if (authLoading) return;
     if (!user) { navigate("/login"); return; }
-    // Gate: require approved seller status (admins bypass)
-    if (user.role !== "admin" && user.seller_status !== "approved") {
-      navigate("/verify");
-      return;
-    }
     api.get("/categories").then((r) => setCategories(r.data));
   }, [user, authLoading, navigate]);
+
+  const isApprovedSeller = user && (user.role === "admin" || user.seller_status === "approved");
 
   const addPlaceholder = () => {
     const seed = PLACEHOLDER_SEEDS[Math.floor(Math.random() * PLACEHOLDER_SEEDS.length)] + Date.now();
@@ -210,6 +252,10 @@ const Sell = () => {
       <h1 className="text-3xl font-bold text-neutral-900 dark:text-neutral-100">Sell an item</h1>
       <p className="text-neutral-600 dark:text-neutral-400 mt-1">List your item in minutes. Free to list, fees apply on sale.</p>
 
+      {!isApprovedSeller ? (
+        <SellerGate status={user?.seller_status} />
+      ) : (
+      <>
       {/* Mode toggle: new listing vs resell existing */}
       <div className="mt-6 grid grid-cols-2 gap-2 p-1 rounded-full bg-neutral-100 dark:bg-neutral-800 max-w-md" data-testid="sell-mode-toggle">
         <button
@@ -446,6 +492,8 @@ const Sell = () => {
             </div>
           </div>
         </div>
+      )}
+      </>
       )}
     </div>
   );

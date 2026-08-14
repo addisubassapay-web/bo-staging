@@ -1891,6 +1891,9 @@ async def seller_resell_info(user: dict = Depends(get_current_user)):
 
 @api_router.post("/listings/import", response_model=Listing)
 async def import_listing(payload: ImportPayload, user: dict = Depends(get_current_user)):
+    # Gate: only approved sellers (or admins) can resell/import listings.
+    if user.get("role") != "admin" and user.get("seller_status") != "approved":
+        raise HTTPException(403, "Complete seller verification and approval to resell listings")
     # Cap by the seller's badge OR admin override; never above the global dropship_max_markup_pct.
     settings = await get_settings()
     global_cap = float(settings.get("dropship_max_markup_pct", 100.0))
@@ -1932,6 +1935,80 @@ async def import_listing(payload: ImportPayload, user: dict = Depends(get_curren
     )
     await db.listings.insert_one(imported.model_dump())
     return imported
+
+
+class BulkImportItem(BaseModel):
+    listing_id: str
+    markup_pct: float = 20.0
+
+class BulkImportPayload(BaseModel):
+    items: List[BulkImportItem]
+    default_markup_pct: Optional[float] = None  # applied when an item has no markup
+
+@api_router.post("/listings/import/bulk")
+async def import_listings_bulk(payload: BulkImportPayload, user: dict = Depends(get_current_user)):
+    """One-tap publish of up to 20 catalog products as reseller listings."""
+    if user.get("role") != "admin" and user.get("seller_status") != "approved":
+        raise HTTPException(403, "Complete seller verification and approval to resell listings")
+    if not payload.items:
+        raise HTTPException(400, "Select at least one product")
+    if len(payload.items) > 20:
+        raise HTTPException(400, "Publish up to 20 products at a time")
+
+    settings = await get_settings()
+    global_cap = float(settings.get("dropship_max_markup_pct", 100.0))
+    seller_cap, applied = await resolve_max_markup(user)
+    max_mk = min(global_cap, seller_cap)
+    default_mk = float(payload.default_markup_pct if payload.default_markup_pct is not None else 20.0)
+    default_mk = max(0.0, min(default_mk, max_mk))
+
+    published: List[dict] = []
+    skipped: List[dict] = []
+    for it in payload.items:
+        mk = float(it.markup_pct if it.markup_pct is not None else default_mk)
+        if mk < 0 or mk > max_mk:
+            skipped.append({"listing_id": it.listing_id, "reason": "markup_exceeds_cap"}); continue
+        original = await db.listings.find_one({"id": it.listing_id, "status": "active"}, {"_id": 0})
+        if not original:
+            skipped.append({"listing_id": it.listing_id, "reason": "not_found_or_inactive"}); continue
+        if original["seller_id"] == user["id"]:
+            skipped.append({"listing_id": it.listing_id, "reason": "own_listing"}); continue
+        if original.get("imported_from_id"):
+            skipped.append({"listing_id": it.listing_id, "reason": "already_imported"}); continue
+        # Avoid re-importing the same source into this seller's store
+        dup = await db.listings.find_one(
+            {"seller_id": user["id"], "imported_from_id": original["id"], "status": "active"},
+            {"_id": 0, "id": 1},
+        )
+        if dup:
+            skipped.append({"listing_id": it.listing_id, "reason": "already_in_your_store"}); continue
+
+        base_price = float(original["price"])
+        new_price = round(base_price * (1 + mk / 100.0), 2)
+        imported = Listing(
+            seller_id=user["id"],
+            seller_name=user["username"],
+            title=original["title"],
+            description=original["description"] + "\n\n(Fulfilled by original seller.)",
+            price=new_price,
+            original_price=original.get("original_price"),
+            category_id=original["category_id"],
+            category_name=original["category_name"],
+            condition=original["condition"],
+            brand=original.get("brand", ""),
+            size=original.get("size", ""),
+            color=original.get("color", ""),
+            images=original.get("images", []),
+            shipping_paid_by=original.get("shipping_paid_by", "seller"),
+            shipping_method=original.get("shipping_method", "Standard"),
+            store_id=user.get("store_id"),
+            imported_from_id=original["id"],
+            base_price=base_price,
+        )
+        await db.listings.insert_one(imported.model_dump())
+        published.append({"id": imported.id, "title": imported.title, "price": imported.price, "markup_pct": mk})
+
+    return {"published_count": len(published), "skipped_count": len(skipped), "published": published, "skipped": skipped, "applied_cap": max_mk, "cap_source": applied}
 
 
 # =========================

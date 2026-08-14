@@ -26,6 +26,20 @@ Exact replica of Mercari platform (mercari.com) — same color scheme (`#FF211F`
 
 ## Implemented (with dates)
 
+### Feb 2026 — Seller Gating + Bulk Resell Publishing
+- **Backend gate on `/api/listings/import`** — now returns 403 with "Complete seller verification and approval to resell listings" for any user whose `seller_status != "approved"` (admins bypass). Combined with the existing `/api/listings` (create) gate, all selling + reselling entrypoints are now consistent.
+- **New `POST /api/listings/import/bulk`** — publishes up to 20 catalog items in one call. Same gate + tier-based markup cap enforcement. Returns `{published_count, skipped_count, published[], skipped[]}` with per-item skip reasons (`not_found_or_inactive`, `own_listing`, `already_imported`, `already_in_your_store`, `markup_exceeds_cap`). Supports a `default_markup_pct` fallback.
+- **Frontend `Sell.jsx`** — replaced the silent `/verify` redirect with an inline `<SellerGate>` block that renders one of three states based on `user.seller_status`:
+  - `none` → lock icon + "Selling is limited to verified sellers" + red "Apply to sell" CTA
+  - `pending` → clock icon + "Application under review" + "View my application" CTA
+  - `rejected` → red lock + reapply CTA
+  All three list the same three benefit bullets and route to `/seller/apply`.
+- **`ResellFromCatalog.jsx`** — added "Bulk publish" toggle inside the category product list. In bulk mode: each row shows a 44×44 checkbox; toolbar exposes "Pick top 10" (auto-selects the top-ranked 10) + "Clear" + live count with a red **max 20** warning past 20. A sticky bottom bar shows the count, a shared default-markup input (capped by tier), and an emerald **"Publish selected"** button that calls `/listings/import/bulk`. After success it shows a `bulk-result` summary card.
+- **End-to-end verified via API and screenshots on 390×844 mobile**:
+  - New user (`seller_status="none"`) hits `/api/listings/import`, `/import/bulk`, and `/listings` — all return 403 with the correct message.
+  - Approved silver seller Sophia — bulk-published 3 Women's items @15% markup → 200, `published_count: 3, applied_cap: 80.0`.
+  - Sell page renders the gate card for unapproved user; Sell → Resell → Kids → Bulk on → Pick top 10 renders the sticky publish bar with 10 checkboxes ticked.
+
 ### Feb 2026 — Wallet Wholesale Auto-Debit + Storefront Share Dialog
 - **Order model** — added `reseller_wholesale_cost` and `reseller_paid_wholesale` fields.
 - **`POST /api/orders`** — on imported (resell) listings, atomically debits the reseller's `wallet_balance` for their tier-based wholesale cost (`base_price × (1 − discount_pct)`) using a conditional `$gte` update to prevent oversell. On success, source seller earns wholesale cost (frozen), reseller earns `amount − platform_fee − affiliate` (keeps more since wholesale is pre-paid). Falls back to buyer-funded split when balance is insufficient — no sale is ever blocked.

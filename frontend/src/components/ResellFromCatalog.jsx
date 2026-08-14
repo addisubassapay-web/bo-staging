@@ -8,9 +8,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import {
   Search, Package as PackageIcon, Award, Loader2, ArrowRight, ShieldCheck,
-  FolderTree, Sparkles, TrendingDown,
+  FolderTree, Sparkles, TrendingDown, CheckSquare, Square, Rocket,
 } from "lucide-react";
 import { StorefrontShareDialog } from "@/components/StorefrontShare";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const BADGE_META = {
   new: { label: "New seller", color: "bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-200" },
@@ -20,14 +21,28 @@ const BADGE_META = {
   override: { label: "Admin cap", color: "bg-[#FF7A18]/15 text-[#FF211F]" },
 };
 
-const ProductRow = ({ p, picked, onSelect, wholesaleDiscount }) => {
+const ProductRow = ({ p, picked, onSelect, wholesaleDiscount, selectable, isChecked, onToggleCheck }) => {
   const isPicked = picked?.id === p.id;
   const img = p.image || p.images?.[0];
   const wsCost = +((Number(p.price) || 0) * (1 - wholesaleDiscount / 100)).toFixed(2);
+  const bg = selectable
+    ? (isChecked ? "bg-emerald-50 dark:bg-emerald-950/20" : "")
+    : (isPicked ? "bg-[#FFF3F2] dark:bg-red-950/20" : "");
   return (
-    <li className={`flex items-center gap-3 p-3 border-b border-neutral-100 dark:border-neutral-800 last:border-b-0 ${isPicked ? "bg-[#FFF3F2] dark:bg-red-950/20" : ""}`} data-testid={`resell-row-${p.id}`}>
+    <li className={`flex items-center gap-3 p-3 border-b border-neutral-100 dark:border-neutral-800 last:border-b-0 ${bg}`} data-testid={`resell-row-${p.id}`}>
+      {selectable && (
+        <button
+          type="button"
+          onClick={() => onToggleCheck(p)}
+          className="min-h-[44px] min-w-[44px] grid place-items-center shrink-0 -ml-1"
+          aria-label={isChecked ? "Deselect" : "Select"}
+          data-testid={`resell-check-${p.id}`}
+        >
+          {isChecked ? <CheckSquare className="h-5 w-5 text-emerald-600" /> : <Square className="h-5 w-5 text-neutral-400" />}
+        </button>
+      )}
       <img src={img} alt="" className="h-14 w-14 rounded-lg object-cover bg-neutral-100 dark:bg-neutral-800 shrink-0" />
-      <div className="flex-1 min-w-0">
+      <div className="flex-1 min-w-0" onClick={selectable ? () => onToggleCheck(p) : undefined} role={selectable ? "button" : undefined}>
         <div className="text-sm font-medium text-neutral-900 dark:text-neutral-100 line-clamp-1">{p.title}</div>
         <div className="text-xs text-neutral-500 mt-0.5 flex items-center gap-2 flex-wrap">
           <span className="font-semibold text-neutral-800 dark:text-neutral-200 tabular-nums">{formatPrice(p.price)}</span>
@@ -38,14 +53,16 @@ const ProductRow = ({ p, picked, onSelect, wholesaleDiscount }) => {
           )}
         </div>
       </div>
-      <Button
-        size="sm"
-        onClick={() => onSelect({ ...p, image: img })}
-        className={`min-h-[44px] rounded-full shrink-0 ${isPicked ? "bg-emerald-600 hover:bg-emerald-700" : "bg-[#FF211F] hover:bg-[#e01d1b]"} text-white`}
-        data-testid={`resell-select-${p.id}`}
-      >
-        {isPicked ? "Selected" : "Select"}
-      </Button>
+      {!selectable && (
+        <Button
+          size="sm"
+          onClick={() => onSelect({ ...p, image: img })}
+          className={`min-h-[44px] rounded-full shrink-0 ${isPicked ? "bg-emerald-600 hover:bg-emerald-700" : "bg-[#FF211F] hover:bg-[#e01d1b]"} text-white`}
+          data-testid={`resell-select-${p.id}`}
+        >
+          {isPicked ? "Selected" : "Select"}
+        </Button>
+      )}
     </li>
   );
 };
@@ -68,6 +85,11 @@ const ResellFromCatalog = () => {
   const [publishedListing, setPublishedListing] = useState(null);
   const [shareOpen, setShareOpen] = useState(false);
   const [myStoreSlug, setMyStoreSlug] = useState(null);
+  const [bulkMode, setBulkMode] = useState(false);
+  const [bulkSelected, setBulkSelected] = useState([]); // array of {id, title, price, image}
+  const [bulkMarkup, setBulkMarkup] = useState(20);
+  const [bulkPublishing, setBulkPublishing] = useState(false);
+  const [bulkResult, setBulkResult] = useState(null); // {published, skipped}
 
   useEffect(() => {
     api.get("/seller/resell-info").then((r) => setInfo(r.data)).catch(() => {});
@@ -141,6 +163,26 @@ const ResellFromCatalog = () => {
     setShareOpen(open);
     if (!open && publishedListing) {
       navigate(`/listing/${publishedListing.id}`);
+    }
+  };
+
+  const doBulkPublish = async () => {
+    if (bulkSelected.length === 0) return;
+    if (bulkSelected.length > 20) { toast({ title: "Publish up to 20 at a time", variant: "destructive" }); return; }
+    const mk = Math.min(Math.max(0, Number(bulkMarkup) || 0), maxMk);
+    setBulkPublishing(true);
+    try {
+      const { data } = await api.post("/listings/import/bulk", {
+        items: bulkSelected.map((it) => ({ listing_id: it.id, markup_pct: mk })),
+        default_markup_pct: mk,
+      });
+      setBulkResult(data);
+      setBulkSelected([]);
+      toast({ title: `Published ${data.published_count} product${data.published_count === 1 ? "" : "s"}`, description: data.skipped_count ? `${data.skipped_count} skipped` : "All items are live in your store." });
+    } catch (e) {
+      toast({ title: "Bulk publish failed", description: e?.response?.data?.detail || "Try again", variant: "destructive" });
+    } finally {
+      setBulkPublishing(false);
     }
   };
 
@@ -221,13 +263,104 @@ const ResellFromCatalog = () => {
                 <div className="p-10 text-center text-sm text-neutral-500">No products found in this category yet.</div>
               ) : (
                 <>
-                  <div className="px-4 py-2 border-b border-neutral-100 dark:border-neutral-800 text-xs text-neutral-500 flex items-center gap-1.5">
-                    <Sparkles className="h-3.5 w-3.5" /> {catProducts.length} products · sorted by popularity
+                  <div className="px-4 py-2 border-b border-neutral-100 dark:border-neutral-800 text-xs text-neutral-500 flex items-center justify-between gap-2 flex-wrap">
+                    <span className="flex items-center gap-1.5"><Sparkles className="h-3.5 w-3.5" /> {catProducts.length} products · sorted by popularity</span>
+                    <button
+                      type="button"
+                      onClick={() => { setBulkMode((v) => !v); setPicked(null); setBulkSelected([]); setBulkResult(null); }}
+                      className={`min-h-[36px] px-3 rounded-full text-xs font-semibold border transition ${bulkMode ? "bg-emerald-600 text-white border-emerald-600" : "border-neutral-200 dark:border-neutral-700 hover:border-emerald-500 hover:text-emerald-600"}`}
+                      data-testid="bulk-mode-toggle"
+                    >
+                      {bulkMode ? "Bulk on" : "Bulk publish"}
+                    </button>
                   </div>
+                  {bulkMode && (
+                    <div className="px-4 py-2 border-b border-neutral-100 dark:border-neutral-800 flex items-center justify-between gap-2 flex-wrap bg-emerald-50/50 dark:bg-emerald-950/10">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <button
+                          type="button"
+                          onClick={() => setBulkSelected(catProducts.slice(0, 10).map((p) => ({ id: p.id, title: p.title, price: p.price, image: p.image || p.images?.[0] })))}
+                          className="min-h-[36px] px-3 rounded-full text-xs font-semibold bg-white dark:bg-neutral-900 border border-emerald-500 text-emerald-600 hover:bg-emerald-500 hover:text-white transition"
+                          data-testid="bulk-pick-10"
+                        >Pick top 10</button>
+                        <button
+                          type="button"
+                          onClick={() => setBulkSelected([])}
+                          disabled={bulkSelected.length === 0}
+                          className="min-h-[36px] px-3 rounded-full text-xs font-semibold border border-neutral-200 dark:border-neutral-700 hover:border-red-400 hover:text-red-600 transition disabled:opacity-40"
+                          data-testid="bulk-clear"
+                        >Clear</button>
+                      </div>
+                      <span className="text-xs text-neutral-600 dark:text-neutral-300 font-semibold">
+                        {bulkSelected.length} selected {bulkSelected.length > 20 && <span className="text-red-600">(max 20)</span>}
+                      </span>
+                    </div>
+                  )}
                   <ul className="max-h-[440px] overflow-y-auto">
-                    {catProducts.map((p) => <ProductRow key={p.id} p={p} picked={picked} onSelect={setPicked} wholesaleDiscount={wholesaleDiscount} />)}
+                    {catProducts.map((p) => (
+                      <ProductRow
+                        key={p.id}
+                        p={p}
+                        picked={picked}
+                        onSelect={setPicked}
+                        wholesaleDiscount={wholesaleDiscount}
+                        selectable={bulkMode}
+                        isChecked={bulkMode && bulkSelected.some((x) => x.id === p.id)}
+                        onToggleCheck={(prod) => {
+                          setBulkSelected((prev) => prev.some((x) => x.id === prod.id)
+                            ? prev.filter((x) => x.id !== prod.id)
+                            : [...prev, { id: prod.id, title: prod.title, price: prod.price, image: prod.image || prod.images?.[0] }]);
+                        }}
+                      />
+                    ))}
                   </ul>
                 </>
+              )}
+            </div>
+          )}
+
+          {bulkMode && bulkSelected.length > 0 && (
+            <div className="sticky bottom-3 z-10 rounded-2xl border border-emerald-300 dark:border-emerald-800 bg-white dark:bg-neutral-900 shadow-lg p-3 sm:p-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-3" data-testid="bulk-publish-bar">
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">Publish {bulkSelected.length} product{bulkSelected.length === 1 ? "" : "s"} to your store</div>
+                <div className="text-xs text-neutral-500 mt-0.5">All items will use the same default markup below.</div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <Label className="text-xs sr-only" htmlFor="bulk-markup">Default markup</Label>
+                <div className="relative">
+                  <Input
+                    id="bulk-markup"
+                    type="number"
+                    inputMode="decimal"
+                    min={0}
+                    max={maxMk}
+                    value={bulkMarkup}
+                    onChange={(e) => setBulkMarkup(e.target.value)}
+                    className="h-11 w-24 text-base pr-8"
+                    data-testid="bulk-markup-input"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-neutral-500">%</span>
+                </div>
+                <Button
+                  type="button"
+                  onClick={doBulkPublish}
+                  disabled={bulkPublishing || bulkSelected.length === 0 || bulkSelected.length > 20 || Number(bulkMarkup) < 0 || Number(bulkMarkup) > maxMk}
+                  className="min-h-[44px] bg-gradient-to-r from-emerald-500 to-emerald-700 hover:brightness-110 text-white gap-1.5 rounded-full px-5"
+                  data-testid="bulk-publish-btn"
+                >
+                  {bulkPublishing ? (<><Loader2 className="h-4 w-4 animate-spin" /> Publishing…</>) : (<><Rocket className="h-4 w-4" /> Publish selected</>)}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {bulkResult && (
+            <div className="rounded-2xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/20 p-4 text-sm" data-testid="bulk-result">
+              <div className="font-semibold text-emerald-800 dark:text-emerald-200 flex items-center gap-1.5">
+                <ShieldCheck className="h-4 w-4" /> {bulkResult.published_count} published to your store
+              </div>
+              {bulkResult.skipped_count > 0 && (
+                <div className="text-xs text-neutral-600 dark:text-neutral-300 mt-1">{bulkResult.skipped_count} skipped (already in your store or unavailable).</div>
               )}
             </div>
           )}
