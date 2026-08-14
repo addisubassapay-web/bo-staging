@@ -43,7 +43,8 @@ const Login = () => {
   return (
     <div className="max-w-md mx-auto px-4 py-16">
       <div className="bg-white border border-neutral-200 rounded-xl p-8 shadow-sm">
-        <h1 className="text-2xl font-bold text-center">Log in to Mercari</h1>
+        <img src="/logo-mark.png" alt="Mercari" className="h-12 w-12 mx-auto" data-testid="login-logo" />
+        <h1 className="text-2xl font-bold text-center mt-3">Log in to Mercari</h1>
         <p className="text-sm text-neutral-500 text-center mt-1">Buy, sell, and save your favorites.</p>
 
         <form onSubmit={submit} className="mt-6 space-y-4">

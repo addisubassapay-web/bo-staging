@@ -46,7 +46,8 @@ const Register = () => {
   return (
     <div className="max-w-md mx-auto px-4 py-16">
       <div className="bg-white border border-neutral-200 rounded-xl p-8 shadow-sm">
-        <h1 className="text-2xl font-bold text-center">Create your account</h1>
+        <img src="/logo-mark.png" alt="Mercari" className="h-12 w-12 mx-auto" data-testid="register-logo" />
+        <h1 className="text-2xl font-bold text-center mt-3">Create your account</h1>
         <p className="text-sm text-neutral-500 text-center mt-1">Join Mercari to start buying and selling.</p>
 
         <form onSubmit={submit} className="mt-6 space-y-4">

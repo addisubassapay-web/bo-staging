@@ -129,7 +129,12 @@ const Header = () => {
           <GlobalNavMenu />
 
           <Link to="/" className="flex items-center gap-2 sm:gap-3 shrink-0" data-testid="brand-link">
-            <div className={`rounded-lg bg-gradient-to-br from-[#FF7A18] to-[#FF211F] text-white grid place-items-center font-bold shadow-sm transition-all ${compact ? "h-8 w-8 text-sm" : "h-9 w-9 sm:h-11 sm:w-11 text-base sm:text-lg"}`}>M</div>
+            <img
+              src="/logo-mark.png"
+              alt="Mercari"
+              className={`shrink-0 transition-all ${compact ? "h-8 w-8" : "h-9 w-9 sm:h-11 sm:w-11"}`}
+              data-testid="header-logo"
+            />
             <div className={`hidden lg:block leading-tight transition-opacity ${compact ? "hidden xl:block" : ""}`}>
               <div className={`font-bold text-neutral-900 dark:text-neutral-100 ${compact ? "text-base" : "text-lg xl:text-xl"}`}>Mercari <span className="text-[#FF7A18]">Global</span></div>
               {!compact && <div className="text-[11px] text-neutral-500 dark:text-neutral-400 -mt-0.5">Smart Ecommerce</div>}

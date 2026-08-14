@@ -7,7 +7,7 @@ const Footer = () => (
     <div className="max-w-7xl mx-auto px-4 py-14 grid grid-cols-2 md:grid-cols-4 gap-8">
       <div>
         <div className="flex items-center gap-2 mb-3">
-          <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-[#FF7A18] to-[#FF211F] grid place-items-center text-white font-bold">M</div>
+          <img src="/logo-mark.png" alt="Mercari" className="h-9 w-9 shrink-0" data-testid="footer-logo" />
           <span className="font-bold text-lg text-[#FF7A18]">Mercari Global</span>
         </div>
         <p className="text-sm text-neutral-400 leading-relaxed">
