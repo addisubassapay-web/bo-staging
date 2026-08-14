@@ -205,6 +205,21 @@ const AdminPaymentMethods = () => {
                       <span className="font-mono break-all">{p.reference}</span>
                     </div>
                     {p.note && <div className="mt-1 text-xs text-neutral-700">{p.note}</div>}
+                    {p.screenshot_url && (
+                      <a
+                        href={p.screenshot_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="mt-2 inline-block"
+                        data-testid={`screenshot-${p.id}`}
+                      >
+                        <img
+                          src={p.screenshot_url}
+                          alt="proof"
+                          className="h-20 w-20 rounded-lg object-cover border border-neutral-200 hover:opacity-90 transition"
+                        />
+                      </a>
+                    )}
                     <div className="mt-1 text-[11px] text-neutral-400">{new Date(p.created_at).toLocaleString()}</div>
                   </div>
                   {p.status === "pending" && (

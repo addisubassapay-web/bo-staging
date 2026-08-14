@@ -12,7 +12,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import {
   Wallet as WalletIcon, ArrowDownRight, ArrowUpRight, Clock, CheckCircle2, XCircle,
-  Snowflake, Copy, Check, Bitcoin, Building2, Plus, Minus,
+  Snowflake, Copy, Check, Bitcoin, Building2, Plus, Minus, RotateCcw, Upload, X as XIcon,
 } from "lucide-react";
 
 const typeMeta = {
@@ -80,6 +80,8 @@ const DepositDialog = ({ open, onOpenChange, methods, onSubmitted }) => {
   const [amount, setAmount] = useState("");
   const [reference, setReference] = useState("");
   const [note, setNote] = useState("");
+  const [screenshotUrl, setScreenshotUrl] = useState("");
+  const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -90,10 +92,31 @@ const DepositDialog = ({ open, onOpenChange, methods, onSubmitted }) => {
     setAmount("");
     setReference("");
     setNote("");
+    setScreenshotUrl("");
   }, [open]);
 
   const selectedAddress = currency ? (methods?.crypto_addresses || {})[currency] : "";
   const selectedManual = manualList.find((m) => m.id === manualId);
+
+  const uploadScreenshot = async (file) => {
+    if (!file) return;
+    if (file.size > 12 * 1024 * 1024) {
+      toast({ title: "File too large", description: "Max 12MB", variant: "destructive" });
+      return;
+    }
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const { data } = await api.post("/upload", fd, { headers: { "Content-Type": "multipart/form-data" } });
+      setScreenshotUrl(data.url);
+      toast({ title: "Screenshot attached" });
+    } catch (e) {
+      toast({ title: "Upload failed", description: e?.response?.data?.detail || "Try again", variant: "destructive" });
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const submit = async () => {
     const amt = parseFloat(amount);
@@ -112,6 +135,7 @@ const DepositDialog = ({ open, onOpenChange, methods, onSubmitted }) => {
         currency: tab === "crypto" ? currency : manualId,
         reference: reference.trim(),
         note: note.trim(),
+        screenshot_url: screenshotUrl || null,
       });
       toast({ title: "Deposit submitted", description: "An admin will review and credit your wallet once confirmed." });
       onSubmitted?.();
@@ -256,6 +280,40 @@ const DepositDialog = ({ open, onOpenChange, methods, onSubmitted }) => {
               </div>
             )}
 
+            <div className="border-t border-neutral-100 pt-3">
+              <Label className="text-sm">Payment screenshot (optional)</Label>
+              <p className="text-[11px] text-neutral-500 mt-0.5 mb-2">Attach proof of payment to speed up approval. JPG, PNG or PDF, up to 12MB.</p>
+              {screenshotUrl ? (
+                <div className="flex items-center gap-2 border border-neutral-200 rounded-lg p-2 bg-neutral-50">
+                  {/\.pdf$/i.test(screenshotUrl) ? (
+                    <div className="h-16 w-16 rounded bg-white border border-neutral-200 grid place-items-center text-xs text-neutral-500 shrink-0">PDF</div>
+                  ) : (
+                    <img src={screenshotUrl} alt="proof" className="h-16 w-16 rounded object-cover bg-white border border-neutral-200 shrink-0" data-testid="deposit-screenshot-preview" />
+                  )}
+                  <div className="flex-1 min-w-0 text-xs text-neutral-600 truncate">{screenshotUrl}</div>
+                  <button
+                    type="button"
+                    onClick={() => setScreenshotUrl("")}
+                    className="min-h-[44px] min-w-[44px] rounded-full border border-neutral-200 hover:border-red-400 hover:text-red-600 grid place-items-center transition"
+                    aria-label="Remove screenshot"
+                    data-testid="deposit-screenshot-remove"
+                  ><XIcon className="h-4 w-4" /></button>
+                </div>
+              ) : (
+                <label className="flex items-center justify-center gap-2 min-h-[52px] rounded-lg border-2 border-dashed border-neutral-300 hover:border-[#FF211F] hover:bg-[#FFF3F2] transition cursor-pointer text-sm text-neutral-600" data-testid="deposit-screenshot-upload">
+                  <Upload className="h-4 w-4" />
+                  <span>{uploading ? "Uploading…" : "Tap to upload payment proof"}</span>
+                  <input
+                    type="file"
+                    accept="image/*,application/pdf"
+                    className="hidden"
+                    disabled={uploading}
+                    onChange={(e) => uploadScreenshot(e.target.files?.[0])}
+                  />
+                </label>
+              )}
+            </div>
+
             <p className="text-[11px] text-neutral-500">
               Deposits are reviewed by an admin. Your wallet will be credited once payment is confirmed.
             </p>
@@ -390,6 +448,46 @@ const WithdrawDialog = ({ open, onOpenChange, methods, onSubmitted }) => {
   );
 };
 
+const RefundsDialog = ({ open, onOpenChange, transactions }) => {
+  const refunds = (transactions || []).filter((t) => t.type === "refund" || (t.type === "adjustment" && (t.description || "").toLowerCase().includes("refund")));
+  const total = refunds.reduce((s, t) => s + Math.max(0, t.amount), 0);
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto" data-testid="refunds-dialog">
+        <DialogHeader><DialogTitle>Refund history</DialogTitle></DialogHeader>
+        <div className="space-y-4">
+          <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-4">
+            <div className="text-xs uppercase tracking-wider text-neutral-500 font-semibold">Total refunded to your wallet</div>
+            <div className="text-2xl font-bold text-emerald-600 mt-1 tabular-nums" data-testid="refunds-total">{formatPrice(total)}</div>
+            <p className="text-[11px] text-neutral-500 mt-2">Refunds happen automatically when a dispute is resolved in your favor.</p>
+          </div>
+          {refunds.length === 0 ? (
+            <div className="py-8 text-center text-sm text-neutral-500">No refunds yet.</div>
+          ) : (
+            <div className="border border-neutral-200 rounded-lg divide-y divide-neutral-100 overflow-hidden">
+              {refunds.map((t) => (
+                <div key={t.id} className="p-3 flex items-center justify-between gap-2" data-testid={`refund-row-${t.id}`}>
+                  <div className="min-w-0">
+                    <div className="text-sm text-neutral-800 truncate">{t.description}</div>
+                    <div className="text-[11px] text-neutral-500">{new Date(t.created_at).toLocaleString()}</div>
+                  </div>
+                  <div className="text-sm font-semibold text-emerald-600 tabular-nums shrink-0">+{formatPrice(Math.abs(t.amount))}</div>
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="text-xs text-neutral-500">
+            Need a refund on a recent order? <Link to="/disputes" className="text-[#FF211F] font-medium hover:underline">Open a dispute →</Link>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button onClick={() => onOpenChange(false)} className="min-h-[44px] w-full sm:w-auto bg-[#FF211F] hover:bg-[#e01d1b]" data-testid="refunds-close">Close</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 const Wallet = () => {
   const { user, loading, refresh } = useAuth();
   const navigate = useNavigate();
@@ -398,6 +496,7 @@ const Wallet = () => {
   const [deposits, setDeposits] = useState([]);
   const [dpOpen, setDpOpen] = useState(false);
   const [wdOpen, setWdOpen] = useState(false);
+  const [rfOpen, setRfOpen] = useState(false);
 
   const load = async () => {
     const [w, m, d] = await Promise.allSettled([
@@ -459,6 +558,11 @@ const Wallet = () => {
               className="min-h-[44px] bg-white/20 hover:bg-white/30 text-white border border-white/40"
               data-testid="wallet-withdraw-btn"
             ><Minus className="h-4 w-4 mr-1" /> Withdraw</Button>
+            <Button
+              onClick={() => setRfOpen(true)}
+              className="min-h-[44px] bg-white/20 hover:bg-white/30 text-white border border-white/40"
+              data-testid="wallet-refunds-btn"
+            ><RotateCcw className="h-4 w-4 mr-1" /> Refunds</Button>
             <Link to="/seller/payouts">
               <Button className="min-h-[44px] bg-white/20 hover:bg-white/30 text-white border border-white/40" data-testid="wallet-open-dashboard">
                 Payout dashboard →
@@ -587,6 +691,7 @@ const Wallet = () => {
 
       <DepositDialog open={dpOpen} onOpenChange={setDpOpen} methods={methods} onSubmitted={afterMutation} />
       <WithdrawDialog open={wdOpen} onOpenChange={setWdOpen} methods={methods} onSubmitted={afterMutation} />
+      <RefundsDialog open={rfOpen} onOpenChange={setRfOpen} transactions={data.transactions} />
     </div>
   );
 };

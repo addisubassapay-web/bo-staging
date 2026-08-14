@@ -26,6 +26,17 @@ Exact replica of Mercari platform (mercari.com) — same color scheme (`#FF211F`
 
 ## Implemented (with dates)
 
+### Feb 2026 — Category-Based Reseller Workflow + Deposit Screenshots + Refunds View + Wholesale Discount Tiers
+- **Backend `Settings`** — added `resell_wholesale_discounts` per tier (`new:0`, `bronze:5`, `silver:10`, `gold:15`). Whitelisted in `PUT /api/admin/settings`.
+- **`GET /api/seller/resell-info`** — now returns `resell_wholesale_discounts` (full map) + `wholesale_discount_pct` (this user's live rate).
+- **`ResellFromCatalog.jsx`** — added "By category / Search" mode toggle. Category mode shows a dropdown of all 22 admin categories → renders the top 40 popular products in a scrollable list, each with a compact **Select** button (44×44 touch target) that pins the item to the markup + earnings preview panel. Earnings preview now shows Retail / Wholesale cost (X% off) / Markup / Buyer pays / Platform fee / Paid to source seller / **You earn** — accurately deducts wholesale from margin.
+- **`Wallet.jsx`** — added **Refunds** action button that opens a `RefundsDialog` showing total refunded + per-refund history + link to `/disputes`.
+- **Deposit dialog** — new "Payment screenshot" upload zone (dashed dropzone), uses `/api/upload` (12 MB limit, jpg/png/webp/gif/pdf), stores `screenshot_url` on the deposit. Preview + remove button before submit.
+- **`AdminPaymentMethods.jsx`** — pending deposits now show a 20×20 thumbnail of the uploaded screenshot (opens full size in new tab) to speed admin review.
+- **All new UI** uses `min-h-[44px]` / `min-w-[44px]` touch targets, dialogs `max-h-[90vh] overflow-y-auto`, and adapts flawlessly to 390×844 (iPhone 12) and 1440×900 (desktop).
+- End-to-end verified via curl: resell-info returns tier-aware discount ✅, `/listings?category_id=X` returns products ✅, `/upload` returns URL ✅, deposit accepts `screenshot_url` ✅.
+- Screenshots captured for: wallet 3-button card, deposit dialog with upload zone, refunds dialog, category dropdown, product list with Select buttons, full earnings preview.
+
 ### Feb 2026 — Crypto & Manual Deposit System + Admin Payment Methods Panel
 - **`Settings` model** extended with `crypto_addresses` (BTC/ETH/USDC/USDT — blank = hidden) and `manual_payment_methods` (list of `{id, name, instructions, icon, active}`).
 - **`DepositRequest` model** — `{id, user_id, user_name, amount, method: crypto|manual, currency, reference, note, screenshot_url, status: pending|approved|rejected, admin_note, created_at, processed_at}`.

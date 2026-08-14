@@ -355,6 +355,9 @@ class Settings(BaseModel):
     delivery_auto_release_days: int = 14  # if buyer doesn't confirm, auto-release frozen funds after N days from order.
     # Resell markup caps (%) per seller badge. Admin-tunable.
     resell_markup_caps: dict = Field(default_factory=lambda: {"new": 25.0, "bronze": 50.0, "silver": 80.0, "gold": 120.0})
+    # Wholesale discount (%) resellers get off the source retail price, per tier.
+    # e.g. gold=15 means gold resellers buy inventory at 85% of retail. Admin-tunable.
+    resell_wholesale_discounts: dict = Field(default_factory=lambda: {"new": 0.0, "bronze": 5.0, "silver": 10.0, "gold": 15.0})
     # Crypto deposit addresses shown to users on the Wallet page. Empty string = hidden.
     crypto_addresses: dict = Field(default_factory=lambda: {"BTC": "", "ETH": "", "USDC": "", "USDT": ""})
     # Admin-managed manual payment methods (bank transfer, mobile money, PayPal link, etc.)
@@ -1830,6 +1833,8 @@ async def seller_resell_info(user: dict = Depends(get_current_user)):
         "max_markup_pct": max_pct,
         "platform_fee_pct": settings.get("platform_fee_pct", 8.0),
         "resell_markup_caps": settings.get("resell_markup_caps"),
+        "resell_wholesale_discounts": settings.get("resell_wholesale_discounts") or {"new": 0.0, "bronze": 5.0, "silver": 10.0, "gold": 15.0},
+        "wholesale_discount_pct": float((settings.get("resell_wholesale_discounts") or {}).get(compute_seller_badge(user), 0.0)),
         "sales_count": int(user.get("sales_count", 0) or 0),
         "rating": float(user.get("rating", 5.0) or 0.0),
         "override_active": user.get("resell_markup_override") is not None,
@@ -1908,7 +1913,7 @@ async def admin_update_settings(updates: dict, _admin: dict = Depends(require_ad
         "semi_threshold", "referral_levels_enabled", "dispute_auto_refund_threshold",
         "dispute_auto_refund_excluded_reasons",
         "delivery_days_estimate", "delivery_auto_release_days",
-        "resell_markup_caps",
+        "resell_markup_caps", "resell_wholesale_discounts",
     }
     filtered = {k: v for k, v in updates.items() if k in allowed}
     # Sanitize the exclusion list — only accept known dispute reasons
