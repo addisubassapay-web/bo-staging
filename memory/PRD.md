@@ -26,6 +26,12 @@ Exact replica of Mercari platform (mercari.com) — same color scheme (`#FF211F`
 
 ## Implemented (with dates)
 
+### Feb 2026 — Admin Per-User Resell Cap + Badge Progress + Full Regression
+- **Admin → Users** now has a "Resell cap %" column (`resell-cap-input-<userId>`). Entering a number 0–500 sets `resell_markup_override` on that user (hard-cap that bypasses tier logic); blanking it reverts to the badge-tier cap. Persists on blur with a success toast. `PUT /api/admin/users/{id}` accepts and validates the new field; non-admin returns 403; out-of-range/non-numeric returns 400.
+- **Profile hero badge progress bar** (`BadgeProgress` in `Profile.jsx`) — fetches `/api/seller/resell-info`, shows tier chip + max % + a gradient progress bar with New/Bronze/Silver/Gold stops and % to next tier, plus a hint like "Unlock Gold with 4 more sales." Top-tier users see the celebratory copy.
+- **Import error privacy fix** — when the cap is admin-imposed (`applied="override"`), the 400 message is now neutral ("Markup exceeds your allowed cap.") so the exact override value isn't leaked to the seller.
+- Verified via `testing_agent_v3_fork` iteration_18: **10/10 backend pytest + all frontend E2E green** — zero action items. Test file: `/app/backend/tests/test_phase18_resell_markup_cap.py` (run serially with `-o addopts=''`).
+
 ### Feb 2026 — Sell-Page Resell Mode with Badge-Tiered Markup Caps
 - **User model** — new `resell_markup_override` field (admin-set hard cap that bypasses tier logic).
 - **Settings** — new `resell_markup_caps` dict per badge (`new: 25%`, `bronze: 50%`, `silver: 80%`, `gold: 120%`), tunable via `PUT /api/admin/settings`.

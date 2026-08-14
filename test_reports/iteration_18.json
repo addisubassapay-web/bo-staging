@@ -1,0 +1,25 @@
+{
+  "summary": "Phase 18 full regression PASSED. Backend: 10/10 pytest cases green for /api/seller/resell-info, POST /api/listings/import cap enforcement, admin override roundtrip (set 10 → import 20% fails / 8% succeeds → clear → tier restored), validation (>500 and non-numeric = 400), and non-admin 403. Frontend E2E: Profile hero badge progress renders correctly ('87% to Gold · Unlock Gold with 4 more sales.'), Sell → Resell mode publishes a listing end-to-end (badge card + live catalog search + picked card + earnings preview + cap enforcement + inline error at 90% + Publish routes to /listing/:id). Admin → Users has 'Resell cap %' column with 125 inputs; setting 25% shows toast 'Resell cap set to 25% · Overrides the badge tier.' and persists across reload; clearing reverts to tier default. Payout Dashboard and ListingDetail 'Import & resell' entry point still render (regression clean).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_phase18_resell_markup_cap.py",
+    "/app/test_reports/pytest/phase18.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "test_phase18_resell_markup_cap.py must be executed serially (state-mutating). The project pytest.ini enables xdist LoadScope which caused a real ordering race on my first run; I added an explicit note in the file header: run with `-o addopts=''`. Consider a `@pytest.mark.serial` marker or `pytest.ini` opt-out for this file to avoid future flakes.",
+    "PUT /api/admin/users/{id} silently ignores unknown fields (whitelist filter). Consider returning 400 when the body contains only invalid keys today it returns 400 with 'No valid updates', which is fine — but mixing a valid+invalid key silently drops the invalid one. Low priority.",
+    "Import endpoint /api/listings/import returns a 400 whose detail string embeds the seller's current cap ('Markup must be between 0 and 10% for your seller tier'). This leaks the admin override value to the seller. Consider a neutral message like 'Markup exceeds your allowed cap.' if that's a privacy concern."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_phase18_resell_markup_cap.py"
+  ],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "test_credentials": "admin@mercari.local/admin123 and sophia_style@demo.local/demo1234 (from /app/memory/test_credentials.md — both valid).",
+  "seed_data_creation": "Created 2 imported listings during pytest (silver+15% and override+8%) plus one via UI publish (15% markup). These remain in the DB tied to sophia_style; harmless but next agent may want to filter TEST_/imported_from_id listings.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "All Phase 18 acceptance criteria are met. If retesting: run `REACT_APP_BACKEND_URL=<url> pytest backend/tests/test_phase18_resell_markup_cap.py -o addopts='' -v` (serial mandatory). Frontend selectors used: sell-mode-toggle, sell-mode-resell, resell-badge-card, resell-search-input, resell-pick-<id>, resell-picked-card, resell-markup-input, resell-earnings-preview, resell-publish-btn, badge-progress[-bar/-pct/-hint], resell-cap-input-<userId>. Search term 'sh' returned 8 catalog picks. Sophia is silver 46 sales / 5.0 rating so uses 80% cap; override tested at 10 and cleared cleanly.",
+  "rca of the issue": "N/A — no bugs found this iteration."
+}

@@ -112,6 +112,8 @@ class UserPublic(BaseModel):
     wallet_frozen_balance: float = 0.0
     store_id: Optional[str] = None
     email_verified: bool = False
+    resell_markup_override: Optional[float] = None
+    created_at: Optional[datetime] = None
     # Seller badge & resell caps ----------------------------------------
     # `badge` is auto-derived from sales_count + rating unless the admin
     # sets `resell_markup_override` — a hard cap (%) that bypasses the tier table.
@@ -1244,8 +1246,24 @@ async def admin_list_users(_admin: dict = Depends(require_admin)):
 
 @api_router.put("/admin/users/{user_id}")
 async def admin_update_user(user_id: str, updates: dict, _admin: dict = Depends(require_admin)):
-    allowed = {"role", "is_active", "bio", "avatar"}
-    filtered = {k: v for k, v in updates.items() if k in allowed}
+    allowed = {"role", "is_active", "bio", "avatar", "resell_markup_override"}
+    filtered: dict = {}
+    for k, v in updates.items():
+        if k not in allowed:
+            continue
+        if k == "resell_markup_override":
+            if v is None or v == "":
+                filtered[k] = None  # clear override -> revert to tier-based cap
+            else:
+                try:
+                    n = float(v)
+                    if n < 0 or n > 500:
+                        raise HTTPException(400, "resell_markup_override must be between 0 and 500")
+                    filtered[k] = n
+                except (TypeError, ValueError):
+                    raise HTTPException(400, "resell_markup_override must be numeric")
+        else:
+            filtered[k] = v
     if not filtered:
         raise HTTPException(400, "No valid updates")
     await db.users.update_one({"id": user_id}, {"$set": filtered})
@@ -1635,9 +1653,12 @@ async def import_listing(payload: ImportPayload, user: dict = Depends(get_curren
     # Cap by the seller's badge OR admin override; never above the global dropship_max_markup_pct.
     settings = await get_settings()
     global_cap = float(settings.get("dropship_max_markup_pct", 100.0))
-    seller_cap, _ = await resolve_max_markup(user)
+    seller_cap, applied = await resolve_max_markup(user)
     max_mk = min(global_cap, seller_cap)
     if payload.markup_pct < 0 or payload.markup_pct > max_mk:
+        # Neutral wording when the cap comes from an admin override so we don't leak the exact value to the seller.
+        if applied == "override":
+            raise HTTPException(400, "Markup exceeds your allowed cap.")
         raise HTTPException(400, f"Markup must be between 0 and {max_mk:g}% for your seller tier")
     original = await db.listings.find_one({"id": payload.listing_id, "status": "active"}, {"_id": 0})
     if not original:

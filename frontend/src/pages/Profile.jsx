@@ -12,6 +12,62 @@ import { VerificationBadges } from "@/components/VerificationBadges";
 import ShippingTracker from "@/components/ShippingTracker";
 import DigestCard from "@/components/DigestCard";
 
+const BADGE_STEPS = [
+  { key: "new", label: "New", threshold: { sales: 0, rating: 0 } },
+  { key: "bronze", label: "Bronze", threshold: { sales: 5, rating: 4.0 } },
+  { key: "silver", label: "Silver", threshold: { sales: 20, rating: 4.5 } },
+  { key: "gold", label: "Gold", threshold: { sales: 50, rating: 4.7 } },
+];
+
+const BadgeProgress = ({ info }) => {
+  const currentIdx = Math.max(0, BADGE_STEPS.findIndex((s) => s.key === info.badge));
+  const next = BADGE_STEPS[currentIdx + 1];
+  const cur = BADGE_STEPS[currentIdx];
+  const sales = Number(info.sales_count || 0);
+  const rating = Number(info.rating || 0);
+
+  let pct = 100;
+  let subline = "You're at the top tier — enjoy your maximum markup.";
+  if (next) {
+    const salesProgress = Math.min(1, (sales - cur.threshold.sales) / Math.max(1, next.threshold.sales - cur.threshold.sales));
+    const ratingProgress = Math.min(1, rating / Math.max(0.01, next.threshold.rating));
+    pct = Math.round(Math.min(salesProgress, ratingProgress) * 100);
+    const salesNeeded = Math.max(0, next.threshold.sales - sales);
+    const ratingNeeded = Math.max(0, +(next.threshold.rating - rating).toFixed(2));
+    const parts = [];
+    if (salesNeeded > 0) parts.push(`${salesNeeded} more sale${salesNeeded === 1 ? "" : "s"}`);
+    if (ratingNeeded > 0) parts.push(`${ratingNeeded.toFixed(1)}★ higher rating`);
+    subline = parts.length ? `Unlock ${next.label} with ${parts.join(" + ")}.` : `Ready to unlock ${next.label}!`;
+  }
+
+  return (
+    <div className="mt-5 rounded-2xl bg-white/15 backdrop-blur-sm ring-1 ring-white/25 p-4" data-testid="badge-progress">
+      <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
+        <div className="text-[10px] uppercase tracking-wider font-semibold text-white/90 flex items-center gap-1.5">
+          Seller tier · <span className="capitalize">{info.applied === "override" ? "Admin cap" : info.badge}</span>
+          <span className="ml-1 bg-white/25 rounded-full px-1.5 h-4 grid place-items-center text-[10px] tabular-nums">Max {info.max_markup_pct}% markup</span>
+        </div>
+        {next && (
+          <div className="text-[11px] text-white/85 tabular-nums" data-testid="badge-progress-pct">{pct}% to <span className="capitalize font-semibold">{next.label}</span></div>
+        )}
+      </div>
+      <div className="h-2 rounded-full bg-black/25 overflow-hidden">
+        <div
+          className="h-full bg-gradient-to-r from-yellow-300 via-orange-200 to-white transition-all duration-500"
+          style={{ width: `${pct}%` }}
+          data-testid="badge-progress-bar"
+        />
+      </div>
+      <div className="flex justify-between mt-1.5 text-[10px] text-white/80">
+        {BADGE_STEPS.map((s, i) => (
+          <span key={s.key} className={i === currentIdx ? "font-bold text-white" : ""}>{s.label}</span>
+        ))}
+      </div>
+      <p className="mt-2 text-xs text-white/90" data-testid="badge-progress-hint">{subline}</p>
+    </div>
+  );
+};
+
 const Profile = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -22,6 +78,7 @@ const Profile = () => {
   const [orders, setOrders] = useState([]);
   const [sales, setSales] = useState([]);
   const [wallet, setWallet] = useState({ balance: 0, frozen_balance: 0 });
+  const [resellInfo, setResellInfo] = useState(null);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -31,6 +88,7 @@ const Profile = () => {
     api.get("/orders", { params: { role: "buyer" } }).then((r) => setOrders(r.data));
     api.get("/orders", { params: { role: "seller" } }).then((r) => setSales(r.data));
     api.get("/wallet").then((r) => setWallet({ balance: r.data.balance, frozen_balance: r.data.frozen_balance || 0 })).catch(() => {});
+    api.get("/seller/resell-info").then((r) => setResellInfo(r.data)).catch(() => {});
   }, [user, authLoading, navigate]);
 
   const deleteListing = async (id) => {
@@ -194,6 +252,11 @@ const Profile = () => {
               <div className="text-[11px] text-white/80 mt-0.5">{soldListings} sold · {listings.length} total</div>
             </div>
           </div>
+
+          {/* Badge tier progress */}
+          {resellInfo && (
+            <BadgeProgress info={resellInfo} />
+          )}
 
           {/* Referral code strip */}
           {user.referral_code && (

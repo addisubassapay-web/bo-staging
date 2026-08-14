@@ -78,6 +78,16 @@ const UsersMgr = () => {
     toast({ title: "User deleted" });
     load();
   };
+  const saveCap = async (u, value) => {
+    const payload = value === "" || value === null ? { resell_markup_override: null } : { resell_markup_override: Number(value) };
+    try {
+      await api.put(`/admin/users/${u.id}`, payload);
+      toast({ title: value === "" ? "Cap cleared" : `Resell cap set to ${value}%`, description: value === "" ? "Reverted to tier-based cap." : "Overrides the badge tier." });
+      load();
+    } catch (e) {
+      toast({ title: "Update failed", description: e?.response?.data?.detail || "Try again", variant: "destructive" });
+    }
+  };
 
   return (
     <div>
@@ -90,13 +100,14 @@ const UsersMgr = () => {
               <th className="p-3">Email</th>
               <th className="p-3">Role</th>
               <th className="p-3">Sales</th>
+              <th className="p-3" title="Personal markup cap that overrides the badge tier">Resell cap %</th>
               <th className="p-3">Status</th>
               <th className="p-3"></th>
             </tr>
           </thead>
           <tbody>
             {users.map((u) => (
-              <tr key={u.id} className="border-t border-neutral-100">
+              <tr key={u.id} className="border-t border-neutral-100" data-testid={`admin-user-${u.id}`}>
                 <td className="p-3">
                   <div className="flex items-center gap-2">
                     <div className="h-8 w-8 rounded-full bg-neutral-200 grid place-items-center text-xs font-semibold">{u.username[0].toUpperCase()}</div>
@@ -115,6 +126,27 @@ const UsersMgr = () => {
                 </td>
                 <td className="p-3">{u.sales_count}</td>
                 <td className="p-3">
+                  <div className="flex items-center gap-1">
+                    <Input
+                      type="number"
+                      min={0}
+                      max={500}
+                      defaultValue={u.resell_markup_override ?? ""}
+                      onBlur={(e) => {
+                        const raw = e.target.value.trim();
+                        const cur = u.resell_markup_override;
+                        if (raw === "" && cur == null) return;
+                        if (raw !== "" && Number(raw) === Number(cur)) return;
+                        saveCap(u, raw);
+                      }}
+                      placeholder="tier"
+                      className="h-8 w-20 tabular-nums"
+                      data-testid={`resell-cap-input-${u.id}`}
+                    />
+                    <span className="text-xs text-neutral-400">%</span>
+                  </div>
+                </td>
+                <td className="p-3">
                   <div className="flex items-center gap-2">
                     <Switch checked={u.is_active} onCheckedChange={() => toggleActive(u)} />
                     <span className="text-xs text-neutral-500">{u.is_active ? "Active" : "Disabled"}</span>
@@ -128,6 +160,9 @@ const UsersMgr = () => {
           </tbody>
         </table>
       </div>
+      <p className="text-xs text-neutral-500 mt-2">
+        Leave the resell cap empty to use the seller&apos;s badge tier. Enter a number (0–500) to hard-cap that user&apos;s maximum markup %.
+      </p>
     </div>
   );
 };
