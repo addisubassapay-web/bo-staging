@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { Star, Edit, Trash2, Package as PackageIcon, CheckCircle2, Snowflake, Truck } from "lucide-react";
+import { Star, Edit, Trash2, Package as PackageIcon, CheckCircle2, Snowflake, Truck, Wallet as WalletIcon, BarChart3, Sparkles, Copy, Check, Share2, MessageSquare, Users, TrendingUp } from "lucide-react";
 import { ReviewOrderCard } from "@/components/Reviews";
 import { VerificationBadges } from "@/components/VerificationBadges";
 import ShippingTracker from "@/components/ShippingTracker";
@@ -21,6 +21,8 @@ const Profile = () => {
   const [listings, setListings] = useState([]);
   const [orders, setOrders] = useState([]);
   const [sales, setSales] = useState([]);
+  const [wallet, setWallet] = useState({ balance: 0, frozen_balance: 0 });
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (authLoading) return;
@@ -28,6 +30,7 @@ const Profile = () => {
     api.get("/listings", { params: { seller_id: user.id, status_filter: "" } }).then((r) => setListings(r.data));
     api.get("/orders", { params: { role: "buyer" } }).then((r) => setOrders(r.data));
     api.get("/orders", { params: { role: "seller" } }).then((r) => setSales(r.data));
+    api.get("/wallet").then((r) => setWallet({ balance: r.data.balance, frozen_balance: r.data.frozen_balance || 0 })).catch(() => {});
   }, [user, authLoading, navigate]);
 
   const deleteListing = async (id) => {
@@ -50,28 +53,173 @@ const Profile = () => {
 
   const setStatus = (v) => setParams({ tab: v });
 
+  const copyReferral = async () => {
+    try {
+      await navigator.clipboard.writeText(`${window.location.origin}/register?ref=${user.referral_code}`);
+      setCopied(true);
+      toast({ title: "Referral link copied!", description: "Share it and earn on every sale from your invites." });
+      setTimeout(() => setCopied(false), 2000);
+    } catch { /* ignore */ }
+  };
+
+  const shareProfile = async () => {
+    const url = `${window.location.origin}/store/${user.username}`;
+    const text = `Check out ${user.username}'s store on Mercari Global`;
+    if (navigator.share) {
+      try { await navigator.share({ title: text, url }); } catch { /* dismissed */ }
+    } else {
+      try { await navigator.clipboard.writeText(url); toast({ title: "Store link copied" }); } catch { /* ignore */ }
+    }
+  };
+
   if (!user) return null;
 
+  // Derived seller metrics for the hero
+  const activeListings = listings.filter((l) => l.status === "active").length;
+  const soldListings = listings.filter((l) => l.status === "sold").length;
+  const totalEarnings = sales.reduce((s, o) => s + (Number(o.seller_earnings) || Number(o.amount) || 0), 0);
+  const memberYear = new Date(user.created_at).getFullYear();
+
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
-      <div className="flex items-center gap-4 mb-8">
-        <div className="h-20 w-20 rounded-full bg-neutral-200 grid place-items-center text-2xl font-bold text-neutral-700">
-          {user.username[0].toUpperCase()}
-        </div>
-        <div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <h1 className="text-2xl font-bold">{user.username}</h1>
-            {user.role === "admin" && <Badge className="bg-[#FF211F] hover:bg-[#FF211F]">Admin</Badge>}
-            <VerificationBadges user={user} />
+    <div className="max-w-6xl mx-auto px-4 py-8" data-testid="profile-page">
+      {/* Modern gradient hero */}
+      <div className="relative rounded-3xl overflow-hidden mb-8 shadow-[0_20px_50px_-25px_rgba(255,33,31,0.35)]" data-testid="profile-hero">
+        {/* Decorative gradient background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[#FF7A18] via-[#FF5722] to-[#FF211F]" />
+        <div className="absolute -top-24 -right-24 h-72 w-72 rounded-full bg-white/20 blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-20 -left-16 h-64 w-64 rounded-full bg-black/25 blur-3xl pointer-events-none" />
+        {/* Subtle grid pattern */}
+        <div
+          className="absolute inset-0 opacity-[0.08] pointer-events-none"
+          style={{
+            backgroundImage: "linear-gradient(rgba(255,255,255,0.6) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.6) 1px, transparent 1px)",
+            backgroundSize: "28px 28px",
+          }}
+        />
+
+        <div className="relative p-5 sm:p-8 text-white">
+          <div className="flex items-start gap-4 sm:gap-6 flex-wrap">
+            {/* Avatar with ring */}
+            <div className="relative">
+              <div className="h-20 w-20 sm:h-24 sm:w-24 rounded-2xl bg-white text-[#FF211F] grid place-items-center text-3xl sm:text-4xl font-extrabold shadow-xl ring-4 ring-white/40" data-testid="profile-avatar">
+                {user.username[0].toUpperCase()}
+              </div>
+              {user.role === "admin" && (
+                <span className="absolute -bottom-2 -right-2 h-6 w-6 rounded-full bg-yellow-400 text-yellow-900 grid place-items-center text-[11px] font-black ring-2 ring-white" title="Admin">
+                  ★
+                </span>
+              )}
+            </div>
+
+            {/* Identity + chips */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight" data-testid="profile-username">{user.username}</h1>
+                {user.role === "admin" && (
+                  <span className="text-[10px] uppercase tracking-wider font-bold bg-white/25 backdrop-blur-sm px-2 py-1 rounded-full ring-1 ring-white/30">Admin</span>
+                )}
+                <span className="hidden sm:inline-flex items-center gap-1 text-[11px] bg-white/15 backdrop-blur-sm px-2 py-0.5 rounded-full ring-1 ring-white/30">
+                  <Sparkles className="h-3 w-3" /> Member since {memberYear}
+                </span>
+              </div>
+              <div className="mt-1"><VerificationBadges user={user} /></div>
+              <div className="text-sm text-white/90 flex items-center gap-3 mt-2 flex-wrap">
+                <span className="inline-flex items-center gap-1"><Star className="h-3.5 w-3.5 fill-yellow-300 text-yellow-300" /> {user.rating}</span>
+                <span>·</span>
+                <span className="tabular-nums">{user.sales_count} sales</span>
+                {user.email_verified && (
+                  <>
+                    <span>·</span>
+                    <span className="inline-flex items-center gap-1 text-emerald-100"><CheckCircle2 className="h-3.5 w-3.5" /> Verified email</span>
+                  </>
+                )}
+              </div>
+
+              {/* Quick action buttons */}
+              <div className="mt-4 flex items-center gap-2 flex-wrap" data-testid="profile-quick-actions">
+                <Link to="/sell">
+                  <Button className="h-9 rounded-full bg-white text-[#FF211F] hover:bg-neutral-100 font-semibold gap-1.5 px-4 shadow-sm" data-testid="profile-cta-sell">
+                    <PackageIcon className="h-4 w-4" /> Sell an item
+                  </Button>
+                </Link>
+                <Link to="/seller/payouts">
+                  <Button variant="outline" className="h-9 rounded-full bg-white/10 backdrop-blur-sm border-white/40 text-white hover:bg-white hover:text-[#FF211F] font-semibold gap-1.5 px-4" data-testid="profile-cta-payouts">
+                    <BarChart3 className="h-4 w-4" /> Payout dashboard
+                  </Button>
+                </Link>
+                <Link to="/wallet">
+                  <Button variant="outline" className="h-9 rounded-full bg-white/10 backdrop-blur-sm border-white/40 text-white hover:bg-white hover:text-[#FF211F] font-semibold gap-1.5 px-4" data-testid="profile-cta-wallet">
+                    <WalletIcon className="h-4 w-4" /> Wallet
+                  </Button>
+                </Link>
+                <button
+                  onClick={shareProfile}
+                  className="h-9 rounded-full bg-white/10 backdrop-blur-sm border border-white/40 text-white hover:bg-white/20 font-semibold gap-1.5 px-3 inline-flex items-center transition"
+                  data-testid="profile-cta-share"
+                >
+                  <Share2 className="h-4 w-4" /> Share
+                </button>
+              </div>
+            </div>
           </div>
-          <div className="text-sm text-neutral-500 flex items-center gap-3 mt-1">
-            <span className="flex items-center gap-1"><Star className="h-3 w-3 fill-yellow-400 text-yellow-400" /> {user.rating}</span>
-            <span>{user.sales_count} sales</span>
-            <span>Joined {new Date(user.created_at).toLocaleDateString()}</span>
+
+          {/* Stat cards row */}
+          <div className="mt-6 sm:mt-8 grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="rounded-2xl bg-white/15 backdrop-blur-sm ring-1 ring-white/25 p-4" data-testid="stat-available">
+              <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider font-semibold text-white/90">
+                <WalletIcon className="h-3 w-3" /> Available
+              </div>
+              <div className="mt-1.5 text-xl sm:text-2xl font-extrabold tabular-nums">{formatPrice(wallet.balance)}</div>
+              <div className="text-[11px] text-white/80 mt-0.5">Ready to withdraw</div>
+            </div>
+            <div className="rounded-2xl bg-amber-400/25 backdrop-blur-sm ring-1 ring-amber-200/40 p-4" data-testid="stat-frozen">
+              <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider font-semibold text-amber-50">
+                <Snowflake className="h-3 w-3" /> Frozen
+              </div>
+              <div className="mt-1.5 text-xl sm:text-2xl font-extrabold tabular-nums">{formatPrice(wallet.frozen_balance)}</div>
+              <div className="text-[11px] text-amber-50/90 mt-0.5">Releases on delivery</div>
+            </div>
+            <div className="rounded-2xl bg-emerald-400/25 backdrop-blur-sm ring-1 ring-emerald-200/40 p-4" data-testid="stat-earnings">
+              <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider font-semibold text-emerald-50">
+                <TrendingUp className="h-3 w-3" /> Lifetime sales
+              </div>
+              <div className="mt-1.5 text-xl sm:text-2xl font-extrabold tabular-nums">{formatPrice(totalEarnings)}</div>
+              <div className="text-[11px] text-emerald-50/90 mt-0.5">{sales.length} order{sales.length === 1 ? "" : "s"}</div>
+            </div>
+            <div className="rounded-2xl bg-white/15 backdrop-blur-sm ring-1 ring-white/25 p-4" data-testid="stat-listings">
+              <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider font-semibold text-white/90">
+                <PackageIcon className="h-3 w-3" /> Listings
+              </div>
+              <div className="mt-1.5 text-xl sm:text-2xl font-extrabold tabular-nums">{activeListings}</div>
+              <div className="text-[11px] text-white/80 mt-0.5">{soldListings} sold · {listings.length} total</div>
+            </div>
           </div>
-          <div className="mt-4 max-w-md"><DigestCard /></div>
+
+          {/* Referral code strip */}
+          {user.referral_code && (
+            <div className="mt-5 rounded-2xl bg-black/25 backdrop-blur-sm ring-1 ring-white/20 p-3 flex items-center gap-3 flex-wrap" data-testid="referral-strip">
+              <div className="h-8 w-8 shrink-0 rounded-lg bg-white/20 grid place-items-center">
+                <Users className="h-4 w-4" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-[10px] uppercase tracking-wider font-semibold text-white/80">Your referral code</div>
+                <div className="font-mono font-bold text-lg tracking-widest" data-testid="referral-code">{user.referral_code}</div>
+              </div>
+              <button
+                onClick={copyReferral}
+                className={`h-9 px-4 rounded-full font-semibold text-sm transition inline-flex items-center gap-1.5 ${copied ? "bg-emerald-400 text-emerald-900" : "bg-white text-[#FF211F] hover:bg-neutral-100"}`}
+                data-testid="referral-copy-btn"
+              >
+                {copied ? <><Check className="h-4 w-4" /> Copied!</> : <><Copy className="h-4 w-4" /> Copy link</>}
+              </button>
+              <Link to="/referrals" className="text-xs text-white/90 hover:text-white underline whitespace-nowrap">See referral earnings →</Link>
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Digest card in its own row (previously nested in hero) */}
+      <div className="mb-6"><DigestCard /></div>
 
       <Tabs value={tab} onValueChange={setStatus}>
         <TabsList className="mb-4">

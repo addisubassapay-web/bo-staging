@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import api, { formatPrice } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -93,7 +93,7 @@ const Wallet = () => {
               <span className="opacity-80">· released after delivery is confirmed</span>
             </div>
           )}
-          <div className="mt-4 flex gap-2">
+          <div className="mt-4 flex gap-2 flex-wrap">
             <Dialog open={wdOpen} onOpenChange={setWdOpen}>
               <DialogTrigger asChild>
                 <Button variant="secondary" className="bg-white text-[#FF211F] hover:bg-neutral-100">Withdraw</Button>
@@ -113,6 +113,11 @@ const Wallet = () => {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
+            <Link to="/seller/payouts">
+              <Button variant="secondary" className="bg-white/20 hover:bg-white/30 text-white border border-white/40" data-testid="wallet-open-dashboard">
+                Open payout dashboard →
+              </Button>
+            </Link>
           </div>
         </div>
 

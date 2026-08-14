@@ -26,6 +26,11 @@ Exact replica of Mercari platform (mercari.com) — same color scheme (`#FF211F`
 
 ## Implemented (with dates)
 
+### Feb 2026 — Profile Hero Modernization + Payout Dashboard + Dropship Earnings Preview
+- **Profile hero redesigned** (`Profile.jsx`) — replaced the flat neutral header with a full-bleed gradient card (orange→red) featuring decorative blur blobs, subtle grid pattern, a rounded-square avatar with ring, chips for verification/role/tenure, 4 glass-morphic stat cards (Available / Frozen / Lifetime sales / Listings), 4 quick-action CTAs (Sell / Payout dashboard / Wallet / Share), and a copyable referral-code strip. Fully dark-mode compatible; hero data auto-loads from `/api/wallet`.
+- **Payout Dashboard** (`/seller/payouts`, `PayoutDashboard.jsx`, `GET /api/wallet/payout-dashboard?days=…`) — new standalone view that aggregates available balance, frozen amount, pending withdrawals, and lifetime total on gradient stat cards; a Recharts area chart plots frozen-in vs released vs withdrawn over a 7/30/90/180-day window; window totals row + Top-5 selling listings + Next-expected-release card + "Request withdrawal" CTA. Wallet page has a new "Open payout dashboard →" button.
+- **Dropship earnings preview** (`ListingDetail.jsx` — `DropshipImportButton`) — the Import & resell dialog now fetches public settings to show: original seller price, your markup, buyer pays, minus platform fee %, minus paid-to-original-seller, and a highlighted "You earn per sale" with margin % and a "frozen until delivery" note. Quick presets 10/20/35/50 %, live max-markup cap validation, and negative-earning guard-rail that disables the Import button.
+
 ### Feb 2026 — Wallet Freeze/Release + Admin-Set Delivery ETA
 - **User model**: added `wallet_frozen_balance` alongside `wallet_balance` (available).
 - **Settings**: new `delivery_days_estimate` (default 7) and `delivery_auto_release_days` (default 14), both admin-controlled via `PUT /api/admin/settings`.

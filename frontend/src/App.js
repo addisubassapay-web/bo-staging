@@ -27,6 +27,7 @@ import StorePage from "@/pages/StorePage";
 import AffiliateRedirect from "@/pages/AffiliateRedirect";
 import { ChatThreads, ChatRoom } from "@/pages/Chat";
 import StoreAnalytics from "@/pages/StoreAnalytics";
+import PayoutDashboard from "@/pages/PayoutDashboard";
 import Verification from "@/pages/Verification";
 import SellerApply from "@/pages/SellerApply";
 import EditListing from "@/pages/EditListing";
@@ -60,6 +61,7 @@ function App() {
                     <Route path="/referrals" element={<Referrals />} />
                     <Route path="/my/store" element={<StoreManage />} />
                     <Route path="/store/analytics" element={<StoreAnalytics />} />
+                    <Route path="/seller/payouts" element={<PayoutDashboard />} />
                     <Route path="/store/:slug" element={<StorePage />} />
                     <Route path="/chat" element={<ChatThreads />} />
                     <Route path="/chat/:listingId/:otherId" element={<ChatRoom />} />

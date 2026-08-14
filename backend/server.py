@@ -1393,6 +1393,139 @@ async def my_referrals(user: dict = Depends(get_current_user)):
 # =========================
 # WALLET
 # =========================
+@api_router.get("/wallet/payout-dashboard")
+async def payout_dashboard(days: int = 30, user: dict = Depends(get_current_user)):
+    """Aggregated seller payout view: current balances + a per-day timeline for the
+    last `days` days broken down by kind (sale_frozen, sale_released, dropship_*,
+    referral, affiliate, withdrawal, refund) plus top selling listings."""
+    days = max(7, min(int(days or 30), 180))
+    since = datetime.now(timezone.utc) - timedelta(days=days)
+    fresh = await db.users.find_one(
+        {"id": user["id"]},
+        {"_id": 0, "wallet_balance": 1, "wallet_frozen_balance": 1},
+    ) or {}
+    available = float(fresh.get("wallet_balance", 0.0))
+    frozen = float(fresh.get("wallet_frozen_balance", 0.0))
+    pending_wd_docs = await db.withdrawals.find(
+        {"user_id": user["id"], "status": {"$in": ["pending", "approved"]}},
+        {"_id": 0, "amount": 1, "status": 1, "created_at": 1},
+    ).to_list(200)
+    pending_withdrawals_total = round(sum(float(w.get("amount", 0.0)) for w in pending_wd_docs), 2)
+
+    # Per-day timeline
+    tx_docs = await db.wallet_txs.find(
+        {"user_id": user["id"], "created_at": {"$gte": since}},
+        {"_id": 0, "type": 1, "amount": 1, "created_at": 1},
+    ).sort("created_at", 1).to_list(2000)
+
+    def bucket_key(dt) -> str:
+        if isinstance(dt, str):
+            try:
+                dt = datetime.fromisoformat(dt.replace("Z", "+00:00"))
+            except Exception:
+                return "unknown"
+        return dt.date().isoformat()
+
+    # Prime every day so the chart has continuous points
+    timeline: dict = {}
+    today = datetime.now(timezone.utc).date()
+    for i in range(days, -1, -1):
+        key = (today - timedelta(days=i)).isoformat()
+        timeline[key] = {
+            "date": key, "frozen_in": 0.0, "released": 0.0, "resell_frozen_in": 0.0,
+            "resell_released": 0.0, "affiliate": 0.0, "referral": 0.0,
+            "withdrawal": 0.0, "refund": 0.0, "adjustment": 0.0, "bonus": 0.0, "net": 0.0,
+        }
+    for t in tx_docs:
+        key = bucket_key(t.get("created_at"))
+        if key not in timeline:
+            continue
+        amt = float(t.get("amount", 0.0))
+        typ = t.get("type", "")
+        if typ == "sale_frozen":
+            timeline[key]["frozen_in"] += amt
+        elif typ in ("sale", "sale_released"):
+            timeline[key]["released"] += amt
+        elif typ == "dropship_frozen":
+            timeline[key]["resell_frozen_in"] += amt
+        elif typ in ("dropship", "dropship_released"):
+            timeline[key]["resell_released"] += amt
+        elif typ == "affiliate":
+            timeline[key]["affiliate"] += amt
+        elif typ == "referral":
+            timeline[key]["referral"] += amt
+        elif typ == "withdrawal":
+            timeline[key]["withdrawal"] += amt  # already negative
+        elif typ == "refund":
+            timeline[key]["refund"] += amt
+        elif typ == "adjustment":
+            timeline[key]["adjustment"] += amt
+        elif typ == "bonus":
+            timeline[key]["bonus"] += amt
+        timeline[key]["net"] += amt
+    # Round each field for a clean payload
+    for row in timeline.values():
+        for k, v in row.items():
+            if isinstance(v, float):
+                row[k] = round(v, 2)
+    timeline_list = list(timeline.values())
+
+    # Totals over window
+    total_earned = round(sum(r["frozen_in"] + r["released"] + r["resell_frozen_in"] + r["resell_released"] + r["affiliate"] + r["referral"] + r["refund"] + r["bonus"] for r in timeline_list), 2)
+    total_released = round(sum(r["released"] + r["resell_released"] for r in timeline_list), 2)
+    total_frozen_in = round(sum(r["frozen_in"] + r["resell_frozen_in"] for r in timeline_list), 2)
+    total_withdrawn = round(-sum(r["withdrawal"] for r in timeline_list), 2)  # positive number
+
+    # Top selling listings (delivered sales in window)
+    top_agg = [
+        {"$match": {"seller_id": user["id"], "created_at": {"$gte": since}}},
+        {"$group": {
+            "_id": "$listing_id",
+            "title": {"$first": "$listing_title"},
+            "image": {"$first": "$listing_image"},
+            "sales": {"$sum": 1},
+            "earnings": {"$sum": "$seller_earnings"},
+        }},
+        {"$sort": {"earnings": -1}},
+        {"$limit": 5},
+    ]
+    top_listings = [
+        {
+            "listing_id": r["_id"], "title": r.get("title") or "",
+            "image": r.get("image"), "sales": int(r.get("sales", 0)),
+            "earnings": round(float(r.get("earnings", 0.0)), 2),
+        }
+        async for r in db.orders.aggregate(top_agg)
+    ]
+
+    # Next expected release (oldest un-released order still frozen)
+    next_release_doc = await db.orders.find_one(
+        {"seller_id": user["id"], "funds_released": False, "seller_earnings": {"$gt": 0}},
+        {"_id": 0, "id": 1, "listing_title": 1, "seller_earnings": 1, "estimated_delivery_at": 1, "created_at": 1},
+        sort=[("estimated_delivery_at", 1)],
+    )
+
+    return {
+        "balances": {
+            "available": round(available, 2),
+            "frozen": round(frozen, 2),
+            "pending_withdrawals": pending_withdrawals_total,
+            "lifetime_total": round(available + frozen + pending_withdrawals_total, 2),
+        },
+        "window": {
+            "days": days,
+            "total_earned": total_earned,
+            "total_released": total_released,
+            "total_frozen_in": total_frozen_in,
+            "total_withdrawn": total_withdrawn,
+        },
+        "timeline": timeline_list,
+        "top_listings": top_listings,
+        "next_release": next_release_doc,
+        "pending_withdrawals_list": pending_wd_docs,
+    }
+
+
 @api_router.get("/wallet")
 async def get_wallet(user: dict = Depends(get_current_user)):
     txs = await db.wallet_txs.find({"user_id": user["id"]}, {"_id": 0}).sort("created_at", -1).to_list(200)

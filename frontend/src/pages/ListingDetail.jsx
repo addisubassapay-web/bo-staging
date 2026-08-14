@@ -91,6 +91,13 @@ const AffiliateShareButton = ({ listingId }) => {
   );
 };
 
+const DropshipRowLine = ({ label, value, tone = "" }) => (
+  <div className="flex justify-between items-center text-sm">
+    <span className="text-neutral-600 dark:text-neutral-300">{label}</span>
+    <span className={`tabular-nums font-medium ${tone}`}>{value}</span>
+  </div>
+);
+
 const DropshipImportButton = ({ listing, onImported }) => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -98,13 +105,35 @@ const DropshipImportButton = ({ listing, onImported }) => {
   const [open, setOpen] = useState(false);
   const [markup, setMarkup] = useState(20);
   const [loading, setLoading] = useState(false);
+  const [settings, setSettings] = useState({ platform_fee_pct: 8, dropship_max_markup_pct: 100 });
+
+  useEffect(() => {
+    if (!open) return;
+    api.get("/settings/public").then((r) => setSettings((s) => ({ ...s, ...r.data }))).catch(() => {});
+    api.get("/admin/settings").then((r) => setSettings((s) => ({ ...s, ...r.data }))).catch(() => {}); // admins get extra fields; others silently fail
+  }, [open]);
+
+  const markupNum = Math.max(0, Number(markup) || 0);
+  const basePrice = Number(listing.price) || 0;
+  const salePrice = +(basePrice * (1 + markupNum / 100)).toFixed(2);
+  const platformFeePct = Number(settings.platform_fee_pct ?? 8);
+  const maxMarkup = Number(settings.dropship_max_markup_pct ?? 100);
+  const platformFee = +(salePrice * platformFeePct / 100).toFixed(2);
+  const sourceEarnings = basePrice; // seller of original listing always keeps base_price on dropship sales
+  const resellerEarnings = Math.max(0, +(salePrice - platformFee - sourceEarnings).toFixed(2));
+  const marginPct = salePrice > 0 ? +((resellerEarnings / salePrice) * 100).toFixed(1) : 0;
+  const overCap = markupNum > maxMarkup;
 
   const doImport = async () => {
     if (!user) { navigate("/login"); return; }
+    if (overCap) {
+      toast({ title: "Markup too high", description: `Max allowed is ${maxMarkup}%.`, variant: "destructive" });
+      return;
+    }
     setLoading(true);
     try {
-      const { data } = await api.post("/listings/import", { listing_id: listing.id, markup_pct: parseFloat(markup) });
-      toast({ title: "Imported to your store", description: "You'll earn the markup on every sale." });
+      const { data } = await api.post("/listings/import", { listing_id: listing.id, markup_pct: markupNum });
+      toast({ title: "Imported to your store", description: `You'll pocket ${formatPrice(resellerEarnings)} per sale.` });
       setOpen(false);
       onImported?.(data.id);
     } catch (err) {
@@ -114,34 +143,91 @@ const DropshipImportButton = ({ listing, onImported }) => {
     }
   };
 
-  const newPrice = (listing.price * (1 + markup / 100)).toFixed(2);
-  const earn = (listing.price * markup / 100).toFixed(2);
+  const RowLine = DropshipRowLine;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button type="button" variant="outline" className="h-11">
+        <Button type="button" variant="outline" className="h-11" data-testid="dropship-import-btn">
           <PackagePlus className="h-4 w-4 mr-2" /> Import & resell
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent data-testid="dropship-import-dialog">
         <DialogHeader><DialogTitle>Import to your store</DialogTitle></DialogHeader>
-        <p className="text-sm text-neutral-600">
-          Sell this item without holding inventory. Set your markup — you earn the difference, the original seller fulfills.
+        <p className="text-sm text-neutral-600 dark:text-neutral-300">
+          Sell this item without holding inventory. Set your markup — the original seller fulfills, you keep the difference minus the platform fee.
         </p>
+
         <div className="mt-3">
-          <Label>Markup %</Label>
-          <Input type="number" min="0" max="100" value={markup} onChange={(e) => setMarkup(e.target.value)} className="mt-1" />
+          <div className="flex items-center justify-between mb-1">
+            <Label htmlFor="dropship-markup">Markup %</Label>
+            <span className="text-[11px] text-neutral-500 dark:text-neutral-400">Max allowed: {maxMarkup}%</span>
+          </div>
+          <Input
+            id="dropship-markup"
+            type="number"
+            min="0"
+            max={maxMarkup}
+            value={markup}
+            onChange={(e) => setMarkup(e.target.value)}
+            className={`mt-1 ${overCap ? "border-red-500 focus-visible:ring-red-500" : ""}`}
+            data-testid="dropship-markup-input"
+          />
+          {/* Quick markup presets */}
+          <div className="mt-2 flex gap-1.5">
+            {[10, 20, 35, 50].filter((v) => v <= maxMarkup).map((v) => (
+              <button
+                key={v}
+                type="button"
+                onClick={() => setMarkup(v)}
+                className={`px-2.5 h-7 rounded-full text-xs font-medium transition ${Number(markup) === v ? "bg-[#FF211F] text-white" : "bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-200 dark:hover:bg-neutral-700"}`}
+                data-testid={`dropship-markup-preset-${v}`}
+              >
+                {v}%
+              </button>
+            ))}
+          </div>
         </div>
-        <div className="mt-3 bg-neutral-50 rounded-lg p-3 text-sm space-y-1">
-          <div className="flex justify-between"><span>Base price</span><span>${listing.price.toFixed(2)}</span></div>
-          <div className="flex justify-between"><span>Your listing price</span><span className="font-semibold">${newPrice}</span></div>
-          <div className="flex justify-between text-green-600"><span>You earn per sale</span><span className="font-semibold">${earn}</span></div>
+
+        {/* Earnings preview */}
+        <div className="mt-3 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-gradient-to-br from-neutral-50 to-white dark:from-neutral-900 dark:to-neutral-950 p-4 space-y-1.5" data-testid="dropship-earnings-preview">
+          <RowLine label="Original seller price" value={formatPrice(basePrice)} />
+          <RowLine label={`Your markup (+${markupNum}%)`} value={`+${formatPrice(salePrice - basePrice)}`} tone="text-[#FF7A18]" />
+          <div className="h-px bg-neutral-200 dark:bg-neutral-800 my-1.5" />
+          <RowLine label="Buyer pays (your listing)" value={formatPrice(salePrice)} tone="font-semibold text-neutral-900 dark:text-neutral-100" />
+          <RowLine label={`Platform fee (${platformFeePct}%)`} value={`−${formatPrice(platformFee)}`} tone="text-neutral-500" />
+          <RowLine label="Paid to original seller" value={`−${formatPrice(sourceEarnings)}`} tone="text-neutral-500" />
+          <div className="h-px bg-neutral-200 dark:bg-neutral-800 my-1.5" />
+          <div className="flex justify-between items-baseline">
+            <span className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">You earn per sale</span>
+            <div className="text-right">
+              <div className="text-xl font-extrabold text-emerald-600 tabular-nums" data-testid="dropship-earn-amount">
+                {formatPrice(resellerEarnings)}
+              </div>
+              <div className="text-[11px] text-neutral-500 dark:text-neutral-400 tabular-nums" data-testid="dropship-margin-pct">
+                {marginPct}% margin
+              </div>
+            </div>
+          </div>
+          {resellerEarnings <= 0 && (
+            <div className="mt-1 text-[11px] text-red-600 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 rounded-lg px-2 py-1">
+              Your markup won&apos;t cover the platform fee. Bump it up a bit.
+            </div>
+          )}
+          {overCap && (
+            <div className="mt-1 text-[11px] text-red-600 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 rounded-lg px-2 py-1">
+              Markup exceeds the platform cap of {maxMarkup}%.
+            </div>
+          )}
+          <div className="mt-1 text-[11px] text-neutral-500 dark:text-neutral-400">
+            Note: earnings stay <span className="font-medium">frozen</span> until the buyer confirms delivery.
+          </div>
         </div>
+
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-          <Button type="button" className="bg-[#FF211F] hover:bg-[#e01d1b]" onClick={doImport} disabled={loading}>
-            {loading ? "Importing…" : "Import"}
+          <Button type="button" className="bg-[#FF211F] hover:bg-[#e01d1b]" onClick={doImport} disabled={loading || overCap || resellerEarnings <= 0} data-testid="dropship-import-submit">
+            {loading ? "Importing…" : `Import & earn ${formatPrice(resellerEarnings)}/sale`}
           </Button>
         </DialogFooter>
       </DialogContent>
