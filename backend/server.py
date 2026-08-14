@@ -238,6 +238,9 @@ class Order(BaseModel):
     referral_payouts: List[dict] = []  # [{level, user_id, amount}]
     dropship_source_seller_id: Optional[str] = None
     dropship_source_earnings: float = 0.0
+    # Reseller wholesale-debit fulfillment (Feb 2026):
+    reseller_wholesale_cost: float = 0.0
+    reseller_paid_wholesale: bool = False
     # Phase 2: Shipping (MOCKED EasyPost/Shippo)
     tracking_number: Optional[str] = None
     carrier: Optional[str] = None
@@ -1060,17 +1063,41 @@ async def create_order(payload: OrderCreate, user: dict = Depends(get_current_us
                 affiliate_earnings = round(amount * settings["affiliate_commission_pct"] / 100.0, 2)
                 affiliate_user_id = affiliate_link["affiliate_user_id"]
 
-    # Dropship: original seller earnings
+    # Dropship / Reseller wholesale flow ---------------------------------
     dropship_source_seller_id = None
     dropship_source_earnings = 0.0
+    reseller_wholesale_cost = 0.0
+    reseller_paid_wholesale = False
     if listing.get("imported_from_id") and listing.get("base_price"):
         original = await db.listings.find_one({"id": listing["imported_from_id"]}, {"_id": 0, "seller_id": 1})
         if original and original.get("seller_id"):
             dropship_source_seller_id = original["seller_id"]
-            dropship_source_earnings = float(listing["base_price"])
+            retail_base = float(listing["base_price"])
+            reseller_user = await db.users.find_one({"id": listing["seller_id"]}, {"_id": 0})
+            if reseller_user:
+                badge = compute_seller_badge(reseller_user)
+                discounts = settings.get("resell_wholesale_discounts") or {"new": 0.0, "bronze": 5.0, "silver": 10.0, "gold": 15.0}
+                discount_pct = float(discounts.get(badge, 0.0))
+                wholesale_cost = round(retail_base * (1 - discount_pct / 100.0), 2)
+                # Atomic wallet debit — only debits if reseller has enough available balance.
+                debit_res = await db.users.update_one(
+                    {"id": listing["seller_id"], "wallet_balance": {"$gte": wholesale_cost}},
+                    {"$inc": {"wallet_balance": -wholesale_cost}},
+                )
+                if debit_res.modified_count == 1:
+                    reseller_paid_wholesale = True
+                    reseller_wholesale_cost = wholesale_cost
+                    dropship_source_earnings = wholesale_cost
+                else:
+                    dropship_source_earnings = retail_base
+            else:
+                dropship_source_earnings = retail_base
 
-    # Reseller (current seller) earnings = amount - platform_fee - affiliate - dropship_source
-    seller_earnings = round(amount - platform_fee - affiliate_earnings - dropship_source_earnings, 2)
+    # Reseller earnings — if wholesale was pre-paid from wallet, they keep amount - fees.
+    if reseller_paid_wholesale:
+        seller_earnings = round(amount - platform_fee - affiliate_earnings, 2)
+    else:
+        seller_earnings = round(amount - platform_fee - affiliate_earnings - dropship_source_earnings, 2)
     if seller_earnings < 0:
         seller_earnings = 0.0
 
@@ -1105,6 +1132,8 @@ async def create_order(payload: OrderCreate, user: dict = Depends(get_current_us
         referral_payouts=referral_payouts,
         dropship_source_seller_id=dropship_source_seller_id,
         dropship_source_earnings=dropship_source_earnings,
+        reseller_wholesale_cost=reseller_wholesale_cost,
+        reseller_paid_wholesale=reseller_paid_wholesale,
         estimated_delivery_at=datetime.now(timezone.utc) + timedelta(days=int(settings.get("delivery_days_estimate", 7))),
     )
     await db.orders.insert_one(order.model_dump())
@@ -1129,6 +1158,20 @@ async def create_order(payload: OrderCreate, user: dict = Depends(get_current_us
             dropship_source_seller_id, dropship_source_earnings, "dropship_frozen",
             f"Dropship sale (held until delivery): {listing['title']}", order.id, frozen=True,
         )
+    # If reseller wallet was debited for wholesale, log the transaction so the
+    # debit is visible in their wallet history.
+    if reseller_paid_wholesale and reseller_wholesale_cost > 0:
+        fresh = await db.users.find_one({"id": listing["seller_id"]}, {"_id": 0, "wallet_balance": 1}) or {}
+        tx = WalletTransaction(
+            user_id=listing["seller_id"],
+            type="adjustment",
+            amount=-reseller_wholesale_cost,
+            balance_after=float(fresh.get("wallet_balance", 0.0)),
+            description=f"Wholesale cost auto-paid: {listing['title']}",
+            related_id=order.id,
+            status="completed",
+        )
+        await db.wallet_txs.insert_one(tx.model_dump())
     for rp in referral_payouts:
         await credit_wallet(rp["user_id"], rp["amount"], "referral", f"Referral L{rp['level']} bonus", order.id)
 
@@ -1150,6 +1193,11 @@ async def create_order(payload: OrderCreate, user: dict = Depends(get_current_us
         await notify(dropship_source_seller_id, "sale",
                      f"Dropship sale: {listing['title']}",
                      f"Earnings ${dropship_source_earnings:.2f} are held until delivery is confirmed.", None)
+    if reseller_paid_wholesale and reseller_wholesale_cost > 0:
+        await notify(listing["seller_id"], "wallet",
+                     f"Wholesale ${reseller_wholesale_cost:.2f} debited",
+                     f"Auto-paid to the source seller for: {listing['title']}",
+                     "/wallet")
 
     return order
 

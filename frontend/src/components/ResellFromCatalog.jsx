@@ -10,6 +10,7 @@ import {
   Search, Package as PackageIcon, Award, Loader2, ArrowRight, ShieldCheck,
   FolderTree, Sparkles, TrendingDown,
 } from "lucide-react";
+import { StorefrontShareDialog } from "@/components/StorefrontShare";
 
 const BADGE_META = {
   new: { label: "New seller", color: "bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-200" },
@@ -64,10 +65,14 @@ const ResellFromCatalog = () => {
   const [picked, setPicked] = useState(null);
   const [markup, setMarkup] = useState(20);
   const [submitting, setSubmitting] = useState(false);
+  const [publishedListing, setPublishedListing] = useState(null);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [myStoreSlug, setMyStoreSlug] = useState(null);
 
   useEffect(() => {
     api.get("/seller/resell-info").then((r) => setInfo(r.data)).catch(() => {});
     api.get("/categories").then((r) => setCategories(r.data || [])).catch(() => {});
+    api.get("/my/store").then((r) => setMyStoreSlug(r.data?.slug || null)).catch(() => {});
   }, []);
 
   // Load products by category
@@ -123,11 +128,19 @@ const ResellFromCatalog = () => {
     try {
       const { data } = await api.post("/listings/import", { listing_id: picked.id, markup_pct: cappedMarkup });
       toast({ title: "Listed as reseller!", description: `You'll earn ${formatPrice(preview.yours)} per sale.` });
-      navigate(`/listing/${data.id}`);
+      setPublishedListing(data);
+      setShareOpen(true);
     } catch (err) {
       toast({ title: "Could not publish", description: err.response?.data?.detail || "Try again", variant: "destructive" });
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const onShareClose = (open) => {
+    setShareOpen(open);
+    if (!open && publishedListing) {
+      navigate(`/listing/${publishedListing.id}`);
     }
   };
 
@@ -374,6 +387,14 @@ const ResellFromCatalog = () => {
           Start typing to search the catalog.
         </div>
       )}
+
+      <StorefrontShareDialog
+        open={shareOpen}
+        onOpenChange={onShareClose}
+        listing={publishedListing}
+        storeSlug={myStoreSlug}
+        headline="Published! Share it to boost your first sale"
+      />
     </div>
   );
 };

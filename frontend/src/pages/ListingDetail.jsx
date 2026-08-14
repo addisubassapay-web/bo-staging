@@ -13,6 +13,7 @@ import { ListingReviews } from "@/components/Reviews";
 import { VerificationBadges } from "@/components/VerificationBadges";
 import ProductCard from "@/components/ProductCard";
 import SimilarItems from "@/components/SimilarItems";
+import StorefrontShareButton from "@/components/StorefrontShare";
 import { useLang } from "@/context/LanguageContext";
 
 const SellerBlock = ({ sellerId, sellerName, views }) => {
@@ -247,6 +248,7 @@ const ListingDetail = () => {
   const [fav, setFav] = useState(false);
   const [inCart, setInCart] = useState(false);
   const [bundle, setBundle] = useState([]);
+  const [myStoreSlug, setMyStoreSlug] = useState(null);
 
   const load = () => {
     setLoading(true);
@@ -264,6 +266,7 @@ const ListingDetail = () => {
       api.get("/favorites").then((r) => setFav(r.data.some((l) => l.id === id))).catch(() => {});
       api.get("/cart").then((r) => setInCart(r.data.some((l) => l.id === id))).catch(() => {});
       api.post(`/recently-viewed/${id}`).catch(() => {});
+      api.get("/my/store").then((r) => setMyStoreSlug(r.data?.slug || null)).catch(() => {});
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, user]);
@@ -433,8 +436,11 @@ const ListingDetail = () => {
             </div>
           )}
           {isOwn && (
-            <div className="mt-6 p-4 rounded-2xl bg-orange-50 dark:bg-[#FF7A18]/10 border border-orange-200 dark:border-orange-500/30 text-sm text-neutral-700 dark:text-neutral-200">
-              {t("listing.yourListing")} <Link to="/profile?tab=listings" className="text-[#FF211F] font-semibold hover:underline">{t("listing.profile")}</Link>.
+            <div className="mt-6 p-4 rounded-2xl bg-orange-50 dark:bg-[#FF7A18]/10 border border-orange-200 dark:border-orange-500/30 space-y-3">
+              <div className="text-sm text-neutral-700 dark:text-neutral-200">
+                {t("listing.yourListing")} <Link to="/profile?tab=listings" className="text-[#FF211F] font-semibold hover:underline">{t("listing.profile")}</Link>.
+              </div>
+              <StorefrontShareButton listing={listing} storeSlug={myStoreSlug} label="Share to boost sales" className="w-full" />
             </div>
           )}
           {isSold && !isOwn && (

@@ -26,6 +26,17 @@ Exact replica of Mercari platform (mercari.com) — same color scheme (`#FF211F`
 
 ## Implemented (with dates)
 
+### Feb 2026 — Wallet Wholesale Auto-Debit + Storefront Share Dialog
+- **Order model** — added `reseller_wholesale_cost` and `reseller_paid_wholesale` fields.
+- **`POST /api/orders`** — on imported (resell) listings, atomically debits the reseller's `wallet_balance` for their tier-based wholesale cost (`base_price × (1 − discount_pct)`) using a conditional `$gte` update to prevent oversell. On success, source seller earns wholesale cost (frozen), reseller earns `amount − platform_fee − affiliate` (keeps more since wholesale is pre-paid). Falls back to buyer-funded split when balance is insufficient — no sale is ever blocked.
+- **Wallet history** — records an `adjustment −wholesale_cost` transaction (`"Wholesale cost auto-paid: <title>"`) and a wallet notification for the reseller.
+- **`StorefrontShare.jsx`** — new reusable component (`StorefrontShareDialog` + `StorefrontShareButton`) with product preview, storefront URL, listing URL (both copy buttons), ready-to-post caption (auto-generated with title + price + hashtags), and one-tap share intents for Twitter/X, Facebook, WhatsApp, Telegram + native "More…" via `navigator.share`.
+- **ListingDetail** — when viewing your own listing, shows a full-width **"Share to boost sales"** pill button that opens the share dialog. Fetches user's store slug from `/api/my/store`.
+- **ResellFromCatalog** — after publish, the share dialog opens automatically with a "Published! Share it to boost your first sale" headline; closing navigates to the listing detail page.
+- **End-to-end verified via curl:** silver reseller imports $8.99 base @ 30% markup → priced $11.69. Admin buys → order shows `reseller_wholesale_cost: $8.09`, `reseller_paid_wholesale: True`; reseller wallet debited 8.09 available + credited 11.69 frozen; wallet_txs shows both entries.
+- **Screenshots verified** on 390×844 mobile: listing page own-view share button, share dialog with preview + copy + channel buttons, wallet after debit.
+- Backend + frontend lint clean.
+
 ### Feb 2026 — Category-Based Reseller Workflow + Deposit Screenshots + Refunds View + Wholesale Discount Tiers
 - **Backend `Settings`** — added `resell_wholesale_discounts` per tier (`new:0`, `bronze:5`, `silver:10`, `gold:15`). Whitelisted in `PUT /api/admin/settings`.
 - **`GET /api/seller/resell-info`** — now returns `resell_wholesale_discounts` (full map) + `wholesale_discount_pct` (this user's live rate).
