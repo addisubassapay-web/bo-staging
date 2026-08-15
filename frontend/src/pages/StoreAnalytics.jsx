@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import confetti from "canvas-confetti";
 import {
   TrendingUp, DollarSign, Package, Eye, Heart, Wallet, Clock,
-  ArrowUpRight, Sparkles, Zap, Target, PartyPopper, TrendingDown, Trophy,
+  ArrowUpRight, Sparkles, Zap, Target, PartyPopper, TrendingDown, Trophy, Plus, PackagePlus, Rocket, Store as StoreIcon,
 } from "lucide-react";
 
 const money = (n) => `$${Number(n || 0).toFixed(2)}`;
@@ -191,10 +191,22 @@ const WeeklyRecapCard = ({ recap, currentEarnings = 0 }) => {
 const StoreAnalytics = () => {
   const { user, loading: authLoading } = useAuth();
   const [data, setData] = useState(null);
+  const [latestPublished, setLatestPublished] = useState([]);
+  const [myStoreSlug, setMyStoreSlug] = useState(null);
 
   useEffect(() => {
     if (!user) return;
     api.get("/seller/dashboard").then((r) => setData(r.data)).catch(() => {});
+    api.get("/my/store").then((r) => {
+      const slug = r.data?.slug;
+      setMyStoreSlug(slug || null);
+      if (slug) {
+        api.get(`/stores/${slug}/listings`).then((res) => {
+          const sorted = [...(res.data || [])].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+          setLatestPublished(sorted.slice(0, 8));
+        }).catch(() => {});
+      }
+    }).catch(() => {});
   }, [user]);
 
   // NOTE: the milestone-based celebrations useEffect above replaces the older 100%-only handler.
@@ -222,12 +234,35 @@ const StoreAnalytics = () => {
         </div>
       )}
       {/* Header banner */}
-      <div className="rounded-2xl bg-gradient-to-r from-[#FF7A18] via-[#FF5B22] to-[#FF211F] text-white p-6 sm:p-8 shadow-sm">
-        <div className="flex items-start justify-between flex-wrap gap-3">
+      <div className="relative rounded-3xl bg-gradient-to-br from-[#FF7A18] via-[#FF3D66] to-[#7C3AED] text-white p-6 sm:p-8 shadow-xl overflow-hidden">
+        <div className="pointer-events-none absolute -top-16 -right-10 h-64 w-64 rounded-full bg-white/20 blur-3xl animate-pulse" />
+        <div className="pointer-events-none absolute -bottom-20 left-1/4 h-72 w-72 rounded-full bg-amber-300/30 blur-3xl" />
+        <div className="pointer-events-none absolute top-1/3 -left-10 h-40 w-40 rounded-full bg-fuchsia-400/30 blur-3xl" />
+        <div className="relative flex items-start justify-between flex-wrap gap-3">
           <div>
-            <div className="text-xs uppercase tracking-wider opacity-80">Seller dashboard</div>
-            <h1 className="text-3xl sm:text-4xl font-extrabold mt-1">Hey, {user.username}</h1>
+            <div className="text-xs uppercase tracking-[0.2em] opacity-90 font-semibold">Seller dashboard</div>
+            <h1 className="text-3xl sm:text-4xl font-extrabold mt-1 tracking-tight">Hey, {user.username}</h1>
             <p className="text-white/90 mt-1">Here&apos;s how your store is performing right now.</p>
+            {/* Quick action buttons */}
+            <div className="mt-4 flex gap-2 flex-wrap">
+              <Link to="/sell">
+                <Button className="min-h-[44px] rounded-full bg-white text-[#FF211F] hover:bg-neutral-100 font-semibold gap-1.5 shadow-md" data-testid="dash-cta-new-listing">
+                  <PackagePlus className="h-4 w-4" /> New listing
+                </Button>
+              </Link>
+              <Link to="/sell">
+                <Button className="min-h-[44px] rounded-full bg-white/20 hover:bg-white/30 text-white border border-white/40 backdrop-blur gap-1.5" data-testid="dash-cta-resell">
+                  <Rocket className="h-4 w-4" /> Bulk resell
+                </Button>
+              </Link>
+              {myStoreSlug && (
+                <Link to={`/store/${myStoreSlug}`}>
+                  <Button className="min-h-[44px] rounded-full bg-white/20 hover:bg-white/30 text-white border border-white/40 backdrop-blur gap-1.5" data-testid="dash-cta-view-store">
+                    <StoreIcon className="h-4 w-4" /> View my store
+                  </Button>
+                </Link>
+              )}
+            </div>
           </div>
           <div className="flex items-center gap-4">
             <div className="text-right hidden sm:block">
@@ -254,29 +289,64 @@ const StoreAnalytics = () => {
             <ProgressRing pct={data.weekly?.progress_pct || 0} />
           </div>
         </div>
-        <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <div className="bg-white/15 backdrop-blur rounded-xl p-3">
+        <div className="relative mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+          <div className="bg-white/15 backdrop-blur rounded-xl p-3 border border-white/20">
             <div className="text-xs opacity-80">Today</div>
-            <div className="text-xl font-bold">{money(t.today_earnings)}</div>
+            <div className="text-xl font-bold tabular-nums">{money(t.today_earnings)}</div>
             <div className="text-[11px] opacity-80">{t.today_orders} orders</div>
           </div>
-          <div className="bg-white/15 backdrop-blur rounded-xl p-3">
+          <div className="bg-white/15 backdrop-blur rounded-xl p-3 border border-white/20">
             <div className="text-xs opacity-80">30-day earnings</div>
-            <div className="text-xl font-bold">{money(t.earnings_30d)}</div>
+            <div className="text-xl font-bold tabular-nums">{money(t.earnings_30d)}</div>
             <div className="text-[11px] opacity-80">{t.orders_30d} orders</div>
           </div>
-          <div className="bg-white/15 backdrop-blur rounded-xl p-3">
+          <div className="bg-white/15 backdrop-blur rounded-xl p-3 border border-white/20">
             <div className="text-xs opacity-80">Wallet</div>
-            <div className="text-xl font-bold">{money(t.wallet_balance)}</div>
+            <div className="text-xl font-bold tabular-nums">{money(t.wallet_balance)}</div>
             <div className="text-[11px] opacity-80">Available now</div>
           </div>
-          <div className="bg-white/15 backdrop-blur rounded-xl p-3">
+          <div className="bg-white/15 backdrop-blur rounded-xl p-3 border border-white/20">
             <div className="text-xs opacity-80">Pending payout</div>
-            <div className="text-xl font-bold">{money(t.pending_payout)}</div>
+            <div className="text-xl font-bold tabular-nums">{money(t.pending_payout)}</div>
             <div className="text-[11px] opacity-80">{t.pending_payout > 0 ? "Processing" : "Nothing pending"}</div>
           </div>
         </div>
       </div>
+
+      {/* Recently published — proves auto-attach to store works */}
+      {latestPublished.length > 0 && (
+        <div className="mt-6 rounded-2xl border border-neutral-200 bg-white p-5" data-testid="latest-published-strip">
+          <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
+            <div className="flex items-center gap-2">
+              <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-600 grid place-items-center shadow-sm">
+                <Sparkles className="h-4 w-4 text-white" />
+              </div>
+              <div>
+                <h2 className="font-bold text-neutral-900">Recently published in your store</h2>
+                <p className="text-xs text-neutral-500">Every new listing lands here — and in your storefront — instantly.</p>
+              </div>
+            </div>
+            {myStoreSlug && (
+              <Link to={`/store/${myStoreSlug}`} className="text-xs font-semibold text-[#FF7A18] hover:underline">View all →</Link>
+            )}
+          </div>
+          <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory -mx-5 px-5">
+            {latestPublished.slice(0, 8).map((l) => (
+              <Link key={l.id} to={`/listing/${l.id}`} className="snap-start shrink-0 w-[40%] sm:w-[160px] group">
+                <div className="rounded-xl overflow-hidden border border-neutral-200 group-hover:border-[#FF211F] transition">
+                  <div className="aspect-square bg-neutral-100 overflow-hidden">
+                    {(l.images?.[0]) && <img src={l.images[0]} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />}
+                  </div>
+                  <div className="p-2">
+                    <div className="text-xs font-medium text-neutral-800 line-clamp-1">{l.title}</div>
+                    <div className="text-sm font-bold text-[#FF211F] tabular-nums">{money(l.price)}</div>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Earnings chart */}
       <div className="mt-6 bg-white border border-neutral-200 rounded-2xl p-5">
@@ -360,6 +430,13 @@ const StoreAnalytics = () => {
           </div>
         </div>
       </div>
+
+      {/* Floating quick-action — mobile-friendly */}
+      <Link to="/sell" className="fixed bottom-6 right-6 z-40 sm:hidden" data-testid="dash-fab-new">
+        <div className="h-14 w-14 rounded-full bg-gradient-to-br from-[#FF7A18] to-[#FF211F] text-white shadow-2xl grid place-items-center hover:scale-105 active:scale-95 transition-transform">
+          <Plus className="h-6 w-6" />
+        </div>
+      </Link>
     </div>
   );
 };

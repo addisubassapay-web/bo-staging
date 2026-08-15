@@ -26,6 +26,16 @@ Exact replica of Mercari platform (mercari.com) — same color scheme (`#FF211F`
 
 ## Implemented (with dates)
 
+### Feb 2026 — Seller Dashboard Redesign + Quick-Action Buttons
+- **Vibrant hero redesign** (`StoreAnalytics.jsx`) — orange → pink → purple gradient with 3 soft glow orbs, matching the storefront hero for brand consistency. All stat pills upgraded with subtle borders + glassmorphism.
+- **Quick-action buttons in the hero**:
+  - **New listing** (white pill) → `/sell` — the primary path to publish an item.
+  - **Bulk resell** (glass pill) → `/sell` — jumps to the resell workflow.
+  - **View my store** (glass pill) → `/store/{mySlug}` — opens the seller's public storefront to visually verify auto-publish.
+- **Mobile FAB**: a floating **+** button (bottom-right, gradient orange→red, `sm:hidden`) provides one-tap access to `/sell` on mobile.
+- **"Recently published in your store" strip** — new section fetched from `/api/stores/{mySlug}/listings`, sorted by `created_at` desc. Shows 8 latest items in a horizontal snap-scroll with tagline "Every new listing lands here — and in your storefront — instantly." This proves the auto-attach behavior end-to-end for the seller.
+- **Verified via screenshots** on 390×844 mobile and 1440×900 desktop — hero renders 3 CTAs + progress ring + stats, strip lists Sophia's newest items (Clear Backpack $15.59, The Sak Lumi $83.99, Clear Bag $32.38, …), and mobile FAB shows as a shadow-boosted gradient circle.
+
 ### Feb 2026 — Store Follow Feed + Storefront Push Rewards
 - **`GET /api/feed/following?limit=20`** — returns fresh active listings from stores the current user follows, sorted newest first, excluding their own items. Auth-only.
 - **Home page** — new **"New from stores you follow"** section (purple "YOUR FOLLOWS" pill + filled Heart icon) in a horizontal snap-scroll strip. Only renders when the logged-in user follows at least one store with active inventory.
