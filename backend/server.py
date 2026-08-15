@@ -909,11 +909,16 @@ async def create_listing(payload: ListingCreate, user: dict = Depends(get_curren
     cat = await db.categories.find_one({"id": payload.category_id}, {"_id": 0})
     if not cat:
         raise HTTPException(400, "Invalid category")
+    # Safety net: ensure the seller has a storefront so the listing is instantly added to it.
+    store_id = user.get("store_id")
+    if not store_id and user.get("role") != "admin":
+        s = await ensure_store_for_user(user["id"])
+        store_id = s["id"] if s else None
     listing = Listing(
         seller_id=user["id"],
         seller_name=user["username"],
         category_name=cat["name"],
-        store_id=user.get("store_id"),
+        store_id=store_id,
         **payload.model_dump(),
     )
     await db.listings.insert_one(listing.model_dump())
@@ -1386,6 +1391,70 @@ async def create_store(payload: StoreCreate, user: dict = Depends(get_current_us
     await db.stores.insert_one(store.model_dump())
     await db.users.update_one({"id": user["id"]}, {"$set": {"store_id": store.id}})
     return store
+
+
+async def ensure_store_for_user(user_id: str) -> Optional[dict]:
+    """Auto-create a storefront for an approved seller if they don't have one yet."""
+    user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    if not user:
+        return None
+    if user.get("store_id"):
+        return await db.stores.find_one({"id": user["store_id"]}, {"_id": 0})
+
+    base_slug = re.sub(r"[^a-z0-9-]+", "-", (user.get("username") or "seller").lower()).strip("-") or "seller"
+    slug = base_slug
+    suffix = 1
+    while await db.stores.find_one({"slug": slug}, {"_id": 0, "id": 1}):
+        suffix += 1
+        slug = f"{base_slug}-{suffix}"
+    settings = await get_settings()
+    is_active = settings.get("store_mode", "auto") == "auto"
+    first = (user.get("first_name") or user.get("username") or "Seller").strip()
+    store = Store(
+        owner_id=user_id,
+        name=f"{first}'s Store" if first else "New Store",
+        slug=slug,
+        tagline="Curated with care",
+        bio="",
+        logo=user.get("avatar", ""),
+        banner="",
+        is_active=is_active,
+    )
+    await db.stores.insert_one(store.model_dump())
+    await db.users.update_one({"id": user_id}, {"$set": {"store_id": store.id}})
+    return store.model_dump()
+
+
+@api_router.post("/stores/{slug}/follow")
+async def follow_store(slug: str, user: dict = Depends(get_current_user)):
+    store = await db.stores.find_one({"slug": slug.lower()}, {"_id": 0})
+    if not store:
+        raise HTTPException(404, "Store not found")
+    if store["owner_id"] == user["id"]:
+        raise HTTPException(400, "You can't follow your own store")
+    existing = await db.store_follows.find_one({"store_id": store["id"], "user_id": user["id"]}, {"_id": 0})
+    if existing:
+        await db.store_follows.delete_one({"store_id": store["id"], "user_id": user["id"]})
+        await db.stores.update_one({"id": store["id"]}, {"$inc": {"followers_count": -1}})
+        following = False
+    else:
+        await db.store_follows.insert_one({
+            "store_id": store["id"], "user_id": user["id"],
+            "created_at": datetime.now(timezone.utc),
+        })
+        await db.stores.update_one({"id": store["id"]}, {"$inc": {"followers_count": 1}})
+        following = True
+    fresh = await db.stores.find_one({"id": store["id"]}, {"_id": 0, "followers_count": 1})
+    return {"following": following, "followers_count": int(fresh.get("followers_count", 0) or 0)}
+
+
+@api_router.get("/stores/{slug}/follow-status")
+async def follow_status(slug: str, user: dict = Depends(get_current_user)):
+    store = await db.stores.find_one({"slug": slug.lower()}, {"_id": 0, "id": 1, "followers_count": 1})
+    if not store:
+        raise HTTPException(404, "Store not found")
+    existing = await db.store_follows.find_one({"store_id": store["id"], "user_id": user["id"]}, {"_id": 0, "user_id": 1})
+    return {"following": bool(existing), "followers_count": int(store.get("followers_count", 0) or 0)}
 
 @api_router.get("/stores/{slug}", response_model=Store)
 async def get_store_by_slug(slug: str):
@@ -2055,6 +2124,11 @@ async def import_listing(payload: ImportPayload, user: dict = Depends(get_curren
         raise HTTPException(400, "Cannot import an already imported listing")
     base_price = float(original["price"])
     new_price = round(base_price * (1 + payload.markup_pct / 100.0), 2)
+    # Safety net: ensure the seller has a storefront to receive the imported listing.
+    store_id = user.get("store_id")
+    if not store_id and user.get("role") != "admin":
+        s = await ensure_store_for_user(user["id"])
+        store_id = s["id"] if s else None
     imported = Listing(
         seller_id=user["id"],
         seller_name=user["username"],
@@ -2071,7 +2145,7 @@ async def import_listing(payload: ImportPayload, user: dict = Depends(get_curren
         images=original.get("images", []),
         shipping_paid_by=original.get("shipping_paid_by", "seller"),
         shipping_method=original.get("shipping_method", "Standard"),
-        store_id=user.get("store_id"),
+        store_id=store_id,
         imported_from_id=original["id"],
         base_price=base_price,
     )
@@ -2106,6 +2180,11 @@ async def import_listings_bulk(payload: BulkImportPayload, user: dict = Depends(
 
     published: List[dict] = []
     skipped: List[dict] = []
+    # Safety net: ensure a storefront exists so all bulk-imported items are auto-attached.
+    store_id = user.get("store_id")
+    if not store_id and user.get("role") != "admin":
+        s = await ensure_store_for_user(user["id"])
+        store_id = s["id"] if s else None
     for it in payload.items:
         mk = float(it.markup_pct if it.markup_pct is not None else default_mk)
         if mk < 0 or mk > max_mk:
@@ -2143,7 +2222,7 @@ async def import_listings_bulk(payload: BulkImportPayload, user: dict = Depends(
             images=original.get("images", []),
             shipping_paid_by=original.get("shipping_paid_by", "seller"),
             shipping_method=original.get("shipping_method", "Standard"),
-            store_id=user.get("store_id"),
+            store_id=store_id,
             imported_from_id=original["id"],
             base_price=base_price,
         )
@@ -2743,6 +2822,7 @@ async def seller_apply(payload: SellerApplicationCreate, user: dict = Depends(ge
             {"id": user["id"]},
             {"$set": {"seller_status": "approved", "role": "user"}},
         )
+        await ensure_store_for_user(user["id"])
         await notify(
             user["id"], "system", "You're approved to sell! 🎉",
             f"Trust Score {ts['score']}/100 qualified you for instant approval. Start listing now.",
@@ -2829,6 +2909,7 @@ async def admin_review_seller_app(app_id: str, updates: dict, admin: dict = Depe
     )
     await db.users.update_one({"id": doc["user_id"]}, {"$set": {"seller_status": new_status}})
     if new_status == "approved":
+        await ensure_store_for_user(doc["user_id"])
         await notify(doc["user_id"], "system", "Seller application approved",
                      "You can now sell on Mercari. Connect your payout method.", "/verify")
     else:
@@ -2868,6 +2949,8 @@ async def admin_bulk_review_seller_apps(payload: dict, admin: dict = Depends(req
             }},
         )
         await db.users.update_one({"id": doc["user_id"]}, {"$set": {"seller_status": new_status}})
+        if new_status == "approved":
+            await ensure_store_for_user(doc["user_id"])
         if new_status == "approved":
             await notify(doc["user_id"], "system", "Seller application approved",
                          "You can now sell on Mercari. Connect your payout method.", "/verify")

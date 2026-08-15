@@ -26,6 +26,21 @@ Exact replica of Mercari platform (mercari.com) — same color scheme (`#FF211F`
 
 ## Implemented (with dates)
 
+### Feb 2026 — Auto-Store Creation + Store Redesign + Follow System
+- **Auto-store on approval**: added `ensure_store_for_user(user_id)` helper that generates a unique `{first_name}'s Store` with a slug based on the username (uniqueness-checked). Wired into all 3 approval paths: `POST /seller/apply` (auto-approve via trust score), `PUT /admin/seller-applications/{id}`, and `POST /admin/seller-applications/bulk-review`.
+- **Safety net**: `POST /listings`, `POST /listings/import`, and `POST /listings/import/bulk` now call `ensure_store_for_user` when the seller lacks a `store_id`, guaranteeing every published item is instantly attached to a storefront.
+- **New endpoints**: `POST /api/stores/{slug}/follow` (idempotent toggle, atomic `$inc` on `followers_count`, blocks self-follow) and `GET /api/stores/{slug}/follow-status`.
+- **Historical backfill**: 80 existing listings across all users had their `store_id` populated from their owner's user record — every legacy seller's storefront now shows their inventory.
+- **`StorePage.jsx` redesign** (fully mobile-first, 44×44 touch targets):
+  - Vibrant animated gradient hero (orange → pink → purple with soft glow orbs).
+  - Overlapping **profile card** with logo, tier badge, verification badges, tagline, bio, Follow + Share buttons.
+  - Live **stat pills** in 4-up grid: Items · Followers · Sales · Since — color-coded per stat.
+  - **Sticky mini-nav** appears on scroll with mini logo + name + Follow button.
+  - **"New this week"** horizontal snap-scroll strip (last 7 days, emerald sparkles icon).
+  - **"Hot picks"** strip (most-favorited, orange flame icon).
+  - **Category filter chips** derived from the store's own listings with live counts; active chip uses the brand gradient. Combined with a sort dropdown.
+- **Verified end-to-end via API**: single-review approval → user gets `seller_status: approved` + fresh `store_id: <uuid>` pointing to auto-created `"Auto's Store"`. Follow flow toggles cleanly (0→1→0). Sophia's 62-item store shows all strips, chips filter to "Women (21)" and updates counter.
+
 ### Feb 2026 — AI-Curated Suggested-For-Me Bulk Resell
 - **New endpoint `GET /api/seller/resell-suggestions?limit=10`** — returns personalized picks scored by:
   1. **Category preference** from the seller's own active listings (+1.0 each) and completed orders (+2.5 each).
