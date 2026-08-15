@@ -8,8 +8,10 @@ import { useAuth } from "@/context/AuthContext";
 import { useCurrency } from "@/context/CurrencyContext";
 import { useLang } from "@/context/LanguageContext";
 import { useToast } from "@/hooks/use-toast";
-import { CheckCircle2, Lock, Share2 } from "lucide-react";
+import { CheckCircle2, Lock, Share2, CreditCard, Wallet as WalletIcon, Bitcoin, Building2, Copy, Check } from "lucide-react";
 import confetti from "canvas-confetti";
+
+const qrUrl = (data) => `https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=0&data=${encodeURIComponent(data || "")}`;
 
 const Checkout = () => {
   const { id } = useParams();
@@ -24,13 +26,35 @@ const Checkout = () => {
   const [card, setCard] = useState({ number: "4242 4242 4242 4242", exp: "12/28", cvc: "123" });
   const [placing, setPlacing] = useState(false);
   const [done, setDone] = useState(null);
+  const [payMethod, setPayMethod] = useState("card"); // card | wallet | crypto | bank
+  const [wallet, setWallet] = useState(null);
+  const [payMethods, setPayMethods] = useState({ crypto_addresses: {}, manual_payment_methods: [] });
+  const [cryptoCcy, setCryptoCcy] = useState("");
+  const [bankId, setBankId] = useState("");
+  const [copied, setCopied] = useState("");
 
   useEffect(() => {
     if (authLoading) return;
     if (!user) { navigate("/login"); return; }
     api.get(`/listings/${id}`).then((r) => setListing(r.data));
     api.get("/settings/public").then((r) => setPublicSettings(r.data)).catch(() => {});
+    api.get("/wallet").then((r) => setWallet(r.data)).catch(() => {});
+    api.get("/wallet/payment-methods").then((r) => {
+      setPayMethods(r.data || { crypto_addresses: {}, manual_payment_methods: [] });
+      const first = Object.keys(r.data?.crypto_addresses || {})[0];
+      if (first) setCryptoCcy(first);
+      const m = (r.data?.manual_payment_methods || [])[0];
+      if (m) setBankId(m.id);
+    }).catch(() => {});
   }, [id, user, authLoading, navigate]);
+
+  const doCopy = async (text, key) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(key);
+      setTimeout(() => setCopied(""), 1500);
+    } catch (e) { /* ignore */ }
+  };
 
   const place = async (e) => {
     e.preventDefault();
@@ -42,7 +66,7 @@ const Checkout = () => {
     try {
       const affiliate_code = sessionStorage.getItem("affiliate_code") || null;
       const share_ref = sessionStorage.getItem("share_ref") || null;
-      const { data } = await api.post("/orders", { listing_id: id, shipping_address: address, affiliate_code, share_ref });
+      const { data } = await api.post("/orders", { listing_id: id, shipping_address: address, affiliate_code, share_ref, payment_method: payMethod });
       setDone(data);
       sessionStorage.removeItem("affiliate_code");
       sessionStorage.removeItem("share_ref");
@@ -154,14 +178,159 @@ const Checkout = () => {
                 {t("checkout.demo")}
               </span>
             </div>
-            <div className="space-y-3">
-              <div><Label>{t("checkout.cardNumber")}</Label><Input value={card.number} onChange={(e) => setCard({ ...card, number: e.target.value })} className="mt-1 tabular-nums" /></div>
-              <div className="grid grid-cols-2 gap-3">
-                <div><Label>{t("checkout.expiry")}</Label><Input value={card.exp} onChange={(e) => setCard({ ...card, exp: e.target.value })} className="mt-1 tabular-nums" /></div>
-                <div><Label>{t("checkout.cvc")}</Label><Input value={card.cvc} onChange={(e) => setCard({ ...card, cvc: e.target.value })} className="mt-1 tabular-nums" /></div>
-              </div>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">{t("checkout.demoNote")}</p>
+
+            {/* Method selector — 4 vibrant chips */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-5" data-testid="pay-method-selector">
+              {[
+                { id: "card",   icon: CreditCard, label: "Card",   tone: "from-sky-400 to-sky-600" },
+                { id: "wallet", icon: WalletIcon, label: "Wallet", tone: "from-emerald-400 to-emerald-600" },
+                { id: "crypto", icon: Bitcoin,    label: "Crypto", tone: "from-amber-400 to-orange-600" },
+                { id: "bank",   icon: Building2,  label: "Bank",   tone: "from-purple-400 to-fuchsia-600" },
+              ].map((m) => {
+                const active = payMethod === m.id;
+                const Icon = m.icon;
+                return (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => setPayMethod(m.id)}
+                    className={`min-h-[72px] rounded-2xl border-2 transition-all active:scale-95 hover:-translate-y-0.5 flex flex-col items-center justify-center gap-1.5 ${
+                      active
+                        ? "border-transparent bg-gradient-to-br " + m.tone + " text-white shadow-lg"
+                        : "border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 hover:border-neutral-400"
+                    }`}
+                    data-testid={`pay-method-${m.id}`}
+                  >
+                    <Icon className={`h-5 w-5 ${active ? "text-white" : "text-neutral-500"}`} />
+                    <span className="text-sm font-semibold">{m.label}</span>
+                  </button>
+                );
+              })}
             </div>
+
+            {/* Card fields */}
+            {payMethod === "card" && (
+              <div className="space-y-3 animate-in fade-in-50 duration-200" data-testid="pay-card-panel">
+                <div><Label>{t("checkout.cardNumber")}</Label><Input value={card.number} onChange={(e) => setCard({ ...card, number: e.target.value })} className="mt-1 h-11 tabular-nums" /></div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div><Label>{t("checkout.expiry")}</Label><Input value={card.exp} onChange={(e) => setCard({ ...card, exp: e.target.value })} className="mt-1 h-11 tabular-nums" /></div>
+                  <div><Label>{t("checkout.cvc")}</Label><Input value={card.cvc} onChange={(e) => setCard({ ...card, cvc: e.target.value })} className="mt-1 h-11 tabular-nums" /></div>
+                </div>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400">{t("checkout.demoNote")}</p>
+              </div>
+            )}
+
+            {/* Wallet balance */}
+            {payMethod === "wallet" && (
+              <div className="animate-in fade-in-50 duration-200 rounded-2xl border-2 border-emerald-200 dark:border-emerald-500/30 bg-emerald-50/70 dark:bg-emerald-500/10 p-4" data-testid="pay-wallet-panel">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-xs uppercase tracking-wider text-emerald-700 dark:text-emerald-300 font-semibold">Available balance</div>
+                    <div className="text-3xl font-extrabold tabular-nums text-neutral-900 dark:text-neutral-100 mt-0.5">{format(wallet?.balance ?? 0)}</div>
+                    {wallet?.frozen_balance > 0 && (
+                      <div className="text-[11px] text-neutral-500 mt-0.5">Frozen: {format(wallet.frozen_balance)}</div>
+                    )}
+                  </div>
+                  <WalletIcon className="h-10 w-10 text-emerald-500/60" />
+                </div>
+                {wallet && (wallet.balance ?? 0) < total ? (
+                  <div className="mt-3 text-xs text-red-600 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 rounded-lg px-3 py-2">
+                    Insufficient balance. Please deposit or choose another method.
+                  </div>
+                ) : (
+                  <p className="mt-3 text-[11px] text-emerald-700 dark:text-emerald-300">Order confirmation happens instantly with wallet payment.</p>
+                )}
+              </div>
+            )}
+
+            {/* Crypto: QR + address */}
+            {payMethod === "crypto" && (
+              <div className="animate-in fade-in-50 duration-200 space-y-3" data-testid="pay-crypto-panel">
+                {Object.keys(payMethods.crypto_addresses || {}).length === 0 ? (
+                  <div className="text-sm text-neutral-500 p-4 border border-dashed border-neutral-300 dark:border-neutral-700 rounded-xl">No crypto addresses configured. Contact support.</div>
+                ) : (
+                  <>
+                    <div className="flex gap-2 flex-wrap" data-testid="crypto-ccy-select">
+                      {Object.entries(payMethods.crypto_addresses).map(([k]) => (
+                        <button
+                          key={k}
+                          type="button"
+                          onClick={() => setCryptoCcy(k)}
+                          className={`min-h-[36px] px-3 rounded-full text-xs font-bold border transition-all active:scale-95 ${cryptoCcy === k ? "bg-gradient-to-br from-amber-400 to-orange-600 text-white border-transparent shadow-md" : "border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:border-orange-400"}`}
+                          data-testid={`crypto-ccy-${k}`}
+                        >{k}</button>
+                      ))}
+                    </div>
+                    {cryptoCcy && payMethods.crypto_addresses[cryptoCcy] && (
+                      <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-950 p-4 flex flex-col sm:flex-row gap-4 items-center sm:items-start">
+                        <img src={qrUrl(payMethods.crypto_addresses[cryptoCcy])} alt={`${cryptoCcy} QR`} className="rounded-lg bg-white p-2 h-40 w-40 shrink-0" data-testid="crypto-qr" />
+                        <div className="min-w-0 flex-1 w-full space-y-2">
+                          <div className="text-xs uppercase tracking-wider text-neutral-500 font-semibold">{cryptoCcy} deposit address</div>
+                          <div className="font-mono text-xs break-all bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg p-2.5" data-testid="crypto-address">
+                            {payMethods.crypto_addresses[cryptoCcy]}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => doCopy(payMethods.crypto_addresses[cryptoCcy], "crypto")}
+                            className="min-h-[44px] px-3 rounded-lg border border-neutral-200 dark:border-neutral-700 hover:border-[#FF211F] hover:text-[#FF211F] active:scale-95 transition-all flex items-center gap-1.5 text-sm font-medium"
+                            data-testid="crypto-copy"
+                          >
+                            {copied === "crypto" ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                            {copied === "crypto" ? "Copied" : "Copy address"}
+                          </button>
+                          <p className="text-[11px] text-neutral-500">Send exactly <b>{format(total)}</b> worth of <b>{cryptoCcy}</b>. Your order goes on hold until an admin confirms the transfer.</p>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* Bank / manual instructions */}
+            {payMethod === "bank" && (
+              <div className="animate-in fade-in-50 duration-200 space-y-3" data-testid="pay-bank-panel">
+                {(payMethods.manual_payment_methods || []).length === 0 ? (
+                  <div className="text-sm text-neutral-500 p-4 border border-dashed border-neutral-300 dark:border-neutral-700 rounded-xl">No manual methods configured.</div>
+                ) : (
+                  <>
+                    <div className="flex gap-2 flex-wrap">
+                      {payMethods.manual_payment_methods.map((m) => (
+                        <button
+                          key={m.id}
+                          type="button"
+                          onClick={() => setBankId(m.id)}
+                          className={`min-h-[36px] px-3 rounded-full text-xs font-bold border transition-all active:scale-95 ${bankId === m.id ? "bg-gradient-to-br from-purple-400 to-fuchsia-600 text-white border-transparent shadow-md" : "border-neutral-200 dark:border-neutral-700 hover:border-fuchsia-400"}`}
+                          data-testid={`bank-method-${m.id}`}
+                        >{m.name}</button>
+                      ))}
+                    </div>
+                    {bankId && (() => {
+                      const m = payMethods.manual_payment_methods.find((x) => x.id === bankId);
+                      if (!m) return null;
+                      return (
+                        <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-950 p-4" data-testid="bank-instructions">
+                          <div className="text-xs uppercase tracking-wider text-neutral-500 font-semibold mb-2">Instructions</div>
+                          <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed break-words text-neutral-800 dark:text-neutral-200">{m.instructions || "No instructions provided."}</pre>
+                          {m.instructions && (
+                            <button
+                              type="button"
+                              onClick={() => doCopy(m.instructions, "bank")}
+                              className="mt-3 min-h-[44px] px-3 rounded-lg border border-neutral-200 dark:border-neutral-700 hover:border-[#FF211F] hover:text-[#FF211F] active:scale-95 transition-all flex items-center gap-1.5 text-sm font-medium"
+                              data-testid="bank-copy"
+                            >
+                              {copied === "bank" ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                              {copied === "bank" ? "Copied" : "Copy details"}
+                            </button>
+                          )}
+                          <p className="text-[11px] text-neutral-500 mt-2">Complete the transfer and place the order. Your order goes on hold until admin confirms.</p>
+                        </div>
+                      );
+                    })()}
+                  </>
+                )}
+              </div>
+            )}
           </section>
         </div>
 
@@ -198,8 +367,8 @@ const Checkout = () => {
           </div>
           <Button
             type="submit"
-            disabled={placing}
-            className="w-full mt-5 bg-[#FF211F] hover:bg-[#e01d1b] rounded-full h-11 shadow-lg shadow-[#FF211F]/20 disabled:opacity-60"
+            disabled={placing || (payMethod === "wallet" && wallet && (wallet.balance ?? 0) < total)}
+            className="w-full mt-5 bg-gradient-to-r from-[#FF7A18] to-[#FF211F] hover:brightness-110 rounded-full h-12 min-h-[48px] font-bold shadow-lg shadow-[#FF211F]/30 disabled:opacity-60 hover:-translate-y-0.5 active:translate-y-0 transition-all"
             data-testid="place-order-btn"
           >
             {placing ? t("checkout.placing") : `${t("checkout.pay")} ${format(total)}`}

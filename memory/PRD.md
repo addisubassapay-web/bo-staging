@@ -26,6 +26,15 @@ Exact replica of Mercari platform (mercari.com) — same color scheme (`#FF211F`
 
 ## Implemented (with dates)
 
+### Feb 2026 — Checkout Multi-Channel Payment Selector
+- **4-way payment method selector** on `/checkout/:id` — Card / Wallet / Crypto / Bank chips with per-method color gradients (sky / emerald / amber / fuchsia), 72px min height, hover `-translate-y-0.5`, `active:scale-95`.
+- **Wallet panel** — emerald-tinted card showing available balance, frozen sub-line, and a red "insufficient balance" guard that disables the Pay button.
+- **Crypto panel** — currency chips (BTC/ETH/USDC/USDT), live QR code (`api.qrserver.com`), copyable monospace address, "send exactly $X worth of {ccy}" instruction. Only shows currencies enabled in `Settings.crypto_addresses`.
+- **Bank panel** — dynamic method chips from `Settings.manual_payment_methods`, whitespace-preserved instructions card, copy-instructions button. "Order goes on hold until admin confirms" note.
+- **Pay button** upgraded to a 48px orange→red gradient pill with red glow shadow + hover-lift.
+- `POST /orders` now sends `payment_method` alongside `share_ref` and `affiliate_code` for future backend routing.
+- Verified on 1440×900 desktop and 390×844 mobile: all 4 panels render, animations engage, mobile touch targets stay at ≥44px.
+
 ### Feb 2026 — StorePage Contrast + Owner Publish CTA
 - **Route alias** `/dashboard/list-product` → `Sell` page added in `App.js` so the requested CTA path works while still reusing the existing Sell workflow.
 - **Owner Control Panel** — new high-contrast card rendered only when `isOwn`. Salmon → white → purple gradient background with soft orbs, orange gradient icon, "OWNER CONTROLS" chip, and 2 buttons:
