@@ -26,6 +26,12 @@ Exact replica of Mercari platform (mercari.com) — same color scheme (`#FF211F`
 
 ## Implemented (with dates)
 
+### Feb 2026 — Push Rewards Widget + Follower Notification Pagination
+- **`GET /api/seller/push-stats`** — compact metrics for the Profile widget: `share_reach_followers`, `share_attributed_sales`, `share_attributed_gmv`, `share_attributed_earnings`, `last_share_sale_at`, `bonuses_count`, `bonuses_total`, `last_bonus_at`, `push_reward_amount` (from settings), and `eligible_for_next_bonus`. Two aggregates (orders + wallet_txs) + one settings read.
+- **Profile widget** (`push-stats-widget`) — orange→red gradient icon, animated soft orbs, 3 color-coded stat tiles (Reach / Sales / Bonuses), emerald "+$X first-sale bonus available" CTA chip when eligible, "last on {date}" footer when there are attributed orders. Visible for any approved seller / admin so the incentive is always in view (not just after activity).
+- **Cursor-based follower notifier** — `_notify_store_followers` now iterates `db.store_follows.find(...)` via `async for` instead of `to_list(1000)`. Stores with any follower count are notified without silent truncation. Verified end-to-end: admin follows Sophia's store → Sophia creates a listing → admin receives a `system` notification titled *"Sophy Style added something new"*.
+- Lint clean · unauthenticated `GET /seller/push-stats` returns 401 · mobile screenshot confirms the widget renders with all three stat cards + eligibility chip.
+
 ### Feb 2026 — Store Follow Notifications + Phase 19 Regression Suite
 - **`_notify_store_followers(store_id, title, listing_id, bulk=False)`** helper: fetches every follower of the store and pings a `system` notification with a deep link to the listing (or the storefront on bulk). Silent no-op when the store has no followers.
 - Wired into all 3 publish paths: `POST /api/listings`, `POST /api/listings/import`, `POST /api/listings/import/bulk` (bulk sends one aggregated notification with the drop count).

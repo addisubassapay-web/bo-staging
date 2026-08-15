@@ -79,6 +79,7 @@ const Profile = () => {
   const [sales, setSales] = useState([]);
   const [wallet, setWallet] = useState({ balance: 0, frozen_balance: 0 });
   const [resellInfo, setResellInfo] = useState(null);
+  const [pushStats, setPushStats] = useState(null);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -89,6 +90,7 @@ const Profile = () => {
     api.get("/orders", { params: { role: "seller" } }).then((r) => setSales(r.data));
     api.get("/wallet").then((r) => setWallet({ balance: r.data.balance, frozen_balance: r.data.frozen_balance || 0 })).catch(() => {});
     api.get("/seller/resell-info").then((r) => setResellInfo(r.data)).catch(() => {});
+    api.get("/seller/push-stats").then((r) => setPushStats(r.data)).catch(() => {});
   }, [user, authLoading, navigate]);
 
   const deleteListing = async (id) => {
@@ -283,6 +285,61 @@ const Profile = () => {
 
       {/* Digest card in its own row (previously nested in hero) */}
       <div className="mb-6"><DigestCard /></div>
+
+      {/* Storefront Push stats widget — visible for any approved seller */}
+      {pushStats && (user?.seller_status === "approved" || user?.role === "admin" || pushStats.share_attributed_sales > 0 || pushStats.bonuses_count > 0) && (
+        <div className="mb-6 rounded-2xl border border-neutral-200 bg-white p-4 sm:p-5 relative overflow-hidden" data-testid="push-stats-widget">
+          <div className="pointer-events-none absolute -top-10 -right-10 h-40 w-40 rounded-full bg-orange-100/70 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-14 -left-10 h-40 w-40 rounded-full bg-purple-100/70 blur-3xl" />
+          <div className="relative flex items-start justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#FF7A18] to-[#FF211F] grid place-items-center shrink-0 shadow-sm">
+                <Share2 className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <h3 className="font-bold text-neutral-900">Storefront Push</h3>
+                <p className="text-xs text-neutral-500">Share links convert followers into sales.</p>
+              </div>
+            </div>
+            {pushStats.eligible_for_next_bonus && pushStats.push_reward_amount > 0 && (
+              <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2.5 py-1" data-testid="push-eligible-chip">
+                +${pushStats.push_reward_amount.toFixed(0)} first-sale bonus available
+              </span>
+            )}
+          </div>
+
+          <div className="relative mt-4 grid grid-cols-3 gap-2 sm:gap-3">
+            <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-3 text-center" data-testid="push-stat-reach">
+              <div className="text-[10px] uppercase tracking-wider text-neutral-500 font-semibold">Reach</div>
+              <div className="text-xl sm:text-2xl font-extrabold text-neutral-900 tabular-nums mt-0.5">{pushStats.share_reach_followers.toLocaleString()}</div>
+              <div className="text-[10px] text-neutral-500">followers</div>
+            </div>
+            <div className="rounded-xl border border-[#FF7A18]/30 bg-[#FFF3F2] p-3 text-center" data-testid="push-stat-sales">
+              <div className="text-[10px] uppercase tracking-wider text-[#FF211F] font-semibold">Sales</div>
+              <div className="text-xl sm:text-2xl font-extrabold text-neutral-900 tabular-nums mt-0.5">{pushStats.share_attributed_sales.toLocaleString()}</div>
+              <div className="text-[10px] text-neutral-500">from shares</div>
+            </div>
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-center" data-testid="push-stat-bonus">
+              <div className="text-[10px] uppercase tracking-wider text-emerald-700 font-semibold">Bonuses</div>
+              <div className="text-xl sm:text-2xl font-extrabold text-emerald-700 tabular-nums mt-0.5">${pushStats.bonuses_total.toFixed(2)}</div>
+              <div className="text-[10px] text-emerald-700">{pushStats.bonuses_count} paid</div>
+            </div>
+          </div>
+
+          {pushStats.share_attributed_earnings > 0 && (
+            <div className="relative mt-3 text-xs text-neutral-600 flex justify-between items-center flex-wrap gap-2">
+              <span>Earnings from share-attributed orders: <b className="text-neutral-900 tabular-nums">${pushStats.share_attributed_earnings.toFixed(2)}</b></span>
+              {pushStats.last_share_sale_at && (
+                <span className="text-neutral-400 text-[11px]">last on {new Date(pushStats.last_share_sale_at).toLocaleDateString()}</span>
+              )}
+            </div>
+          )}
+
+          <p className="relative mt-3 text-[11px] text-neutral-500 leading-relaxed">
+            Every share adds <code className="bg-neutral-100 px-1 rounded text-[10px]">?ref=push</code> automatically. Your first share-attributed sale earns a <b>${pushStats.push_reward_amount.toFixed(0)} bonus</b>.
+          </p>
+        </div>
+      )}
 
       <Tabs value={tab} onValueChange={setStatus}>
         <TabsList className="mb-4">

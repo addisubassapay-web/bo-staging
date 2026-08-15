@@ -1489,22 +1489,65 @@ async def follow_status(slug: str, user: dict = Depends(get_current_user)):
 
 async def _notify_store_followers(store_id: Optional[str], title: str, listing_id: Optional[str], bulk: bool = False):
     """Notify every follower of a store when the seller drops new inventory.
-       Silent no-op if store_id is missing or has no followers."""
+       Silent no-op if store_id is missing or has no followers. Cursor-based to scale beyond 1k followers."""
     if not store_id:
         return
     store = await db.stores.find_one({"id": store_id}, {"_id": 0, "name": 1, "slug": 1})
     if not store:
         return
-    follows = await db.store_follows.find({"store_id": store_id}, {"_id": 0, "user_id": 1}).to_list(1000)
-    if not follows:
-        return
     link = f"/listing/{listing_id}" if listing_id else f"/store/{store.get('slug', '')}"
     heading = f"{store.get('name', 'A store you follow')} just added new items" if bulk else f"{store.get('name', 'A store you follow')} added something new"
-    for f in follows:
+    async for f in db.store_follows.find({"store_id": store_id}, {"_id": 0, "user_id": 1}):
         try:
             await notify(f["user_id"], "system", heading, title, link)
         except Exception:
             pass
+
+
+@api_router.get("/seller/push-stats")
+async def seller_push_stats(user: dict = Depends(get_current_user)):
+    """Compact Storefront Push metrics for the seller's Profile widget."""
+    # Push-attributed sales as seller
+    pipe = [
+        {"$match": {"seller_id": user["id"], "share_ref": "push"}},
+        {"$group": {
+            "_id": None,
+            "sales": {"$sum": 1},
+            "gmv": {"$sum": "$amount"},
+            "earnings": {"$sum": "$seller_earnings"},
+            "last_at": {"$max": "$created_at"},
+        }},
+    ]
+    agg = await db.orders.aggregate(pipe).to_list(1)
+    sales = agg[0] if agg else {"sales": 0, "gmv": 0.0, "earnings": 0.0, "last_at": None}
+
+    bonus_pipe = [
+        {"$match": {"user_id": user["id"], "type": "bonus", "description": {"$regex": "^Storefront Push"}}},
+        {"$group": {"_id": None, "count": {"$sum": 1}, "total": {"$sum": "$amount"}, "last_at": {"$max": "$created_at"}}},
+    ]
+    b = await db.wallet_txs.aggregate(bonus_pipe).to_list(1)
+    bonuses = b[0] if b else {"count": 0, "total": 0.0, "last_at": None}
+
+    # Followers as a proxy for share reach
+    store_id = user.get("store_id")
+    followers = 0
+    if store_id:
+        s = await db.stores.find_one({"id": store_id}, {"_id": 0, "followers_count": 1})
+        followers = int((s or {}).get("followers_count", 0) or 0)
+
+    settings = await get_settings()
+    return {
+        "share_reach_followers": followers,
+        "share_attributed_sales": int(sales.get("sales", 0) or 0),
+        "share_attributed_gmv": round(float(sales.get("gmv", 0.0) or 0.0), 2),
+        "share_attributed_earnings": round(float(sales.get("earnings", 0.0) or 0.0), 2),
+        "last_share_sale_at": sales.get("last_at"),
+        "bonuses_count": int(bonuses.get("count", 0) or 0),
+        "bonuses_total": round(float(bonuses.get("total", 0.0) or 0.0), 2),
+        "last_bonus_at": bonuses.get("last_at"),
+        "push_reward_amount": float(settings.get("push_reward_amount", 2.0) or 0.0),
+        "eligible_for_next_bonus": int(bonuses.get("count", 0) or 0) == 0,
+    }
 
 
 @api_router.get("/feed/following", response_model=List[Listing])
