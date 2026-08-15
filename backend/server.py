@@ -929,6 +929,7 @@ async def create_listing(payload: ListingCreate, user: dict = Depends(get_curren
         **payload.model_dump(),
     )
     await db.listings.insert_one(listing.model_dump())
+    await _notify_store_followers(store_id, listing.title, listing.id)
     return listing
 
 @api_router.put("/listings/{listing_id}", response_model=Listing)
@@ -1484,6 +1485,26 @@ async def follow_status(slug: str, user: dict = Depends(get_current_user)):
         raise HTTPException(404, "Store not found")
     existing = await db.store_follows.find_one({"store_id": store["id"], "user_id": user["id"]}, {"_id": 0, "user_id": 1})
     return {"following": bool(existing), "followers_count": int(store.get("followers_count", 0) or 0)}
+
+
+async def _notify_store_followers(store_id: Optional[str], title: str, listing_id: Optional[str], bulk: bool = False):
+    """Notify every follower of a store when the seller drops new inventory.
+       Silent no-op if store_id is missing or has no followers."""
+    if not store_id:
+        return
+    store = await db.stores.find_one({"id": store_id}, {"_id": 0, "name": 1, "slug": 1})
+    if not store:
+        return
+    follows = await db.store_follows.find({"store_id": store_id}, {"_id": 0, "user_id": 1}).to_list(1000)
+    if not follows:
+        return
+    link = f"/listing/{listing_id}" if listing_id else f"/store/{store.get('slug', '')}"
+    heading = f"{store.get('name', 'A store you follow')} just added new items" if bulk else f"{store.get('name', 'A store you follow')} added something new"
+    for f in follows:
+        try:
+            await notify(f["user_id"], "system", heading, title, link)
+        except Exception:
+            pass
 
 
 @api_router.get("/feed/following", response_model=List[Listing])
@@ -2196,6 +2217,7 @@ async def import_listing(payload: ImportPayload, user: dict = Depends(get_curren
         base_price=base_price,
     )
     await db.listings.insert_one(imported.model_dump())
+    await _notify_store_followers(store_id, imported.title, imported.id)
     return imported
 
 
@@ -2274,6 +2296,9 @@ async def import_listings_bulk(payload: BulkImportPayload, user: dict = Depends(
         )
         await db.listings.insert_one(imported.model_dump())
         published.append({"id": imported.id, "title": imported.title, "price": imported.price, "markup_pct": mk})
+
+    if published and store_id:
+        await _notify_store_followers(store_id, f"{len(published)} new items", None, bulk=True)
 
     return {"published_count": len(published), "skipped_count": len(skipped), "published": published, "skipped": skipped, "applied_cap": max_mk, "cap_source": applied}
 

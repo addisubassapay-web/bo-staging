@@ -1,0 +1,28 @@
+{
+  "summary": "Phase 19 backend regression PASSED — 15/15 pytest cases green across all six focus areas: seller gate (403 with the exact 'Complete seller verification and approval' message on POST /listings, /listings/import, /listings/import/bulk for unapproved users; admin/approved sellers succeed), auto-store creation (single approval via PUT /api/admin/seller-applications/{id} and bulk-review via POST /api/admin/seller-applications/bulk-review both set seller_status='approved', populate store_id, and create a Store with a slug derived from the username), wallet wholesale-debit (with wallet balance the debit fires — reseller_paid_wholesale=true, reseller_wholesale_cost≈base_price*(1-discount%), reseller wallet decreases by that amount, source seller wallet_frozen_balance grows by that amount; with insufficient balance the order still succeeds with reseller_paid_wholesale=false and dropship_source_earnings equal to full retail base_price), Follow Feed (GET /api/feed/following returns 401 unauth, [] when following nobody, and the followed store's listings after POST /api/stores/{slug}/follow), Storefront Push reward (first share_ref='push' sale credits exactly one $2 bonus tx, order.push_reward_amount=2.0, second share_ref='push' sale does NOT credit a second bonus and order.push_reward_amount=0), Store Follow notifications (creating via POST /api/listings, importing via POST /api/listings/import, and bulk-importing via POST /api/listings/import/bulk all deliver a system notification to every follower; sellers with zero followers do not fail).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_phase19_regression.py",
+    "/app/test_reports/pytest/phase19.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "server.py is now 4443 lines — long overdue for a modular split (listings, orders, seller-apps, admin, stores/follows are all cohesive units).",
+    "Wallet wholesale-debit uses an atomic $gte guard (line ~1096) which is correct and race-safe. However the WalletTransaction inserted at line ~1177 uses balance_after read AFTER the debit via a separate find_one — under concurrent debits this could be slightly stale in the txn log (balance in the DB is still correct, only the log line may misreport). Consider using update_one with a returnDocument=AFTER equivalent (find_one_and_update) to get the authoritative balance in one round-trip.",
+    "The Storefront Push idempotency check regex-matches description ^Storefront Push. This is fine but description-based dedup is fragile if wording ever changes. Consider a boolean flag on the user doc (push_reward_paid_at) or a unique index on (user_id, type='push_bonus') to make it structurally impossible to double-credit.",
+    "_notify_store_followers uses to_list(1000) — a store with >1k followers would silently drop notifications. Either paginate or use a cursor.",
+    "Seller-gate 403 message string is duplicated in three places (create_listing, import_listing, import_listings_bulk). Extract into a helper `_require_approved_seller(user)` to avoid drift."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_phase19_regression.py",
+    "/app/test_reports/iteration_19.json"
+  ],
+  "success_rate": {"backend": "100%", "frontend": "not_tested"},
+  "test_credentials": "admin@mercari.local/admin123 and sophia_style@demo.local/demo1234 (from /app/memory/test_credentials.md — both valid).",
+  "seed_data_creation": "Test creates ~15 disposable users (e2e-prefixed usernames like gate1*, autostore*, bulkstore0/1*, src*, res*, buyer*, feedslr/follower*, pushslr/pbuyer*, nslr1/nflw*, nsrc/nres/nsrcb/nresb*, nofol*), a handful of TEST_-prefixed listings, and a few stores (slug = <username>-store) plus 2 pending seller_applications approved during the run. Harmless test residue but next agent may want a cleanup pass filtering username LIKE 'e2e%' / title LIKE 'TEST_%'. One TEST_SOPHIA_OK listing was also created under sophia_style during the approved-seller assertion.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Run with `pytest backend/tests/test_phase19_regression.py -v -o addopts=''` (the project pytest.ini enables xdist loadscope; the file is safe under parallel because each test builds its own fresh users, but running serial is also fine and faster to debug). The test seeds pending seller_applications directly via pymongo because /api/seller/apply requires phone+email OTP flow — if you need to also test /seller/apply itself, extend with /verify/email/send + /verify/phone/send tokens which are returned in dev_mock mode. All six regression areas green: seller gate, auto-store on approval, wholesale-debit atomicity, follow feed, push reward idempotency, follower notifications on 3 write paths.",
+  "rca of the issue": "N/A — no regressions found. Only stylistic/code-quality recommendations captured under critical_code_review_comments."
+}

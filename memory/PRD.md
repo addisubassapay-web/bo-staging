@@ -26,6 +26,18 @@ Exact replica of Mercari platform (mercari.com) — same color scheme (`#FF211F`
 
 ## Implemented (with dates)
 
+### Feb 2026 — Store Follow Notifications + Phase 19 Regression Suite
+- **`_notify_store_followers(store_id, title, listing_id, bulk=False)`** helper: fetches every follower of the store and pings a `system` notification with a deep link to the listing (or the storefront on bulk). Silent no-op when the store has no followers.
+- Wired into all 3 publish paths: `POST /api/listings`, `POST /api/listings/import`, `POST /api/listings/import/bulk` (bulk sends one aggregated notification with the drop count).
+- **Regression run** (`/app/test_reports/iteration_19.json`, `/app/backend/tests/test_phase19_regression.py`) — **15/15 pytest cases green**:
+  1. Seller gate returns 403 with "Complete seller verification and approval…" on all 3 write endpoints for unapproved users; approved sellers succeed.
+  2. Auto-store on both single approval (`PUT /admin/seller-applications/{id}`) and bulk (`POST /admin/seller-applications/bulk-review`) — user gets `store_id` + a unique username-derived slug.
+  3. Wallet wholesale-debit — atomic `$gte` guard fires only when balance is sufficient; falls back to buyer-funded split otherwise; wallet_tx row + frozen credit both correct.
+  4. Follow feed — 401 unauth, `[]` when following nobody, followed store's listings after `POST /stores/{slug}/follow`.
+  5. Push reward — first `share_ref="push"` sale credits exactly one $2 bonus + stamps `push_reward_amount` on the order; second sale does NOT re-credit.
+  6. Follower notifications — followers of the seller's store receive a system notification when the seller creates/imports/bulk-imports; sellers with 0 followers don't fail.
+- **Non-blocking code quality notes** from the tester (deferred): extract `_require_approved_seller(user)` helper, replace description-regex idempotency check with a boolean flag or unique index, paginate `to_list(1000)` in `_notify_store_followers`, and consider `find_one_and_update` for the wallet debit balance-after read. server.py is at ~4443 lines — modular split still overdue.
+
 ### Feb 2026 — Seller Dashboard Redesign + Quick-Action Buttons
 - **Vibrant hero redesign** (`StoreAnalytics.jsx`) — orange → pink → purple gradient with 3 soft glow orbs, matching the storefront hero for brand consistency. All stat pills upgraded with subtle borders + glassmorphism.
 - **Quick-action buttons in the hero**:
