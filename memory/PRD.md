@@ -26,6 +26,17 @@ Exact replica of Mercari platform (mercari.com) — same color scheme (`#FF211F`
 
 ## Implemented (with dates)
 
+### Feb 2026 — StorePage Contrast + Owner Publish CTA
+- **Route alias** `/dashboard/list-product` → `Sell` page added in `App.js` so the requested CTA path works while still reusing the existing Sell workflow.
+- **Owner Control Panel** — new high-contrast card rendered only when `isOwn`. Salmon → white → purple gradient background with soft orbs, orange gradient icon, "OWNER CONTROLS" chip, and 2 buttons:
+  - **"Publish / List Products"** — vibrant orange→red gradient pill, 48px tall, glowing red shadow, hover `-translate-y-0.5` with `xl` shadow. Links to `/dashboard/list-product`.
+  - **"Dashboard"** — outlined pill linking to `/store/analytics`.
+- **Store listings section** wrapped in its own white card with shadow for clear section separation. Section header updated: filled gradient "STOREFRONT" pill (was tinted), bold "Store listings" title, tabular-nums counter "**N** of M items on offer".
+- **Category chips** — hairline bottom border for separation, active state uses gradient background + red glow shadow, hover lifts by 0.5px, `active:scale-95` for touch feedback.
+- **Product grid** — each card wrapped with `hover:-translate-y-0.5 hover:shadow-lg transition-all` for a subtle interactive feel.
+- **Empty state** — for owners now includes a "Publish your first item" gradient CTA so a blank storefront always has a next step.
+- Verified on 1440×900 desktop: owner sees control panel + Publish CTA, click navigates to `/dashboard/list-product` which renders the Sell page. Store listings card renders 65 items, category chips filter, hover states animate.
+
 ### Feb 2026 — Push Rewards Widget + Follower Notification Pagination
 - **`GET /api/seller/push-stats`** — compact metrics for the Profile widget: `share_reach_followers`, `share_attributed_sales`, `share_attributed_gmv`, `share_attributed_earnings`, `last_share_sale_at`, `bonuses_count`, `bonuses_total`, `last_bonus_at`, `push_reward_amount` (from settings), and `eligible_for_next_bonus`. Two aggregates (orders + wallet_txs) + one settings read.
 - **Profile widget** (`push-stats-widget`) — orange→red gradient icon, animated soft orbs, 3 color-coded stat tiles (Reach / Sales / Bonuses), emerald "+$X first-sale bonus available" CTA chip when eligible, "last on {date}" footer when there are attributed orders. Visible for any approved seller / admin so the incentive is always in view (not just after activity).

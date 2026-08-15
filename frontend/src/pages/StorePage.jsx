@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import api, { formatPrice } from "@/lib/api";
 import ProductCard from "@/components/ProductCard";
 import { Badge } from "@/components/ui/badge";
@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Store as StoreIcon, Award, ShieldCheck, Users, Package, Calendar, Star,
-  Heart, HeartOff, Share2, TrendingUp, Sparkles, Zap, Flame,
+  Heart, HeartOff, Share2, TrendingUp, Sparkles, Zap, Flame, PackagePlus,
 } from "lucide-react";
 import { VerificationBadges } from "@/components/VerificationBadges";
 import { useAuth } from "@/context/AuthContext";
@@ -174,7 +174,7 @@ const StorePage = () => {
         <style>{`@keyframes gradient {0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}`}</style>
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 relative">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 relative pb-16">
         {/* Profile card overlapping the hero */}
         <div className="-mt-16 sm:-mt-20 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-xl p-5 sm:p-6" data-testid="store-profile-card">
           <div className="flex items-start gap-4 flex-wrap">
@@ -228,9 +228,47 @@ const StorePage = () => {
 
           <div className="mt-5 inline-flex items-center gap-2 rounded-full bg-emerald-50 dark:bg-emerald-500/15 border border-emerald-200 dark:border-emerald-500/30 text-emerald-800 dark:text-emerald-200 text-sm px-3 py-1.5">
             <ShieldCheck className="h-4 w-4" />
-            Protected by Mercari Buyer Protection
+            Purchases here are protected by Mercari Buyer Protection
           </div>
         </div>
+
+        {/* Owner control panel — high-visibility Publish CTA */}
+        {isOwn && (
+          <div className="mt-6 rounded-3xl border-2 border-[#FF211F]/20 bg-gradient-to-br from-[#FFF3F2] via-white to-purple-50 dark:from-red-950/30 dark:via-neutral-900 dark:to-purple-950/30 p-5 sm:p-6 shadow-md relative overflow-hidden" data-testid="store-control-panel">
+            <div className="pointer-events-none absolute -top-16 -right-16 h-64 w-64 rounded-full bg-[#FF7A18]/15 blur-3xl" />
+            <div className="relative flex items-center justify-between gap-4 flex-wrap">
+              <div className="flex items-center gap-3">
+                <div className="h-11 w-11 rounded-2xl bg-gradient-to-br from-[#FF7A18] to-[#FF211F] grid place-items-center shrink-0 shadow-lg shadow-[#FF211F]/30">
+                  <PackagePlus className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <div className="text-[10px] uppercase tracking-[0.2em] font-semibold text-[#FF7A18]">Owner controls</div>
+                  <h3 className="font-bold text-lg text-neutral-900 dark:text-neutral-100">Grow your store</h3>
+                  <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-0.5">Publish new items to your storefront instantly.</p>
+                </div>
+              </div>
+              <div className="flex gap-2 flex-wrap">
+                <Link to="/dashboard/list-product">
+                  <Button
+                    className="min-h-[48px] px-6 rounded-full bg-gradient-to-r from-[#FF7A18] to-[#FF211F] hover:brightness-110 text-white font-bold gap-2 shadow-lg shadow-[#FF211F]/30 hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 transition-all"
+                    data-testid="store-publish-cta"
+                  >
+                    <PackagePlus className="h-5 w-5" /> Publish / List Products
+                  </Button>
+                </Link>
+                <Link to="/store/analytics">
+                  <Button
+                    variant="outline"
+                    className="min-h-[48px] rounded-full gap-1.5 border-neutral-300 hover:border-[#FF211F] hover:text-[#FF211F]"
+                    data-testid="store-open-dashboard"
+                  >
+                    <TrendingUp className="h-4 w-4" /> Dashboard
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* New Arrivals strip */}
         {newArrivals.length > 0 && (
@@ -287,17 +325,17 @@ const StorePage = () => {
         )}
 
         {/* Category filter chips + sort */}
-        <section className="mt-10 pb-14">
+        <section className="mt-10 pb-14 rounded-3xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5 sm:p-6 shadow-sm">
           <div className="flex items-end justify-between mb-4 gap-4 flex-wrap">
             <div>
-              <span className="inline-block text-[10px] uppercase tracking-[0.2em] font-semibold text-[#FF7A18] bg-[#FF7A18]/10 border border-[#FF7A18]/20 rounded-full px-3 py-1">
+              <span className="inline-block text-[10px] uppercase tracking-[0.2em] font-semibold text-white bg-gradient-to-r from-[#FF7A18] to-[#FF211F] rounded-full px-3 py-1 shadow-sm">
                 Storefront
               </span>
               <h2 className="mt-2 text-2xl sm:text-3xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
-                <Zap className="h-6 w-6 text-[#FF7A18]" /> All items
+                <Zap className="h-6 w-6 text-[#FF7A18] fill-[#FF7A18]/20" /> Store listings
               </h2>
-              <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
-                {filteredAndSorted.length} of {totalItems} {totalItems === 1 ? "item" : "items"} shown
+              <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1 tabular-nums">
+                <b>{filteredAndSorted.length}</b> of {totalItems} items on offer
               </p>
             </div>
             {listings.length > 0 && (
@@ -311,42 +349,55 @@ const StorePage = () => {
           </div>
 
           {catChips.length > 1 && (
-            <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0" data-testid="store-cat-chips">
+            <div className="flex gap-2 overflow-x-auto pb-2 -mx-5 px-5 sm:mx-0 sm:px-0 border-b border-neutral-100 dark:border-neutral-800 mb-5" data-testid="store-cat-chips">
               <button
                 type="button"
                 onClick={() => setActiveCat("all")}
-                className={`min-h-[40px] shrink-0 px-4 rounded-full text-sm font-semibold transition-all ${activeCat === "all"
-                  ? "bg-gradient-to-r from-[#FF7A18] to-[#FF211F] text-white shadow-md"
-                  : "bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-neutral-700 dark:text-neutral-300 hover:border-[#FF211F] hover:text-[#FF211F]"}`}
+                className={`min-h-[40px] shrink-0 px-4 rounded-full text-sm font-semibold transition-all active:scale-95 ${activeCat === "all"
+                  ? "bg-gradient-to-r from-[#FF7A18] to-[#FF211F] text-white shadow-md shadow-[#FF211F]/25"
+                  : "bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:border-[#FF211F] hover:text-[#FF211F] hover:-translate-y-0.5"}`}
                 data-testid="store-cat-all"
               >
-                All <span className="ml-1.5 text-[10px] opacity-80">{totalItems}</span>
+                All <span className={`ml-1.5 text-[10px] ${activeCat === "all" ? "opacity-90" : "opacity-60"}`}>{totalItems}</span>
               </button>
               {catChips.map((c) => (
                 <button
                   key={c.id}
                   type="button"
                   onClick={() => setActiveCat(c.id)}
-                  className={`min-h-[40px] shrink-0 px-4 rounded-full text-sm font-semibold transition-all ${activeCat === c.id
-                    ? "bg-gradient-to-r from-[#FF7A18] to-[#FF211F] text-white shadow-md"
-                    : "bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-neutral-700 dark:text-neutral-300 hover:border-[#FF211F] hover:text-[#FF211F]"}`}
+                  className={`min-h-[40px] shrink-0 px-4 rounded-full text-sm font-semibold transition-all active:scale-95 ${activeCat === c.id
+                    ? "bg-gradient-to-r from-[#FF7A18] to-[#FF211F] text-white shadow-md shadow-[#FF211F]/25"
+                    : "bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:border-[#FF211F] hover:text-[#FF211F] hover:-translate-y-0.5"}`}
                   data-testid={`store-cat-${c.id}`}
                 >
-                  {c.name} <span className="ml-1.5 text-[10px] opacity-80">{c.count}</span>
+                  {c.name} <span className={`ml-1.5 text-[10px] ${activeCat === c.id ? "opacity-90" : "opacity-60"}`}>{c.count}</span>
                 </button>
               ))}
             </div>
           )}
 
-          <div className="mt-5">
+          <div>
             {filteredAndSorted.length === 0 ? (
-              <div className="text-center py-16 rounded-2xl border border-dashed border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-500 dark:text-neutral-400" data-testid="store-empty">
+              <div className="text-center py-16 rounded-2xl border-2 border-dashed border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-950 text-neutral-500 dark:text-neutral-400" data-testid="store-empty">
                 <Package className="h-10 w-10 mx-auto text-neutral-300 dark:text-neutral-600 mb-2" />
                 {activeCat === "all" ? "This store has no active listings yet." : "No items in this category."}
+                {isOwn && (
+                  <div className="mt-4">
+                    <Link to="/dashboard/list-product">
+                      <Button className="min-h-[44px] rounded-full bg-gradient-to-r from-[#FF7A18] to-[#FF211F] hover:brightness-110 text-white gap-1.5" data-testid="store-empty-publish">
+                        <PackagePlus className="h-4 w-4" /> Publish your first item
+                      </Button>
+                    </Link>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4" data-testid="store-listings-grid">
-                {filteredAndSorted.map((l) => <ProductCard key={l.id} listing={l} />)}
+                {filteredAndSorted.map((l) => (
+                  <div key={l.id} className="hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200 rounded-xl">
+                    <ProductCard listing={l} />
+                  </div>
+                ))}
               </div>
             )}
           </div>
