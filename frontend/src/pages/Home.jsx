@@ -464,6 +464,7 @@ const Home = () => {
   const [recentlyViewed, setRecentlyViewed] = useState([]);
   const [shelves, setShelves] = useState([]);
   const [featuredStores, setFeaturedStores] = useState([]);
+  const [followingFeed, setFollowingFeed] = useState([]);
   const [favIds, setFavIds] = useState(new Set());
 
   useEffect(() => {
@@ -477,6 +478,7 @@ const Home = () => {
       api.get("/favorites").then((r) => setFavIds(new Set(r.data.map((l) => l.id)))).catch(() => {});
       api.get("/for-you", { params: { limit: 12 } }).then((r) => setForYou(r.data)).catch(() => {});
       api.get("/recently-viewed", { params: { limit: 12 } }).then((r) => setRecentlyViewed(r.data)).catch(() => {});
+      api.get("/feed/following", { params: { limit: 12 } }).then((r) => setFollowingFeed(r.data)).catch(() => {});
     }
   }, []);
 
@@ -510,6 +512,32 @@ const Home = () => {
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-6 gap-3">
             {recentlyViewed.slice(0, 12).map((l) => (
               <ProductCard key={l.id} listing={l} isFavorite={favIds.has(l.id)} onFavoriteChange={(id, isFav) => setFavIds((prev) => { const s = new Set(prev); isFav ? s.add(id) : s.delete(id); return s; })} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* New from stores you follow */}
+      {followingFeed.length > 0 && (
+        <section className="max-w-7xl mx-auto px-4 mt-10" data-testid="following-feed-section">
+          <div className="flex items-end justify-between mb-4 gap-4 flex-wrap">
+            <div>
+              <span className="inline-block text-[10px] uppercase tracking-[0.2em] font-semibold text-purple-600 bg-purple-50 border border-purple-200 rounded-full px-3 py-1">
+                Your follows
+              </span>
+              <h2 className="mt-2 text-xl sm:text-2xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+                <Heart className="h-5 w-5 text-purple-600 fill-purple-600" /> New from stores you follow
+              </h2>
+              <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-0.5">
+                Fresh drops from your favourite storefronts
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-3 overflow-x-auto pb-3 snap-x snap-mandatory -mx-4 px-4 sm:mx-0 sm:px-0" data-testid="following-feed-strip">
+            {followingFeed.map((l) => (
+              <div key={l.id} className="snap-start shrink-0 w-[45%] sm:w-[220px]">
+                <ProductCard listing={l} isFavorite={favIds.has(l.id)} onFavoriteChange={(id, isFav) => setFavIds((prev) => { const s = new Set(prev); isFav ? s.add(id) : s.delete(id); return s; })} />
+              </div>
             ))}
           </div>
         </section>

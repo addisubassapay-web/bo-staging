@@ -41,9 +41,11 @@ const Checkout = () => {
     setPlacing(true);
     try {
       const affiliate_code = sessionStorage.getItem("affiliate_code") || null;
-      const { data } = await api.post("/orders", { listing_id: id, shipping_address: address, affiliate_code });
+      const share_ref = sessionStorage.getItem("share_ref") || null;
+      const { data } = await api.post("/orders", { listing_id: id, shipping_address: address, affiliate_code, share_ref });
       setDone(data);
       sessionStorage.removeItem("affiliate_code");
+      sessionStorage.removeItem("share_ref");
       await api.delete(`/cart/${id}`).catch(() => {});
       // 🎉 Confetti burst on success
       requestAnimationFrame(() => {

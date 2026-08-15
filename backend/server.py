@@ -241,6 +241,9 @@ class Order(BaseModel):
     # Reseller wholesale-debit fulfillment (Feb 2026):
     reseller_wholesale_cost: float = 0.0
     reseller_paid_wholesale: bool = False
+    # Storefront Push attribution — set when the buyer arrived via a shared link.
+    share_ref: Optional[str] = None
+    push_reward_amount: float = 0.0
     # Phase 2: Shipping (MOCKED EasyPost/Shippo)
     tracking_number: Optional[str] = None
     carrier: Optional[str] = None
@@ -256,6 +259,7 @@ class OrderCreate(BaseModel):
     listing_id: str
     shipping_address: dict = {}
     affiliate_code: Optional[str] = None
+    share_ref: Optional[str] = None  # e.g. "push" when the buyer arrived from a Storefront Push share link
 
 
 # =========================
@@ -361,6 +365,9 @@ class Settings(BaseModel):
     # Wholesale discount (%) resellers get off the source retail price, per tier.
     # e.g. gold=15 means gold resellers buy inventory at 85% of retail. Admin-tunable.
     resell_wholesale_discounts: dict = Field(default_factory=lambda: {"new": 0.0, "bronze": 5.0, "silver": 10.0, "gold": 15.0})
+    # Storefront Push reward: fixed bonus (USD) credited to the seller when their share link
+    # converts to their first-ever share-attributed sale. Set to 0 to disable.
+    push_reward_amount: float = 2.0
     # Crypto deposit addresses shown to users on the Wallet page. Empty string = hidden.
     crypto_addresses: dict = Field(default_factory=lambda: {"BTC": "", "ETH": "", "USDC": "", "USDT": ""})
     # Admin-managed manual payment methods (bank transfer, mobile money, PayPal link, etc.)
@@ -1139,6 +1146,7 @@ async def create_order(payload: OrderCreate, user: dict = Depends(get_current_us
         dropship_source_earnings=dropship_source_earnings,
         reseller_wholesale_cost=reseller_wholesale_cost,
         reseller_paid_wholesale=reseller_paid_wholesale,
+        share_ref=(payload.share_ref or None),
         estimated_delivery_at=datetime.now(timezone.utc) + timedelta(days=int(settings.get("delivery_days_estimate", 7))),
     )
     await db.orders.insert_one(order.model_dump())
@@ -1203,6 +1211,27 @@ async def create_order(payload: OrderCreate, user: dict = Depends(get_current_us
                      f"Wholesale ${reseller_wholesale_cost:.2f} debited",
                      f"Auto-paid to the source seller for: {listing['title']}",
                      "/wallet")
+
+    # Storefront Push reward — first share-attributed sale ever for this seller earns a small bonus.
+    if payload.share_ref == "push" and seller_earnings > 0:
+        bonus = float(settings.get("push_reward_amount", 2.0) or 0.0)
+        if bonus > 0:
+            already = await db.wallet_txs.find_one(
+                {"user_id": listing["seller_id"], "type": "bonus", "description": {"$regex": "^Storefront Push"}},
+                {"_id": 0, "id": 1},
+            )
+            if not already:
+                await credit_wallet(
+                    listing["seller_id"], bonus, "bonus",
+                    f"Storefront Push reward — first share-attributed sale: {listing['title']}",
+                    order.id,
+                )
+                order.push_reward_amount = bonus
+                await db.orders.update_one({"id": order.id}, {"$set": {"push_reward_amount": bonus}})
+                await notify(listing["seller_id"], "payout",
+                             f"Storefront Push reward: +${bonus:.2f}",
+                             "Your shared link brought in your first sale — bonus credited to your wallet 🎉",
+                             "/wallet")
 
     return order
 
@@ -1455,6 +1484,23 @@ async def follow_status(slug: str, user: dict = Depends(get_current_user)):
         raise HTTPException(404, "Store not found")
     existing = await db.store_follows.find_one({"store_id": store["id"], "user_id": user["id"]}, {"_id": 0, "user_id": 1})
     return {"following": bool(existing), "followers_count": int(store.get("followers_count", 0) or 0)}
+
+
+@api_router.get("/feed/following", response_model=List[Listing])
+async def followed_stores_feed(
+    user: dict = Depends(get_current_user),
+    limit: int = Query(20, ge=1, le=50),
+):
+    """Recent active listings from stores the current user follows, newest first."""
+    follows = await db.store_follows.find({"user_id": user["id"]}, {"_id": 0, "store_id": 1}).to_list(500)
+    store_ids = [f["store_id"] for f in follows if f.get("store_id")]
+    if not store_ids:
+        return []
+    docs = await db.listings.find(
+        {"store_id": {"$in": store_ids}, "status": "active", "seller_id": {"$ne": user["id"]}},
+        {"_id": 0},
+    ).sort("created_at", -1).limit(limit).to_list(limit)
+    return [Listing(**d) for d in docs]
 
 @api_router.get("/stores/{slug}", response_model=Store)
 async def get_store_by_slug(slug: str):
@@ -2259,7 +2305,7 @@ async def admin_update_settings(updates: dict, _admin: dict = Depends(require_ad
         "semi_threshold", "referral_levels_enabled", "dispute_auto_refund_threshold",
         "dispute_auto_refund_excluded_reasons",
         "delivery_days_estimate", "delivery_auto_release_days",
-        "resell_markup_caps", "resell_wholesale_discounts",
+        "resell_markup_caps", "resell_wholesale_discounts", "push_reward_amount",
     }
     filtered = {k: v for k, v in updates.items() if k in allowed}
     # Sanitize the exclusion list — only accept known dispute reasons

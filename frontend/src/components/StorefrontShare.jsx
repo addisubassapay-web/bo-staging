@@ -12,8 +12,8 @@ import { formatPrice } from "@/lib/api";
  */
 const buildUrls = ({ listing, storeSlug }) => {
   const origin = typeof window !== "undefined" ? window.location.origin : "";
-  const listingUrl = `${origin}/listing/${listing.id}`;
-  const storeUrl = storeSlug ? `${origin}/store/${storeSlug}` : null;
+  const listingUrl = `${origin}/listing/${listing.id}?ref=push`;
+  const storeUrl = storeSlug ? `${origin}/store/${storeSlug}?ref=push` : null;
   const price = formatPrice(listing.price);
   const caption = `🔥 Just added: ${listing.title} — ${price}. Grab it before it's gone!`;
   const tag = "#Mercari #Resell";

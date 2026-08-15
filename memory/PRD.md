@@ -26,6 +26,16 @@ Exact replica of Mercari platform (mercari.com) — same color scheme (`#FF211F`
 
 ## Implemented (with dates)
 
+### Feb 2026 — Store Follow Feed + Storefront Push Rewards
+- **`GET /api/feed/following?limit=20`** — returns fresh active listings from stores the current user follows, sorted newest first, excluding their own items. Auth-only.
+- **Home page** — new **"New from stores you follow"** section (purple "YOUR FOLLOWS" pill + filled Heart icon) in a horizontal snap-scroll strip. Only renders when the logged-in user follows at least one store with active inventory.
+- **Storefront Push Reward** — end-to-end conversion attribution:
+  - `StorefrontShare` component now appends `?ref=push` to shared listing + store URLs.
+  - `ListingDetail` captures `?ref=push` from the URL and stores it in `sessionStorage`.
+  - `Checkout` passes `share_ref` in the `POST /orders` payload alongside the affiliate code, then clears it on success.
+  - **Backend** — `OrderCreate.share_ref`, `Order.share_ref`, and `Order.push_reward_amount` fields added. On the seller's **first-ever** share-attributed sale, credit a `bonus` wallet tx of `settings.push_reward_amount` (default $2, admin-tunable via `PUT /admin/settings`), stamp the amount on the order, and send a "Storefront Push reward" wallet notification. Subsequent share-attributed sales are detected via prior `bonus` tx lookup and don't re-credit.
+- **End-to-end verified**: Sophia follows Test Store → `/feed/following` returns 5 items · unauth = 401 · first buy w/ `share_ref=push` credits seller +$2.00 (balance 185.60 → 187.60) with the correct wallet tx description · second buy with same ref → no double-credit (still 1 bonus). Home strip renders with 12 products in a scrollable strip.
+
 ### Feb 2026 — Auto-Store Creation + Store Redesign + Follow System
 - **Auto-store on approval**: added `ensure_store_for_user(user_id)` helper that generates a unique `{first_name}'s Store` with a slug based on the username (uniqueness-checked). Wired into all 3 approval paths: `POST /seller/apply` (auto-approve via trust score), `PUT /admin/seller-applications/{id}`, and `POST /admin/seller-applications/bulk-review`.
 - **Safety net**: `POST /listings`, `POST /listings/import`, and `POST /listings/import/bulk` now call `ensure_store_for_user` when the seller lacks a `store_id`, guaranteeing every published item is instantly attached to a storefront.

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, useNavigate, Link, useSearchParams } from "react-router-dom";
 import api, { formatPrice, conditionLabel } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -238,6 +238,7 @@ const DropshipImportButton = ({ listing, onImported }) => {
 
 const ListingDetail = () => {
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { t } = useLang();
@@ -267,6 +268,11 @@ const ListingDetail = () => {
       api.get("/cart").then((r) => setInCart(r.data.some((l) => l.id === id))).catch(() => {});
       api.post(`/recently-viewed/${id}`).catch(() => {});
       api.get("/my/store").then((r) => setMyStoreSlug(r.data?.slug || null)).catch(() => {});
+    }
+    // Capture Storefront Push referral so it survives the buyer's checkout journey.
+    const ref = searchParams.get("ref");
+    if (ref === "push") {
+      try { sessionStorage.setItem("share_ref", "push"); } catch (e) { /* ignored */ }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, user]);
