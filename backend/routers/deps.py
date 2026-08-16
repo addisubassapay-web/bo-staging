@@ -104,8 +104,12 @@ def build_listings_query(q=None, category_id=None, price_min=None, price_max=Non
                          condition=None, featured=None, seller_id=None, brand=None,
                          status_filter="active"):
     from server import _build_listings_query as _impl
-    return _impl(q, category_id, price_min, price_max, condition, featured,
-                 seller_id, brand, status_filter)
+    # Underlying signature: (q, category_id, min_price, max_price, condition,
+    # featured, seller_id, status_filter, brand=None). Pass by keyword so
+    # future arg-order changes don't silently break.
+    return _impl(q=q, category_id=category_id, min_price=price_min, max_price=price_max,
+                 condition=condition, featured=featured, seller_id=seller_id,
+                 status_filter=status_filter, brand=brand)
 
 async def notify_store_followers(store_id: str, title: str, listing_id=None, bulk: bool = False):
     from server import _notify_store_followers as _impl

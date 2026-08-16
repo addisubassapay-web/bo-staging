@@ -33,6 +33,7 @@ from routers.auth import router as auth_router
 from routers.stores_search import router as stores_search_router
 from routers.shopping import router as shopping_router
 from routers.listings import router as listings_router
+from routers.personalized import router as personalized_router
 
 
 ROOT_DIR = Path(__file__).parent
@@ -806,25 +807,6 @@ async def list_listings(
     return [Listing(**d) for d in docs]
 
 
-@api_router.get("/listings/count")
-async def count_listings(
-    q: Optional[str] = None,
-    category_id: Optional[str] = None,
-    min_price: Optional[float] = None,
-    max_price: Optional[float] = None,
-    condition: Optional[str] = None,
-    brand: Optional[str] = None,
-    featured: Optional[bool] = None,
-    seller_id: Optional[str] = None,
-    status_filter: Optional[str] = "active",
-):
-    """Total item count for the same filter shape as /listings — used to render pagination."""
-    query = _build_listings_query(
-        q=q, category_id=category_id, min_price=min_price, max_price=max_price,
-        condition=condition, brand=brand, featured=featured, seller_id=seller_id, status_filter=status_filter,
-    )
-    total = await db.listings.count_documents(query)
-    return {"total": total}
 
 
 def _build_listings_query(
@@ -4453,6 +4435,7 @@ app.include_router(auth_router, prefix="/api")
 app.include_router(stores_search_router, prefix="/api")
 app.include_router(shopping_router, prefix="/api")
 app.include_router(listings_router, prefix="/api")
+app.include_router(personalized_router, prefix="/api")
 
 app.add_middleware(
     CORSMiddleware,
