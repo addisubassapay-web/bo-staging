@@ -1,0 +1,26 @@
+{
+  "cleaned_user_ids": [
+    "4feee551-d91b-4647-87ac-d4456e564df0",
+    "06ca2835-38b6-483d-a4fa-ccb048222b56"
+  ],
+  "cleaned_emails": [
+    "iter27.mobile.buyer.1786916559662@example.com",
+    "iter27.mobile.empty.1786916560022@example.com"
+  ],
+  "deleted": {
+    "cart_items": 2,
+    "favorites": 0,
+    "views": 0,
+    "orders": 0,
+    "wallets": 0,
+    "wallet_txns": 0,
+    "referrals": 0,
+    "notifications": 0,
+    "reviews": 0,
+    "disputes": 0,
+    "affiliate_clicks": 0,
+    "seller_applications": 0,
+    "user_settings": 0,
+    "users": 2
+  }
+}

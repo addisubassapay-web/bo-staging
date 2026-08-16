@@ -1,56 +1,69 @@
 {
   "verdict": "not_fixed",
-  "user_reported_bug": "The page navigation feature is not working find and fix the problem blocking this feature. Make the application to fit into a respective device.",
-  "summary": "No relevant testing skill found. Focused /search UI verification showed pagination navigation is fixed: page 3 stays on ?page=3 with items 49-72, Next/Prev/First/Last work, Go-to page 57 works, and changing sort resets to page 1. The responsive/device-fit part is still not fixed: at 390x844 the page has horizontal overflow (document scrollWidth 596 > clientWidth 390).",
+  "user_reported_bug": "Cart & Checkout mobile clipping \u2014 bug_testing_agent previously flagged that although horizontal scrollbars are hidden, the Cart grid children maintain a ~419px minimum width, causing product rows and totals to clip out of view at 320px / 375px / 390px widths.",
+  "summary": "No relevant testing skill found. Cart/Checkout mobile clipping itself is fixed in focused UI testing: /cart empty + filled states and /checkout card/wallet/crypto/bank panels strict-fit at 320/375/390 with documentElement.scrollWidth == clientWidth and no offscreen key content. Overall verdict is not_fixed because the requested marketplace hygiene check still fails: active listing count is 239 (all statuses 242) and 6 active TEST/e2e-style listings remain searchable/visible, including featured/flash and women category results.",
   "backend_issues": {
-    "critical": [],
-    "minor": []
-  },
-  "frontend_issues": {
-    "ui_bugs": [
+    "critical": [
       {
-        "component": "Mobile Search/Header layout",
-        "issue": "On 390px mobile viewport the app still overflows horizontally: document scrollWidth=596 while clientWidth=390. Overflow inspection points to header controls/search form extending past the viewport (theme/cart cluster right=596, header-search-form right=504) and category pill links extending inside the rail. Pagination itself wraps, but the user-visible page does not fit the device.",
-        "selector": "[data-testid=\"header-search-form\"], [data-testid=\"header-cart-btn-mobile\"], [data-testid^=\"cat-pill-\"]",
+        "endpoint": "/api/listings, /api/listings/count",
+        "issue": "Marketplace hygiene contract failed: /api/listings/count returns 239 active listings (242 only when status_filter is blank/all-statuses), and active API results include 6 test-named listings: TEST_SOPHIA_OK x2, TEST_pay_2e6f5d, TEST_pay_e9fb5a, TEST_pay_e1fd4d, and Follow Notif Test. GET /api/listings?q=TEST returns these, and featured results included TEST_pay_e1fd4d / Follow Notif Test during verification.",
         "priority": "HIGH"
       }
     ],
-    "integration_issues": [],
-    "design_issues": [
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
       {
-        "screen": "/search mobile 390x844",
-        "issues": [
-          "Horizontal page overflow remains (596px scroll width on 390px viewport).",
-          "Header search/action controls and the top category pill rail are laid out wider than the viewport instead of being constrained or safely contained."
+        "flow": "Marketplace/search/category/homepage listing hygiene",
+        "issue": "Frontend listing surfaces consume API data that still contains test-named active listings; therefore test/e2e listings can appear in /search, category pages, and homepage flash/featured sections even though Cart/Checkout mobile layout now fits.",
+        "affected_selectors": [
+          "listing cards/search results",
+          "homepage featured/flash deals",
+          "category listing grids"
         ]
       }
-    ]
+    ],
+    "design_issues": []
   },
   "test_report_links": [
-    "/app/tests/bug_pagination_verification.py",
+    "/app/tests/bug_cart_checkout_mobile_fit_iteration26_setup.py",
+    "/app/tests/bug_cart_checkout_mobile_fit_iteration26_browser.py",
+    "/app/test_reports/iteration_26_runtime_setup.json",
+    "/app/test_reports/iteration_26_runtime_ui.json",
+    "/app/test_reports/bug_verification_26.json",
+    "/app/test_reports/iteration_26.json",
     "/app/test_reports/bug_verification_21.json",
     "/app/test_reports/iteration_21.json"
   ],
   "action_items": [
-    "Fix the mobile horizontal overflow on /search, especially the global header search/action row and category pill rail, so document scrollWidth <= clientWidth at 390px.",
-    "Retest the focused pagination flow plus mobile responsive metrics after the overflow fix."
+    "Remove or rename all active TEST/e2e-style listings, including those owned by allowed demo/real sellers, then re-check /api/listings?q=TEST and featured/category results.",
+    "If the contract is exactly 242 visible marketplace listings, restore/revive the 3 sold listings or update live-sync behavior so /api/listings/count for active listings returns 242.",
+    "Keep the Cart/Checkout mobile min-width fixes; the focused viewport checks passed at 320/375/390."
   ],
   "critical_code_review_comments": [
-    "Search.jsx pagination reset effect now excludes page/params/setParams, and runtime testing confirms the original page-navigation reset bug no longer reproduces.",
-    "The mobile pagination component met touch-target and wrapping checks (min button height 40px, jump form own row), but the page-level responsive requirement still fails because another header/category component causes horizontal overflow."
+    "Cart.jsx and Checkout.jsx now use grid-cols-1, minmax(0,1fr), and min-w-0 in the key places; runtime evidence showed no remaining mobile clipping for the tested cart/checkout flows.",
+    "cleanup_test_data.py deletes listings by deleted test users, but it does not remove test-titled listings owned by retained demo/real users such as sophia_style; that appears to be why TEST_* listings remain visible.",
+    "apify_sync.py seller whitelist prevents future imports to test users, but it does not clean existing test listing records or enforce title/name hygiene."
   ],
   "updated_files": [
-    "/app/tests/bug_pagination_verification.py",
+    "/app/tests/bug_cart_checkout_mobile_fit_iteration26_setup.py",
+    "/app/tests/bug_cart_checkout_mobile_fit_iteration26_browser.py",
+    "/app/test_reports/iteration_26_runtime_setup.json",
+    "/app/test_reports/iteration_26_runtime_ui.json",
+    "/app/test_reports/bug_verification_26.json",
+    "/app/test_reports/iteration_26.json",
     "/app/test_reports/bug_verification_21.json",
     "/app/test_reports/iteration_21.json"
   ],
   "success_rate": {
-    "backend": "N/A (frontend-only focused test)",
-    "frontend": "83% (5/6 focused checks passed; mobile no-overflow check failed)"
+    "backend": "75%",
+    "frontend": "100% for Cart/Checkout mobile fit; marketplace data hygiene failed"
   },
-  "seed_data_creation": "None. Used existing preview listings (2,708 items / 113 pages).",
+  "seed_data_creation": "Created fresh gmail-domain buyers mobile.fit.buyer.1786916088918@gmail.com and mobile.fit.empty.1786916089331@gmail.com; added 2 real active listings to mobile.fit.buyer.1786916088918@gmail.com's cart via POST /api/cart/{listing_id}.",
   "retest_needed": true,
   "should_main_agent_self_test": true,
-  "context_for_next_testing_agent": "No relevant testing skill found. Pagination-specific behavior passed on live /search: page 3, Next/Prev/First/Last, jump to 57, and sort reset. Recheck mobile 390x844 after fixing overflow; current overflow inspection identified header-search-form/header action controls and [data-testid^=\"cat-pill-\"] elements extending beyond viewport while pagination rect was 366px wide inside the viewport.",
-  "rca_of_the_issue": "Original pagination RCA appears resolved by removing page from the filter-reset effect dependencies. Remaining failure is responsive: mobile header/search/action controls and category rail content participate in page width beyond the viewport, producing horizontal scroll despite the pagination controls themselves wrapping correctly."
+  "context_for_next_testing_agent": "Skill lookup was performed first; no relevant testing skill found. Use iteration_26_runtime_setup.json for tokens/listing IDs and iteration_26_runtime_ui.json for viewport measurements. Mobile Cart/Checkout clipping passed for 18 route/panel/viewport combinations; remaining blocker is marketplace test listing cleanup/count hygiene.",
+  "rca_of_the_issue": "The prior mobile grid/min-width issue appears resolved. The remaining failure is data cleanup: cleanup_test_data.py only removes listings whose seller_id belongs to deleted test users, so test-titled listings under retained demo/real sellers survive and remain active/searchable/featured. Active count is also 239 because 3 of the 242 total listings are sold."
 }

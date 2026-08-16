@@ -1,0 +1,144 @@
+{
+  "verdict": "not_fixed",
+  "base_url": "https://mercari-clone-1.preview.emergentagent.com",
+  "skill_lookup": "No relevant testing skill found.",
+  "setup": {
+    "buyer": "sophia_style@demo.local",
+    "listing_added_to_cart": {
+      "id": "bcf67cba-59f6-46e4-84ef-1f31ecfed288",
+      "title": "HP 64 Black & Tri-Color Ink Cartridges Printers (Combo Pack) | Works with Printer Series: Inspire 7950e; Envy Photo 6200, 7100, 7800; Tango | Eligible for Instant Ink | X4D92AN",
+      "add_status": 200
+    }
+  },
+  "measurements": [
+    {
+      "page": "/cart",
+      "viewport": "320x568",
+      "innerWidth": 320,
+      "documentElementScrollWidth": 320,
+      "bodyScrollWidth": 320,
+      "strict_scrollwidth_pass": true,
+      "key_elements_fit": false,
+      "failing_key_elements": [
+        {
+          "selector": "[data-testid^=cart-item-]",
+          "left": 16,
+          "right": 435.3,
+          "width": 419.3
+        },
+        {
+          "selector": "[data-testid=order-summary]",
+          "left": 16,
+          "right": 435.3,
+          "width": 419.3
+        },
+        {
+          "selector": "[data-testid=checkout-btn]",
+          "left": 37,
+          "right": 414.3,
+          "width": 377.3
+        },
+        {
+          "selector": "[data-testid^=cart-seller-link-]",
+          "example_text": "e2ereg31786338094719",
+          "left": 189.38,
+          "right": 330.78,
+          "width": 141.41
+        }
+      ]
+    },
+    {
+      "page": "/checkout/bcf67cba-59f6-46e4-84ef-1f31ecfed288",
+      "viewport": "320x568",
+      "innerWidth": 320,
+      "documentElementScrollWidth": 320,
+      "bodyScrollWidth": 320,
+      "strict_scrollwidth_pass": true,
+      "key_elements_fit": true,
+      "sticky_checkout_bar_visible": true
+    },
+    {
+      "page": "/cart",
+      "viewport": "375x812",
+      "innerWidth": 375,
+      "documentElementScrollWidth": 375,
+      "bodyScrollWidth": 375,
+      "strict_scrollwidth_pass": true,
+      "key_elements_fit": false,
+      "failing_key_elements": [
+        {
+          "selector": "[data-testid^=cart-item-]",
+          "left": 16,
+          "right": 435.3,
+          "width": 419.3
+        },
+        {
+          "selector": "[data-testid=order-summary]",
+          "left": 16,
+          "right": 435.3,
+          "width": 419.3
+        },
+        {
+          "selector": "[data-testid=checkout-btn]",
+          "left": 37,
+          "right": 414.3,
+          "width": 377.3
+        }
+      ]
+    },
+    {
+      "page": "/checkout/bcf67cba-59f6-46e4-84ef-1f31ecfed288",
+      "viewport": "375x812",
+      "innerWidth": 375,
+      "documentElementScrollWidth": 375,
+      "bodyScrollWidth": 375,
+      "strict_scrollwidth_pass": true,
+      "key_elements_fit": true,
+      "sticky_checkout_bar_visible": true
+    },
+    {
+      "page": "/cart",
+      "viewport": "390x844",
+      "innerWidth": 390,
+      "documentElementScrollWidth": 390,
+      "bodyScrollWidth": 390,
+      "strict_scrollwidth_pass": true,
+      "key_elements_fit": false,
+      "failing_key_elements": [
+        {
+          "selector": "[data-testid^=cart-item-]",
+          "left": 16,
+          "right": 435.3,
+          "width": 419.3
+        },
+        {
+          "selector": "[data-testid=order-summary]",
+          "left": 16,
+          "right": 435.3,
+          "width": 419.3
+        },
+        {
+          "selector": "[data-testid=checkout-btn]",
+          "left": 37,
+          "right": 414.3,
+          "width": 377.3
+        }
+      ]
+    },
+    {
+      "page": "/checkout/bcf67cba-59f6-46e4-84ef-1f31ecfed288",
+      "viewport": "390x844",
+      "innerWidth": 390,
+      "documentElementScrollWidth": 390,
+      "bodyScrollWidth": 390,
+      "strict_scrollwidth_pass": true,
+      "key_elements_fit": true,
+      "sticky_checkout_bar_visible": true
+    }
+  ],
+  "notes": [
+    "All six documentElement/body scrollWidth checks passed exactly equal to innerWidth.",
+    "Cart still fails the user-visible fit requirement because product rows, order summary, and checkout button extend past the viewport at all audited widths; global overflow-x hidden masks scrollWidth but clips content.",
+    "Checkout form inputs and sticky mobile Pay action bar passed at 320/375/390."
+  ]
+}

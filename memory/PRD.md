@@ -26,6 +26,16 @@ Exact replica of Mercari platform (mercari.com) — same color scheme (`#FF211F`
 
 ## Implemented (with dates)
 
+### Feb 2026 — Cart/Checkout Mobile Strict-Fit + Marketplace Data Hygiene
+- **Cart & Checkout mobile clipping (P0) — FIXED and verified by bug_testing_agent (iteration_27, verdict: fixed).** Both pages now strict-fit at 320/375/390 px viewports with `documentElement.scrollWidth === clientWidth` on empty cart, filled cart, and all four checkout payment panels (Card/Wallet/Crypto/Bank).
+  - Root cause: `grid lg:grid-cols-[1fr_360px]` had no explicit mobile column, so implicit grid tracks kept `min-content` sizing and any wide child (long product title, payment chip row) pushed the track past viewport width.
+  - Fix in `/app/frontend/src/pages/Cart.jsx` + `/app/frontend/src/pages/Checkout.jsx`: explicit `grid-cols-1 lg:grid-cols-[minmax(0,1fr)_360px]`, `min-w-0` on grid wrapper AND children, `shrink-0` on image + price/trash column, `whitespace-nowrap` on price, `p-3 sm:p-4/5` reduced side padding, `line-clamp-2` retained.
+- **Test data purge — DONE.** Marketplace now serves ONLY real Apify Amazon products.
+  - `/app/backend/scripts/cleanup_test_data.py` deleted 2,481 test-owned listings + 188 test users + 6 test-titled listings owned by kept sellers. Also strips derivative refs (favorites, cart_items, views, orders, stores, wallets, notifications, disputes, seller_applications).
+  - Final state: **236 listings (233 active + 3 sold)** across the 10 real accounts (1 admin + 5 demo sellers + 4 human-registered).
+  - `/app/backend/apify_sync.py` `_get_sellers()` is now whitelisted to the 5 curated demo sellers (`sophia_style`, `urban_finds`, `vintage_maven`, `tech_haven`, `cozy_home`) so future Apify runs never distribute products to test users.
+
+
 ### Feb 2026 — Phase 20: Multi-Asset Crypto Checkout + Order Payment Persistence
 - **Multi-Asset Crypto Payment Selector** on `/checkout/:id` — Card / Wallet / Crypto / Bank chips. Crypto panel surfaces only admin-active assets (BTC, ETH, SOL, BNB, USDC across networks) with live QR code (`api.qrserver.com`), copyable address + network label. Wallet panel shows available/frozen and disables Pay when insufficient. Bank panel lists admin-configured manual methods with instructions + copy.
 - **Admin controller** (`/admin/payment-methods`) — `GET/PUT /api/admin/settings/payment-methods` accept a `crypto_assets` list (`{symbol, network, address, active}`) + `manual_payment_methods` list, sanitized server-side (drops non-dict, requires symbol+network, caps lengths). Non-admin returns 403.

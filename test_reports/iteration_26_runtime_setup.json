@@ -1,0 +1,1223 @@
+{
+  "backend_url": "https://mercari-clone-1.preview.emergentagent.com",
+  "frontend_url": "http://localhost:3000",
+  "counts": {
+    "active": 239,
+    "all": 242,
+    "sold": 3
+  },
+  "all_listings_sampled": 242,
+  "active_listings_sampled": 239,
+  "bad_sellers_all": [
+    {
+      "id": "bcf67cba-59f6-46e4-84ef-1f31ecfed288",
+      "title": "HP 64 Black & Tri-Color Ink Cartridges Printers (Combo Pack) | Works with Printer Series: Inspire 7950e; Envy Photo 6200, 7100, 7800; Tango | Eligible for Instant Ink | X4D92AN",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "77317204-f1a7-492f-8b59-b747cf7a7745",
+      "title": "Dell 24 Monitor - SE2426H - 23.8-inch FHD (1920x1080) 144Hz 1ms Display, in-Plane Switching (IPS) Technology, AMD FreeSync\u2122, T\u00dcV 3-Star 2X HDMI, Tilt",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "ba67312c-a091-4127-b4e9-21a301c565ce",
+      "title": "AMD RYZEN 7 9800X3D 8-Core, 16-Thread Desktop Processor",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "4f799718-4c81-4982-885f-abc485fddf6a",
+      "title": "JanSport SuperBreak Plus Backpack",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "b9559202-223f-47f7-ab1e-8bfcab6cb649",
+      "title": "COMSOON Bluetooth Receiver for Car, 3.5mm AUX Bluetooth Car Adapter | Noise Cancelling, Wireless Audio Receiver for Home Stereo/Wired Headphones, Hands-Free Call, 16H Battery Life,",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "d0574caa-4465-4241-9ee6-b9d7c20cb32b",
+      "title": "Taygeer Travel Backpack for Women, TSA Carry On Backpack Flight Approved | 15.6inch Laptop Mochila with Water Bottle Pocket & Shoe Pouch, Nurse Bag Casual Daypack for Weekender Bus",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "899e8ae1-c833-43ca-adae-2fb9aeb0f3c3",
+      "title": "6Ft Surge Protector Power Strip with 8 Widely Outlets & 4 USB Ports | 3 Side Outlet Extender with 6 Feet Extension Cord, Flat Plug, for Home, Office, College Dorm Room Essentials, ",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "0a5757f4-7841-4962-8379-bb4b2c580db6",
+      "title": "iPhone Charger Fast Charging, USB C Charger Block, 6FT/10FT Lightning Cable | For Apple iPhone 14/13/12/11 Series, 2-Pack 6FT/10FT Long USB C to Lightning Cables, AirPods with Ligh",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "92477892-a1fe-4519-a358-ceaa5d22c1fc",
+      "title": "USB C Cable 5 Pack 6FT, USB A to Type C Fast Charger Cord | 3A braided USB A to C charging cords for iPhone 17 16 15, Samsung Galaxy, LG; 5 pack for home, office, car and travel.(G",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "ec766fae-1702-4d87-8489-b8d5189ec62a",
+      "title": "iPhone 17 16 15 Charger Fast Charging 10FT - 20W USB C Charger Block | with 10FT Extra Long Type C to C Cable Compatible with iPhone 17/17 Pro/17 Pro Max/Air/16/16e/15, iPad Pro, i",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "ca6b319f-16d2-4164-adf2-90c7be5312b4",
+      "title": "HP 952XL Black + 952 Cyan, Magenta, Yellow Ink | Works with Printer Series: OfficeJet 8702, OfficeJet Pro 7720, 7740, 8210, 8710, 8720, 8730, 8740 | N9K28AN",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "4656f08e-5077-4961-8adf-df94432e1745",
+      "title": "Texas Instruments TI-30Xa Scientific Calculator | Basic, battery-operated; One-line display for general Math and Science",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "95d8edd3-f034-4d2d-8168-19a61499658f",
+      "title": "TEST_SOPHIA_OK",
+      "seller_name": "sophia_style"
+    },
+    {
+      "id": "5f9e03b3-e1af-430b-a570-bfab86e7e470",
+      "title": "TEST_pay_2e6f5d",
+      "seller_name": "sophia_style"
+    },
+    {
+      "id": "ce9424a1-a020-4b59-9eca-1f19d1f14e5f",
+      "title": "TEST_pay_e9fb5a",
+      "seller_name": "sophia_style"
+    },
+    {
+      "id": "adc98f36-6be6-4795-89c7-e31722a50c4a",
+      "title": "TEST_pay_e1fd4d",
+      "seller_name": "sophia_style"
+    },
+    {
+      "id": "31330543-9287-4631-ab3a-7e2a2a580f44",
+      "title": "Teens Girls Period Underwear Kids Period Panties Menstrual Leakproof Protective Underwear for Teens Cotton Briefs",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "39f4d96a-3d55-4be0-bb58-f6511b1c7c37",
+      "title": "Finihen Teen Girls Underwear Seamless Stretch No Show Panties Multi-Pack | 7-16year,Invisible fit dresses tight,Ice silk,Breathable comfort no chafing",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "7b493774-c233-4401-ad52-8ba7ffdc80e2",
+      "title": "Thinx Teens Period Underwear, Brief-Style Period Panties for Teens, Holds Up to Regular 12 Tampons, Period Panties, Reusable",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "5cefe614-8874-4dac-bc8f-a28d2b967139",
+      "title": "Crocs Unisex-Child Classic Watercolor Marbled Clog",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "5b538959-9e3f-4835-96f9-81abdffd0b60",
+      "title": "adidas Boys Adilette Shower Slides Casual Sandals Casual - Blue",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "4fbcd721-ab00-440b-8811-97645020037f",
+      "title": "New Balance Boys Sweatpants 3-Pack, Athletic Fleece Joggers, Size 4-20 | Soft Cotton Blend Fleece, Side Pockets, Ribbed Cuffs, 3-Pack Value, Pull On Pants, Comfy Sweats, Premium Ki",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "57650fa3-8747-4042-8d0f-b5d6a439255d",
+      "title": "UGG Kids' Tasman II",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "dcfcfce5-9c45-423e-ae0b-8a59ba75500a",
+      "title": "The Children's Place Baby Boys Chino Shorts",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "ecb83b94-ec27-4c1e-9f27-9bc130aa0140",
+      "title": "for MagSafe Wallet, 5 Card Holder, Slim Leather Magnetic Wallet for iPhone 17/16/15/14/13/12 Pro Max Plus Air Series, 1 Card Slots & 1 Cash Slot,Black",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "77def7a4-6ac9-4fb7-976b-d5daf110bc45",
+      "title": "adidas Kids Athletic Cushioned 6-Pack Quarter Socks (Little Kid/Big Kid/Adult)",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "221f3890-1e19-4491-b21a-a54d55b63da1",
+      "title": "Stelle Tap Shoes for Toddler Girls PU Unisex Tap Dance Shoes | Rounded toe, Padded heel collar, Clear tap sound, Cushioned insole, Non-slip outsole, Lightweight design",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "1274643d-52f3-48b2-84ec-8e73b241494d",
+      "title": "COTTON DAY Unisex School Kids Boys Girls Soft Combed Cotton Athletic Socks",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "0ba57579-f715-434a-8971-f2071dcfff81",
+      "title": "ZERULETS 25 Pairs Kids Socks Toddler Ankle Low Cut Short Socks 1-14 Years | School Athletic Socks for Boys Girls, Daily, Casual, Soft, Breathable, Black, White",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "f96fdcf9-2f40-4e33-bb31-5e71cea43326",
+      "title": "QYQBOON Mag-Safe Wallet Magnetic Wallet for Phone Lightweight Magnetic Phone Pouch Stand Adjustable Leather Mag-Safe Card Holder for iPhone 17/16/15/14/13/12 Series, Not for iPhone",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "1af2f8ba-7ca2-496a-b7bd-97315a703553",
+      "title": "GRPSKCOS Non Slip Toddler Socks 15 Pairs Toddler Grip Anti Skid Low Cut Socks for 1-7 Years Boys Girls",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "01853630-3b63-4cde-aa55-269faeda2363",
+      "title": "Gerber Baby Boys & Girls 5-Pack Solid Onesies Bodysuits",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "9d56b0d6-28a2-4206-b461-eece2ed77ba2",
+      "title": "Follow Notif Test",
+      "seller_name": "sophia_style"
+    },
+    {
+      "id": "b05bea1c-193c-4ae2-b60e-8085e6b22660",
+      "title": "TEST_SOPHIA_OK",
+      "seller_name": "sophia_style"
+    },
+    {
+      "id": "ae854430-4b60-4c62-98d7-e6e7da2d3989",
+      "title": "Citizen Quartz Mens Watch, Stainless Steel, Classic",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "3e16523d-2ad5-44b3-a3e2-4e0f3073faa0",
+      "title": "Nike Men's Air Max Alpha Trainer 6 Workout Shoes",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "7038185d-6302-4c1a-9dd6-aa6d0ac40ac2",
+      "title": "Citizen Quartz Mens Watch, Stainless Steel, Classic, Gold-Tone",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "56948057-9620-43c0-838a-56a67f7753b3",
+      "title": "Fossil Men's Nate Quartz Chronograph Watch for Men",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "ab72dfdc-d5a6-47af-a2c9-cfeaf71d04fc",
+      "title": "Bulova Men's Series X High Precision Quartz Chronograph Watch, Sapphire Crystal, Continous Sweeping Secondhand",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "cf0eea1d-8a83-4ccc-bdaa-02e32fc538e5",
+      "title": "Willis Judd Copper Bracelet Magnetic for Men",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "4855737a-5695-445d-bce1-3df108ec2628",
+      "title": "Hamilton Khaki Field Murph Automatic Men's Watch, 42mm Stainless Steel Case, Swiss Made, Black Dial Analog Wrist Watch for Men, 100m Waterproof, Sapphire Crystal, Cow Leather Strap",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "d7f1c2c6-7cfe-413a-84f0-a1e81cd561e8",
+      "title": "Jump Rope, Tangle-Free Rapid Speed Jumping Rope Cable with Ball Bearings for Women, Men, and Kids, Adjustable Steel Jump Rope with Foam Handles for Home Gym Exercise Fitness Workou",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "565921f1-0937-49c8-859e-17403201443a",
+      "title": "3-Pack Breathable Mesh Skull Cap Sweat Control Helmet Liner | Lightweight Quick Dry Cooling Sports Cycling Motorcycle Hard Hat Liner for Men Women",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "9524f059-2feb-4989-9b3b-e5c2a6f7d856",
+      "title": "LISEN Bike Phone Holder, [Super Easy Install] Motorcycle Phone Mount Ebike Accessories Bicycle Handlebar Holder Mount Gifts for Adults Kids Men Mountain Mini Bike Scooter Gear Acce",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "1eec4cc9-3462-40f3-81d6-96af197d6fc8",
+      "title": "Citizen Quartz Mens Watch, Stainless Steel, Classic",
+      "seller_name": "Eddy Boss"
+    },
+    {
+      "id": "bf4cb3b3-3b62-4264-8339-9611a53c9697",
+      "title": "shevalues Quick Drying Shower Shoes for Women Men with Arch Support | Lightweight Pool Slides with Drain Holes Comfortable Beach Slipper Sandals for Gym College Dorms",
+      "seller_name": "Eddy Boss"
+    },
+    {
+      "id": "1efcf9c8-1b2d-4b63-86a9-3e20234760bc",
+      "title": "Affresh Washing Machine Cleaner, Helps Power Away Odor Causing Bacteria & Grime Deep Inside Pump, Valve & Hoses, 6 Time Release Tablets, 6 Month Supply",
+      "seller_name": "Eddy Boss"
+    },
+    {
+      "id": "844b2549-150a-49db-9ce5-bf6fa457033c",
+      "title": "Assassin's Creed Black Flag Resynced - PlayStation 5",
+      "seller_name": "Eddy Boss"
+    },
+    {
+      "id": "ed853195-b8f4-4137-86f9-c742a56134ee",
+      "title": "FEIDUSUN Sunglasses Men Polarized Sunglasses for Mens and Womens,Black Retro Sun Glasses Driving Fishing UV Protection",
+      "seller_name": "Eddy Boss"
+    },
+    {
+      "id": "145f4928-4ba4-4a07-af16-e2fec6b7eaf8",
+      "title": "Fammart Iridescent Clear Beach Bags Waterproof Sandproof for Women, Large Jelly Tote Zipper Pool Bag Cruise Essentials 2026",
+      "seller_name": "Eddy Boss"
+    },
+    {
+      "id": "0bffe7aa-417e-4784-8354-730044d6dc99",
+      "title": "Hanes Kids' Uniform Crew Socks Pack, 10-pack, Moisture-wicking, Cushioned, Stretch Kids' Socks for School",
+      "seller_name": "Eddy Boss"
+    },
+    {
+      "id": "fa77e02e-a23f-4924-8c98-9e51dfdf1c7a",
+      "title": "iPhone Charger Fast Charging,2Pack 20W Type C Fast Charger Block with [10FT&6FT] USB C to Lightning Cable Compatible for iPhone 14/13/12/11 Pro Max/Xs Max/XR/X,iPad",
+      "seller_name": "Eddy Boss"
+    },
+    {
+      "id": "0ddf218b-f845-4140-9f95-4eaffd7e0f4b",
+      "title": "Crocs Unisex-Adult Classic Clogs",
+      "seller_name": "Eddy Boss"
+    },
+    {
+      "id": "4528f822-27c1-4ff9-94a8-5067cfa3d5f4",
+      "title": "CERAKOTE\u00ae Ceramic Trim Coat Kit - Quick Plastic Trim Restorer - Ceramic Coating Guaranteed Restoration to Last Over 200 Washes \u2013 A Ceramic Coating, Not a Dressing | Restores faded ",
+      "seller_name": "Eddy Boss"
+    },
+    {
+      "id": "877358fc-4256-4015-af99-76a8c152933d",
+      "title": "Roundup 190260 2-Gallon Lawn and Garden Sprayer for Controlling Insects and Weeds or Cleaning Decks and Siding",
+      "seller_name": "Eddy Boss"
+    },
+    {
+      "id": "b43c3030-fc46-4acc-a309-36d444e9f4d7",
+      "title": "Nizoral Anti-Dandruff Shampoo with 1% Ketoconazole, Fresh Scent, 14 Fl Oz | Anti-Fungal Shampoo, Dandruff Shampoo for Dandruff Relief, Ketoconazole Shampoo, Dandruff Treatment, 1% ",
+      "seller_name": "Eddy Boss"
+    },
+    {
+      "id": "fb4ee853-1bd4-4208-8daf-57d3eb631978",
+      "title": "Wood Designs WD13803 See-All Storage with (12) Assorted Color Trays, 21 x 33 x 14\" (H x W x D)",
+      "seller_name": "Eddy Boss"
+    },
+    {
+      "id": "27311f23-9d80-4d41-990b-517effa17105",
+      "title": "Crest Pro-Health Gum Detoxify Plus Toothpaste 4.5 oz Pack of 3 - Antibacterial Fluoride Toothpaste, Sensitivity Protection, Whitens Teeth, Anticavity, Plaque Control",
+      "seller_name": "Eddy Boss"
+    },
+    {
+      "id": "55dfd36e-d715-49c7-a68d-c255e0d49c41",
+      "title": "Gain The Edge Soccer Grip Socks - Set - White",
+      "seller_name": "Eddy Boss"
+    },
+    {
+      "id": "36a19519-4a72-4b08-9061-aa30b98d2dc1",
+      "title": "Disneys Pixar Cars Mini Adventures 2 Pk Sarges Boot Camp Sally & Mater",
+      "seller_name": "Eddy Boss"
+    },
+    {
+      "id": "4932b269-915b-4d27-99dc-44da298385a7",
+      "title": "12 Pack Muslin Burp Cloths - Large 20\" x 10\", Ultra Absorbent 100% Cotton for Baby Drool and Messes - Soft, Gentle Baby Burp Rag for Boys & Girls -Pink, Purple, Sakura Series",
+      "seller_name": "Eddy Boss"
+    },
+    {
+      "id": "7879e631-8f8c-4c80-afff-ffc5bb34d6a0",
+      "title": "Tomodachi Life: Living the Dream",
+      "seller_name": "Eddy Boss"
+    },
+    {
+      "id": "7db3f15e-4a37-4c1f-8b53-cf5d19d5b731",
+      "title": "Demifill Teen Girls Period Panties Juniors First Period Starter Underwear Soft Briefs Pack of 6 Multipack",
+      "seller_name": "Eddy Boss"
+    },
+    {
+      "id": "ce4eb5ff-9024-4e9d-b210-0dd378fc20fc",
+      "title": "Tiny Twinkle Long Sleeve Bib for Babies & Toddlers | Waterproof Smock Bib for Eating | Machine Washable & Mess-Proof Feeding Essentials | Newborn Shower Gift (Dinosaur, 6\u201324M)",
+      "seller_name": "Eddy Boss"
+    },
+    {
+      "id": "c0cb3528-c602-4c32-a772-e4ae72e2a8da",
+      "title": "The Children's Place boys Quick Dry Chino Shorts",
+      "seller_name": "Eddy Boss"
+    },
+    {
+      "id": "db01f61a-c8d4-455e-8a39-888c6be743ec",
+      "title": "HEYDUDE Men's Paul | Men\u2019s Shoes | Men's Lace Up Loafers | Comfortable & Light-Weight | Cushioned Ankle Collar, Elastic Laces, Removable Foam Insole, Slip Resistant Outsole",
+      "seller_name": "Eddy Boss"
+    },
+    {
+      "id": "52ceff25-3f43-4df1-b333-fe9e1ee80d47",
+      "title": "Women's 3 Piece Tankini Swimsuit Tummy Control with Bra Pocket Boy Shorts | Modest Bathing Suit, Athletic Style, Strappy-Back Support, High-Waist Fit, Built-In Brief, Side Pockets,",
+      "seller_name": "Eddy Boss"
+    },
+    {
+      "id": "8a885053-8caa-4845-9086-417975bf4bf4",
+      "title": "KIIU Mens Thong Sandals Indoor and Outdoor Beach Flip Flop",
+      "seller_name": "Eddy Boss"
+    },
+    {
+      "id": "c423b9e0-7cd0-4ec8-8404-6e3d72ad8104",
+      "title": "$50 PlayStation Store Gift Card [Digital Code]",
+      "seller_name": "Eddy Boss"
+    },
+    {
+      "id": "9eeea82d-4e0a-4f35-8986-4d1bf57ae423",
+      "title": "Sperry Men's Authentic Original 2-Eye Boat Shoe",
+      "seller_name": "Eddy Boss"
+    },
+    {
+      "id": "0c812a02-51e5-4df7-83b6-6914047086c4",
+      "title": "Threshing Day (Wing and Claw Collection) (The Empyrean)",
+      "seller_name": "Eddy Boss"
+    }
+  ],
+  "bad_sellers_active": [
+    {
+      "id": "bcf67cba-59f6-46e4-84ef-1f31ecfed288",
+      "title": "HP 64 Black & Tri-Color Ink Cartridges Printers (Combo Pack) | Works with Printer Series: Inspire 7950e; Envy Photo 6200, 7100, 7800; Tango | Eligible for Instant Ink | X4D92AN",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "77317204-f1a7-492f-8b59-b747cf7a7745",
+      "title": "Dell 24 Monitor - SE2426H - 23.8-inch FHD (1920x1080) 144Hz 1ms Display, in-Plane Switching (IPS) Technology, AMD FreeSync\u2122, T\u00dcV 3-Star 2X HDMI, Tilt",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "ba67312c-a091-4127-b4e9-21a301c565ce",
+      "title": "AMD RYZEN 7 9800X3D 8-Core, 16-Thread Desktop Processor",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "4f799718-4c81-4982-885f-abc485fddf6a",
+      "title": "JanSport SuperBreak Plus Backpack",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "b9559202-223f-47f7-ab1e-8bfcab6cb649",
+      "title": "COMSOON Bluetooth Receiver for Car, 3.5mm AUX Bluetooth Car Adapter | Noise Cancelling, Wireless Audio Receiver for Home Stereo/Wired Headphones, Hands-Free Call, 16H Battery Life,",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "d0574caa-4465-4241-9ee6-b9d7c20cb32b",
+      "title": "Taygeer Travel Backpack for Women, TSA Carry On Backpack Flight Approved | 15.6inch Laptop Mochila with Water Bottle Pocket & Shoe Pouch, Nurse Bag Casual Daypack for Weekender Bus",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "899e8ae1-c833-43ca-adae-2fb9aeb0f3c3",
+      "title": "6Ft Surge Protector Power Strip with 8 Widely Outlets & 4 USB Ports | 3 Side Outlet Extender with 6 Feet Extension Cord, Flat Plug, for Home, Office, College Dorm Room Essentials, ",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "0a5757f4-7841-4962-8379-bb4b2c580db6",
+      "title": "iPhone Charger Fast Charging, USB C Charger Block, 6FT/10FT Lightning Cable | For Apple iPhone 14/13/12/11 Series, 2-Pack 6FT/10FT Long USB C to Lightning Cables, AirPods with Ligh",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "92477892-a1fe-4519-a358-ceaa5d22c1fc",
+      "title": "USB C Cable 5 Pack 6FT, USB A to Type C Fast Charger Cord | 3A braided USB A to C charging cords for iPhone 17 16 15, Samsung Galaxy, LG; 5 pack for home, office, car and travel.(G",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "ec766fae-1702-4d87-8489-b8d5189ec62a",
+      "title": "iPhone 17 16 15 Charger Fast Charging 10FT - 20W USB C Charger Block | with 10FT Extra Long Type C to C Cable Compatible with iPhone 17/17 Pro/17 Pro Max/Air/16/16e/15, iPad Pro, i",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "ca6b319f-16d2-4164-adf2-90c7be5312b4",
+      "title": "HP 952XL Black + 952 Cyan, Magenta, Yellow Ink | Works with Printer Series: OfficeJet 8702, OfficeJet Pro 7720, 7740, 8210, 8710, 8720, 8730, 8740 | N9K28AN",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "4656f08e-5077-4961-8adf-df94432e1745",
+      "title": "Texas Instruments TI-30Xa Scientific Calculator | Basic, battery-operated; One-line display for general Math and Science",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "95d8edd3-f034-4d2d-8168-19a61499658f",
+      "title": "TEST_SOPHIA_OK",
+      "seller_name": "sophia_style"
+    },
+    {
+      "id": "5f9e03b3-e1af-430b-a570-bfab86e7e470",
+      "title": "TEST_pay_2e6f5d",
+      "seller_name": "sophia_style"
+    },
+    {
+      "id": "ce9424a1-a020-4b59-9eca-1f19d1f14e5f",
+      "title": "TEST_pay_e9fb5a",
+      "seller_name": "sophia_style"
+    },
+    {
+      "id": "adc98f36-6be6-4795-89c7-e31722a50c4a",
+      "title": "TEST_pay_e1fd4d",
+      "seller_name": "sophia_style"
+    },
+    {
+      "id": "31330543-9287-4631-ab3a-7e2a2a580f44",
+      "title": "Teens Girls Period Underwear Kids Period Panties Menstrual Leakproof Protective Underwear for Teens Cotton Briefs",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "39f4d96a-3d55-4be0-bb58-f6511b1c7c37",
+      "title": "Finihen Teen Girls Underwear Seamless Stretch No Show Panties Multi-Pack | 7-16year,Invisible fit dresses tight,Ice silk,Breathable comfort no chafing",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "7b493774-c233-4401-ad52-8ba7ffdc80e2",
+      "title": "Thinx Teens Period Underwear, Brief-Style Period Panties for Teens, Holds Up to Regular 12 Tampons, Period Panties, Reusable",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "5cefe614-8874-4dac-bc8f-a28d2b967139",
+      "title": "Crocs Unisex-Child Classic Watercolor Marbled Clog",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "5b538959-9e3f-4835-96f9-81abdffd0b60",
+      "title": "adidas Boys Adilette Shower Slides Casual Sandals Casual - Blue",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "4fbcd721-ab00-440b-8811-97645020037f",
+      "title": "New Balance Boys Sweatpants 3-Pack, Athletic Fleece Joggers, Size 4-20 | Soft Cotton Blend Fleece, Side Pockets, Ribbed Cuffs, 3-Pack Value, Pull On Pants, Comfy Sweats, Premium Ki",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "57650fa3-8747-4042-8d0f-b5d6a439255d",
+      "title": "UGG Kids' Tasman II",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "dcfcfce5-9c45-423e-ae0b-8a59ba75500a",
+      "title": "The Children's Place Baby Boys Chino Shorts",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "ecb83b94-ec27-4c1e-9f27-9bc130aa0140",
+      "title": "for MagSafe Wallet, 5 Card Holder, Slim Leather Magnetic Wallet for iPhone 17/16/15/14/13/12 Pro Max Plus Air Series, 1 Card Slots & 1 Cash Slot,Black",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "77def7a4-6ac9-4fb7-976b-d5daf110bc45",
+      "title": "adidas Kids Athletic Cushioned 6-Pack Quarter Socks (Little Kid/Big Kid/Adult)",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "221f3890-1e19-4491-b21a-a54d55b63da1",
+      "title": "Stelle Tap Shoes for Toddler Girls PU Unisex Tap Dance Shoes | Rounded toe, Padded heel collar, Clear tap sound, Cushioned insole, Non-slip outsole, Lightweight design",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "1274643d-52f3-48b2-84ec-8e73b241494d",
+      "title": "COTTON DAY Unisex School Kids Boys Girls Soft Combed Cotton Athletic Socks",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "0ba57579-f715-434a-8971-f2071dcfff81",
+      "title": "ZERULETS 25 Pairs Kids Socks Toddler Ankle Low Cut Short Socks 1-14 Years | School Athletic Socks for Boys Girls, Daily, Casual, Soft, Breathable, Black, White",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "f96fdcf9-2f40-4e33-bb31-5e71cea43326",
+      "title": "QYQBOON Mag-Safe Wallet Magnetic Wallet for Phone Lightweight Magnetic Phone Pouch Stand Adjustable Leather Mag-Safe Card Holder for iPhone 17/16/15/14/13/12 Series, Not for iPhone",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "1af2f8ba-7ca2-496a-b7bd-97315a703553",
+      "title": "GRPSKCOS Non Slip Toddler Socks 15 Pairs Toddler Grip Anti Skid Low Cut Socks for 1-7 Years Boys Girls",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "01853630-3b63-4cde-aa55-269faeda2363",
+      "title": "Gerber Baby Boys & Girls 5-Pack Solid Onesies Bodysuits",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "9d56b0d6-28a2-4206-b461-eece2ed77ba2",
+      "title": "Follow Notif Test",
+      "seller_name": "sophia_style"
+    },
+    {
+      "id": "b05bea1c-193c-4ae2-b60e-8085e6b22660",
+      "title": "TEST_SOPHIA_OK",
+      "seller_name": "sophia_style"
+    },
+    {
+      "id": "ae854430-4b60-4c62-98d7-e6e7da2d3989",
+      "title": "Citizen Quartz Mens Watch, Stainless Steel, Classic",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "3e16523d-2ad5-44b3-a3e2-4e0f3073faa0",
+      "title": "Nike Men's Air Max Alpha Trainer 6 Workout Shoes",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "7038185d-6302-4c1a-9dd6-aa6d0ac40ac2",
+      "title": "Citizen Quartz Mens Watch, Stainless Steel, Classic, Gold-Tone",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "56948057-9620-43c0-838a-56a67f7753b3",
+      "title": "Fossil Men's Nate Quartz Chronograph Watch for Men",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "ab72dfdc-d5a6-47af-a2c9-cfeaf71d04fc",
+      "title": "Bulova Men's Series X High Precision Quartz Chronograph Watch, Sapphire Crystal, Continous Sweeping Secondhand",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "cf0eea1d-8a83-4ccc-bdaa-02e32fc538e5",
+      "title": "Willis Judd Copper Bracelet Magnetic for Men",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "4855737a-5695-445d-bce1-3df108ec2628",
+      "title": "Hamilton Khaki Field Murph Automatic Men's Watch, 42mm Stainless Steel Case, Swiss Made, Black Dial Analog Wrist Watch for Men, 100m Waterproof, Sapphire Crystal, Cow Leather Strap",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "d7f1c2c6-7cfe-413a-84f0-a1e81cd561e8",
+      "title": "Jump Rope, Tangle-Free Rapid Speed Jumping Rope Cable with Ball Bearings for Women, Men, and Kids, Adjustable Steel Jump Rope with Foam Handles for Home Gym Exercise Fitness Workou",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "565921f1-0937-49c8-859e-17403201443a",
+      "title": "3-Pack Breathable Mesh Skull Cap Sweat Control Helmet Liner | Lightweight Quick Dry Cooling Sports Cycling Motorcycle Hard Hat Liner for Men Women",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "9524f059-2feb-4989-9b3b-e5c2a6f7d856",
+      "title": "LISEN Bike Phone Holder, [Super Easy Install] Motorcycle Phone Mount Ebike Accessories Bicycle Handlebar Holder Mount Gifts for Adults Kids Men Mountain Mini Bike Scooter Gear Acce",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "1eec4cc9-3462-40f3-81d6-96af197d6fc8",
+      "title": "Citizen Quartz Mens Watch, Stainless Steel, Classic",
+      "seller_name": "Eddy Boss"
+    },
+    {
+      "id": "bf4cb3b3-3b62-4264-8339-9611a53c9697",
+      "title": "shevalues Quick Drying Shower Shoes for Women Men with Arch Support | Lightweight Pool Slides with Drain Holes Comfortable Beach Slipper Sandals for Gym College Dorms",
+      "seller_name": "Eddy Boss"
+    },
+    {
+      "id": "1efcf9c8-1b2d-4b63-86a9-3e20234760bc",
+      "title": "Affresh Washing Machine Cleaner, Helps Power Away Odor Causing Bacteria & Grime Deep Inside Pump, Valve & Hoses, 6 Time Release Tablets, 6 Month Supply",
+      "seller_name": "Eddy Boss"
+    },
+    {
+      "id": "844b2549-150a-49db-9ce5-bf6fa457033c",
+      "title": "Assassin's Creed Black Flag Resynced - PlayStation 5",
+      "seller_name": "Eddy Boss"
+    },
+    {
+      "id": "ed853195-b8f4-4137-86f9-c742a56134ee",
+      "title": "FEIDUSUN Sunglasses Men Polarized Sunglasses for Mens and Womens,Black Retro Sun Glasses Driving Fishing UV Protection",
+      "seller_name": "Eddy Boss"
+    },
+    {
+      "id": "145f4928-4ba4-4a07-af16-e2fec6b7eaf8",
+      "title": "Fammart Iridescent Clear Beach Bags Waterproof Sandproof for Women, Large Jelly Tote Zipper Pool Bag Cruise Essentials 2026",
+      "seller_name": "Eddy Boss"
+    },
+    {
+      "id": "0bffe7aa-417e-4784-8354-730044d6dc99",
+      "title": "Hanes Kids' Uniform Crew Socks Pack, 10-pack, Moisture-wicking, Cushioned, Stretch Kids' Socks for School",
+      "seller_name": "Eddy Boss"
+    },
+    {
+      "id": "fa77e02e-a23f-4924-8c98-9e51dfdf1c7a",
+      "title": "iPhone Charger Fast Charging,2Pack 20W Type C Fast Charger Block with [10FT&6FT] USB C to Lightning Cable Compatible for iPhone 14/13/12/11 Pro Max/Xs Max/XR/X,iPad",
+      "seller_name": "Eddy Boss"
+    },
+    {
+      "id": "0ddf218b-f845-4140-9f95-4eaffd7e0f4b",
+      "title": "Crocs Unisex-Adult Classic Clogs",
+      "seller_name": "Eddy Boss"
+    },
+    {
+      "id": "4528f822-27c1-4ff9-94a8-5067cfa3d5f4",
+      "title": "CERAKOTE\u00ae Ceramic Trim Coat Kit - Quick Plastic Trim Restorer - Ceramic Coating Guaranteed Restoration to Last Over 200 Washes \u2013 A Ceramic Coating, Not a Dressing | Restores faded ",
+      "seller_name": "Eddy Boss"
+    },
+    {
+      "id": "877358fc-4256-4015-af99-76a8c152933d",
+      "title": "Roundup 190260 2-Gallon Lawn and Garden Sprayer for Controlling Insects and Weeds or Cleaning Decks and Siding",
+      "seller_name": "Eddy Boss"
+    },
+    {
+      "id": "b43c3030-fc46-4acc-a309-36d444e9f4d7",
+      "title": "Nizoral Anti-Dandruff Shampoo with 1% Ketoconazole, Fresh Scent, 14 Fl Oz | Anti-Fungal Shampoo, Dandruff Shampoo for Dandruff Relief, Ketoconazole Shampoo, Dandruff Treatment, 1% ",
+      "seller_name": "Eddy Boss"
+    },
+    {
+      "id": "fb4ee853-1bd4-4208-8daf-57d3eb631978",
+      "title": "Wood Designs WD13803 See-All Storage with (12) Assorted Color Trays, 21 x 33 x 14\" (H x W x D)",
+      "seller_name": "Eddy Boss"
+    },
+    {
+      "id": "27311f23-9d80-4d41-990b-517effa17105",
+      "title": "Crest Pro-Health Gum Detoxify Plus Toothpaste 4.5 oz Pack of 3 - Antibacterial Fluoride Toothpaste, Sensitivity Protection, Whitens Teeth, Anticavity, Plaque Control",
+      "seller_name": "Eddy Boss"
+    },
+    {
+      "id": "55dfd36e-d715-49c7-a68d-c255e0d49c41",
+      "title": "Gain The Edge Soccer Grip Socks - Set - White",
+      "seller_name": "Eddy Boss"
+    },
+    {
+      "id": "36a19519-4a72-4b08-9061-aa30b98d2dc1",
+      "title": "Disneys Pixar Cars Mini Adventures 2 Pk Sarges Boot Camp Sally & Mater",
+      "seller_name": "Eddy Boss"
+    },
+    {
+      "id": "4932b269-915b-4d27-99dc-44da298385a7",
+      "title": "12 Pack Muslin Burp Cloths - Large 20\" x 10\", Ultra Absorbent 100% Cotton for Baby Drool and Messes - Soft, Gentle Baby Burp Rag for Boys & Girls -Pink, Purple, Sakura Series",
+      "seller_name": "Eddy Boss"
+    },
+    {
+      "id": "7879e631-8f8c-4c80-afff-ffc5bb34d6a0",
+      "title": "Tomodachi Life: Living the Dream",
+      "seller_name": "Eddy Boss"
+    },
+    {
+      "id": "7db3f15e-4a37-4c1f-8b53-cf5d19d5b731",
+      "title": "Demifill Teen Girls Period Panties Juniors First Period Starter Underwear Soft Briefs Pack of 6 Multipack",
+      "seller_name": "Eddy Boss"
+    },
+    {
+      "id": "ce4eb5ff-9024-4e9d-b210-0dd378fc20fc",
+      "title": "Tiny Twinkle Long Sleeve Bib for Babies & Toddlers | Waterproof Smock Bib for Eating | Machine Washable & Mess-Proof Feeding Essentials | Newborn Shower Gift (Dinosaur, 6\u201324M)",
+      "seller_name": "Eddy Boss"
+    },
+    {
+      "id": "c0cb3528-c602-4c32-a772-e4ae72e2a8da",
+      "title": "The Children's Place boys Quick Dry Chino Shorts",
+      "seller_name": "Eddy Boss"
+    },
+    {
+      "id": "db01f61a-c8d4-455e-8a39-888c6be743ec",
+      "title": "HEYDUDE Men's Paul | Men\u2019s Shoes | Men's Lace Up Loafers | Comfortable & Light-Weight | Cushioned Ankle Collar, Elastic Laces, Removable Foam Insole, Slip Resistant Outsole",
+      "seller_name": "Eddy Boss"
+    },
+    {
+      "id": "52ceff25-3f43-4df1-b333-fe9e1ee80d47",
+      "title": "Women's 3 Piece Tankini Swimsuit Tummy Control with Bra Pocket Boy Shorts | Modest Bathing Suit, Athletic Style, Strappy-Back Support, High-Waist Fit, Built-In Brief, Side Pockets,",
+      "seller_name": "Eddy Boss"
+    },
+    {
+      "id": "8a885053-8caa-4845-9086-417975bf4bf4",
+      "title": "KIIU Mens Thong Sandals Indoor and Outdoor Beach Flip Flop",
+      "seller_name": "Eddy Boss"
+    },
+    {
+      "id": "c423b9e0-7cd0-4ec8-8404-6e3d72ad8104",
+      "title": "$50 PlayStation Store Gift Card [Digital Code]",
+      "seller_name": "Eddy Boss"
+    },
+    {
+      "id": "9eeea82d-4e0a-4f35-8986-4d1bf57ae423",
+      "title": "Sperry Men's Authentic Original 2-Eye Boat Shoe",
+      "seller_name": "Eddy Boss"
+    },
+    {
+      "id": "0c812a02-51e5-4df7-83b6-6914047086c4",
+      "title": "Threshing Day (Wing and Claw Collection) (The Empyrean)",
+      "seller_name": "Eddy Boss"
+    }
+  ],
+  "bad_sellers_featured": [
+    {
+      "id": "b9559202-223f-47f7-ab1e-8bfcab6cb649",
+      "title": "COMSOON Bluetooth Receiver for Car, 3.5mm AUX Bluetooth Car Adapter | Noise Cancelling, Wireless Audio Receiver for Home Stereo/Wired Headphones, Hands-Free Call, 16H Battery Life,",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "39f4d96a-3d55-4be0-bb58-f6511b1c7c37",
+      "title": "Finihen Teen Girls Underwear Seamless Stretch No Show Panties Multi-Pack | 7-16year,Invisible fit dresses tight,Ice silk,Breathable comfort no chafing",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "ecb83b94-ec27-4c1e-9f27-9bc130aa0140",
+      "title": "for MagSafe Wallet, 5 Card Holder, Slim Leather Magnetic Wallet for iPhone 17/16/15/14/13/12 Pro Max Plus Air Series, 1 Card Slots & 1 Cash Slot,Black",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "221f3890-1e19-4491-b21a-a54d55b63da1",
+      "title": "Stelle Tap Shoes for Toddler Girls PU Unisex Tap Dance Shoes | Rounded toe, Padded heel collar, Clear tap sound, Cushioned insole, Non-slip outsole, Lightweight design",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "01853630-3b63-4cde-aa55-269faeda2363",
+      "title": "Gerber Baby Boys & Girls 5-Pack Solid Onesies Bodysuits",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "9d56b0d6-28a2-4206-b461-eece2ed77ba2",
+      "title": "Follow Notif Test",
+      "seller_name": "sophia_style"
+    },
+    {
+      "id": "56948057-9620-43c0-838a-56a67f7753b3",
+      "title": "Fossil Men's Nate Quartz Chronograph Watch for Men",
+      "seller_name": "Elona"
+    },
+    {
+      "id": "ce4eb5ff-9024-4e9d-b210-0dd378fc20fc",
+      "title": "Tiny Twinkle Long Sleeve Bib for Babies & Toddlers | Waterproof Smock Bib for Eating | Machine Washable & Mess-Proof Feeding Essentials | Newborn Shower Gift (Dinosaur, 6\u201324M)",
+      "seller_name": "Eddy Boss"
+    },
+    {
+      "id": "c0cb3528-c602-4c32-a772-e4ae72e2a8da",
+      "title": "The Children's Place boys Quick Dry Chino Shorts",
+      "seller_name": "Eddy Boss"
+    }
+  ],
+  "category_samples": [
+    {
+      "category": "women",
+      "count_sampled": 46,
+      "bad": [
+        {
+          "id": "95d8edd3-f034-4d2d-8168-19a61499658f",
+          "title": "TEST_SOPHIA_OK",
+          "seller_name": "sophia_style"
+        },
+        {
+          "id": "5f9e03b3-e1af-430b-a570-bfab86e7e470",
+          "title": "TEST_pay_2e6f5d",
+          "seller_name": "sophia_style"
+        },
+        {
+          "id": "ce9424a1-a020-4b59-9eca-1f19d1f14e5f",
+          "title": "TEST_pay_e9fb5a",
+          "seller_name": "sophia_style"
+        },
+        {
+          "id": "adc98f36-6be6-4795-89c7-e31722a50c4a",
+          "title": "TEST_pay_e1fd4d",
+          "seller_name": "sophia_style"
+        },
+        {
+          "id": "9d56b0d6-28a2-4206-b461-eece2ed77ba2",
+          "title": "Follow Notif Test",
+          "seller_name": "sophia_style"
+        },
+        {
+          "id": "b05bea1c-193c-4ae2-b60e-8085e6b22660",
+          "title": "TEST_SOPHIA_OK",
+          "seller_name": "sophia_style"
+        }
+      ]
+    },
+    {
+      "category": "men",
+      "count_sampled": 51,
+      "bad": [
+        {
+          "id": "ae854430-4b60-4c62-98d7-e6e7da2d3989",
+          "title": "Citizen Quartz Mens Watch, Stainless Steel, Classic",
+          "seller_name": "Elona"
+        },
+        {
+          "id": "3e16523d-2ad5-44b3-a3e2-4e0f3073faa0",
+          "title": "Nike Men's Air Max Alpha Trainer 6 Workout Shoes",
+          "seller_name": "Elona"
+        },
+        {
+          "id": "7038185d-6302-4c1a-9dd6-aa6d0ac40ac2",
+          "title": "Citizen Quartz Mens Watch, Stainless Steel, Classic, Gold-Tone",
+          "seller_name": "Elona"
+        },
+        {
+          "id": "56948057-9620-43c0-838a-56a67f7753b3",
+          "title": "Fossil Men's Nate Quartz Chronograph Watch for Men",
+          "seller_name": "Elona"
+        },
+        {
+          "id": "ab72dfdc-d5a6-47af-a2c9-cfeaf71d04fc",
+          "title": "Bulova Men's Series X High Precision Quartz Chronograph Watch, Sapphire Crystal, Continous Sweeping Secondhand",
+          "seller_name": "Elona"
+        },
+        {
+          "id": "cf0eea1d-8a83-4ccc-bdaa-02e32fc538e5",
+          "title": "Willis Judd Copper Bracelet Magnetic for Men",
+          "seller_name": "Elona"
+        },
+        {
+          "id": "4855737a-5695-445d-bce1-3df108ec2628",
+          "title": "Hamilton Khaki Field Murph Automatic Men's Watch, 42mm Stainless Steel Case, Swiss Made, Black Dial Analog Wrist Watch for Men, 100m Waterproof, Sapphire Crystal, Cow Leather Strap",
+          "seller_name": "Elona"
+        },
+        {
+          "id": "1eec4cc9-3462-40f3-81d6-96af197d6fc8",
+          "title": "Citizen Quartz Mens Watch, Stainless Steel, Classic",
+          "seller_name": "Eddy Boss"
+        },
+        {
+          "id": "bf4cb3b3-3b62-4264-8339-9611a53c9697",
+          "title": "shevalues Quick Drying Shower Shoes for Women Men with Arch Support | Lightweight Pool Slides with Drain Holes Comfortable Beach Slipper Sandals for Gym College Dorms",
+          "seller_name": "Eddy Boss"
+        },
+        {
+          "id": "ed853195-b8f4-4137-86f9-c742a56134ee",
+          "title": "FEIDUSUN Sunglasses Men Polarized Sunglasses for Mens and Womens,Black Retro Sun Glasses Driving Fishing UV Protection",
+          "seller_name": "Eddy Boss"
+        }
+      ]
+    },
+    {
+      "category": "kids",
+      "count_sampled": 44,
+      "bad": [
+        {
+          "id": "31330543-9287-4631-ab3a-7e2a2a580f44",
+          "title": "Teens Girls Period Underwear Kids Period Panties Menstrual Leakproof Protective Underwear for Teens Cotton Briefs",
+          "seller_name": "Elona"
+        },
+        {
+          "id": "39f4d96a-3d55-4be0-bb58-f6511b1c7c37",
+          "title": "Finihen Teen Girls Underwear Seamless Stretch No Show Panties Multi-Pack | 7-16year,Invisible fit dresses tight,Ice silk,Breathable comfort no chafing",
+          "seller_name": "Elona"
+        },
+        {
+          "id": "7b493774-c233-4401-ad52-8ba7ffdc80e2",
+          "title": "Thinx Teens Period Underwear, Brief-Style Period Panties for Teens, Holds Up to Regular 12 Tampons, Period Panties, Reusable",
+          "seller_name": "Elona"
+        },
+        {
+          "id": "5cefe614-8874-4dac-bc8f-a28d2b967139",
+          "title": "Crocs Unisex-Child Classic Watercolor Marbled Clog",
+          "seller_name": "Elona"
+        },
+        {
+          "id": "5b538959-9e3f-4835-96f9-81abdffd0b60",
+          "title": "adidas Boys Adilette Shower Slides Casual Sandals Casual - Blue",
+          "seller_name": "Elona"
+        },
+        {
+          "id": "4fbcd721-ab00-440b-8811-97645020037f",
+          "title": "New Balance Boys Sweatpants 3-Pack, Athletic Fleece Joggers, Size 4-20 | Soft Cotton Blend Fleece, Side Pockets, Ribbed Cuffs, 3-Pack Value, Pull On Pants, Comfy Sweats, Premium Ki",
+          "seller_name": "Elona"
+        },
+        {
+          "id": "57650fa3-8747-4042-8d0f-b5d6a439255d",
+          "title": "UGG Kids' Tasman II",
+          "seller_name": "Elona"
+        },
+        {
+          "id": "dcfcfce5-9c45-423e-ae0b-8a59ba75500a",
+          "title": "The Children's Place Baby Boys Chino Shorts",
+          "seller_name": "Elona"
+        },
+        {
+          "id": "ecb83b94-ec27-4c1e-9f27-9bc130aa0140",
+          "title": "for MagSafe Wallet, 5 Card Holder, Slim Leather Magnetic Wallet for iPhone 17/16/15/14/13/12 Pro Max Plus Air Series, 1 Card Slots & 1 Cash Slot,Black",
+          "seller_name": "Elona"
+        },
+        {
+          "id": "77def7a4-6ac9-4fb7-976b-d5daf110bc45",
+          "title": "adidas Kids Athletic Cushioned 6-Pack Quarter Socks (Little Kid/Big Kid/Adult)",
+          "seller_name": "Elona"
+        },
+        {
+          "id": "221f3890-1e19-4491-b21a-a54d55b63da1",
+          "title": "Stelle Tap Shoes for Toddler Girls PU Unisex Tap Dance Shoes | Rounded toe, Padded heel collar, Clear tap sound, Cushioned insole, Non-slip outsole, Lightweight design",
+          "seller_name": "Elona"
+        },
+        {
+          "id": "1274643d-52f3-48b2-84ec-8e73b241494d",
+          "title": "COTTON DAY Unisex School Kids Boys Girls Soft Combed Cotton Athletic Socks",
+          "seller_name": "Elona"
+        },
+        {
+          "id": "0ba57579-f715-434a-8971-f2071dcfff81",
+          "title": "ZERULETS 25 Pairs Kids Socks Toddler Ankle Low Cut Short Socks 1-14 Years | School Athletic Socks for Boys Girls, Daily, Casual, Soft, Breathable, Black, White",
+          "seller_name": "Elona"
+        },
+        {
+          "id": "f96fdcf9-2f40-4e33-bb31-5e71cea43326",
+          "title": "QYQBOON Mag-Safe Wallet Magnetic Wallet for Phone Lightweight Magnetic Phone Pouch Stand Adjustable Leather Mag-Safe Card Holder for iPhone 17/16/15/14/13/12 Series, Not for iPhone",
+          "seller_name": "Elona"
+        },
+        {
+          "id": "1af2f8ba-7ca2-496a-b7bd-97315a703553",
+          "title": "GRPSKCOS Non Slip Toddler Socks 15 Pairs Toddler Grip Anti Skid Low Cut Socks for 1-7 Years Boys Girls",
+          "seller_name": "Elona"
+        },
+        {
+          "id": "01853630-3b63-4cde-aa55-269faeda2363",
+          "title": "Gerber Baby Boys & Girls 5-Pack Solid Onesies Bodysuits",
+          "seller_name": "Elona"
+        },
+        {
+          "id": "0bffe7aa-417e-4784-8354-730044d6dc99",
+          "title": "Hanes Kids' Uniform Crew Socks Pack, 10-pack, Moisture-wicking, Cushioned, Stretch Kids' Socks for School",
+          "seller_name": "Eddy Boss"
+        }
+      ]
+    },
+    {
+      "category": "electronics",
+      "count_sampled": 30,
+      "bad": [
+        {
+          "id": "bcf67cba-59f6-46e4-84ef-1f31ecfed288",
+          "title": "HP 64 Black & Tri-Color Ink Cartridges Printers (Combo Pack) | Works with Printer Series: Inspire 7950e; Envy Photo 6200, 7100, 7800; Tango | Eligible for Instant Ink | X4D92AN",
+          "seller_name": "Elona"
+        },
+        {
+          "id": "77317204-f1a7-492f-8b59-b747cf7a7745",
+          "title": "Dell 24 Monitor - SE2426H - 23.8-inch FHD (1920x1080) 144Hz 1ms Display, in-Plane Switching (IPS) Technology, AMD FreeSync\u2122, T\u00dcV 3-Star 2X HDMI, Tilt",
+          "seller_name": "Elona"
+        },
+        {
+          "id": "ba67312c-a091-4127-b4e9-21a301c565ce",
+          "title": "AMD RYZEN 7 9800X3D 8-Core, 16-Thread Desktop Processor",
+          "seller_name": "Elona"
+        },
+        {
+          "id": "4f799718-4c81-4982-885f-abc485fddf6a",
+          "title": "JanSport SuperBreak Plus Backpack",
+          "seller_name": "Elona"
+        },
+        {
+          "id": "b9559202-223f-47f7-ab1e-8bfcab6cb649",
+          "title": "COMSOON Bluetooth Receiver for Car, 3.5mm AUX Bluetooth Car Adapter | Noise Cancelling, Wireless Audio Receiver for Home Stereo/Wired Headphones, Hands-Free Call, 16H Battery Life,",
+          "seller_name": "Elona"
+        },
+        {
+          "id": "d0574caa-4465-4241-9ee6-b9d7c20cb32b",
+          "title": "Taygeer Travel Backpack for Women, TSA Carry On Backpack Flight Approved | 15.6inch Laptop Mochila with Water Bottle Pocket & Shoe Pouch, Nurse Bag Casual Daypack for Weekender Bus",
+          "seller_name": "Elona"
+        },
+        {
+          "id": "899e8ae1-c833-43ca-adae-2fb9aeb0f3c3",
+          "title": "6Ft Surge Protector Power Strip with 8 Widely Outlets & 4 USB Ports | 3 Side Outlet Extender with 6 Feet Extension Cord, Flat Plug, for Home, Office, College Dorm Room Essentials, ",
+          "seller_name": "Elona"
+        },
+        {
+          "id": "0a5757f4-7841-4962-8379-bb4b2c580db6",
+          "title": "iPhone Charger Fast Charging, USB C Charger Block, 6FT/10FT Lightning Cable | For Apple iPhone 14/13/12/11 Series, 2-Pack 6FT/10FT Long USB C to Lightning Cables, AirPods with Ligh",
+          "seller_name": "Elona"
+        },
+        {
+          "id": "92477892-a1fe-4519-a358-ceaa5d22c1fc",
+          "title": "USB C Cable 5 Pack 6FT, USB A to Type C Fast Charger Cord | 3A braided USB A to C charging cords for iPhone 17 16 15, Samsung Galaxy, LG; 5 pack for home, office, car and travel.(G",
+          "seller_name": "Elona"
+        },
+        {
+          "id": "ec766fae-1702-4d87-8489-b8d5189ec62a",
+          "title": "iPhone 17 16 15 Charger Fast Charging 10FT - 20W USB C Charger Block | with 10FT Extra Long Type C to C Cable Compatible with iPhone 17/17 Pro/17 Pro Max/Air/16/16e/15, iPad Pro, i",
+          "seller_name": "Elona"
+        },
+        {
+          "id": "ca6b319f-16d2-4164-adf2-90c7be5312b4",
+          "title": "HP 952XL Black + 952 Cyan, Magenta, Yellow Ink | Works with Printer Series: OfficeJet 8702, OfficeJet Pro 7720, 7740, 8210, 8710, 8720, 8730, 8740 | N9K28AN",
+          "seller_name": "Elona"
+        },
+        {
+          "id": "4656f08e-5077-4961-8adf-df94432e1745",
+          "title": "Texas Instruments TI-30Xa Scientific Calculator | Basic, battery-operated; One-line display for general Math and Science",
+          "seller_name": "Elona"
+        }
+      ]
+    },
+    {
+      "category": "home",
+      "count_sampled": 7,
+      "bad": [
+        {
+          "id": "877358fc-4256-4015-af99-76a8c152933d",
+          "title": "Roundup 190260 2-Gallon Lawn and Garden Sprayer for Controlling Insects and Weeds or Cleaning Decks and Siding",
+          "seller_name": "Eddy Boss"
+        },
+        {
+          "id": "fb4ee853-1bd4-4208-8daf-57d3eb631978",
+          "title": "Wood Designs WD13803 See-All Storage with (12) Assorted Color Trays, 21 x 33 x 14\" (H x W x D)",
+          "seller_name": "Eddy Boss"
+        }
+      ]
+    },
+    {
+      "category": "beauty",
+      "count_sampled": 16,
+      "bad": [
+        {
+          "id": "b43c3030-fc46-4acc-a309-36d444e9f4d7",
+          "title": "Nizoral Anti-Dandruff Shampoo with 1% Ketoconazole, Fresh Scent, 14 Fl Oz | Anti-Fungal Shampoo, Dandruff Shampoo for Dandruff Relief, Ketoconazole Shampoo, Dandruff Treatment, 1% ",
+          "seller_name": "Eddy Boss"
+        }
+      ]
+    },
+    {
+      "category": "sports",
+      "count_sampled": 5,
+      "bad": [
+        {
+          "id": "d7f1c2c6-7cfe-413a-84f0-a1e81cd561e8",
+          "title": "Jump Rope, Tangle-Free Rapid Speed Jumping Rope Cable with Ball Bearings for Women, Men, and Kids, Adjustable Steel Jump Rope with Foam Handles for Home Gym Exercise Fitness Workou",
+          "seller_name": "Elona"
+        },
+        {
+          "id": "565921f1-0937-49c8-859e-17403201443a",
+          "title": "3-Pack Breathable Mesh Skull Cap Sweat Control Helmet Liner | Lightweight Quick Dry Cooling Sports Cycling Motorcycle Hard Hat Liner for Men Women",
+          "seller_name": "Elona"
+        },
+        {
+          "id": "9524f059-2feb-4989-9b3b-e5c2a6f7d856",
+          "title": "LISEN Bike Phone Holder, [Super Easy Install] Motorcycle Phone Mount Ebike Accessories Bicycle Handlebar Holder Mount Gifts for Adults Kids Men Mountain Mini Bike Scooter Gear Acce",
+          "seller_name": "Elona"
+        }
+      ]
+    },
+    {
+      "category": "toys",
+      "count_sampled": 8,
+      "bad": [
+        {
+          "id": "844b2549-150a-49db-9ce5-bf6fa457033c",
+          "title": "Assassin's Creed Black Flag Resynced - PlayStation 5",
+          "seller_name": "Eddy Boss"
+        },
+        {
+          "id": "36a19519-4a72-4b08-9061-aa30b98d2dc1",
+          "title": "Disneys Pixar Cars Mini Adventures 2 Pk Sarges Boot Camp Sally & Mater",
+          "seller_name": "Eddy Boss"
+        },
+        {
+          "id": "7879e631-8f8c-4c80-afff-ffc5bb34d6a0",
+          "title": "Tomodachi Life: Living the Dream",
+          "seller_name": "Eddy Boss"
+        },
+        {
+          "id": "c423b9e0-7cd0-4ec8-8404-6e3d72ad8104",
+          "title": "$50 PlayStation Store Gift Card [Digital Code]",
+          "seller_name": "Eddy Boss"
+        }
+      ]
+    },
+    {
+      "category": "books",
+      "count_sampled": 3,
+      "bad": [
+        {
+          "id": "0c812a02-51e5-4df7-83b6-6914047086c4",
+          "title": "Threshing Day (Wing and Claw Collection) (The Empyrean)",
+          "seller_name": "Eddy Boss"
+        }
+      ]
+    },
+    {
+      "category": "other",
+      "count_sampled": 29,
+      "bad": [
+        {
+          "id": "1efcf9c8-1b2d-4b63-86a9-3e20234760bc",
+          "title": "Affresh Washing Machine Cleaner, Helps Power Away Odor Causing Bacteria & Grime Deep Inside Pump, Valve & Hoses, 6 Time Release Tablets, 6 Month Supply",
+          "seller_name": "Eddy Boss"
+        },
+        {
+          "id": "4528f822-27c1-4ff9-94a8-5067cfa3d5f4",
+          "title": "CERAKOTE\u00ae Ceramic Trim Coat Kit - Quick Plastic Trim Restorer - Ceramic Coating Guaranteed Restoration to Last Over 200 Washes \u2013 A Ceramic Coating, Not a Dressing | Restores faded ",
+          "seller_name": "Eddy Boss"
+        },
+        {
+          "id": "27311f23-9d80-4d41-990b-517effa17105",
+          "title": "Crest Pro-Health Gum Detoxify Plus Toothpaste 4.5 oz Pack of 3 - Antibacterial Fluoride Toothpaste, Sensitivity Protection, Whitens Teeth, Anticavity, Plaque Control",
+          "seller_name": "Eddy Boss"
+        }
+      ]
+    }
+  ],
+  "store_samples": [],
+  "selected_listings": [
+    {
+      "id": "4855737a-5695-445d-bce1-3df108ec2628",
+      "title": "Hamilton Khaki Field Murph Automatic Men's Watch, 42mm Stainless Steel Case, Swiss Made, Black Dial Analog Wrist Watch for Men, 100m Waterproof, Sapphire Crystal, Cow Leather Strap",
+      "price": 1314.0,
+      "seller_name": "Elona"
+    },
+    {
+      "id": "12be6a70-dc66-4bac-8692-634a7e790250",
+      "title": "Hamilton Khaki Field Murph Automatic Men's Watch, 42mm Stainless Steel Case, Swiss Made, Black Dial Analog Wrist Watch for Men, 100m Waterproof, Sapphire Crystal, Cow Leather Strap",
+      "price": 1314.0,
+      "seller_name": "sophia_style"
+    }
+  ],
+  "buyer": {
+    "payload": {
+      "email": "mobile.fit.buyer.1786916088918@gmail.com",
+      "username": "mobilefitbuyer916088918",
+      "password": "pass1234"
+    },
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI3YjQzM2MwMi0wNjRlLTQ0MTQtYjk0ZC05Zjk2OTkzZGQxM2UiLCJyb2xlIjoidXNlciIsImV4cCI6MTc4NzUyMDg4OX0.m3_ws5yOOMOzkmQ1rvUtPDqgOv19JJsakEs4qaFTEZU",
+    "user": {
+      "id": "7b433c02-064e-4414-b94d-9f96993dd13e",
+      "email": "mobile.fit.buyer.1786916088918@gmail.com",
+      "username": "mobilefitbuyer916088918",
+      "role": "user",
+      "avatar": null,
+      "bio": "",
+      "rating": 5.0,
+      "sales_count": 0,
+      "is_active": true,
+      "referral_code": "41107CAB",
+      "referred_by": null,
+      "wallet_balance": 0.0,
+      "wallet_frozen_balance": 0.0,
+      "store_id": null,
+      "email_verified": false,
+      "resell_markup_override": null,
+      "created_at": "2026-08-16T21:34:49.053000",
+      "email_verified_at": null,
+      "phone": null,
+      "phone_verified": false,
+      "phone_verified_at": null,
+      "seller_status": "none",
+      "stripe_account_id": null,
+      "stripe_status": "none",
+      "weekly_earnings_goal": 0.0
+    }
+  },
+  "empty_buyer": {
+    "payload": {
+      "email": "mobile.fit.empty.1786916089331@gmail.com",
+      "username": "mobilefitempty916089331",
+      "password": "pass1234"
+    },
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5NDEzMjY1ZC0xMjUwLTQwMGUtOTRmMi03N2NhMzdlMzQ1MGYiLCJyb2xlIjoidXNlciIsImV4cCI6MTc4NzUyMDg4OX0.VxxLYlVLVMzihU6FUXhnaqCdTvs8y7X_0_VFUjHyq74",
+    "user": {
+      "id": "9413265d-1250-400e-94f2-77ca37e3450f",
+      "email": "mobile.fit.empty.1786916089331@gmail.com",
+      "username": "mobilefitempty916089331",
+      "role": "user",
+      "avatar": null,
+      "bio": "",
+      "rating": 5.0,
+      "sales_count": 0,
+      "is_active": true,
+      "referral_code": "C5C0BDF9",
+      "referred_by": null,
+      "wallet_balance": 0.0,
+      "wallet_frozen_balance": 0.0,
+      "store_id": null,
+      "email_verified": false,
+      "resell_markup_override": null,
+      "created_at": "2026-08-16T21:34:49.432000",
+      "email_verified_at": null,
+      "phone": null,
+      "phone_verified": false,
+      "phone_verified_at": null,
+      "seller_status": "none",
+      "stripe_account_id": null,
+      "stripe_status": "none",
+      "weekly_earnings_goal": 0.0
+    }
+  },
+  "cart_count_after_add": 2,
+  "payment_methods_summary": {
+    "crypto_assets": 1,
+    "crypto_addresses": [
+      "BTC",
+      "USDT"
+    ],
+    "manual_payment_methods": 1
+  }
+}

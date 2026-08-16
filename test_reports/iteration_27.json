@@ -1,0 +1,51 @@
+{
+  "verdict": "fixed",
+  "user_reported_bug": "Cart & Checkout mobile clipping \u2014 bug_testing_agent previously flagged that although horizontal scrollbars are hidden, the Cart grid children maintain a ~419px minimum width, causing product rows and totals to clip out of view at 320px / 375px / 390px widths.",
+  "summary": "No relevant testing skill found. Focused retest passed: marketplace cleanup now has 233 active listings, zero forbidden TEST_/test_/Follow Notif Test titles across API pages and direct Mongo, and Cart/Checkout strict-fit at 320/375/390 for empty/filled cart plus checkout card/wallet/crypto/bank panels.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/tests/bug_cart_checkout_mobile_fit_iteration27_api.py",
+    "/app/tests/bug_cart_checkout_mobile_fit_iteration27_browser.py",
+    "/app/tests/bug_cart_checkout_mobile_fit_iteration27_cleanup.py",
+    "/app/test_reports/iteration_27_runtime_api.json",
+    "/app/test_reports/iteration_27_runtime_ui.json",
+    "/app/test_reports/iteration_27_runtime_cleanup.json",
+    "/app/test_reports/bug_verification_27.json",
+    "/app/test_reports/iteration_27.json"
+  ],
+  "action_items": [
+    "Optional hardening: move cleanup_test_data.py's bad-title deletion before the `if not test_ids: return` branch so future cleanup runs also strip bad titles when there are no test users left. Runtime DB is clean now."
+  ],
+  "critical_code_review_comments": [
+    "Cart.jsx/Checkout.jsx use grid-cols-1, minmax(0,1fr), min-w-0, and mobile-friendly wrapping; browser evidence showed documentElement.scrollWidth == clientWidth and no offscreen important content in all tested mobile states.",
+    "cleanup_test_data.py currently places bad-title deletion after an early return when no test users exist. This does not affect the verified database state, but it is a future cleanup robustness gap.",
+    "apify_sync.py _get_sellers() is whitelisted to sophia_style, urban_finds, vintage_maven, tech_haven, and cozy_home for future imports."
+  ],
+  "updated_files": [
+    "/app/tests/bug_cart_checkout_mobile_fit_iteration27_api.py",
+    "/app/tests/bug_cart_checkout_mobile_fit_iteration27_browser.py",
+    "/app/tests/bug_cart_checkout_mobile_fit_iteration27_cleanup.py",
+    "/app/test_reports/iteration_27_runtime_api.json",
+    "/app/test_reports/iteration_27_runtime_ui.json",
+    "/app/test_reports/iteration_27_runtime_cleanup.json",
+    "/app/test_reports/bug_verification_27.json",
+    "/app/test_reports/iteration_27.json"
+  ],
+  "success_rate": {
+    "backend": "100%",
+    "frontend": "100%"
+  },
+  "seed_data_creation": "Created two temporary @example.com users for mobile UI testing, added 2 active real listings to one cart, then removed both users and their 2 cart_items via targeted cleanup. Post-cleanup /api/listings/count remained 233.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Skill lookup was performed first; no relevant testing skill found. API proof: /api/listings/count active=233/all=236/sold=3; q=TEST returned 18 real Amazon matches but 0 forbidden test-titled listings; q=Follow Notif Test returned 0; featured=38 bad_title=0; every category bad_title=0; Mongo bad_title_all_statuses=0. UI proof: 18/18 mobile measurements passed with docScrollWidth equal clientWidth at 320/375/390.",
+  "rca_of_the_issue": "The prior not_fixed was caused by 6 forbidden test-titled active listings that survived under kept/demo sellers. Those records are now absent from API and Mongo. The mobile clipping RCA remains fixed by replacing fixed/min-width grid behavior with minmax(0,1fr), min-w-0, and single-column mobile layouts. No APIs were mocked."
+}

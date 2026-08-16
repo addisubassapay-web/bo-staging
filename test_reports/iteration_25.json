@@ -1,0 +1,57 @@
+{
+  "verdict": "not_fixed",
+  "user_reported_bug": "Cart + Checkout Mobile Audit: Run the same 320/375/390 strict-fit test against /cart and /checkout so the whole buy flow is bullet-proof on phones",
+  "summary": "No relevant testing skill found. Focused live-preview verification logged in as the buyer, added a real listing to cart, then measured /cart and /checkout/<listing_id> at 320x568, 375x812, and 390x844. The documentElement/body scrollWidth checks pass on both pages, and checkout inputs/sticky Pay bar fit; however /cart key buy-flow elements are visibly wider than the viewport at all three widths, so the audit is not fixed.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "Cart mobile product rows and totals card",
+        "issue": "At 320, 375, and 390px widths, cart rows and the order summary render about 419.3px wide from left=16 to right=435.3, beyond the viewport. The checkout button inside the summary renders about 377.3px wide from left=37 to right=414.3. On 320px, a seller-link chip also extends right=330.78. document/body scrollWidth is masked by overflow-x:hidden, but the visible cart content is clipped/not strict-fit.",
+        "selector": "[data-testid^='cart-item-'], [data-testid='order-summary'], [data-testid='checkout-btn'], [data-testid^='cart-seller-link-']",
+        "priority": "HIGH"
+      }
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "/cart mobile",
+        "issues": [
+          "320x568: html/body scrollWidth=320 pass, but cart rows/order-summary right edge=435.3 > 321 tolerance.",
+          "375x812: html/body scrollWidth=375 pass, but cart rows/order-summary right edge=435.3 > 376 tolerance.",
+          "390x844: html/body scrollWidth=390 pass, but cart rows/order-summary right edge=435.3 > 391 tolerance."
+        ]
+      }
+    ]
+  },
+  "test_report_links": [
+    "/app/tests/bug_cart_checkout_mobile_fit_iteration25.py",
+    "/app/test_reports/iteration_25_runtime_results.json"
+  ],
+  "action_items": [
+    "Fix Cart.jsx mobile layout so the cart grid, product row cards, order summary, checkout button, and seller links are max-w-full/min-w-0 and wrap/stack within 320px without relying on global overflow-x:hidden.",
+    "Retest /cart and /checkout/<listing_id> at 320x568, 375x812, and 390x844 with both scrollWidth and key-element bounding-rect checks."
+  ],
+  "critical_code_review_comments": [
+    "Cart.jsx still uses a mobile grid/flex structure without min-w-0/max-w-full containment on the grid children and row cards; the fixed image plus metadata/price columns produce a min-content width around 419px.",
+    "App.js/index.css overflow-x:hidden makes documentElement/body scrollWidth pass, but it does not satisfy the user-visible requirement that cart rows and totals fit instead of being clipped."
+  ],
+  "updated_files": [
+    "/app/tests/bug_cart_checkout_mobile_fit_iteration25.py",
+    "/app/test_reports/iteration_25_runtime_results.json",
+    "/app/test_reports/bug_verification_25.json",
+    "/app/test_reports/iteration_25.json"
+  ],
+  "success_rate": {
+    "backend": "N/A - frontend-only bug verification",
+    "frontend": "50% route/viewport combinations fully passed (checkout 3/3, cart 0/3); scrollWidth-only subcheck passed 6/6"
+  },
+  "seed_data_creation": "Logged in with the provided buyer credentials and added live listing bcf67cba-59f6-46e4-84ef-1f31ecfed288 to the buyer cart via POST /api/cart/{listing_id} for verification.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Skill lookup returned no relevant testing skill. Use /app/tests/bug_cart_checkout_mobile_fit_iteration25.py against the live preview. Expected fixed behavior: /cart and /checkout at 320/375/390 should have html/body scrollWidth <= innerWidth+1 AND key cart/checkout elements' bounding rects within viewport. This run found checkout passed, but cart rows/order-summary remained 419.3px wide and clipped at all widths.",
+  "rca_of_the_issue": "Reproduction: set mobile viewport, skip splash, login as sophia_style@demo.local, add listing bcf67cba-59f6-46e4-84ef-1f31ecfed288 to cart, visit /cart and /checkout/bcf67cba-59f6-46e4-84ef-1f31ecfed288. Root/body scrollWidth equals innerWidth because overflow-x is hidden globally, but cart grid children keep a min-content width (~419px). The result is no horizontal scrollbar but clipped product rows/totals, so the user-visible mobile buy flow is still not bullet-proof."
+}

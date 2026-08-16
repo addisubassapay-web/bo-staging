@@ -35,7 +35,7 @@ const Cart = () => {
   if (loading) return <div className="max-w-4xl mx-auto px-4 py-8">Loading…</div>;
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8" data-testid="cart-page">
+    <div className="max-w-5xl w-full mx-auto px-3 sm:px-4 py-8 min-w-0" data-testid="cart-page">
       <div className="mb-8">
         <span className="inline-block text-[10px] uppercase tracking-[0.2em] font-semibold text-[#FF7A18] bg-[#FF7A18]/10 border border-[#FF7A18]/20 rounded-full px-3 py-1">
           {t("cart.kicker")}
@@ -55,15 +55,15 @@ const Cart = () => {
           <Link to="/search"><Button className="mt-4 bg-[#FF211F] hover:bg-[#e01d1b] rounded-full h-11 px-6">{t("cta.startShopping")}</Button></Link>
         </div>
       ) : (
-        <div className="grid lg:grid-cols-[1fr_360px] gap-8">
-          <div className="space-y-3">
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_360px] gap-6 lg:gap-8 min-w-0">
+          <div className="space-y-3 min-w-0">
             {items.map((item) => (
               <div
                 key={item.id}
-                className="flex gap-4 rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-3 shadow-[0_1px_2px_rgba(0,0,0,0.04)] hover:border-[#FF7A18]/40 hover:shadow-[0_10px_24px_-14px_rgba(255,33,31,0.2)] transition-all duration-300"
+                className="flex gap-3 sm:gap-4 rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-3 shadow-[0_1px_2px_rgba(0,0,0,0.04)] hover:border-[#FF7A18]/40 hover:shadow-[0_10px_24px_-14px_rgba(255,33,31,0.2)] transition-all duration-300 min-w-0"
                 data-testid={`cart-item-${item.id}`}
               >
-                <Link to={`/listing/${item.id}`} className="h-24 w-24 rounded-xl overflow-hidden bg-neutral-100 dark:bg-neutral-800 shrink-0 ring-1 ring-black/[0.04] dark:ring-white/10">
+                <Link to={`/listing/${item.id}`} className="h-20 w-20 sm:h-24 sm:w-24 rounded-xl overflow-hidden bg-neutral-100 dark:bg-neutral-800 shrink-0 ring-1 ring-black/[0.04] dark:ring-white/10">
                   <img src={item.images?.[0]} alt="" className="w-full h-full object-cover" />
                 </Link>
                 <div className="flex-1 min-w-0">
@@ -82,8 +82,8 @@ const Cart = () => {
                     {item.shipping_paid_by === "seller" ? t("cart.freeShipping") : `${t("cart.shippingLabel")} ${format(5.99)}`}
                   </div>
                 </div>
-                <div className="flex flex-col items-end justify-between">
-                  <div className="font-extrabold text-neutral-900 dark:text-neutral-100 tabular-nums">{format(item.price)}</div>
+                <div className="flex flex-col items-end justify-between shrink-0">
+                  <div className="font-extrabold text-neutral-900 dark:text-neutral-100 tabular-nums text-sm sm:text-base whitespace-nowrap">{format(item.price)}</div>
                   <button
                     onClick={() => remove(item.id)}
                     className="text-neutral-400 hover:text-[#FF211F] transition"
@@ -97,7 +97,7 @@ const Cart = () => {
             ))}
           </div>
 
-          <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5 h-fit shadow-[0_1px_2px_rgba(0,0,0,0.04)] lg:sticky lg:top-24" data-testid="order-summary">
+          <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4 sm:p-5 h-fit shadow-[0_1px_2px_rgba(0,0,0,0.04)] lg:sticky lg:top-24 min-w-0" data-testid="order-summary">
             <h2 className="font-bold text-lg mb-4 text-neutral-900 dark:text-neutral-100">{t("cart.orderSummary")}</h2>
             <div className="space-y-2.5 text-sm">
               <div className="flex justify-between text-neutral-700 dark:text-neutral-300">

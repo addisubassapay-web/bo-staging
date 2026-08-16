@@ -181,8 +181,19 @@ async def _get_categories_by_slug(db) -> Dict[str, Dict]:
     return {c["slug"]: c for c in cats}
 
 
+DEMO_SELLER_USERNAMES = [
+    "sophia_style", "urban_finds", "vintage_maven", "tech_haven", "cozy_home",
+]
+
+
 async def _get_sellers(db) -> List[Dict]:
-    return await db.users.find({"role": "user"}, {"_id": 0, "id": 1, "username": 1}).to_list(200)
+    """Only distribute Apify imports across the curated demo sellers.
+    This prevents test users (from e2e runs) from accumulating product listings.
+    """
+    return await db.users.find(
+        {"username": {"$in": DEMO_SELLER_USERNAMES}, "role": "user"},
+        {"_id": 0, "id": 1, "username": 1},
+    ).to_list(50)
 
 
 def _run_actor_sync(client: ApifyClient, urls: List[Dict], max_per_url: int) -> Optional[str]:

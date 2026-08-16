@@ -193,7 +193,7 @@ const Checkout = () => {
   const etaLabel = eta.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8" data-testid="checkout-page">
+    <div className="max-w-5xl w-full mx-auto px-3 sm:px-4 py-8 min-w-0 pb-28 lg:pb-8" data-testid="checkout-page">
       <div className="mb-8">
         <span className="inline-block text-[10px] uppercase tracking-[0.2em] font-semibold text-[#FF7A18] bg-[#FF7A18]/10 border border-[#FF7A18]/20 rounded-full px-3 py-1">
           {t("checkout.kicker")}
@@ -201,10 +201,10 @@ const Checkout = () => {
         <h1 className="mt-2 text-3xl sm:text-4xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">{t("checkout.title")}</h1>
         <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">{t("checkout.subtitle")}</p>
       </div>
-      <form onSubmit={place} className="grid lg:grid-cols-[1fr_360px] gap-8">
-        <div className="space-y-4">
-          <section className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
-            <div className="flex items-center justify-between mb-4">
+      <form onSubmit={place} className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_360px] gap-6 lg:gap-8 min-w-0">
+        <div className="space-y-4 min-w-0">
+          <section className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4 sm:p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04)] min-w-0">
+            <div className="flex items-center justify-between mb-4 gap-2">
               <h2 className="font-bold text-lg text-neutral-900 dark:text-neutral-100">{t("checkout.shippingAddress")}</h2>
               {savedAddress && (
                 <button
@@ -227,8 +227,8 @@ const Checkout = () => {
             </div>
           </section>
 
-          <section className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
-            <div className="flex items-center gap-2 mb-4">
+          <section className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4 sm:p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04)] min-w-0">
+            <div className="flex items-center gap-2 mb-4 flex-wrap">
               <div className="h-8 w-8 rounded-lg bg-emerald-50 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-300 grid place-items-center">
                 <Lock className="h-4 w-4" />
               </div>
@@ -451,11 +451,11 @@ const Checkout = () => {
           </section>
         </div>
 
-        <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5 h-fit lg:sticky lg:top-24 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+        <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4 sm:p-5 h-fit lg:sticky lg:top-24 shadow-[0_1px_2px_rgba(0,0,0,0.04)] min-w-0">
           <h2 className="font-bold text-lg mb-4 text-neutral-900 dark:text-neutral-100">{t("cart.orderSummary")}</h2>
-          <div className="flex gap-3 mb-4 pb-4 border-b border-neutral-100 dark:border-neutral-800">
-            <img src={listing.images?.[0]} alt="" className="h-16 w-16 rounded-xl object-cover ring-1 ring-black/[0.04] dark:ring-white/10" />
-            <div className="text-sm min-w-0">
+          <div className="flex gap-3 mb-4 pb-4 border-b border-neutral-100 dark:border-neutral-800 min-w-0">
+            <img src={listing.images?.[0]} alt="" className="h-16 w-16 rounded-xl object-cover ring-1 ring-black/[0.04] dark:ring-white/10 shrink-0" />
+            <div className="text-sm min-w-0 flex-1">
               <div className="font-semibold line-clamp-2 text-neutral-900 dark:text-neutral-100">{listing.title}</div>
               <div className="text-neutral-500 dark:text-neutral-400 text-xs mt-0.5">{t("cart.soldBy")} {listing.seller_name}</div>
             </div>
