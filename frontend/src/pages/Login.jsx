@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import BrandMark from "@/components/BrandMark";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -42,9 +43,11 @@ const Login = () => {
 
   return (
     <div className="max-w-md mx-auto px-4 py-16">
+      <div className="flex justify-center mb-6">
+        <BrandMark size={80} showWordmark animated data-testid="login-logo" />
+      </div>
       <div className="bg-white border border-neutral-200 rounded-xl p-8 shadow-sm">
-        <img src="/logo-mark.png" alt="Mercari" className="h-12 w-12 mx-auto" data-testid="login-logo" />
-        <h1 className="text-2xl font-bold text-center mt-3">Log in to Mercari</h1>
+        <h1 className="text-2xl font-bold text-center">Log in to Mercari</h1>
         <p className="text-sm text-neutral-500 text-center mt-1">Buy, sell, and save your favorites.</p>
 
         <form onSubmit={submit} className="mt-6 space-y-4">

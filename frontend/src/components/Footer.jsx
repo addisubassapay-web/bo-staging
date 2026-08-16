@@ -1,13 +1,14 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { Facebook, Twitter, Instagram, Youtube } from "lucide-react";
+import BrandMark from "@/components/BrandMark";
 
 const Footer = () => (
   <footer className="bg-[#0F1113] text-neutral-300 mt-16">
     <div className="max-w-7xl mx-auto px-4 py-14 grid grid-cols-2 md:grid-cols-4 gap-8">
       <div>
         <div className="flex items-center gap-2 mb-3">
-          <img src="/logo-mark.png" alt="Mercari" className="h-9 w-9 shrink-0" data-testid="footer-logo" />
+          <BrandMark size={36} variant="outline" data-testid="footer-logo" />
           <span className="font-bold text-lg text-[#FF7A18]">Mercari Global</span>
         </div>
         <p className="text-sm text-neutral-400 leading-relaxed">

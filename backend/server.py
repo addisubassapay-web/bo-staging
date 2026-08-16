@@ -25,6 +25,7 @@ from apify_sync import import_from_apify, simulate_live_update, get_sync_status
 from shipping_providers import get_provider as get_shipping_provider, next_stage_for_age, event_details
 from routers.search import router as search_router
 from routers.discovery import router as discovery_router
+from routers.users import router as users_router
 
 
 ROOT_DIR = Path(__file__).parent
@@ -773,25 +774,6 @@ async def login(payload: UserLogin):
 async def me(user: dict = Depends(get_current_user)):
     return UserPublic(**user)
 
-
-@api_router.get("/users/{user_id}/public")
-async def get_public_user(user_id: str):
-    """Public snapshot: verification badges, rating, sales — safe for anonymous viewing."""
-    u = await db.users.find_one({"id": user_id}, {"_id": 0, "password_hash": 0})
-    if not u:
-        raise HTTPException(404, "User not found")
-    return {
-        "id": u["id"],
-        "username": u.get("username"),
-        "avatar": u.get("avatar"),
-        "bio": u.get("bio", ""),
-        "rating": u.get("rating", 5.0),
-        "sales_count": u.get("sales_count", 0),
-        "email_verified": bool(u.get("email_verified")),
-        "phone_verified": bool(u.get("phone_verified")),
-        "seller_status": u.get("seller_status", "none"),
-        "created_at": u.get("created_at"),
-    }
 
 
 # =========================
@@ -4446,6 +4428,7 @@ async def root():
 app.include_router(api_router)
 app.include_router(search_router, prefix="/api")
 app.include_router(discovery_router, prefix="/api")
+app.include_router(users_router, prefix="/api")
 
 app.add_middleware(
     CORSMiddleware,

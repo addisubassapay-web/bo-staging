@@ -33,6 +33,7 @@ import SellerApply from "@/pages/SellerApply";
 import EditListing from "@/pages/EditListing";
 import BuyerProgressToast from "@/components/BuyerProgressToast";
 import Disputes from "@/pages/Disputes";
+import SplashScreen from "@/components/SplashScreen";
 
 function App() {
   return (
@@ -40,6 +41,7 @@ function App() {
       <LanguageProvider>
         <CurrencyProvider>
           <div className="App min-h-screen flex flex-col bg-white text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100 transition-colors">
+            <SplashScreen />
             <BrowserRouter>
               <AuthProvider>
                 <Header />
