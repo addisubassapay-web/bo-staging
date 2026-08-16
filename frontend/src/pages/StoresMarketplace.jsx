@@ -53,9 +53,9 @@ const StoreCard = ({ store, onFollowChange }) => {
         {store.banner && (
           <img src={store.banner} alt="" className="w-full h-full object-cover opacity-90" />
         )}
-        {store.tier && TIER_STYLES[store.tier] && (
-          <span className={`absolute top-2 right-2 text-[10px] uppercase tracking-widest px-2 py-0.5 rounded-full bg-gradient-to-r ${TIER_STYLES[store.tier]} font-semibold shadow`}>
-            {store.tier}
+        {store.verified_tier && store.verified_tier !== "none" && TIER_STYLES[store.verified_tier] && (
+          <span className={`absolute top-2 right-2 text-[10px] uppercase tracking-widest px-2 py-0.5 rounded-full bg-gradient-to-r ${TIER_STYLES[store.verified_tier]} font-semibold shadow`}>
+            {store.verified_tier}
           </span>
         )}
       </div>
@@ -68,13 +68,16 @@ const StoreCard = ({ store, onFollowChange }) => {
           )}
         </div>
         <div className="font-semibold text-neutral-900 dark:text-neutral-100 line-clamp-1 group-hover:text-[#2563EB] transition">{store.name}</div>
+        {store.owner_username && (
+          <div className="text-[11px] text-neutral-400 dark:text-neutral-500 mt-0.5">by @{store.owner_username}</div>
+        )}
         {store.tagline && (
           <div className="text-xs text-neutral-500 dark:text-neutral-400 line-clamp-1 mt-0.5">{store.tagline}</div>
         )}
         <div className="mt-3 flex items-center justify-between">
           <div className="flex items-center gap-3 text-xs text-neutral-600 dark:text-neutral-400">
             <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5" /> {followers}</span>
-            <span className="flex items-center gap-1"><ShoppingBag className="h-3.5 w-3.5" /> {store.sales_count || 0}</span>
+            <span className="flex items-center gap-1"><ShoppingBag className="h-3.5 w-3.5" /> {store.total_sales || 0}</span>
           </div>
           <button
             onClick={toggle}
@@ -146,7 +149,7 @@ const StoresMarketplace = () => {
           <Input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Search stores by name…"
+            placeholder="Search stores by name, handle, or tagline…"
             className="pl-9 h-11 focus-visible:ring-2 focus-visible:ring-[#2563EB]/30 focus-visible:border-[#2563EB]"
             data-testid="stores-search-input"
           />
