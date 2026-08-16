@@ -1,10 +1,59 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { Facebook, Twitter, Instagram, Youtube } from "lucide-react";
+import { Facebook, Twitter, Instagram, Youtube, Mail, ArrowRight } from "lucide-react";
 import BrandMark from "@/components/BrandMark";
+
+const NewsletterStrip = () => {
+  const [email, setEmail] = useState("");
+  const [status, setStatus] = useState("idle"); // idle | ok
+
+  const submit = (e) => {
+    e.preventDefault();
+    if (!email || !/@/.test(email)) return;
+    try { localStorage.setItem("mercari_newsletter_email", email); } catch { /* ignore */ }
+    setStatus("ok");
+    setTimeout(() => { setStatus("idle"); setEmail(""); }, 3500);
+  };
+
+  return (
+    <div className="bg-gradient-to-r from-[#111827] via-[#0F1113] to-[#0B1220] border-b border-neutral-800/50">
+      <div className="max-w-7xl mx-auto px-4 py-6 flex flex-col md:flex-row items-center gap-4">
+        <div className="flex items-center gap-3 flex-1">
+          <div className="h-10 w-10 rounded-full bg-gradient-to-br from-[#7DD3FC] to-[#2563EB] grid place-items-center shrink-0">
+            <Mail className="h-5 w-5 text-white" />
+          </div>
+          <div className="min-w-0">
+            <div className="text-white font-semibold text-sm sm:text-base">Get the best deals in your inbox</div>
+            <div className="text-neutral-400 text-xs">Weekly picks · Flash sales · Zero spam · Unsubscribe anytime</div>
+          </div>
+        </div>
+        <form onSubmit={submit} className="w-full md:w-auto flex items-center gap-2" data-testid="newsletter-form">
+          <input
+            type="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="you@example.com"
+            className="flex-1 md:w-72 h-11 px-4 rounded-full bg-white/10 border border-white/15 text-white placeholder:text-neutral-500 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB]/50 focus:border-[#2563EB] transition"
+            data-testid="newsletter-email-input"
+            aria-label="Newsletter email"
+          />
+          <button
+            type="submit"
+            className="h-11 px-5 rounded-full bg-gradient-to-r from-[#7DD3FC] to-[#2563EB] hover:brightness-110 text-white text-sm font-semibold shadow-sm hover:shadow-md transition-all flex items-center gap-1.5 whitespace-nowrap"
+            data-testid="newsletter-submit-btn"
+          >
+            {status === "ok" ? "You’re in ✓" : (<>Subscribe <ArrowRight className="h-4 w-4" /></>)}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+};
 
 const Footer = () => (
   <footer className="bg-[#0F1113] text-neutral-300 mt-16">
+    <NewsletterStrip />
     <div className="max-w-7xl mx-auto px-4 py-14 grid grid-cols-2 md:grid-cols-4 gap-8">
       <div>
         <div className="flex items-center gap-2 mb-3">

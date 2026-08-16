@@ -16,8 +16,10 @@ export const AuthProvider = ({ children }) => {
     try {
       const { data } = await api.get("/auth/me");
       setUser(data);
+      try { localStorage.setItem("mercari_username", data.username || ""); } catch { /* ignore */ }
     } catch {
       localStorage.removeItem("mercari_token");
+      localStorage.removeItem("mercari_username");
       setUser(null);
     } finally {
       setLoading(false);
@@ -31,6 +33,7 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     const { data } = await api.post("/auth/login", { email, password });
     localStorage.setItem("mercari_token", data.token);
+    try { localStorage.setItem("mercari_username", data.user?.username || ""); } catch { /* ignore */ }
     setUser(data.user);
     return data.user;
   };
@@ -38,12 +41,14 @@ export const AuthProvider = ({ children }) => {
   const register = async (email, username, password) => {
     const { data } = await api.post("/auth/register", { email, username, password });
     localStorage.setItem("mercari_token", data.token);
+    try { localStorage.setItem("mercari_username", data.user?.username || ""); } catch { /* ignore */ }
     setUser(data.user);
     return data.user;
   };
 
   const logout = () => {
     localStorage.removeItem("mercari_token");
+    localStorage.removeItem("mercari_username");
     setUser(null);
   };
 

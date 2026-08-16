@@ -67,19 +67,19 @@ const Register = () => {
         <form onSubmit={submit} className="mt-6 space-y-4">
           <div>
             <Label>Email</Label>
-            <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required className="mt-1" />
+            <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required className="mt-1 focus-visible:ring-2 focus-visible:ring-[#2563EB]/30 focus-visible:border-[#2563EB] transition" />
           </div>
           <div>
             <Label>Username</Label>
-            <Input value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} required minLength={3} maxLength={20} className="mt-1" />
+            <Input value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} required minLength={3} maxLength={20} className="mt-1 focus-visible:ring-2 focus-visible:ring-[#2563EB]/30 focus-visible:border-[#2563EB] transition" />
           </div>
           <div>
             <Label>Password</Label>
-            <Input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required minLength={6} className="mt-1" />
+            <Input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required minLength={6} className="mt-1 focus-visible:ring-2 focus-visible:ring-[#2563EB]/30 focus-visible:border-[#2563EB] transition" />
           </div>
           <div>
             <Label>Referral code <span className="text-xs text-neutral-400">(optional)</span></Label>
-            <Input value={form.referral_code} onChange={(e) => setForm({ ...form, referral_code: e.target.value.toUpperCase() })} placeholder="Have a friend's code?" className="mt-1 font-mono uppercase" maxLength={12} />
+            <Input value={form.referral_code} onChange={(e) => setForm({ ...form, referral_code: e.target.value.toUpperCase() })} placeholder="Have a friend's code?" className="mt-1 font-mono uppercase focus-visible:ring-2 focus-visible:ring-[#2563EB]/30 focus-visible:border-[#2563EB] transition" maxLength={12} />
           </div>
           <Button type="submit" disabled={loading} className="w-full bg-gradient-to-r from-[#7DD3FC] to-[#2563EB] hover:brightness-110 text-white h-11 shadow-sm hover:shadow-md transition-all">
             {loading ? "Creating…" : "Create account"}

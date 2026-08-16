@@ -64,11 +64,11 @@ const Login = () => {
         <form onSubmit={submit} className="mt-6 space-y-4">
           <div>
             <Label>Email</Label>
-            <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="mt-1" />
+            <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="mt-1 focus-visible:ring-2 focus-visible:ring-[#2563EB]/30 focus-visible:border-[#2563EB] transition" />
           </div>
           <div>
             <Label>Password</Label>
-            <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className="mt-1" />
+            <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className="mt-1 focus-visible:ring-2 focus-visible:ring-[#2563EB]/30 focus-visible:border-[#2563EB] transition" />
           </div>
           <Button type="submit" disabled={loading} className="w-full bg-gradient-to-r from-[#7DD3FC] to-[#2563EB] hover:brightness-110 text-white h-11 shadow-sm hover:shadow-md transition-all">
             {loading ? "Logging in…" : "Log in"}

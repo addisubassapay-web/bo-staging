@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import BrandMark from "@/components/BrandMark";
 
 /**
  * SplashScreen — full-screen brand splash shown once per session on first paint.
- * Fades out after ~1.2s. Skips if the user has already seen it this session.
+ * Personalized: greets returning logged-in users by name, welcomes first-time visitors.
  */
 const SplashScreen = () => {
   const [visible, setVisible] = useState(() => {
@@ -12,13 +12,43 @@ const SplashScreen = () => {
   });
   const [fadeOut, setFadeOut] = useState(false);
 
+  // Personalized headline — computed once at render time.
+  const { headline, sub, isReturning } = useMemo(() => {
+    if (typeof window === "undefined") return { headline: "", sub: "", isReturning: false };
+    const token = localStorage.getItem("mercari_token");
+    const name = (localStorage.getItem("mercari_username") || "").trim();
+    const hasVisited = localStorage.getItem("mercari_visited_before") === "1";
+    if (token && name) {
+      const first = name.charAt(0).toUpperCase() + name.slice(1);
+      return {
+        headline: `Welcome back, ${first}`,
+        sub: "Your marketplace, ready when you are.",
+        isReturning: true,
+      };
+    }
+    if (hasVisited) {
+      return {
+        headline: "Welcome back",
+        sub: "Continue where you left off.",
+        isReturning: true,
+      };
+    }
+    return {
+      headline: "Welcome to mercarie",
+      sub: "Millions of items · Verified sellers · Buyer protection",
+      isReturning: false,
+    };
+  }, []);
+
   useEffect(() => {
     if (!visible) return;
-    const fadeTimer = setTimeout(() => setFadeOut(true), 1200);
+    // Mark that this browser has seen the splash at least once.
+    try { localStorage.setItem("mercari_visited_before", "1"); } catch { /* ignore */ }
+    const fadeTimer = setTimeout(() => setFadeOut(true), 1500);
     const hideTimer = setTimeout(() => {
       setVisible(false);
-      try { sessionStorage.setItem("mercari_splash_seen", "1"); } catch { /* ignore storage errors */ }
-    }, 1700);
+      try { sessionStorage.setItem("mercari_splash_seen", "1"); } catch { /* ignore */ }
+    }, 2000);
     return () => { clearTimeout(fadeTimer); clearTimeout(hideTimer); };
   }, [visible]);
 
@@ -46,11 +76,22 @@ const SplashScreen = () => {
       <div className="absolute -bottom-24 -right-24 h-80 w-80 rounded-full bg-[#FF211F] opacity-15 blur-3xl" />
       <div className="absolute top-1/3 right-1/4 h-40 w-40 rounded-full bg-[#2563EB] opacity-10 blur-3xl" />
 
-      <div className="relative flex flex-col items-center gap-6 animate-hero-in">
+      <div className="relative flex flex-col items-center gap-6 animate-hero-in text-center px-6">
         <BrandMark size={160} animated />
-        <div className="flex flex-col items-center gap-1">
-          <span className="text-3xl font-bold tracking-tight text-neutral-900">mercarie</span>
-          <span className="text-xs uppercase tracking-[0.3em] text-neutral-500">Global marketplace</span>
+        <div className="flex flex-col items-center gap-2">
+          <span
+            className="text-3xl sm:text-4xl font-bold tracking-tight text-neutral-900"
+            data-testid="splash-headline"
+          >
+            {headline}
+          </span>
+          <span className="text-sm text-neutral-600 max-w-md">{sub}</span>
+          {isReturning && (
+            <span className="mt-2 inline-flex items-center gap-1.5 text-[11px] uppercase tracking-[0.25em] text-[#2563EB] font-semibold">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#2563EB]" />
+              Good to see you again
+            </span>
+          )}
         </div>
       </div>
 
