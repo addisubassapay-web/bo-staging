@@ -45,7 +45,7 @@ export const BrandMark = ({
         width={size}
         height={size}
         role="img"
-        aria-label="Mercari"
+        aria-label="Brand mark"
         className={`shrink-0 ${animated ? "brand-mark-animated" : ""} drop-shadow-sm`}
       >
         <defs>
