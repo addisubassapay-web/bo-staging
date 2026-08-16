@@ -45,13 +45,21 @@ const Register = () => {
   };
 
   return (
-    <div className="max-w-md mx-auto px-4 py-16">
-      <div className="flex justify-center mb-6">
-        <BrandMark size={80} showWordmark animated data-testid="register-logo" />
-      </div>
-      <div className="bg-white border border-neutral-200 rounded-xl p-8 shadow-sm">
-        <h1 className="text-2xl font-bold text-center">Create your account</h1>
-        <p className="text-sm text-neutral-500 text-center mt-1">Join Mercari to start buying and selling.</p>
+    <div className="min-h-[calc(100vh-4rem)] px-4 py-16 relative overflow-hidden">
+      {/* Soft gradient background */}
+      <div className="absolute inset-0 -z-10" style={{
+        background: "radial-gradient(circle at 20% 20%, #FFF7ED 0%, transparent 55%), radial-gradient(circle at 80% 80%, #DBEAFE 0%, transparent 55%), linear-gradient(180deg, #FFFBF6 0%, #F8FAFC 100%)",
+      }} />
+      <div className="absolute -top-24 -right-24 h-72 w-72 rounded-full bg-[#7DD3FC] opacity-20 blur-3xl -z-10" />
+      <div className="absolute -bottom-24 -left-24 h-72 w-72 rounded-full bg-[#FF7A18] opacity-15 blur-3xl -z-10" />
+
+      <div className="max-w-md mx-auto">
+        <div className="flex justify-center mb-6">
+          <BrandMark size={80} showWordmark animated data-testid="register-logo" />
+        </div>
+        <div className="bg-white/80 backdrop-blur border border-white/60 rounded-2xl p-8 shadow-xl shadow-orange-100/40 ring-1 ring-neutral-100">
+          <h1 className="text-2xl font-bold text-center">Create your account</h1>
+          <p className="text-sm text-neutral-500 text-center mt-1">Join Mercari to start buying and selling.</p>
 
         <form onSubmit={submit} className="mt-6 space-y-4">
           <div>
@@ -78,6 +86,7 @@ const Register = () => {
         <p className="mt-6 text-sm text-center text-neutral-600">
           Already have an account? <Link to="/login" className="text-[#FF211F] font-medium hover:underline">Log in</Link>
         </p>
+        </div>
       </div>
     </div>
   );

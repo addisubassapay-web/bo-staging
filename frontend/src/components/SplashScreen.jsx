@@ -24,6 +24,14 @@ const SplashScreen = () => {
 
   if (!visible) return null;
 
+  const skip = () => {
+    setFadeOut(true);
+    setTimeout(() => {
+      setVisible(false);
+      try { sessionStorage.setItem("mercari_splash_seen", "1"); } catch { /* ignore */ }
+    }, 350);
+  };
+
   return (
     <div
       className={`fixed inset-0 z-[9999] flex items-center justify-center transition-opacity duration-500 ${fadeOut ? "opacity-0 pointer-events-none" : "opacity-100"}`}
@@ -45,6 +53,16 @@ const SplashScreen = () => {
           <span className="text-xs uppercase tracking-[0.3em] text-neutral-500">Global marketplace</span>
         </div>
       </div>
+
+      <button
+        type="button"
+        onClick={skip}
+        className="absolute top-6 right-6 h-9 px-4 rounded-full bg-white/70 hover:bg-white text-neutral-700 text-xs font-medium border border-neutral-200 shadow-sm backdrop-blur transition"
+        data-testid="splash-skip-btn"
+        aria-label="Skip splash"
+      >
+        Skip →
+      </button>
     </div>
   );
 };
