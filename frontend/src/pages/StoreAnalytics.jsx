@@ -193,10 +193,14 @@ const StoreAnalytics = () => {
   const [data, setData] = useState(null);
   const [latestPublished, setLatestPublished] = useState([]);
   const [myStoreSlug, setMyStoreSlug] = useState(null);
+  const [discoveries, setDiscoveries] = useState({ items: [], total: 0 });
 
   useEffect(() => {
     if (!user) return;
     api.get("/seller/dashboard").then((r) => setData(r.data)).catch(() => {});
+    api.get("/store/analytics/category-discoveries", { params: { days: 7 } })
+      .then((r) => setDiscoveries(r.data || { items: [], total: 0 }))
+      .catch(() => {});
     api.get("/my/store").then((r) => {
       const slug = r.data?.slug;
       setMyStoreSlug(slug || null);
@@ -406,6 +410,43 @@ const StoreAnalytics = () => {
         </div>
 
         <div className="space-y-4">
+          <div className="bg-white border border-neutral-200 rounded-2xl p-5" data-testid="category-discoveries-card">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 font-bold">
+                <Target className="h-5 w-5 text-[#2563EB]" /> Discoveries by category
+              </div>
+              <span className="text-xs text-neutral-400">last 7 days</span>
+            </div>
+            <p className="text-xs text-neutral-500 mt-1">Buyers who opened your store from a category filter in the directory.</p>
+            {discoveries.total === 0 ? (
+              <div className="mt-4 rounded-xl bg-neutral-50 border border-dashed border-neutral-200 p-4 text-center text-sm text-neutral-500">
+                No category-driven visits yet.
+                <div className="text-xs mt-1">Tag your store with up to 3 categories in <Link to="/store/manage" className="text-[#2563EB] underline">Store settings</Link> to be discoverable.</div>
+              </div>
+            ) : (
+              <ul className="mt-3 space-y-2" data-testid="category-discoveries-list">
+                {discoveries.items.map((d) => {
+                  const pct = discoveries.total > 0 ? Math.round((d.count / discoveries.total) * 100) : 0;
+                  return (
+                    <li key={d.category_id} className="text-sm" data-testid={`cat-discovery-${d.slug || d.category_id}`}>
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium text-neutral-800">{d.name}</span>
+                        <span className="tabular-nums text-neutral-500 text-xs">{d.count} buyer{d.count === 1 ? "" : "s"}</span>
+                      </div>
+                      <div className="mt-1 h-1.5 rounded-full bg-neutral-100 overflow-hidden">
+                        <div className="h-full bg-gradient-to-r from-[#7DD3FC] to-[#2563EB]" style={{ width: `${Math.max(6, pct)}%` }} />
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+            <div className="mt-3 pt-3 border-t border-neutral-100 flex items-center justify-between text-xs">
+              <span className="text-neutral-500">Total this week</span>
+              <span className="font-semibold text-neutral-800 tabular-nums">{discoveries.total}</span>
+            </div>
+          </div>
+
           <div className="bg-gradient-to-br from-[#FFF7EF] to-white border border-orange-100 rounded-2xl p-5">
             <div className="flex items-center gap-2 text-[#FF211F] font-bold">
               <Sparkles className="h-5 w-5" /> Pro tips

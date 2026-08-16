@@ -13,12 +13,21 @@ const TIER_STYLES = {
   bronze: "from-orange-400 to-orange-600 text-white",
 };
 
-const StoreCard = ({ store, categoryMap = {} }) => {
+const StoreCard = ({ store, categoryMap = {}, currentCategoryId }) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [following, setFollowing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [followers, setFollowers] = useState(store.followers_count || 0);
+
+  const trackDiscovery = () => {
+    if (!currentCategoryId) return;
+    // Fire-and-forget — never blocks navigation.
+    api.post(`/stores/${store.slug}/discovery`, {
+      source: "category",
+      category_id: currentCategoryId,
+    }).catch(() => {});
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -45,6 +54,7 @@ const StoreCard = ({ store, categoryMap = {} }) => {
   return (
     <Link
       to={`/store/${store.slug}`}
+      onClick={trackDiscovery}
       className="group block rounded-2xl overflow-hidden bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all"
       data-testid={`store-card-${store.slug}`}
     >
@@ -241,7 +251,7 @@ const StoresMarketplace = () => {
         </div>
       ) : (
         <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {items.map((s) => <StoreCard key={s.id} store={s} categoryMap={Object.fromEntries(categories.map((c) => [c.id, c]))} />)}
+          {items.map((s) => <StoreCard key={s.id} store={s} currentCategoryId={categoryId} categoryMap={Object.fromEntries(categories.map((c) => [c.id, c]))} />)}
         </div>
       )}
     </div>

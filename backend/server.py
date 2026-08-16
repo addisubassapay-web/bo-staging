@@ -236,6 +236,8 @@ class Order(BaseModel):
     listing_id: str
     listing_title: str
     listing_image: Optional[str] = None
+    quantity: int = 1
+    unit_price: Optional[float] = None
     amount: float
     shipping_fee: float = 0.0
     status: Literal["pending", "paid", "shipped", "delivered", "cancelled"] = "paid"
@@ -271,6 +273,7 @@ class Order(BaseModel):
 
 class OrderCreate(BaseModel):
     listing_id: str
+    quantity: int = 1
     shipping_address: dict = {}
     affiliate_code: Optional[str] = None
     share_ref: Optional[str] = None  # e.g. "push" when the buyer arrived from a Storefront Push share link
@@ -949,8 +952,12 @@ async def create_order(payload: OrderCreate, user: dict = Depends(get_current_us
     if listing["seller_id"] == user["id"]:
         raise HTTPException(400, "Cannot buy your own listing")
 
+    quantity = max(1, min(int(payload.quantity or 1), 99))
+
     settings = await get_settings()
-    amount = float(listing["price"])
+    unit_price = float(listing["price"])
+    amount = round(unit_price * quantity, 2)
+    # Flat shipping (one shipment covers the whole bulk order).
     shipping_fee = 0.0 if listing.get("shipping_paid_by") == "seller" else 5.99
 
     # Payment method validation — wallet payments must have sufficient balance.
@@ -975,11 +982,11 @@ async def create_order(payload: OrderCreate, user: dict = Depends(get_current_us
             type="adjustment",
             amount=-total_due,
             balance_after=float(buyer_fresh.get("wallet_balance", 0.0)),
-            description=f"Wallet payment: {listing['title']}",
+            description=f"Wallet payment × {quantity}: {listing['title']}",
             related_order_id=None,
         ).model_dump())
 
-    # Platform fee
+    # Platform fee — scales with the total merchandise amount.
     platform_fee = round(amount * settings["platform_fee_pct"] / 100.0, 2)
 
     # Affiliate lookup
@@ -1005,7 +1012,7 @@ async def create_order(payload: OrderCreate, user: dict = Depends(get_current_us
         original = await db.listings.find_one({"id": listing["imported_from_id"]}, {"_id": 0, "seller_id": 1})
         if original and original.get("seller_id"):
             dropship_source_seller_id = original["seller_id"]
-            retail_base = float(listing["base_price"])
+            retail_base = float(listing["base_price"]) * quantity
             reseller_user = await db.users.find_one({"id": listing["seller_id"]}, {"_id": 0})
             if reseller_user:
                 badge = compute_seller_badge(reseller_user)
@@ -1053,6 +1060,8 @@ async def create_order(payload: OrderCreate, user: dict = Depends(get_current_us
         listing_id=listing["id"],
         listing_title=listing["title"],
         listing_image=listing["images"][0] if listing.get("images") else None,
+        quantity=quantity,
+        unit_price=unit_price,
         amount=amount,
         shipping_fee=shipping_fee,
         shipping_address=payload.shipping_address,
@@ -2598,6 +2607,73 @@ async def store_analytics(user: dict = Depends(get_current_user)):
         "top_listings": top,
         "sales_last_30d": sales_series,
     }
+
+
+class StoreDiscoveryPayload(BaseModel):
+    source: Literal["category", "search", "direct"] = "direct"
+    category_id: Optional[str] = None
+
+
+@api_router.post("/stores/{slug}/discovery")
+async def track_store_discovery(slug: str, payload: StoreDiscoveryPayload,
+                                 user: Optional[dict] = Depends(get_current_user_optional)):
+    """Fire-and-forget event: a buyer opened this store from a specific
+    discovery surface (e.g. the category-filtered marketplace directory).
+    Used by seller analytics to see which category filters send them buyers.
+    """
+    store = await db.stores.find_one({"slug": slug}, {"_id": 0, "id": 1, "owner_id": 1})
+    if not store:
+        # Return 200 so beacons never retry — silently swallow.
+        return {"ok": True, "skipped": "unknown_store"}
+    # Never count the owner clicking their own listing
+    if user and user.get("id") == store["owner_id"]:
+        return {"ok": True, "skipped": "self"}
+    await db.store_discoveries.insert_one({
+        "id": str(uuid.uuid4()),
+        "store_id": store["id"],
+        "owner_id": store["owner_id"],
+        "source": payload.source,
+        "category_id": payload.category_id,
+        "buyer_id": (user or {}).get("id"),
+        "at": datetime.now(timezone.utc),
+    })
+    return {"ok": True}
+
+
+@api_router.get("/store/analytics/category-discoveries")
+async def store_category_discoveries(days: int = 7, user: dict = Depends(get_current_user)):
+    """How many buyers found the current user's store via each category filter
+    over the last `days` (default 7). Owner-only.
+    """
+    if not user.get("store_id"):
+        return {"items": [], "total": 0, "days": days}
+    days = max(1, min(int(days or 7), 90))
+    since = datetime.now(timezone.utc) - timedelta(days=days)
+    pipeline = [
+        {"$match": {
+            "owner_id": user["id"],
+            "source": "category",
+            "at": {"$gte": since},
+            "category_id": {"$ne": None},
+        }},
+        {"$group": {"_id": "$category_id", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}},
+    ]
+    rows = await db.store_discoveries.aggregate(pipeline).to_list(50)
+    cat_ids = [r["_id"] for r in rows]
+    cats = {c["id"]: c for c in await db.categories.find(
+        {"id": {"$in": cat_ids}}, {"_id": 0, "id": 1, "name": 1, "slug": 1}
+    ).to_list(len(cat_ids))} if cat_ids else {}
+    items = [
+        {
+            "category_id": r["_id"],
+            "name": (cats.get(r["_id"]) or {}).get("name") or "Unknown",
+            "slug": (cats.get(r["_id"]) or {}).get("slug"),
+            "count": r["count"],
+        }
+        for r in rows
+    ]
+    return {"items": items, "total": sum(r["count"] for r in rows), "days": days}
 
 
 # =========================

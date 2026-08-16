@@ -35,6 +35,7 @@ const Checkout = () => {
   const [copied, setCopied] = useState("");
   const [savedAddress, setSavedAddress] = useState(null);
   const [coupon, setCoupon] = useState({ code: "", loading: false, discount: 0, description: "", error: "" });
+  const [quantity, setQuantity] = useState(1);
 
   useEffect(() => {
     if (authLoading) return;
@@ -111,7 +112,7 @@ const Checkout = () => {
     try {
       const affiliate_code = sessionStorage.getItem("affiliate_code") || null;
       const share_ref = sessionStorage.getItem("share_ref") || null;
-      const { data } = await api.post("/orders", { listing_id: id, shipping_address: address, affiliate_code, share_ref, payment_method: payMethod });
+      const { data } = await api.post("/orders", { listing_id: id, quantity, shipping_address: address, affiliate_code, share_ref, payment_method: payMethod });
       setDone(data);
       sessionStorage.removeItem("affiliate_code");
       sessionStorage.removeItem("share_ref");
@@ -166,7 +167,10 @@ const Checkout = () => {
           </div>
           <div className="flex justify-between text-neutral-700 dark:text-neutral-300">
             <span>{t("checkout.item")}</span>
-            <span className="text-right ml-2 line-clamp-1 max-w-[220px]">{done.listing_title}</span>
+            <span className="text-right ml-2 line-clamp-1 max-w-[220px]">
+              {done.listing_title}
+              {done.quantity > 1 && <span className="ml-1 text-xs text-neutral-500">× {done.quantity}</span>}
+            </span>
           </div>
           <div className="flex justify-between font-extrabold text-neutral-900 dark:text-neutral-100 text-base pt-1.5 border-t border-neutral-100 dark:border-neutral-800 mt-2">
             <span>{t("checkout.amount")}</span>
@@ -185,9 +189,11 @@ const Checkout = () => {
   }
 
   const shippingFee = listing.shipping_paid_by === "buyer" ? 5.99 : 0;
-  const subtotal = listing.price;
+  const unitPrice = listing.price;
+  const subtotal = unitPrice * quantity;
   const discount = coupon.discount || 0;
   const total = Math.max(0, subtotal + shippingFee - discount);
+  const setQty = (n) => setQuantity(Math.max(1, Math.min(99, Number(n) || 1)));
   const deliveryDays = publicSettings.delivery_days_estimate || 7;
   const eta = new Date(Date.now() + deliveryDays * 24 * 60 * 60 * 1000);
   const etaLabel = eta.toLocaleDateString(undefined, { month: "short", day: "numeric" });
@@ -460,10 +466,59 @@ const Checkout = () => {
               <div className="text-neutral-500 dark:text-neutral-400 text-xs mt-0.5">{t("cart.soldBy")} {listing.seller_name}</div>
             </div>
           </div>
+
+          {/* Quantity — buy in bulk */}
+          <div className="mb-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/60 px-3 py-2.5" data-testid="checkout-quantity-block">
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <div className="text-xs font-semibold text-neutral-800 dark:text-neutral-100">Quantity</div>
+                <div className="text-[11px] text-neutral-500 dark:text-neutral-400 leading-tight mt-0.5">
+                  Stock up on this item — bulk purchases ship together with one shipping fee.
+                </div>
+              </div>
+              <div className="flex items-center gap-1 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setQty(quantity - 1)}
+                  disabled={quantity <= 1}
+                  aria-label="Decrease quantity"
+                  data-testid="qty-decrease"
+                  className="h-8 w-8 rounded-full border border-neutral-200 dark:border-neutral-700 grid place-items-center text-lg font-bold text-neutral-700 dark:text-neutral-200 hover:border-[#FF211F] hover:text-[#FF211F] disabled:opacity-40 disabled:cursor-not-allowed transition"
+                >−</button>
+                <input
+                  type="number"
+                  min={1}
+                  max={99}
+                  value={quantity}
+                  onChange={(e) => setQty(e.target.value)}
+                  aria-label="Quantity"
+                  data-testid="qty-input"
+                  className="h-8 w-12 text-center rounded-md border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-950 text-sm font-bold tabular-nums focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                />
+                <button
+                  type="button"
+                  onClick={() => setQty(quantity + 1)}
+                  disabled={quantity >= 99}
+                  aria-label="Increase quantity"
+                  data-testid="qty-increase"
+                  className="h-8 w-8 rounded-full border border-neutral-200 dark:border-neutral-700 grid place-items-center text-lg font-bold text-neutral-700 dark:text-neutral-200 hover:border-[#FF211F] hover:text-[#FF211F] disabled:opacity-40 transition"
+                >+</button>
+              </div>
+            </div>
+            {quantity >= 5 && (
+              <div className="mt-2 text-[11px] text-emerald-700 dark:text-emerald-300 font-semibold" data-testid="bulk-badge">
+                Bulk order · {quantity}× units
+              </div>
+            )}
+          </div>
+
           <div className="space-y-2.5 text-sm">
             <div className="flex justify-between text-neutral-700 dark:text-neutral-300">
-              <span>{t("checkout.item")}</span>
-              <span className="tabular-nums font-medium">{format(listing.price)}</span>
+              <span>
+                {t("checkout.item")}
+                {quantity > 1 && <span className="text-neutral-400 dark:text-neutral-500"> · {format(unitPrice)} × {quantity}</span>}
+              </span>
+              <span className="tabular-nums font-medium" data-testid="summary-subtotal">{format(subtotal)}</span>
             </div>
             <div className="flex justify-between text-neutral-700 dark:text-neutral-300">
               <span>{t("cart.shipping")}</span>
