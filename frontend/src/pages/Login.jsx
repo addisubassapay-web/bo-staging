@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import BrandMark from "@/components/BrandMark";
+import GoogleLoginButton from "@/components/GoogleLoginButton";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -74,6 +75,15 @@ const Login = () => {
             {loading ? "Logging in…" : "Log in"}
           </Button>
         </form>
+
+        {/* Divider */}
+        <div className="my-6 flex items-center gap-3">
+          <div className="flex-1 h-px bg-neutral-200 dark:bg-neutral-700" />
+          <span className="text-[11px] uppercase tracking-widest text-neutral-400 dark:text-neutral-500">or</span>
+          <div className="flex-1 h-px bg-neutral-200 dark:bg-neutral-700" />
+        </div>
+
+        <GoogleLoginButton label="Continue with Google" testId="login-google-btn" />
 
         <div className="mt-4 flex gap-2">
           <Button type="button" variant="outline" size="sm" className="flex-1" onClick={() => fillDemo("user")}>Demo user</Button>

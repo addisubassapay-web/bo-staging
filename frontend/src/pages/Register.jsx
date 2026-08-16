@@ -7,6 +7,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import api from "@/lib/api";
 import BrandMark from "@/components/BrandMark";
+import GoogleLoginButton from "@/components/GoogleLoginButton";
 
 const Register = () => {
   const navigate = useNavigate();
@@ -17,7 +18,11 @@ const Register = () => {
 
   useEffect(() => {
     const ref = searchParams.get("ref");
-    if (ref) setForm((f) => ({ ...f, referral_code: ref.toUpperCase() }));
+    if (ref) {
+      setForm((f) => ({ ...f, referral_code: ref.toUpperCase() }));
+      // Persist so a Google-Auth round-trip preserves the referral attribution
+      try { localStorage.setItem("mercari_pending_referral", ref.toUpperCase()); } catch { /* ignore */ }
+    }
   }, [searchParams]);
 
   const submit = async (e) => {
@@ -85,6 +90,15 @@ const Register = () => {
             {loading ? "Creating…" : "Create account"}
           </Button>
         </form>
+
+        {/* Divider */}
+        <div className="my-6 flex items-center gap-3">
+          <div className="flex-1 h-px bg-neutral-200 dark:bg-neutral-700" />
+          <span className="text-[11px] uppercase tracking-widest text-neutral-400 dark:text-neutral-500">or</span>
+          <div className="flex-1 h-px bg-neutral-200 dark:bg-neutral-700" />
+        </div>
+
+        <GoogleLoginButton label="Sign up with Google" testId="register-google-btn" />
 
         <p className="mt-6 text-sm text-center text-neutral-600 dark:text-neutral-400">
           Already have an account? <Link to="/login" className="text-[#2563EB] dark:text-[#7DD3FC] font-medium hover:underline">Log in</Link>

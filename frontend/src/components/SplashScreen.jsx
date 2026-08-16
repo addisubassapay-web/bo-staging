@@ -8,7 +8,13 @@ import BrandMark from "@/components/BrandMark";
 const SplashScreen = () => {
   const [visible, setVisible] = useState(() => {
     if (typeof window === "undefined") return false;
-    return !sessionStorage.getItem("mercari_splash_seen");
+    if (sessionStorage.getItem("mercari_splash_seen")) return false;
+    // Respect prefers-reduced-motion — skip splash entirely for a11y
+    if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      try { sessionStorage.setItem("mercari_splash_seen", "1"); } catch { /* ignore */ }
+      return false;
+    }
+    return true;
   });
   const [fadeOut, setFadeOut] = useState(false);
 

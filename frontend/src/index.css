@@ -49,6 +49,17 @@ code {
     transform-origin: center;
 }
 
+/* Accessibility: honour OS reduced-motion setting for the splash + brand pulse */
+@media (prefers-reduced-motion: reduce) {
+    .brand-mark-animated,
+    .animate-hero-zoom,
+    .animate-hero-in {
+        animation: none !important;
+        transition: none !important;
+        transform: none !important;
+    }
+}
+
 @layer base {
     :root {
         --background: 0 0% 100%;

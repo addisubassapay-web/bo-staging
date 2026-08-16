@@ -2,17 +2,29 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { Facebook, Twitter, Instagram, Youtube, Mail, ArrowRight } from "lucide-react";
 import BrandMark from "@/components/BrandMark";
+import api from "@/lib/api";
 
 const NewsletterStrip = () => {
   const [email, setEmail] = useState("");
-  const [status, setStatus] = useState("idle"); // idle | ok
+  const [status, setStatus] = useState("idle"); // idle | loading | ok | error
+  const [message, setMessage] = useState("");
 
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault();
     if (!email || !/@/.test(email)) return;
-    try { localStorage.setItem("mercari_newsletter_email", email); } catch { /* ignore */ }
-    setStatus("ok");
-    setTimeout(() => { setStatus("idle"); setEmail(""); }, 3500);
+    setStatus("loading");
+    setMessage("");
+    try {
+      const { data } = await api.post("/newsletter/subscribe", { email, source: "footer" });
+      setStatus("ok");
+      setMessage(data.already ? "You're already on the list ✓" : "You're in ✓");
+      try { localStorage.setItem("mercari_newsletter_email", email); } catch { /* ignore */ }
+      setTimeout(() => { setStatus("idle"); setEmail(""); setMessage(""); }, 3500);
+    } catch (err) {
+      setStatus("error");
+      setMessage(err.response?.data?.detail || "Please try again");
+      setTimeout(() => { setStatus("idle"); setMessage(""); }, 3500);
+    }
   };
 
   return (
@@ -40,10 +52,14 @@ const NewsletterStrip = () => {
           />
           <button
             type="submit"
-            className="h-11 px-5 rounded-full bg-gradient-to-r from-[#7DD3FC] to-[#2563EB] hover:brightness-110 text-white text-sm font-semibold shadow-sm hover:shadow-md transition-all flex items-center gap-1.5 whitespace-nowrap"
+            disabled={status === "loading"}
+            className="h-11 px-5 rounded-full bg-gradient-to-r from-[#7DD3FC] to-[#2563EB] hover:brightness-110 disabled:opacity-60 text-white text-sm font-semibold shadow-sm hover:shadow-md transition-all flex items-center gap-1.5 whitespace-nowrap"
             data-testid="newsletter-submit-btn"
           >
-            {status === "ok" ? "You’re in ✓" : (<>Subscribe <ArrowRight className="h-4 w-4" /></>)}
+            {status === "loading" && "…"}
+            {status === "ok" && (message || "You're in ✓")}
+            {status === "error" && (message || "Try again")}
+            {status === "idle" && (<>Subscribe <ArrowRight className="h-4 w-4" /></>)}
           </button>
         </form>
       </div>

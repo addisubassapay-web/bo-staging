@@ -55,3 +55,42 @@ async def require_admin(user: dict = Depends(get_current_user)):
 
 def now_utc() -> datetime:
     return datetime.now(timezone.utc)
+
+
+# ---------------------------------------------------------------------------
+# Phase A shims — thin wrappers around helpers currently defined in server.py.
+# Router modules should import from here, NOT from server, to avoid circular
+# imports at module-load time. Each shim lazy-imports its target the first
+# time it is called (after server.py has finished loading).
+#
+# Once every route is extracted out of server.py we'll move the helper bodies
+# themselves into this module and drop the shims.
+# ---------------------------------------------------------------------------
+def hash_password(password: str) -> str:
+    from server import hash_password as _impl
+    return _impl(password)
+
+def verify_password(plain: str, hashed: str) -> bool:
+    from server import verify_password as _impl
+    return _impl(plain, hashed)
+
+def create_token(user_id: str, role: str) -> str:
+    from server import create_token as _impl
+    return _impl(user_id, role)
+
+def to_public_user(user: dict) -> dict:
+    from server import to_public_user as _impl
+    return _impl(user)
+
+async def get_settings() -> dict:
+    from server import get_settings as _impl
+    return await _impl()
+
+async def credit_wallet(user_id: str, amount: float, tx_type: str, description: str,
+                        related_id: Optional[str] = None, frozen: bool = False):
+    from server import credit_wallet as _impl
+    return await _impl(user_id, amount, tx_type, description, related_id, frozen)
+
+async def notify(user_id: str, ntype: str, title: str, body: str = "", link: Optional[str] = None):
+    from server import notify as _impl
+    return await _impl(user_id, ntype, title, body, link)

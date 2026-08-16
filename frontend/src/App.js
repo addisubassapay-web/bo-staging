@@ -34,6 +34,7 @@ import EditListing from "@/pages/EditListing";
 import BuyerProgressToast from "@/components/BuyerProgressToast";
 import Disputes from "@/pages/Disputes";
 import SplashScreen from "@/components/SplashScreen";
+import AuthCallback from "@/pages/AuthCallback";
 
 function App() {
   return (
@@ -55,6 +56,7 @@ function App() {
                     <Route path="/dashboard/list-product" element={<Sell />} />
                     <Route path="/login" element={<Login />} />
                     <Route path="/register" element={<Register />} />
+                    <Route path="/auth/callback" element={<AuthCallback />} />
                     <Route path="/cart" element={<Cart />} />
                     <Route path="/checkout/:id" element={<Checkout />} />
                     <Route path="/favorites" element={<Favorites />} />

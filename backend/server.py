@@ -26,6 +26,8 @@ from shipping_providers import get_provider as get_shipping_provider, next_stage
 from routers.search import router as search_router
 from routers.discovery import router as discovery_router
 from routers.users import router as users_router
+from routers.newsletter import router as newsletter_router
+from routers.google_auth import router as google_auth_router
 
 
 ROOT_DIR = Path(__file__).parent
@@ -4429,6 +4431,8 @@ app.include_router(api_router)
 app.include_router(search_router, prefix="/api")
 app.include_router(discovery_router, prefix="/api")
 app.include_router(users_router, prefix="/api")
+app.include_router(newsletter_router, prefix="/api")
+app.include_router(google_auth_router, prefix="/api")
 
 app.add_middleware(
     CORSMiddleware,
