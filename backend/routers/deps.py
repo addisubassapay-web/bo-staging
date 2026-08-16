@@ -94,3 +94,19 @@ async def credit_wallet(user_id: str, amount: float, tx_type: str, description: 
 async def notify(user_id: str, ntype: str, title: str, body: str = "", link: Optional[str] = None):
     from server import notify as _impl
     return await _impl(user_id, ntype, title, body, link)
+
+# Phase E shims — helpers needed by the listings/import extraction.
+async def ensure_store_for_user(user_id: str):
+    from server import ensure_store_for_user as _impl
+    return await _impl(user_id)
+
+def build_listings_query(q=None, category_id=None, price_min=None, price_max=None,
+                         condition=None, featured=None, seller_id=None, brand=None,
+                         status_filter="active"):
+    from server import _build_listings_query as _impl
+    return _impl(q, category_id, price_min, price_max, condition, featured,
+                 seller_id, brand, status_filter)
+
+async def notify_store_followers(store_id: str, title: str, listing_id=None, bulk: bool = False):
+    from server import _notify_store_followers as _impl
+    return await _impl(store_id, title, listing_id, bulk)

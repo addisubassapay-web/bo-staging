@@ -1,9 +1,11 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { Search, Store as StoreIcon, Users, ShoppingBag, Sparkles } from "lucide-react";
+import { Search, Store as StoreIcon, Users, ShoppingBag, Sparkles, Heart } from "lucide-react";
 import api from "@/lib/api";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/context/AuthContext";
 
 const TIER_STYLES = {
   gold: "from-amber-400 to-amber-600 text-white",
@@ -11,41 +13,88 @@ const TIER_STYLES = {
   bronze: "from-orange-400 to-orange-600 text-white",
 };
 
-const StoreCard = ({ store }) => (
-  <Link
-    to={`/store/${store.slug}`}
-    className="group block rounded-2xl overflow-hidden bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all"
-    data-testid={`store-card-${store.slug}`}
-  >
-    <div className="relative h-28 bg-gradient-to-br from-[#FF7A18] via-[#FF5722] to-[#FF211F]">
-      {store.banner && (
-        <img src={store.banner} alt="" className="w-full h-full object-cover opacity-90" />
-      )}
-      {store.tier && TIER_STYLES[store.tier] && (
-        <span className={`absolute top-2 right-2 text-[10px] uppercase tracking-widest px-2 py-0.5 rounded-full bg-gradient-to-r ${TIER_STYLES[store.tier]} font-semibold shadow`}>
-          {store.tier}
-        </span>
-      )}
-    </div>
-    <div className="px-4 pt-8 pb-4 relative">
-      <div className="absolute -top-8 left-4 h-14 w-14 rounded-xl bg-white dark:bg-neutral-900 ring-2 ring-white dark:ring-neutral-900 shadow-md overflow-hidden grid place-items-center text-lg font-bold text-neutral-700 dark:text-neutral-100">
-        {store.logo ? (
-          <img src={store.logo} alt="" className="w-full h-full object-cover" />
-        ) : (
-          store.name?.[0]?.toUpperCase() || "S"
+const StoreCard = ({ store, onFollowChange }) => {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [following, setFollowing] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [followers, setFollowers] = useState(store.followers_count || 0);
+
+  useEffect(() => {
+    if (!user) return;
+    api.get(`/stores/${store.slug}/follow-status`).then((r) => setFollowing(!!r.data?.following)).catch(() => {});
+  }, [user, store.slug]);
+
+  const toggle = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!user) { toast({ title: "Sign in to follow stores", variant: "destructive" }); return; }
+    setLoading(true);
+    try {
+      const { data } = await api.post(`/stores/${store.slug}/follow`);
+      const isFollowing = !!data?.following;
+      setFollowing(isFollowing);
+      setFollowers((prev) => prev + (isFollowing ? 1 : -1));
+      onFollowChange?.(store.id, isFollowing);
+    } catch (err) {
+      toast({ title: err.response?.data?.detail || "Could not follow store", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Link
+      to={`/store/${store.slug}`}
+      className="group block rounded-2xl overflow-hidden bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all"
+      data-testid={`store-card-${store.slug}`}
+    >
+      <div className="relative h-28 bg-gradient-to-br from-[#FF7A18] via-[#FF5722] to-[#FF211F]">
+        {store.banner && (
+          <img src={store.banner} alt="" className="w-full h-full object-cover opacity-90" />
+        )}
+        {store.tier && TIER_STYLES[store.tier] && (
+          <span className={`absolute top-2 right-2 text-[10px] uppercase tracking-widest px-2 py-0.5 rounded-full bg-gradient-to-r ${TIER_STYLES[store.tier]} font-semibold shadow`}>
+            {store.tier}
+          </span>
         )}
       </div>
-      <div className="font-semibold text-neutral-900 dark:text-neutral-100 line-clamp-1 group-hover:text-[#2563EB] transition">{store.name}</div>
-      {store.tagline && (
-        <div className="text-xs text-neutral-500 dark:text-neutral-400 line-clamp-1 mt-0.5">{store.tagline}</div>
-      )}
-      <div className="mt-3 flex items-center gap-3 text-xs text-neutral-600 dark:text-neutral-400">
-        <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5" /> {store.followers_count || 0}</span>
-        <span className="flex items-center gap-1"><ShoppingBag className="h-3.5 w-3.5" /> {store.sales_count || 0}</span>
+      <div className="px-4 pt-8 pb-4 relative">
+        <div className="absolute -top-8 left-4 h-14 w-14 rounded-xl bg-white dark:bg-neutral-900 ring-2 ring-white dark:ring-neutral-900 shadow-md overflow-hidden grid place-items-center text-lg font-bold text-neutral-700 dark:text-neutral-100">
+          {store.logo ? (
+            <img src={store.logo} alt="" className="w-full h-full object-cover" />
+          ) : (
+            store.name?.[0]?.toUpperCase() || "S"
+          )}
+        </div>
+        <div className="font-semibold text-neutral-900 dark:text-neutral-100 line-clamp-1 group-hover:text-[#2563EB] transition">{store.name}</div>
+        {store.tagline && (
+          <div className="text-xs text-neutral-500 dark:text-neutral-400 line-clamp-1 mt-0.5">{store.tagline}</div>
+        )}
+        <div className="mt-3 flex items-center justify-between">
+          <div className="flex items-center gap-3 text-xs text-neutral-600 dark:text-neutral-400">
+            <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5" /> {followers}</span>
+            <span className="flex items-center gap-1"><ShoppingBag className="h-3.5 w-3.5" /> {store.sales_count || 0}</span>
+          </div>
+          <button
+            onClick={toggle}
+            disabled={loading}
+            className={`h-8 px-3 rounded-full text-xs font-semibold transition flex items-center gap-1 shrink-0 disabled:opacity-60 ${
+              following
+                ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-950 dark:text-emerald-300"
+                : "bg-gradient-to-r from-[#7DD3FC] to-[#2563EB] text-white hover:brightness-110"
+            }`}
+            data-testid={`store-follow-btn-${store.slug}`}
+            aria-pressed={following}
+          >
+            <Heart className={`h-3.5 w-3.5 ${following ? "fill-current" : ""}`} />
+            {following ? "Following" : "Follow"}
+          </button>
+        </div>
       </div>
-    </div>
-  </Link>
-);
+    </Link>
+  );
+};
 
 const StoresMarketplace = () => {
   const [q, setQ] = useState("");

@@ -322,6 +322,11 @@ const Header = () => {
               <span className="text-base leading-none">▦</span> All Products
             </button>
           </Link>
+          <Link to="/marketplace/stores" data-testid="cat-pill-stores">
+            <button className="whitespace-nowrap px-4 sm:px-5 h-8 sm:h-9 rounded-full bg-gradient-to-r from-[#7DD3FC] to-[#2563EB] text-white font-semibold text-xs sm:text-sm flex items-center gap-1.5 shrink-0 shadow-sm hover:brightness-110 transition">
+              <Store className="h-3.5 w-3.5" /> Stores
+            </button>
+          </Link>
           {categories.map((c) => (
             <Link key={c.id} to={`/search?category=${c.id}`} data-testid={`cat-pill-${c.slug}`}>
               <button className="whitespace-nowrap px-3 sm:px-4 h-8 sm:h-9 rounded-full bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200 font-medium text-xs sm:text-sm shrink-0 transition">
