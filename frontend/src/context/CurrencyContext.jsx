@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from "react";
 import api from "@/lib/api";
+import { detectGeo, chooseInitial } from "@/lib/geoDetect";
 
 const CurrencyContext = createContext(null);
 
@@ -30,7 +31,10 @@ const CURRENCY_META = {
 export const CURRENCY_LIST = Object.keys(CURRENCY_META);
 
 export const CurrencyProvider = ({ children }) => {
-  const [currency, setCurrencyState] = useState(() => localStorage.getItem("mercari_currency") || "USD");
+  const [currency, setCurrencyState] = useState(() => {
+    const geo = detectGeo();
+    return chooseInitial("mercari_currency", "USD", geo.currency);
+  });
   const [rateData, setRateData] = useState(FALLBACK_RATES);
 
   useEffect(() => {

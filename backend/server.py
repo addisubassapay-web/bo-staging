@@ -10,6 +10,7 @@ import secrets
 import random
 import re
 import json as _json
+import httpx
 from pathlib import Path
 from pydantic import BaseModel, Field, EmailStr
 from typing import List, Optional, Literal
@@ -3317,20 +3318,54 @@ async def search_by_image(payload: ImageSearchRequest):
     }
 
 
-# ---- Currency mock rates (USD base). Static table; wire up ExchangeRate API when live rates are needed. ----
+# ---- Currency live FX rates (USD base). Uses open.er-api.com with in-memory cache and static fallback. ----
+_fx_cache: dict = {}
 @api_router.get("/currency/rates")
 async def currency_rates():
-    return {
-        "base": "USD",
-        "updated_at": "2026-02-11T00:00:00Z",
-        "source": "mocked-static",
-        "rates": {
-            "USD": 1.0, "EUR": 0.92, "GBP": 0.78, "JPY": 155.0,
-            "INR": 83.2, "CAD": 1.36, "AUD": 1.52, "BRL": 5.05,
-            "MXN": 17.1, "CNY": 7.18, "KRW": 1345.0, "SGD": 1.34,
-            "AED": 3.673,
-        },
+    """Live FX rates with 1-hour in-memory cache, falling back to the static
+    table on network / provider failure so the app never shows raw prices."""
+    global _fx_cache
+    now = datetime.now(timezone.utc)
+    cached = _fx_cache.get("data")
+    cached_at = _fx_cache.get("at")
+    if cached and cached_at and (now - cached_at).total_seconds() < 3600:
+        return cached
+
+    static_rates = {
+        "USD": 1.0, "EUR": 0.92, "GBP": 0.78, "JPY": 155.0,
+        "INR": 83.2, "CAD": 1.36, "AUD": 1.52, "BRL": 5.05,
+        "MXN": 17.1, "CNY": 7.18, "KRW": 1345.0, "SGD": 1.34,
+        "AED": 3.673,
     }
+
+    try:
+        async with httpx.AsyncClient(timeout=6.0) as client:
+            resp = await client.get("https://open.er-api.com/v6/latest/USD")
+        if resp.status_code == 200:
+            data = resp.json() or {}
+            live = data.get("rates") or {}
+            rates = {code: float(live.get(code, static_rates[code])) for code in static_rates}
+            payload = {
+                "base": "USD",
+                "updated_at": now.isoformat(),
+                "source": "open.er-api.com",
+                "rates": rates,
+            }
+            _fx_cache = {"data": payload, "at": now}
+            return payload
+    except Exception as e:
+        logger.warning(f"FX fetch failed, using static rates: {e}")
+
+    # Fallback path — never leaves the client without rates
+    payload = {
+        "base": "USD",
+        "updated_at": now.isoformat(),
+        "source": "static-fallback",
+        "rates": static_rates,
+    }
+    # Cache the fallback briefly (5 min) so we retry the live API sooner
+    _fx_cache = {"data": payload, "at": now - timedelta(seconds=3300)}
+    return payload
 
 
 @api_router.post("/search/vibe")

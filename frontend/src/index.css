@@ -60,6 +60,41 @@ code {
     }
 }
 
+/* -------------------------------------------------------------------------- */
+/* RTL polish — auto-flip directional glyphs when the app is in Arabic mode.  */
+/* Layout mirroring is handled by [dir="rtl"] at the html level; these rules  */
+/* fix icons that must not mirror (logos, avatars) and flip arrows/chevrons.  */
+/* -------------------------------------------------------------------------- */
+html[dir="rtl"] {
+    text-align: right;
+}
+html[dir="rtl"] .rtl-flip {
+    transform: scaleX(-1);
+}
+/* Arrow icons that carry meaning (e.g. "back", "next") should mirror in RTL. */
+html[dir="rtl"] svg.lucide-arrow-right,
+html[dir="rtl"] svg.lucide-arrow-left,
+html[dir="rtl"] svg.lucide-chevron-right,
+html[dir="rtl"] svg.lucide-chevron-left {
+    transform: scaleX(-1);
+}
+/* Preserve brand mark, avatars, logos — never mirror. */
+html[dir="rtl"] [data-testid="header-logo"] svg,
+html[dir="rtl"] [data-testid="footer-logo"] svg,
+html[dir="rtl"] [data-testid="login-logo"] svg,
+html[dir="rtl"] [data-testid="register-logo"] svg,
+html[dir="rtl"] [data-testid^="header-user-avatar-img"],
+html[dir="rtl"] [data-testid^="store-card-"] img {
+    transform: none !important;
+}
+/* Number columns (prices, counts) should stay LTR even in RTL mode. */
+html[dir="rtl"] .tabular-nums,
+html[dir="rtl"] [class*="font-mono"] {
+    direction: ltr;
+    unicode-bidi: embed;
+    display: inline-block;
+}
+
 @layer base {
     :root {
         --background: 0 0% 100%;
