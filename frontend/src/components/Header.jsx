@@ -21,6 +21,7 @@ import LanguagePicker from "@/components/LanguagePicker";
 import MiniCart from "@/components/MiniCart";
 import GlobalNavMenu from "@/components/GlobalNavMenu";
 import CommandPalette, { useCommandPaletteShortcut } from "@/components/CommandPalette";
+import BrandMark from "@/components/BrandMark";
 
 const TopStrip = ({ user, onLogout }) => {
   const { t } = useLang();
@@ -129,10 +130,8 @@ const Header = () => {
           <GlobalNavMenu />
 
           <Link to="/" className="flex items-center gap-2 sm:gap-3 shrink-0" data-testid="brand-link">
-            <img
-              src="/logo-mark.svg"
-              alt="Mercari"
-              className={`shrink-0 transition-all drop-shadow-sm ${compact ? "h-8 w-8" : "h-9 w-9 sm:h-11 sm:w-11"}`}
+            <BrandMark
+              size={compact ? 32 : 44}
               data-testid="header-logo"
             />
             <div className={`hidden lg:block leading-tight transition-opacity ${compact ? "hidden xl:block" : ""}`}>
