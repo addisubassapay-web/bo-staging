@@ -257,7 +257,12 @@ const Header = () => {
                           </button>
                         </div>
                         <div className="space-y-1">
-                          {recentNotifs.slice(0, 3).map((n) => (
+                          {recentNotifs.length === 0 ? (
+                            <div className="px-2 py-3 text-center" data-testid="avatar-notifs-empty">
+                              <div className="text-xs font-medium text-emerald-600 dark:text-emerald-400">You're all caught up ✓</div>
+                              <div className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5">No new notifications right now</div>
+                            </div>
+                          ) : recentNotifs.slice(0, 3).map((n) => (
                             <button
                               key={n.id}
                               onClick={() => { navigate(n.link || "/"); }}

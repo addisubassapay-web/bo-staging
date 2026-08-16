@@ -31,6 +31,7 @@ from routers.google_auth import router as google_auth_router
 from routers.auth import router as auth_router
 from routers.stores_search import router as stores_search_router
 from routers.shopping import router as shopping_router
+from routers.listings import router as listings_router
 
 
 ROOT_DIR = Path(__file__).parent
@@ -863,15 +864,6 @@ def _build_listings_query(
             pr["$lte"] = max_price
         query["price"] = pr
     return query
-
-@api_router.get("/listings/{listing_id}", response_model=Listing)
-async def get_listing(listing_id: str):
-    doc = await db.listings.find_one({"id": listing_id}, {"_id": 0})
-    if not doc:
-        raise HTTPException(404, "Listing not found")
-    await db.listings.update_one({"id": listing_id}, {"$inc": {"views_count": 1}})
-    doc["views_count"] = doc.get("views_count", 0) + 1
-    return Listing(**doc)
 
 @api_router.post("/listings", response_model=Listing)
 async def create_listing(payload: ListingCreate, user: dict = Depends(get_current_user)):
@@ -4420,6 +4412,7 @@ app.include_router(google_auth_router, prefix="/api")
 app.include_router(auth_router, prefix="/api")
 app.include_router(stores_search_router, prefix="/api")
 app.include_router(shopping_router, prefix="/api")
+app.include_router(listings_router, prefix="/api")
 
 app.add_middleware(
     CORSMiddleware,

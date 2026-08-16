@@ -35,6 +35,7 @@ import BuyerProgressToast from "@/components/BuyerProgressToast";
 import Disputes from "@/pages/Disputes";
 import SplashScreen from "@/components/SplashScreen";
 import AuthCallback from "@/pages/AuthCallback";
+import StoresMarketplace from "@/pages/StoresMarketplace";
 
 function App() {
   return (
@@ -52,6 +53,7 @@ function App() {
                     <Route path="/" element={<Home />} />
                     <Route path="/search" element={<Search />} />
                     <Route path="/marketplace" element={<Search />} />
+                    <Route path="/marketplace/stores" element={<StoresMarketplace />} />
                     <Route path="/listing/:id" element={<ListingDetail />} />
                     <Route path="/sell" element={<Sell />} />
                     <Route path="/dashboard/list-product" element={<Sell />} />
