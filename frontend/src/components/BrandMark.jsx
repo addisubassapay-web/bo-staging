@@ -63,8 +63,8 @@ export const BrandMark = ({
             )}
           </linearGradient>
           <linearGradient id={dotGrad} x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#FDE68A" />
-            <stop offset="100%" stopColor="#F59E0B" />
+            <stop offset="0%" stopColor="#7DD3FC" />
+            <stop offset="100%" stopColor="#2563EB" />
           </linearGradient>
         </defs>
 
@@ -87,14 +87,12 @@ export const BrandMark = ({
           strokeLinejoin="round"
         />
 
-        {/* Amber accent orb (bottom-right) */}
+        {/* Blue rounded-square accent (top-right) */}
         {showDot && (
           <>
-            <circle cx="94" cy="94" r="15" fill={`url(#${dotGrad})`} />
-            <circle
-              cx="94"
-              cy="94"
-              r="15"
+            <rect x="79" y="11" width="30" height="30" rx="9" ry="9" fill={`url(#${dotGrad})`} />
+            <rect
+              x="79" y="11" width="30" height="30" rx="9" ry="9"
               fill="none"
               stroke={variant === "mono" ? "rgba(255,255,255,0.7)" : "#ffffff"}
               strokeWidth="3"

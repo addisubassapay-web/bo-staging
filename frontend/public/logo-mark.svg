@@ -5,17 +5,19 @@
       <stop offset="100%" stop-color="#FF211F"/>
     </linearGradient>
     <linearGradient id="dotGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#FDE68A"/>
-      <stop offset="100%" stop-color="#F59E0B"/>
+      <stop offset="0%" stop-color="#7DD3FC"/>
+      <stop offset="100%" stop-color="#2563EB"/>
     </linearGradient>
   </defs>
 
+  <!-- Rounded pointy-top hexagon -->
   <polygon points="60,10 103,35 103,85 60,110 17,85 17,35"
            fill="url(#hexGradient)"
            stroke="url(#hexGradient)"
            stroke-width="14"
            stroke-linejoin="round"/>
 
+  <!-- Bold uppercase M with V middle -->
   <path d="M35,82 L35,40 L60,66 L85,40 L85,82"
         fill="none"
         stroke="#ffffff"
@@ -23,6 +25,7 @@
         stroke-linecap="round"
         stroke-linejoin="round"/>
 
-  <circle cx="94" cy="94" r="15" fill="url(#dotGradient)"/>
-  <circle cx="94" cy="94" r="15" fill="none" stroke="#ffffff" stroke-width="3" opacity="0.95"/>
+  <!-- Blue rounded-square accent (top-right) -->
+  <rect x="79" y="11" width="30" height="30" rx="9" ry="9" fill="url(#dotGradient)"/>
+  <rect x="79" y="11" width="30" height="30" rx="9" ry="9" fill="none" stroke="#ffffff" stroke-width="3" opacity="0.95"/>
 </svg>
