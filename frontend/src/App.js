@@ -36,6 +36,7 @@ import Disputes from "@/pages/Disputes";
 import SplashScreen from "@/components/SplashScreen";
 import AuthCallback from "@/pages/AuthCallback";
 import StoresMarketplace from "@/pages/StoresMarketplace";
+import AdminCoupons from "@/pages/AdminCoupons";
 
 function App() {
   return (
@@ -78,6 +79,7 @@ function App() {
                     <Route path="/listing/:id/edit" element={<EditListing />} />
                     <Route path="/disputes" element={<Disputes />} />
                     <Route path="/r/:code" element={<AffiliateRedirect />} />
+                    <Route path="/admin/coupons" element={<AdminCoupons />} />
                     <Route path="/admin/*" element={<Admin />} />
                   </Routes>
                 </main>

@@ -294,13 +294,27 @@ const Search = () => {
 };
 
 function computePageWindow(current, total) {
-  const window = new Set([1, total, current, current - 1, current + 1]);
+  // Show first 2, last 2, and current ±2 so users can hop several pages
+  // in one click without being stranded when total is large (e.g. 113).
+  const siblings = 2;
+  const boundary = 2;
+  const window = new Set();
+  for (let i = 1; i <= Math.min(boundary, total); i++) window.add(i);
+  for (let i = Math.max(1, total - boundary + 1); i <= total; i++) window.add(i);
+  for (let i = Math.max(1, current - siblings); i <= Math.min(total, current + siblings); i++) window.add(i);
   return Array.from(window)
     .filter((n) => n >= 1 && n <= total)
     .sort((a, b) => a - b);
 }
 
 const Pagination = ({ page, totalPages, pageWindow, goToPage }) => {
+  const [jumpTo, setJumpTo] = React.useState("");
+  const submitJump = (e) => {
+    e.preventDefault();
+    const n = parseInt(jumpTo, 10);
+    if (!Number.isNaN(n)) goToPage(n);
+    setJumpTo("");
+  };
   const cls = (active, disabled) =>
     `h-9 min-w-9 px-2.5 rounded-md text-sm font-medium border transition inline-flex items-center justify-center gap-1 ${
       active
@@ -328,7 +342,7 @@ const Pagination = ({ page, totalPages, pageWindow, goToPage }) => {
         const gap = prev != null && n - prev > 1;
         return (
           <React.Fragment key={n}>
-            {gap && <span className="px-1 text-neutral-400">…</span>}
+            {gap && <span className="px-1 text-neutral-400" aria-hidden>…</span>}
             <button
               className={cls(n === page, false)}
               onClick={() => goToPage(n)}
@@ -347,6 +361,30 @@ const Pagination = ({ page, totalPages, pageWindow, goToPage }) => {
       <button className={cls(false, page === totalPages)} disabled={page === totalPages} onClick={() => goToPage(totalPages)} aria-label="Last page" data-testid="page-last">
         <ChevronsRight className="h-4 w-4" />
       </button>
+
+      {totalPages > 7 && (
+        <form onSubmit={submitJump} className="ml-2 inline-flex items-center gap-2" data-testid="page-jump-form">
+          <span className="text-xs text-neutral-500 dark:text-neutral-400">Go to</span>
+          <input
+            type="number"
+            min="1"
+            max={totalPages}
+            value={jumpTo}
+            onChange={(e) => setJumpTo(e.target.value)}
+            placeholder={`1-${totalPages}`}
+            className="h-9 w-20 rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-2 text-sm text-center focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30 focus:border-[#2563EB] transition"
+            data-testid="page-jump-input"
+            aria-label="Jump to page"
+          />
+          <button
+            type="submit"
+            className="h-9 px-3 rounded-md bg-gradient-to-r from-[#7DD3FC] to-[#2563EB] text-white text-xs font-semibold hover:brightness-110 transition"
+            data-testid="page-jump-btn"
+          >
+            Go
+          </button>
+        </form>
+      )}
     </nav>
   );
 };

@@ -78,7 +78,7 @@ const Checkout = () => {
     setCoupon((c) => ({ ...c, loading: true, error: "" }));
     try {
       const subtotal = listing ? Number(listing.price) : 0;
-      const { data } = await api.post("/checkout/coupon/validate", {
+      const { data } = await api.post("/coupons/validate", {
         code: coupon.code.trim().toUpperCase(),
         subtotal,
         item_count: 1,
