@@ -2619,6 +2619,29 @@ async def admin_sync_apify(payload: dict, _admin: dict = Depends(require_admin))
     asyncio.create_task(_run())
     return {"ok": True, "started": True}
 
+@api_router.post("/admin/sync/apify/schedule")
+async def admin_sync_apify_schedule(payload: dict, _admin: dict = Depends(require_admin)):
+    """Toggle the weekly auto-sync or force the loop to run on the next tick.
+
+    Payload: {enabled: bool, run_now: bool}
+    - enabled=false pauses the weekly loop (loop keeps polling once per day).
+    - run_now=true clears last_sync_at so the loop kicks off within a minute.
+    """
+    enabled = payload.get("enabled")
+    run_now = bool(payload.get("run_now", False))
+    updates: dict = {}
+    if enabled is not None:
+        updates["auto_schedule_enabled"] = bool(enabled)
+    if run_now:
+        # Nulling last_sync_at makes the loop treat it as "never synced" → runs asap
+        updates["last_sync_at"] = None
+        updates["next_scheduled_at"] = datetime.now(timezone.utc)
+    if not updates:
+        raise HTTPException(400, "Provide `enabled` and/or `run_now`")
+    await db.sync_state.update_one({"id": "apify"}, {"$set": updates}, upsert=True)
+    return {"ok": True, "updated": {k: (v.isoformat() if isinstance(v, datetime) else v) for k, v in updates.items()}}
+
+
 @api_router.get("/admin/sync/status")
 async def admin_sync_status(_admin: dict = Depends(require_admin)):
     return await get_sync_status(db)
@@ -4524,18 +4547,79 @@ async def startup():
             await asyncio.sleep(60)  # tick every 60 seconds
 
     async def apify_auto_sync_loop():
-        # Auto-sync Amazon data every 7 days (weekly)
+        """Weekly Apify auto-sync, resume-safe across container restarts.
+
+        On startup: reads last_sync_at from `sync_state`; if overdue, kicks off
+        immediately, else sleeps only until the next 7-day mark.
+        """
         WEEK_SECONDS = 60 * 60 * 24 * 7
-        await asyncio.sleep(WEEK_SECONDS)  # wait 1 week before first auto-sync
+        # Small startup delay so DB, other loops, and health checks settle first.
+        await asyncio.sleep(60)
         while True:
             try:
+                state = await db.sync_state.find_one({"id": "apify"}, {"_id": 0}) or {}
+                if not state.get("auto_schedule_enabled", True):
+                    # Feature is off — check again in a day
+                    await asyncio.sleep(60 * 60 * 24)
+                    continue
+
+                # Auto-recover a stuck sync_running lock (e.g. after a crash)
+                if state.get("sync_running"):
+                    started = state.get("started_at")
+                    if started and started.tzinfo is None:
+                        started = started.replace(tzinfo=timezone.utc)
+                    if not started or (datetime.now(timezone.utc) - started).total_seconds() > 60 * 60 * 6:
+                        logger.warning("Clearing stuck Apify sync_running lock (>6h old)")
+                        await db.sync_state.update_one(
+                            {"id": "apify"},
+                            {"$set": {"sync_running": False, "message": "Auto-cleared stuck lock"}},
+                        )
+                        state["sync_running"] = False
+
+                last = state.get("last_sync_at")
+                now = datetime.now(timezone.utc)
+                if last:
+                    # Handle both naive and aware
+                    if last.tzinfo is None:
+                        last = last.replace(tzinfo=timezone.utc)
+                    elapsed = (now - last).total_seconds()
+                    wait = max(0, WEEK_SECONDS - elapsed)
+                else:
+                    # Never synced — run right away
+                    wait = 0
+
+                if wait > 0:
+                    next_scheduled_at = now + timedelta(seconds=wait)
+                    await db.sync_state.update_one(
+                        {"id": "apify"},
+                        {"$set": {
+                            "next_scheduled_at": next_scheduled_at,
+                            "schedule_interval_days": 7,
+                            "auto_schedule_enabled": True,
+                        }},
+                        upsert=True,
+                    )
+                    logger.info(f"Next Apify auto-sync scheduled at {next_scheduled_at.isoformat()}")
+                    await asyncio.sleep(wait)
+
+                # Time to run — but only if not already running
                 state = await db.sync_state.find_one({"id": "apify"}, {"_id": 0}) or {}
                 if not state.get("sync_running"):
                     logger.info("Starting scheduled Apify auto-sync (weekly)")
                     await import_from_apify(db, target_count=5000, replace_existing=True)
             except Exception as e:
-                logger.error(f"apify auto-sync failed: {e}")
-            await asyncio.sleep(WEEK_SECONDS)
+                logger.error(f"apify auto-sync loop failed: {e}")
+                # Back off a day before retrying on hard error
+                await asyncio.sleep(60 * 60 * 24)
+                continue
+
+            # Schedule the next run marker
+            next_scheduled_at = datetime.now(timezone.utc) + timedelta(seconds=WEEK_SECONDS)
+            await db.sync_state.update_one(
+                {"id": "apify"},
+                {"$set": {"next_scheduled_at": next_scheduled_at}},
+                upsert=True,
+            )
 
     asyncio.create_task(live_sync_loop())
     asyncio.create_task(apify_auto_sync_loop())

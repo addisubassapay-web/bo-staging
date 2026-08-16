@@ -26,7 +26,11 @@ Exact replica of Mercari platform (mercari.com) — same color scheme (`#FF211F`
 
 ## Implemented (with dates)
 
-### Feb 2026 — Cart/Checkout Mobile Strict-Fit + Marketplace Data Hygiene
+### Feb 2026 — Weekly Apify Auto-Sync (Resume-Safe + Admin-Controllable)
+- **Weekly Amazon refresh** — `apify_auto_sync_loop()` in `server.py` rewritten to be resume-safe: on every startup it reads `last_sync_at`, sleeps only until the next 7-day mark (not a fresh full week), and auto-clears stuck `sync_running` locks older than 6 hours. Persists `next_scheduled_at` + `schedule_interval_days` in `sync_state`.
+- **Admin controls** — new `POST /api/admin/sync/apify/schedule` accepts `{enabled: bool, run_now: bool}` to pause/resume the loop or force the next tick to run within ~60s. Non-admin blocked (401), empty payload rejected (400).
+- **Sync status expanded** — `GET /api/admin/sync/status` now returns `next_scheduled_at`, `schedule_interval_days`, `auto_schedule_enabled` alongside the existing counters.
+- **Admin UI** — `/admin/apify-sync` now surfaces the next scheduled datetime, a "Pause/Resume" toggle chip, and a "Run scheduled sync now" button (`data-testid: apify-next-scheduled | apify-schedule-toggle | apify-run-schedule-now`). Verified via screenshot: next scheduled 2026-08-17 20:14 UTC (exactly 7 days after the last successful run).
 - **Cart & Checkout mobile clipping (P0) — FIXED and verified by bug_testing_agent (iteration_27, verdict: fixed).** Both pages now strict-fit at 320/375/390 px viewports with `documentElement.scrollWidth === clientWidth` on empty cart, filled cart, and all four checkout payment panels (Card/Wallet/Crypto/Bank).
   - Root cause: `grid lg:grid-cols-[1fr_360px]` had no explicit mobile column, so implicit grid tracks kept `min-content` sizing and any wide child (long product title, payment chip row) pushed the track past viewport width.
   - Fix in `/app/frontend/src/pages/Cart.jsx` + `/app/frontend/src/pages/Checkout.jsx`: explicit `grid-cols-1 lg:grid-cols-[minmax(0,1fr)_360px]`, `min-w-0` on grid wrapper AND children, `shrink-0` on image + price/trash column, `whitespace-nowrap` on price, `p-3 sm:p-4/5` reduced side padding, `line-clamp-2` retained.

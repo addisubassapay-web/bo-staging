@@ -227,10 +227,56 @@ const ApifySync = () => {
             </div>
             <div className="flex justify-between items-center">
               <span className="text-neutral-500">Auto-sync</span>
-              <span className="flex items-center gap-1 text-green-600 text-xs font-medium">
-                <CheckCircle2 className="h-3 w-3" /> Every 7 days
+              <div className="flex items-center gap-2">
+                <span className={`flex items-center gap-1 text-xs font-medium ${status.auto_schedule_enabled ? "text-green-600" : "text-neutral-400"}`}>
+                  <CheckCircle2 className="h-3 w-3" />
+                  {status.auto_schedule_enabled ? `Every ${status.schedule_interval_days ?? 7} days` : "Paused"}
+                </span>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      await api.post("/admin/sync/apify/schedule", { enabled: !status.auto_schedule_enabled });
+                      toast({ title: status.auto_schedule_enabled ? "Weekly auto-sync paused" : "Weekly auto-sync resumed" });
+                      load();
+                    } catch (err) {
+                      toast({ title: "Update failed", description: err.response?.data?.detail || "Try again", variant: "destructive" });
+                    }
+                  }}
+                  className="text-[11px] font-semibold px-2 py-0.5 rounded-full border border-neutral-200 hover:border-[#FF211F] hover:text-[#FF211F] transition"
+                  data-testid="apify-schedule-toggle"
+                >
+                  {status.auto_schedule_enabled ? "Pause" : "Resume"}
+                </button>
+              </div>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-neutral-500">Next scheduled</span>
+              <span className="text-xs" data-testid="apify-next-scheduled">
+                {status.next_scheduled_at ? new Date(status.next_scheduled_at).toLocaleString() : "—"}
               </span>
             </div>
+            {status.auto_schedule_enabled && (
+              <div className="pt-1">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (!window.confirm("Trigger the scheduled weekly sync on the next loop tick (within ~60s)?")) return;
+                    try {
+                      await api.post("/admin/sync/apify/schedule", { run_now: true });
+                      toast({ title: "Scheduled sync queued", description: "The weekly loop will pick it up within ~60s." });
+                      load();
+                    } catch (err) {
+                      toast({ title: "Update failed", description: err.response?.data?.detail || "Try again", variant: "destructive" });
+                    }
+                  }}
+                  className="w-full text-xs font-semibold px-3 py-1.5 rounded-md border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-800 transition"
+                  data-testid="apify-run-schedule-now"
+                >
+                  Run scheduled sync now
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

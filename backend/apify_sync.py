@@ -442,4 +442,7 @@ async def get_sync_status(db) -> Dict:
         "sync_running": bool(state.get("sync_running")),
         "message": state.get("message", ""),
         "per_category": state.get("per_category", {}),
+        "next_scheduled_at": state.get("next_scheduled_at").isoformat() if state.get("next_scheduled_at") else None,
+        "schedule_interval_days": state.get("schedule_interval_days", 7),
+        "auto_schedule_enabled": bool(state.get("auto_schedule_enabled", True)),
     }
