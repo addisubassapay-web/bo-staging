@@ -5,7 +5,10 @@ const CurrencyContext = createContext(null);
 
 const FALLBACK_RATES = {
   base: "USD",
-  rates: { USD: 1, EUR: 0.92, GBP: 0.78, JPY: 155, INR: 83.2, CAD: 1.36 },
+  rates: {
+    USD: 1, EUR: 0.92, GBP: 0.78, JPY: 155, INR: 83.2, CAD: 1.36,
+    AUD: 1.52, BRL: 5.05, MXN: 17.1, CNY: 7.18, KRW: 1345, SGD: 1.34, AED: 3.673,
+  },
 };
 
 const CURRENCY_META = {
@@ -15,6 +18,13 @@ const CURRENCY_META = {
   JPY: { symbol: "¥", locale: "ja-JP", flag: "🇯🇵", name: "Japanese Yen" },
   INR: { symbol: "₹", locale: "en-IN", flag: "🇮🇳", name: "Indian Rupee" },
   CAD: { symbol: "$", locale: "en-CA", flag: "🇨🇦", name: "Canadian Dollar" },
+  AUD: { symbol: "$", locale: "en-AU", flag: "🇦🇺", name: "Australian Dollar" },
+  BRL: { symbol: "R$", locale: "pt-BR", flag: "🇧🇷", name: "Brazilian Real" },
+  MXN: { symbol: "$", locale: "es-MX", flag: "🇲🇽", name: "Mexican Peso" },
+  CNY: { symbol: "¥", locale: "zh-CN", flag: "🇨🇳", name: "Chinese Yuan" },
+  KRW: { symbol: "₩", locale: "ko-KR", flag: "🇰🇷", name: "South Korean Won" },
+  SGD: { symbol: "$", locale: "en-SG", flag: "🇸🇬", name: "Singapore Dollar" },
+  AED: { symbol: "د.إ", locale: "ar-AE", flag: "🇦🇪", name: "UAE Dirham" },
 };
 
 export const CURRENCY_LIST = Object.keys(CURRENCY_META);

@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { useCurrency, CURRENCY_LIST, currencyMeta } from "@/context/CurrencyContext";
 import { ChevronDown } from "lucide-react";
 
-const CurrencyPicker = () => {
+const CurrencyPicker = ({ variant = "compact" }) => {
   const { currency, setCurrency } = useCurrency();
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
@@ -14,15 +14,20 @@ const CurrencyPicker = () => {
     return () => document.removeEventListener("mousedown", onOutside);
   }, []);
 
+  const btnCls = variant === "prominent"
+    ? "h-10 sm:h-11 px-3 rounded-full border border-neutral-200 dark:border-neutral-700 hover:border-[#2563EB] bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-100 text-sm font-medium transition inline-flex items-center gap-1.5"
+    : "h-8 px-2.5 inline-flex items-center gap-1 rounded-full hover:bg-white/10 dark:hover:bg-white/5 text-xs font-medium transition";
+
   return (
     <div ref={ref} className="relative">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="h-8 px-2.5 inline-flex items-center gap-1 rounded-full hover:bg-white/10 dark:hover:bg-white/5 text-xs font-medium transition"
+        className={btnCls}
         data-testid="currency-picker-btn"
         aria-label="Choose currency"
       >
+        <span className="text-base leading-none">{meta.flag}</span>
         <span className="tabular-nums">{meta.symbol} {currency}</span>
         <ChevronDown className={`h-3 w-3 transition-transform ${open ? "rotate-180" : ""}`} />
       </button>

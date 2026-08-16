@@ -3324,7 +3324,12 @@ async def currency_rates():
         "base": "USD",
         "updated_at": "2026-02-11T00:00:00Z",
         "source": "mocked-static",
-        "rates": {"USD": 1.0, "EUR": 0.92, "GBP": 0.78, "JPY": 155.0, "INR": 83.2, "CAD": 1.36},
+        "rates": {
+            "USD": 1.0, "EUR": 0.92, "GBP": 0.78, "JPY": 155.0,
+            "INR": 83.2, "CAD": 1.36, "AUD": 1.52, "BRL": 5.05,
+            "MXN": 17.1, "CNY": 7.18, "KRW": 1345.0, "SGD": 1.34,
+            "AED": 3.673,
+        },
     }
 
 

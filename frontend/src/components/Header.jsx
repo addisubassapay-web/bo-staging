@@ -34,9 +34,6 @@ const TopStrip = ({ user, onLogout }) => {
           <span className="hidden md:flex items-center gap-1.5"><span className="text-orange-400">◔</span>{t("topstrip.deals")}</span>
         </div>
         <div className="flex items-center gap-1 shrink-0">
-          <CurrencyPicker />
-          <LanguagePicker />
-          <span className="mx-1 h-4 w-px bg-white/10" />
           <Link to="/disputes" className="hidden sm:inline hover:text-white px-2" data-testid="topstrip-help">{t("nav.help")}</Link>
           {!user ? (
             <>
@@ -191,6 +188,13 @@ const Header = () => {
             </Link>
 
             <ThemeToggle />
+
+            {/* Currency + Language pickers — prominent variant, hidden on small phones */}
+            <div className="hidden md:flex items-center gap-1">
+              <CurrencyPicker variant="prominent" />
+              <LanguagePicker variant="prominent" />
+              <span className="mx-1 h-6 w-px bg-neutral-200 dark:bg-neutral-700" />
+            </div>
 
             <IconButton to="/favorites" label="Favorites" testid="header-fav-btn">
               <Heart className="h-5 w-5" />

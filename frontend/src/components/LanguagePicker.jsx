@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { useLang, LANGUAGES } from "@/context/LanguageContext";
 import { ChevronDown, Globe } from "lucide-react";
 
-const LanguagePicker = () => {
+const LanguagePicker = ({ variant = "compact" }) => {
   const { lang, setLang } = useLang();
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
@@ -14,12 +14,16 @@ const LanguagePicker = () => {
     return () => document.removeEventListener("mousedown", onOutside);
   }, []);
 
+  const btnCls = variant === "prominent"
+    ? "h-10 sm:h-11 px-3 rounded-full border border-neutral-200 dark:border-neutral-700 hover:border-[#2563EB] bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-100 text-sm font-medium transition inline-flex items-center gap-1.5"
+    : "h-8 px-2.5 inline-flex items-center gap-1 rounded-full hover:bg-white/10 dark:hover:bg-white/5 text-xs font-medium transition";
+
   return (
     <div ref={ref} className="relative">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="h-8 px-2.5 inline-flex items-center gap-1 rounded-full hover:bg-white/10 dark:hover:bg-white/5 text-xs font-medium transition"
+        className={btnCls}
         data-testid="lang-picker-btn"
         aria-label="Choose language"
       >
