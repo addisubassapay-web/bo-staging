@@ -68,7 +68,16 @@ const Cart = () => {
                 </Link>
                 <div className="flex-1 min-w-0">
                   <Link to={`/listing/${item.id}`} className="font-semibold text-neutral-900 dark:text-neutral-100 line-clamp-2 hover:text-[#FF211F] transition">{item.title}</Link>
-                  <div className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">{t("cart.soldBy")} {item.seller_name}</div>
+                  <div className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                    {t("cart.soldBy")}{" "}
+                    <Link
+                      to={`/search?seller_id=${item.seller_id}`}
+                      className="text-[#2563EB] dark:text-[#7DD3FC] hover:underline font-medium"
+                      data-testid={`cart-seller-link-${item.id}`}
+                    >
+                      {item.seller_name}
+                    </Link>
+                  </div>
                   <div className="text-xs text-neutral-500 dark:text-neutral-400">
                     {item.shipping_paid_by === "seller" ? t("cart.freeShipping") : `${t("cart.shippingLabel")} ${format(5.99)}`}
                   </div>

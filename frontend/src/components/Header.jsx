@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
   ShoppingCart, User, LogOut, Package, Settings, Store, Wallet, Link as LinkIcon,
-  Users, MessageSquare, BarChart3, ShieldCheck, Heart, Sun, Moon, AlertCircle, Command,
+  Users, MessageSquare, BarChart3, ShieldCheck, Heart, Sun, Moon, AlertCircle, Command, ShoppingBag,
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
@@ -93,6 +93,7 @@ const Header = () => {
   const [q, setQ] = useState("");
   const [cartCount, setCartCount] = useState(0);
   const [notifCount, setNotifCount] = useState(0);
+  const [recentNotifs, setRecentNotifs] = useState([]);
   const [categories, setCategories] = useState([]);
   const [compact, setCompact] = useState(false);
   const [cpOpen, setCpOpen] = useState(false);
@@ -100,9 +101,13 @@ const Header = () => {
   useCommandPaletteShortcut(setCpOpen);
 
   useEffect(() => {
-    if (!user) { setCartCount(0); setNotifCount(0); return; }
+    if (!user) { setCartCount(0); setNotifCount(0); setRecentNotifs([]); return; }
     api.get("/cart").then((r) => setCartCount(r.data.length)).catch(() => {});
-    api.get("/notifications").then((r) => setNotifCount(r.data.filter((n) => !n.read).length)).catch(() => {});
+    api.get("/notifications").then((r) => {
+      const list = r.data || [];
+      setNotifCount(list.filter((n) => !n.read).length);
+      setRecentNotifs(list.slice(0, 4));
+    }).catch(() => {});
   }, [user, location.pathname]);
 
   useEffect(() => { api.get("/categories").then((r) => setCategories(r.data)).catch(() => {}); }, []);
@@ -167,6 +172,15 @@ const Header = () => {
               <span>⌘K</span>
             </button>
 
+            <Link to="/marketplace">
+              <button
+                className={`rounded-full bg-gradient-to-r from-[#FF7A18] to-[#FF211F] hover:brightness-110 text-white font-semibold text-sm shadow-sm hover:shadow-md transition-all flex items-center gap-1.5 ${compact ? "h-10 px-4" : "h-11 px-5"}`}
+                data-testid="header-shopnow-btn"
+              >
+                <ShoppingBag className="h-4 w-4" /> Shop Now
+              </button>
+            </Link>
+
             <Link to={user ? "/sell" : "/login"}>
               <button
                 className={`rounded-full bg-gradient-to-r from-[#7DD3FC] to-[#2563EB] hover:brightness-110 text-white font-semibold text-sm shadow-sm hover:shadow-md transition-all flex items-center gap-1.5 ${compact ? "h-10 px-4" : "h-11 px-5"}`}
@@ -222,8 +236,42 @@ const Header = () => {
                     )}
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuContent align="end" className="w-72">
                   <DropdownMenuLabel>Hi, {user.username}</DropdownMenuLabel>
+                  {notifCount > 0 && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <div className="px-2 pt-1 pb-2" data-testid="avatar-notifs-preview">
+                        <div className="flex items-center justify-between mb-1.5 px-1">
+                          <span className="text-[11px] uppercase tracking-widest text-emerald-600 font-semibold">
+                            {notifCount} unread
+                          </span>
+                          <button
+                            onClick={async () => {
+                              try { await api.post("/notifications/read-all"); setNotifCount(0); } catch { /* ignore */ }
+                            }}
+                            className="text-[11px] text-neutral-500 hover:text-[#2563EB] transition"
+                            data-testid="avatar-notifs-markread"
+                          >
+                            Mark all read
+                          </button>
+                        </div>
+                        <div className="space-y-1">
+                          {recentNotifs.slice(0, 3).map((n) => (
+                            <button
+                              key={n.id}
+                              onClick={() => { navigate(n.link || "/"); }}
+                              className={`w-full text-left rounded-md px-2 py-1.5 transition ${n.read ? "hover:bg-neutral-100 dark:hover:bg-neutral-800" : "bg-blue-50 dark:bg-blue-950/30 hover:bg-blue-100 dark:hover:bg-blue-950/50"}`}
+                              data-testid={`avatar-notif-${n.id}`}
+                            >
+                              <div className="text-xs font-medium line-clamp-1 dark:text-neutral-100">{n.title}</div>
+                              {n.body && <div className="text-[11px] text-neutral-500 dark:text-neutral-400 line-clamp-1">{n.body}</div>}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => navigate("/profile")}><User className="h-4 w-4 mr-2" /> {t("menu.profile")}</DropdownMenuItem>
                   <DropdownMenuItem onClick={() => navigate("/verify")}><ShieldCheck className="h-4 w-4 mr-2" /> Verification</DropdownMenuItem>

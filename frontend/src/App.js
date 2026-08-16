@@ -51,6 +51,7 @@ function App() {
                   <Routes>
                     <Route path="/" element={<Home />} />
                     <Route path="/search" element={<Search />} />
+                    <Route path="/marketplace" element={<Search />} />
                     <Route path="/listing/:id" element={<ListingDetail />} />
                     <Route path="/sell" element={<Sell />} />
                     <Route path="/dashboard/list-product" element={<Sell />} />

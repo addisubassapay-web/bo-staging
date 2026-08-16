@@ -29,6 +29,8 @@ from routers.users import router as users_router
 from routers.newsletter import router as newsletter_router
 from routers.google_auth import router as google_auth_router
 from routers.auth import router as auth_router
+from routers.stores_search import router as stores_search_router
+from routers.shopping import router as shopping_router
 
 
 ROOT_DIR = Path(__file__).parent
@@ -948,57 +950,6 @@ async def delete_listing(listing_id: str, user: dict = Depends(get_current_user)
     return {"ok": True}
 
 
-# =========================
-# Favorites
-# =========================
-@api_router.get("/favorites", response_model=List[Listing])
-async def get_favorites(user: dict = Depends(get_current_user)):
-    favs = await db.favorites.find({"user_id": user["id"]}, {"_id": 0}).to_list(500)
-    ids = [f["listing_id"] for f in favs]
-    docs = await db.listings.find({"id": {"$in": ids}}, {"_id": 0}).to_list(500)
-    return [Listing(**d) for d in docs]
-
-@api_router.post("/favorites/{listing_id}")
-async def add_favorite(listing_id: str, user: dict = Depends(get_current_user)):
-    existing = await db.favorites.find_one({"user_id": user["id"], "listing_id": listing_id})
-    if existing:
-        return {"ok": True, "already": True}
-    fav = Favorite(user_id=user["id"], listing_id=listing_id)
-    await db.favorites.insert_one(fav.model_dump())
-    await db.listings.update_one({"id": listing_id}, {"$inc": {"likes_count": 1}})
-    return {"ok": True}
-
-@api_router.delete("/favorites/{listing_id}")
-async def remove_favorite(listing_id: str, user: dict = Depends(get_current_user)):
-    result = await db.favorites.delete_one({"user_id": user["id"], "listing_id": listing_id})
-    if result.deleted_count > 0:
-        await db.listings.update_one({"id": listing_id}, {"$inc": {"likes_count": -1}})
-    return {"ok": True}
-
-
-# =========================
-# Cart
-# =========================
-@api_router.get("/cart", response_model=List[Listing])
-async def get_cart(user: dict = Depends(get_current_user)):
-    items = await db.cart_items.find({"user_id": user["id"]}, {"_id": 0}).to_list(500)
-    ids = [i["listing_id"] for i in items]
-    docs = await db.listings.find({"id": {"$in": ids}, "status": "active"}, {"_id": 0}).to_list(500)
-    return [Listing(**d) for d in docs]
-
-@api_router.post("/cart/{listing_id}")
-async def add_to_cart(listing_id: str, user: dict = Depends(get_current_user)):
-    existing = await db.cart_items.find_one({"user_id": user["id"], "listing_id": listing_id})
-    if existing:
-        return {"ok": True, "already": True}
-    item = CartItem(user_id=user["id"], listing_id=listing_id)
-    await db.cart_items.insert_one(item.model_dump())
-    return {"ok": True}
-
-@api_router.delete("/cart/{listing_id}")
-async def remove_from_cart(listing_id: str, user: dict = Depends(get_current_user)):
-    await db.cart_items.delete_one({"user_id": user["id"], "listing_id": listing_id})
-    return {"ok": True}
 
 
 # =========================
@@ -4467,6 +4418,8 @@ app.include_router(users_router, prefix="/api")
 app.include_router(newsletter_router, prefix="/api")
 app.include_router(google_auth_router, prefix="/api")
 app.include_router(auth_router, prefix="/api")
+app.include_router(stores_search_router, prefix="/api")
+app.include_router(shopping_router, prefix="/api")
 
 app.add_middleware(
     CORSMiddleware,
