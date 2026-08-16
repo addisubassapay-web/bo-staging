@@ -7,7 +7,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { Store as StoreIcon, ExternalLink, Save } from "lucide-react";
+import { Store as StoreIcon, ExternalLink, Save, Tag } from "lucide-react";
+
+const MAX_STORE_CATEGORIES = 3;
 
 const StoreManage = () => {
   const { user, loading, refresh } = useAuth();
@@ -15,8 +17,13 @@ const StoreManage = () => {
   const { toast } = useToast();
   const [existing, setExisting] = useState(null);
   const [pageLoading, setPageLoading] = useState(true);
-  const [form, setForm] = useState({ name: "", slug: "", tagline: "", bio: "", logo: "", banner: "" });
+  const [form, setForm] = useState({ name: "", slug: "", tagline: "", bio: "", logo: "", banner: "", category_ids: [] });
   const [saving, setSaving] = useState(false);
+  const [categories, setCategories] = useState([]);
+
+  useEffect(() => {
+    api.get("/categories").then((r) => setCategories(r.data || [])).catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (loading) return;
@@ -31,6 +38,7 @@ const StoreManage = () => {
           bio: r.data.bio || "",
           logo: r.data.logo || "",
           banner: r.data.banner || "",
+          category_ids: r.data.category_ids || [],
         });
       }
     }).finally(() => setPageLoading(false));
@@ -40,6 +48,18 @@ const StoreManage = () => {
 
   const handleSlug = (v) => set("slug", v.toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/-+/g, "-"));
 
+  const toggleCategory = (id) => {
+    setForm((f) => {
+      const has = f.category_ids.includes(id);
+      if (has) return { ...f, category_ids: f.category_ids.filter((c) => c !== id) };
+      if (f.category_ids.length >= MAX_STORE_CATEGORIES) {
+        toast({ title: `Pick at most ${MAX_STORE_CATEGORIES} categories`, variant: "destructive" });
+        return f;
+      }
+      return { ...f, category_ids: [...f.category_ids, id] };
+    });
+  };
+
   const submit = async (e) => {
     e.preventDefault();
     if (!form.name || !form.slug) { toast({ title: "Name and slug are required", variant: "destructive" }); return; }
@@ -48,6 +68,7 @@ const StoreManage = () => {
       if (existing) {
         const { data } = await api.put(`/stores/${existing.id}`, {
           name: form.name, tagline: form.tagline, bio: form.bio, logo: form.logo || null, banner: form.banner || null,
+          category_ids: form.category_ids,
         });
         setExisting(data);
         toast({ title: "Store updated" });
@@ -103,6 +124,42 @@ const StoreManage = () => {
         <div>
           <Label>About your store</Label>
           <Textarea rows={4} value={form.bio} onChange={(e) => set("bio", e.target.value)} placeholder="Tell shoppers what makes your store special…" className="mt-1" />
+        </div>
+
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <Tag className="h-4 w-4 text-[#2563EB]" />
+            <Label className="!mb-0">Store categories</Label>
+            <span className="text-xs text-neutral-400">
+              ({form.category_ids.length}/{MAX_STORE_CATEGORIES} selected)
+            </span>
+          </div>
+          <p className="text-xs text-neutral-500 mb-3">Pick up to 3 categories that best describe what you sell. Shoppers use these to filter the store directory.</p>
+          <div className="flex flex-wrap gap-2" data-testid="store-categories-picker">
+            {categories.map((c) => {
+              const selected = form.category_ids.includes(c.id);
+              const disabled = !selected && form.category_ids.length >= MAX_STORE_CATEGORIES;
+              return (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => toggleCategory(c.id)}
+                  disabled={disabled}
+                  data-testid={`store-cat-${c.slug}`}
+                  aria-pressed={selected}
+                  className={`px-3 h-8 rounded-full text-xs font-semibold transition border ${
+                    selected
+                      ? "bg-gradient-to-r from-[#7DD3FC] to-[#2563EB] text-white border-transparent shadow-sm"
+                      : disabled
+                        ? "bg-neutral-50 text-neutral-300 border-neutral-100 cursor-not-allowed dark:bg-neutral-900 dark:text-neutral-600 dark:border-neutral-800"
+                        : "bg-white text-neutral-700 border-neutral-200 hover:border-[#2563EB] hover:text-[#2563EB] dark:bg-neutral-900 dark:text-neutral-200 dark:border-neutral-700"
+                  }`}
+                >
+                  {c.name}
+                </button>
+              );
+            })}
+          </div>
         </div>
         <div className="grid sm:grid-cols-2 gap-4">
           <div>

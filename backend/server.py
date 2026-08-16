@@ -295,6 +295,7 @@ class Store(BaseModel):
     total_sales: int = 0
     is_active: bool = True
     featured_rank: int = 9999
+    category_ids: List[str] = Field(default_factory=list)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class StoreCreate(BaseModel):
@@ -304,6 +305,7 @@ class StoreCreate(BaseModel):
     bio: Optional[str] = ""
     logo: Optional[str] = None
     banner: Optional[str] = None
+    category_ids: Optional[List[str]] = None
 
 class StoreUpdate(BaseModel):
     name: Optional[str] = None
@@ -311,6 +313,7 @@ class StoreUpdate(BaseModel):
     bio: Optional[str] = None
     logo: Optional[str] = None
     banner: Optional[str] = None
+    category_ids: Optional[List[str]] = None
 
 class AffiliateLink(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -1334,6 +1337,8 @@ async def create_store(payload: StoreCreate, user: dict = Depends(get_current_us
     slug_taken = await db.stores.find_one({"slug": payload.slug.lower()})
     if slug_taken:
         raise HTTPException(400, "Slug already taken")
+    if payload.category_ids and len(payload.category_ids) > 3:
+        raise HTTPException(400, "Pick at most 3 categories for your store")
     settings = await get_settings()
     is_active = settings.get("store_mode", "auto") == "auto"
     store = Store(owner_id=user["id"], **{**payload.model_dump(), "slug": payload.slug.lower()}, is_active=is_active)
@@ -1507,6 +1512,8 @@ async def update_store(store_id: str, payload: StoreUpdate, user: dict = Depends
         raise HTTPException(404, "Store not found")
     if store["owner_id"] != user["id"] and user["role"] != "admin":
         raise HTTPException(403, "Not allowed")
+    if payload.category_ids is not None and len(payload.category_ids) > 3:
+        raise HTTPException(400, "Pick at most 3 categories for your store")
     updates = {k: v for k, v in payload.model_dump().items() if v is not None}
     if updates:
         await db.stores.update_one({"id": store_id}, {"$set": updates})

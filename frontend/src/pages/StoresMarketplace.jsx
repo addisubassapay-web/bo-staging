@@ -13,7 +13,7 @@ const TIER_STYLES = {
   bronze: "from-orange-400 to-orange-600 text-white",
 };
 
-const StoreCard = ({ store, onFollowChange }) => {
+const StoreCard = ({ store, categoryMap = {} }) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [following, setFollowing] = useState(false);
@@ -35,7 +35,6 @@ const StoreCard = ({ store, onFollowChange }) => {
       const isFollowing = !!data?.following;
       setFollowing(isFollowing);
       setFollowers((prev) => prev + (isFollowing ? 1 : -1));
-      onFollowChange?.(store.id, isFollowing);
     } catch (err) {
       toast({ title: err.response?.data?.detail || "Could not follow store", variant: "destructive" });
     } finally {
@@ -74,6 +73,19 @@ const StoreCard = ({ store, onFollowChange }) => {
         {store.tagline && (
           <div className="text-xs text-neutral-500 dark:text-neutral-400 line-clamp-1 mt-0.5">{store.tagline}</div>
         )}
+        {store.category_ids?.length > 0 && (
+          <div className="mt-2 flex flex-wrap gap-1" data-testid={`store-cats-${store.slug}`}>
+            {store.category_ids.slice(0, 3).map((cid) => {
+              const cat = categoryMap[cid];
+              if (!cat) return null;
+              return (
+                <span key={cid} className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#EFF6FF] text-[#2563EB] dark:bg-[#1E3A8A]/30 dark:text-[#93C5FD]">
+                  {cat.name}
+                </span>
+              );
+            })}
+          </div>
+        )}
         <div className="mt-3 flex items-center justify-between">
           <div className="flex items-center gap-3 text-xs text-neutral-600 dark:text-neutral-400">
             <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5" /> {followers}</span>
@@ -102,9 +114,15 @@ const StoreCard = ({ store, onFollowChange }) => {
 const StoresMarketplace = () => {
   const [q, setQ] = useState("");
   const [tier, setTier] = useState("");
+  const [categoryId, setCategoryId] = useState("");
+  const [categories, setCategories] = useState([]);
   const [items, setItems] = useState([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    api.get("/categories").then((r) => setCategories(r.data || [])).catch(() => {});
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -112,6 +130,7 @@ const StoresMarketplace = () => {
       const params = { limit: 48 };
       if (q.trim()) params.q = q.trim();
       if (tier) params.tier = tier;
+      if (categoryId) params.category = categoryId;
       const { data } = await api.get("/stores-search", { params });
       setItems(data.items || []);
       setTotal(data.total || 0);
@@ -120,7 +139,7 @@ const StoresMarketplace = () => {
     } finally {
       setLoading(false);
     }
-  }, [q, tier]);
+  }, [q, tier, categoryId]);
 
   useEffect(() => {
     const h = setTimeout(load, 250); // debounce
@@ -170,6 +189,39 @@ const StoresMarketplace = () => {
         </div>
       </div>
 
+      {/* Category filter chips */}
+      {categories.length > 0 && (
+        <div className="mt-4 -mx-4 px-4 overflow-x-auto scrollbar-hide">
+          <div className="flex gap-2 min-w-max">
+            <button
+              onClick={() => setCategoryId("")}
+              data-testid="stores-cat-all"
+              className={`whitespace-nowrap h-9 px-4 rounded-full text-xs font-semibold transition border ${
+                !categoryId
+                  ? "bg-neutral-900 text-white border-transparent dark:bg-white dark:text-neutral-900"
+                  : "bg-white text-neutral-700 border-neutral-200 hover:border-[#2563EB] hover:text-[#2563EB] dark:bg-neutral-900 dark:text-neutral-200 dark:border-neutral-700"
+              }`}
+            >
+              All categories
+            </button>
+            {categories.map((c) => (
+              <button
+                key={c.id}
+                onClick={() => setCategoryId(c.id === categoryId ? "" : c.id)}
+                data-testid={`stores-cat-${c.slug}`}
+                className={`whitespace-nowrap h-9 px-4 rounded-full text-xs font-semibold transition border ${
+                  categoryId === c.id
+                    ? "bg-gradient-to-r from-[#7DD3FC] to-[#2563EB] text-white border-transparent shadow-sm"
+                    : "bg-white text-neutral-700 border-neutral-200 hover:border-[#2563EB] hover:text-[#2563EB] dark:bg-neutral-900 dark:text-neutral-200 dark:border-neutral-700"
+                }`}
+              >
+                {c.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Result count */}
       <div className="mt-4 text-sm text-neutral-500 dark:text-neutral-400">
         {loading ? "Loading stores…" : (
@@ -189,7 +241,7 @@ const StoresMarketplace = () => {
         </div>
       ) : (
         <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {items.map((s) => <StoreCard key={s.id} store={s} />)}
+          {items.map((s) => <StoreCard key={s.id} store={s} categoryMap={Object.fromEntries(categories.map((c) => [c.id, c]))} />)}
         </div>
       )}
     </div>

@@ -18,12 +18,14 @@ router = APIRouter()
 VALID_TIERS = ("none", "bronze", "silver", "gold")
 
 
-async def _build_query(db, q: str, tier: Optional[str], include_inactive: bool) -> dict:
+async def _build_query(db, q: str, tier: Optional[str], include_inactive: bool, category: Optional[str]) -> dict:
     query: dict = {}
     if not include_inactive:
         query["is_active"] = True
     if tier and tier.lower() in VALID_TIERS:
         query["verified_tier"] = tier.lower()
+    if category:
+        query["category_ids"] = category
 
     q = (q or "").strip()
     if q:
@@ -51,16 +53,17 @@ async def _build_query(db, q: str, tier: Optional[str], include_inactive: bool) 
 async def search_stores(
     q: Optional[str] = None,
     tier: Optional[str] = None,
+    category: Optional[str] = Query(None, description="Filter to stores that tagged this category id"),
     limit: int = 24,
     skip: int = 0,
     include_inactive: bool = Query(True, description="If false, only return active stores"),
 ):
     """Search seller storefronts by name, slug, tagline, bio, or owner
-    username. Optional `tier` filter (none/bronze/silver/gold). Sorted by
-    follower count desc, featured_rank asc, then newest so popular stores
-    surface first but every store is reachable via pagination."""
+    username. Optional `tier` and `category` filters. Sorted by follower
+    count desc, featured_rank asc, then newest so popular stores surface
+    first but every store is reachable via pagination."""
     db = get_db()
-    query = await _build_query(db, q or "", tier, include_inactive)
+    query = await _build_query(db, q or "", tier, include_inactive, category)
 
     limit = max(1, min(int(limit or 24), 60))
     skip = max(0, int(skip or 0))
@@ -70,7 +73,8 @@ async def search_stores(
             query,
             {"_id": 0, "id": 1, "name": 1, "slug": 1, "tagline": 1, "logo": 1,
              "banner": 1, "verified_tier": 1, "followers_count": 1, "total_sales": 1,
-             "featured_rank": 1, "created_at": 1, "owner_id": 1, "is_active": 1},
+             "featured_rank": 1, "created_at": 1, "owner_id": 1, "is_active": 1,
+             "category_ids": 1},
         )
         .sort([("followers_count", -1), ("featured_rank", 1), ("created_at", -1)])
         .skip(skip)
@@ -98,8 +102,9 @@ async def search_stores(
 async def count_stores(
     q: Optional[str] = None,
     tier: Optional[str] = None,
+    category: Optional[str] = None,
     include_inactive: bool = Query(True),
 ):
     db = get_db()
-    query = await _build_query(db, q or "", tier, include_inactive)
+    query = await _build_query(db, q or "", tier, include_inactive, category)
     return {"total": await db.stores.count_documents(query)}

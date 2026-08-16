@@ -178,6 +178,14 @@ const Header = () => {
               </button>
             </Link>
 
+            <Link to="/marketplace/stores" className="hidden md:block" data-testid="header-stores-nav">
+              <button
+                className={`rounded-full border border-neutral-200 dark:border-neutral-700 hover:border-[#2563EB] hover:text-[#2563EB] dark:text-neutral-200 font-semibold text-sm transition-all flex items-center gap-1.5 ${compact ? "h-10 px-4" : "h-11 px-5"}`}
+              >
+                <Store className="h-4 w-4" /> Stores
+              </button>
+            </Link>
+
             <Link to={user ? "/sell" : "/login"}>
               <button
                 className={`rounded-full bg-gradient-to-r from-[#7DD3FC] to-[#2563EB] hover:brightness-110 text-white font-semibold text-sm shadow-sm hover:shadow-md transition-all flex items-center gap-1.5 ${compact ? "h-10 px-4" : "h-11 px-5"}`}
