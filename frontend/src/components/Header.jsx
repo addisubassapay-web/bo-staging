@@ -200,7 +200,7 @@ const Header = () => {
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button aria-label="Account" className="h-10 w-10 sm:h-11 sm:w-11 rounded-full bg-gradient-to-br from-[#7DD3FC] to-[#2563EB] text-white grid place-items-center font-bold text-sm hover:brightness-110 transition overflow-hidden ring-2 ring-white/60 dark:ring-neutral-800" data-testid="header-user-btn">
+                  <button aria-label="Account" className="relative h-10 w-10 sm:h-11 sm:w-11 rounded-full bg-gradient-to-br from-[#7DD3FC] to-[#2563EB] text-white grid place-items-center font-bold text-sm hover:brightness-110 transition overflow-hidden ring-2 ring-white/60 dark:ring-neutral-800" data-testid="header-user-btn">
                     {user.avatar ? (
                       <img
                         src={user.avatar}
@@ -212,6 +212,13 @@ const Header = () => {
                       />
                     ) : (
                       <span data-testid="header-user-initial">{user.username?.[0]?.toUpperCase() || "U"}</span>
+                    )}
+                    {notifCount > 0 && (
+                      <span
+                        className="absolute top-0 right-0 h-3 w-3 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-neutral-950 shadow-[0_0_0_1px_rgba(0,0,0,0.05)] animate-pulse"
+                        aria-label={`${notifCount} unread notifications`}
+                        data-testid="header-user-unread-dot"
+                      />
                     )}
                   </button>
                 </DropdownMenuTrigger>
