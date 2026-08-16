@@ -1,0 +1,43 @@
+{
+  "summary": "Phase 20 Multi-Asset Crypto Payment Selector — full backend + frontend regression. 13/13 new backend tests pass (admin GET/PUT payment-methods, user /wallet/payment-methods, orders with payment_method+share_ref+affiliate_code). Phase 19 baseline still 15/15 green (28/28 total). Frontend E2E via Playwright verified admin CRUD persistence and buyer checkout: 4 payment chips render, Crypto panel surfaces only admin-active assets with QR + copy + network info, Wallet shows balance + insufficient-balance state, Bank panel lists admin-configured methods with instructions + copy.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/orders", "issue": "OrderCreate Pydantic model does not declare a payment_method field — request currently accepts it (silently ignored) so no error is raised, but the value is not persisted on the Order document. If product needs to reflect chosen payment method (crypto/wallet/bank/card) in the order record or trigger different fulfillment flows (e.g. hold order for bank), main agent should add payment_method to OrderCreate + Order models."},
+      {"endpoint": "POST /api/orders", "issue": "No wallet-balance validation happens when payment_method='wallet'. Review request expected 'wallet payment still validates balance' — currently the order goes through even if buyer has $0 wallet balance. This is a functional gap for the wallet flow."},
+      {"endpoint": "POST /api/listings", "issue": "422 (category_id missing) is returned BEFORE the seller-gate 403 check, so unapproved sellers who forget category_id get a validation error instead of the intended access-denied. Consider running the seller-gate before Pydantic body validation (or reordering)."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_phase20_payment_methods.py",
+    "/app/backend/tests/test_phase19_regression.py",
+    "/app/test_reports/pytest/phase20_results.xml"
+  ],
+  "action_items": [
+    "Add payment_method (Literal['card','wallet','crypto','bank']) to OrderCreate + Order so the chosen method is persisted.",
+    "Enforce wallet-balance validation on POST /orders when payment_method='wallet' (reject if balance < total).",
+    "Optionally: for payment_method in ('crypto','bank'), mark order status as 'pending_payment' so admin can approve after off-chain settlement (currently all orders go straight to 'paid')."
+  ],
+  "critical_code_review_comments": [
+    "server.py is 4523 lines — well over the 700-line threshold. Split into routers (orders, wallet, admin_settings, listings, stores, disputes) to improve maintainability.",
+    "OrderCreate does NOT define payment_method although Checkout.jsx sends it; extra field is silently ignored by Pydantic. Add explicit field + persistence.",
+    "PUT /api/admin/settings/payment-methods correctly sanitizes crypto_assets and manual_payment_methods (drops non-dict items, requires symbol+network, caps lengths). Good defensive coding.",
+    "Frontend Checkout.jsx correctly filters address-less assets on the server side (line 1881) so blank-address rows never surface — good.",
+    "Consider deduplicating crypto_addresses (legacy dict) vs crypto_assets (new list) — both exist on Settings and both are surfaced via /wallet/payment-methods. Long-term, migrate legacy consumers to crypto_assets."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_phase20_payment_methods.py (new)"
+  ],
+  "success_rate": {"backend": "100% (28/28)", "frontend": "100% (all critical flows)"},
+  "test_credentials": "admin@mercari.local / admin123 · sophia_style@demo.local / demo1234 (both work)",
+  "seed_data_creation": "Admin config was persisted with test values: crypto_assets[0].address='0xADMIN_TEST_ETH_e2e', manual_payment_methods included 'TEST Active Bank'. Also created a fresh e2e_pay_* buyer + several TEST_pay_* listings during backend tests.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Backend + frontend flows for Phase 20 (multi-asset crypto + admin controller) are green. Two open backend gaps: (1) payment_method not stored on Order, (2) no wallet-balance check on POST /orders. These are functional issues to raise with main agent — the frontend nevertheless renders all 4 payment chips and Crypto/Wallet/Bank panels correctly. test_phase20_payment_methods.py is safe to keep as a regression baseline going forward. Note admin config was mutated during testing (ETH address + one manual bank set) — re-seed if next test needs a clean slate.",
+  "rca of the issue": "N/A — no blocking bugs. See minor issues above for main-agent follow-up on OrderCreate.payment_method persistence and wallet-balance validation."
+}

@@ -26,6 +26,15 @@ Exact replica of Mercari platform (mercari.com) — same color scheme (`#FF211F`
 
 ## Implemented (with dates)
 
+### Feb 2026 — Phase 20: Multi-Asset Crypto Checkout + Order Payment Persistence
+- **Multi-Asset Crypto Payment Selector** on `/checkout/:id` — Card / Wallet / Crypto / Bank chips. Crypto panel surfaces only admin-active assets (BTC, ETH, SOL, BNB, USDC across networks) with live QR code (`api.qrserver.com`), copyable address + network label. Wallet panel shows available/frozen and disables Pay when insufficient. Bank panel lists admin-configured manual methods with instructions + copy.
+- **Admin controller** (`/admin/payment-methods`) — `GET/PUT /api/admin/settings/payment-methods` accept a `crypto_assets` list (`{symbol, network, address, active}`) + `manual_payment_methods` list, sanitized server-side (drops non-dict, requires symbol+network, caps lengths). Non-admin returns 403.
+- **User-facing** `GET /api/wallet/payment-methods` returns only active crypto assets + active manual methods, mirroring the admin config.
+- **Order model** — added `payment_method` (`card|wallet|crypto|bank`) and `payment_currency` (`ETH`/`SOL`/manual-method-id). `OrderCreate` accepts both. `POST /orders` now persists the chosen method on the order document.
+- **Wallet balance validation** — `POST /orders` with `payment_method="wallet"` atomically debits the buyer's `wallet_balance` and rejects with HTTP 400 `"Insufficient wallet balance"` when the balance is under the total. A `wallet_txs` audit row is inserted for every wallet checkout.
+- **Order status** — crypto/bank orders open as `status="pending"` so admin can approve after off-chain settlement. Card/wallet remain instant `paid`.
+- **Regression** — `testing_agent_v3_fork` iteration 20 reported 28/28 backend tests green (13 new Phase 20 + 15 Phase 19 baseline) and all frontend E2E flows green. Post-report fixes applied and manually re-verified via curl: crypto order returns `payment_method: crypto`, `currency: ETH`, `status: pending`; wallet order with $0 balance rejects with `HTTP 400 · "Insufficient wallet balance. Available $0.00, need $24.15"`.
+
 ### Feb 2026 — Checkout Multi-Channel Payment Selector
 - **4-way payment method selector** on `/checkout/:id` — Card / Wallet / Crypto / Bank chips with per-method color gradients (sky / emerald / amber / fuchsia), 72px min height, hover `-translate-y-0.5`, `active:scale-95`.
 - **Wallet panel** — emerald-tinted card showing available balance, frozen sub-line, and a red "insufficient balance" guard that disables the Pay button.

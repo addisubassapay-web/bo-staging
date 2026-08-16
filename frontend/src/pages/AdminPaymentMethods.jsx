@@ -21,6 +21,7 @@ const AdminPaymentMethods = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [crypto, setCrypto] = useState({ BTC: "", ETH: "", USDC: "", USDT: "" });
+  const [assets, setAssets] = useState([]);
   const [manual, setManual] = useState([]);
   const [pending, setPending] = useState([]);
   const [saving, setSaving] = useState(false);
@@ -30,6 +31,7 @@ const AdminPaymentMethods = () => {
     try {
       const { data } = await api.get("/admin/settings/payment-methods");
       setCrypto({ BTC: "", ETH: "", USDC: "", USDT: "", ...(data.crypto_addresses || {}) });
+      setAssets(data.crypto_assets || []);
       setManual(data.manual_payment_methods || []);
     } catch (e) { /* ignored */ }
     try {
@@ -45,6 +47,7 @@ const AdminPaymentMethods = () => {
     try {
       await api.put("/admin/settings/payment-methods", {
         crypto_addresses: crypto,
+        crypto_assets: assets,
         manual_payment_methods: manual,
       });
       toast({ title: "Payment methods saved" });
@@ -52,6 +55,10 @@ const AdminPaymentMethods = () => {
       toast({ title: "Save failed", description: e?.response?.data?.detail || "Try again", variant: "destructive" });
     } finally { setSaving(false); }
   };
+
+  const addAsset = () => setAssets([...assets, {
+    id: Math.random().toString(36).slice(2, 10), symbol: "", network: "", address: "", active: true,
+  }]);
 
   const approve = async (id) => {
     try { await api.post(`/admin/deposits/${id}/approve`); toast({ title: "Approved — wallet credited" }); load(); }
@@ -99,22 +106,26 @@ const AdminPaymentMethods = () => {
           <section className="border border-neutral-200 rounded-xl bg-white p-5">
             <div className="flex items-center gap-2 mb-4">
               <div className="h-9 w-9 rounded-lg bg-[#FFF3F2] grid place-items-center"><Bitcoin className="h-4 w-4 text-[#FF211F]" /></div>
-              <h3 className="font-semibold text-lg">Crypto deposit addresses</h3>
+              <h3 className="font-semibold text-lg">Crypto assets &amp; networks</h3>
             </div>
-            <p className="text-xs text-neutral-500 mb-4">Leave blank to hide a currency from the deposit dialog.</p>
+            <p className="text-xs text-neutral-500 mb-4">Each row is one (asset · network · address) deposit slot. Toggle Active to hide from checkout. Blank addresses are auto-hidden.</p>
             <div className="space-y-3">
-              {Object.keys(crypto).map((k) => (
-                <div key={k} className="grid grid-cols-1 sm:grid-cols-[80px_1fr] gap-2 sm:items-center">
-                  <Label className="uppercase font-mono text-sm">{k}</Label>
-                  <Input
-                    value={crypto[k] || ""}
-                    onChange={(e) => setCrypto({ ...crypto, [k]: e.target.value })}
-                    placeholder={`${k} deposit address`}
-                    className="h-11 text-base font-mono text-xs"
-                    data-testid={`admin-crypto-${k}`}
-                  />
+              {assets.map((a, i) => (
+                <div key={a.id} className="grid grid-cols-1 sm:grid-cols-[110px_140px_1fr_auto] gap-2 sm:items-center border border-neutral-200 rounded-lg p-2.5 bg-neutral-50">
+                  <Input value={a.symbol} onChange={(e) => { const cp = [...assets]; cp[i].symbol = e.target.value.toUpperCase(); setAssets(cp); }} placeholder="ETH" className="h-11 text-base font-mono uppercase" data-testid={`asset-symbol-${i}`} />
+                  <Input value={a.network} onChange={(e) => { const cp = [...assets]; cp[i].network = e.target.value; setAssets(cp); }} placeholder="Ethereum" className="h-11 text-base" data-testid={`asset-network-${i}`} />
+                  <Input value={a.address} onChange={(e) => { const cp = [...assets]; cp[i].address = e.target.value; setAssets(cp); }} placeholder="Deposit address" className="h-11 text-base font-mono text-xs" data-testid={`asset-address-${i}`} />
+                  <div className="flex gap-2">
+                    <button type="button" onClick={() => { const cp = [...assets]; cp[i].active = !cp[i].active; setAssets(cp); }} className={`min-h-[44px] px-3 rounded-full text-xs font-semibold border transition ${a.active ? "bg-green-50 text-green-700 border-green-200" : "bg-neutral-100 text-neutral-500 border-neutral-200"}`} data-testid={`asset-toggle-${i}`}>
+                      {a.active ? "Active" : "Off"}
+                    </button>
+                    <button type="button" onClick={() => setAssets(assets.filter((_, j) => j !== i))} className="min-h-[44px] min-w-[44px] rounded-full border border-neutral-200 hover:border-[#FF211F] hover:text-[#FF211F] grid place-items-center transition" aria-label="Delete" data-testid={`asset-delete-${i}`}>
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
               ))}
+              <Button type="button" variant="outline" onClick={addAsset} className="min-h-[44px] w-full sm:w-auto rounded-full gap-1.5" data-testid="asset-add"><Plus className="h-4 w-4" /> Add asset / network</Button>
             </div>
           </section>
 

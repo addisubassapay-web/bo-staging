@@ -28,7 +28,8 @@ const Checkout = () => {
   const [done, setDone] = useState(null);
   const [payMethod, setPayMethod] = useState("card"); // card | wallet | crypto | bank
   const [wallet, setWallet] = useState(null);
-  const [payMethods, setPayMethods] = useState({ crypto_addresses: {}, manual_payment_methods: [] });
+  const [payMethods, setPayMethods] = useState({ crypto_addresses: {}, crypto_assets: [], manual_payment_methods: [] });
+  const [assetId, setAssetId] = useState("");
   const [cryptoCcy, setCryptoCcy] = useState("");
   const [bankId, setBankId] = useState("");
   const [copied, setCopied] = useState("");
@@ -40,10 +41,13 @@ const Checkout = () => {
     api.get("/settings/public").then((r) => setPublicSettings(r.data)).catch(() => {});
     api.get("/wallet").then((r) => setWallet(r.data)).catch(() => {});
     api.get("/wallet/payment-methods").then((r) => {
-      setPayMethods(r.data || { crypto_addresses: {}, manual_payment_methods: [] });
-      const first = Object.keys(r.data?.crypto_addresses || {})[0];
+      const d = r.data || {};
+      setPayMethods({ crypto_addresses: d.crypto_addresses || {}, crypto_assets: d.crypto_assets || [], manual_payment_methods: d.manual_payment_methods || [] });
+      const firstAsset = (d.crypto_assets || [])[0];
+      if (firstAsset) setAssetId(firstAsset.id);
+      const first = Object.keys(d.crypto_addresses || {})[0];
       if (first) setCryptoCcy(first);
-      const m = (r.data?.manual_payment_methods || [])[0];
+      const m = (d.manual_payment_methods || [])[0];
       if (m) setBankId(m.id);
     }).catch(() => {});
   }, [id, user, authLoading, navigate]);
@@ -243,47 +247,105 @@ const Checkout = () => {
               </div>
             )}
 
-            {/* Crypto: QR + address */}
+            {/* Crypto: asset chips + network chips + QR + address */}
             {payMethod === "crypto" && (
               <div className="animate-in fade-in-50 duration-200 space-y-3" data-testid="pay-crypto-panel">
-                {Object.keys(payMethods.crypto_addresses || {}).length === 0 ? (
-                  <div className="text-sm text-neutral-500 p-4 border border-dashed border-neutral-300 dark:border-neutral-700 rounded-xl">No crypto addresses configured. Contact support.</div>
-                ) : (
-                  <>
-                    <div className="flex gap-2 flex-wrap" data-testid="crypto-ccy-select">
-                      {Object.entries(payMethods.crypto_addresses).map(([k]) => (
-                        <button
-                          key={k}
-                          type="button"
-                          onClick={() => setCryptoCcy(k)}
-                          className={`min-h-[36px] px-3 rounded-full text-xs font-bold border transition-all active:scale-95 ${cryptoCcy === k ? "bg-gradient-to-br from-amber-400 to-orange-600 text-white border-transparent shadow-md" : "border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:border-orange-400"}`}
-                          data-testid={`crypto-ccy-${k}`}
-                        >{k}</button>
-                      ))}
-                    </div>
-                    {cryptoCcy && payMethods.crypto_addresses[cryptoCcy] && (
-                      <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-950 p-4 flex flex-col sm:flex-row gap-4 items-center sm:items-start">
-                        <img src={qrUrl(payMethods.crypto_addresses[cryptoCcy])} alt={`${cryptoCcy} QR`} className="rounded-lg bg-white p-2 h-40 w-40 shrink-0" data-testid="crypto-qr" />
-                        <div className="min-w-0 flex-1 w-full space-y-2">
-                          <div className="text-xs uppercase tracking-wider text-neutral-500 font-semibold">{cryptoCcy} deposit address</div>
-                          <div className="font-mono text-xs break-all bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg p-2.5" data-testid="crypto-address">
-                            {payMethods.crypto_addresses[cryptoCcy]}
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => doCopy(payMethods.crypto_addresses[cryptoCcy], "crypto")}
-                            className="min-h-[44px] px-3 rounded-lg border border-neutral-200 dark:border-neutral-700 hover:border-[#FF211F] hover:text-[#FF211F] active:scale-95 transition-all flex items-center gap-1.5 text-sm font-medium"
-                            data-testid="crypto-copy"
-                          >
-                            {copied === "crypto" ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                            {copied === "crypto" ? "Copied" : "Copy address"}
-                          </button>
-                          <p className="text-[11px] text-neutral-500">Send exactly <b>{format(total)}</b> worth of <b>{cryptoCcy}</b>. Your order goes on hold until an admin confirms the transfer.</p>
-                        </div>
+                {(payMethods.crypto_assets || []).length === 0 ? (
+                  <div className="text-sm text-neutral-500 p-4 border border-dashed border-neutral-300 dark:border-neutral-700 rounded-xl">No crypto assets configured. Contact support.</div>
+                ) : (() => {
+                  const ASSET_BRAND = {
+                    BTC:   { color: "from-orange-400 to-amber-600",   text: "text-white" },
+                    ETH:   { color: "from-indigo-400 to-indigo-700",  text: "text-white" },
+                    SOL:   { color: "from-purple-500 to-fuchsia-600", text: "text-white" },
+                    BNB:   { color: "from-yellow-400 to-amber-500",   text: "text-neutral-900" },
+                    USDC:  { color: "from-sky-400 to-blue-600",       text: "text-white" },
+                    USDT:  { color: "from-teal-400 to-emerald-600",   text: "text-white" },
+                    MATIC: { color: "from-violet-500 to-purple-700",  text: "text-white" },
+                  };
+                  const NETWORK_BADGE = {
+                    Bitcoin:  "bg-amber-100 text-amber-800 border-amber-300",
+                    Ethereum: "bg-indigo-100 text-indigo-800 border-indigo-300",
+                    Solana:   "bg-fuchsia-100 text-fuchsia-800 border-fuchsia-300",
+                    "BEP-20": "bg-yellow-100 text-yellow-800 border-yellow-300",
+                    Polygon:  "bg-violet-100 text-violet-800 border-violet-300",
+                  };
+                  const symbols = Array.from(new Set(payMethods.crypto_assets.map((a) => a.symbol)));
+                  const currentSymbol = (payMethods.crypto_assets.find((a) => a.id === assetId) || {}).symbol;
+                  const symbolAssets = payMethods.crypto_assets.filter((a) => a.symbol === currentSymbol);
+                  const selected = payMethods.crypto_assets.find((a) => a.id === assetId);
+                  return (
+                    <>
+                      <div className="text-[10px] uppercase tracking-wider text-neutral-500 font-semibold">Asset</div>
+                      <div className="flex gap-2 flex-wrap" data-testid="crypto-asset-chips">
+                        {symbols.map((sym) => {
+                          const first = payMethods.crypto_assets.find((a) => a.symbol === sym);
+                          const isActive = currentSymbol === sym;
+                          const brand = ASSET_BRAND[sym] || { color: "from-neutral-500 to-neutral-700", text: "text-white" };
+                          return (
+                            <button
+                              key={sym}
+                              type="button"
+                              onClick={() => setAssetId(first.id)}
+                              className={`min-h-[44px] px-4 rounded-2xl font-bold text-sm border-2 transition-all active:scale-95 hover:-translate-y-0.5 ${isActive ? `bg-gradient-to-br ${brand.color} ${brand.text} border-transparent shadow-lg` : "bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:border-neutral-400"}`}
+                              data-testid={`crypto-asset-${sym}`}
+                            >{sym}</button>
+                          );
+                        })}
                       </div>
-                    )}
-                  </>
-                )}
+
+                      {symbolAssets.length > 0 && (
+                        <>
+                          <div className="text-[10px] uppercase tracking-wider text-neutral-500 font-semibold mt-2">Network</div>
+                          <div className="flex gap-2 flex-wrap" data-testid="crypto-network-chips">
+                            {symbolAssets.map((a) => {
+                              const active = a.id === assetId;
+                              const netCls = NETWORK_BADGE[a.network] || "bg-neutral-100 text-neutral-700 border-neutral-300";
+                              return (
+                                <button
+                                  key={a.id}
+                                  type="button"
+                                  onClick={() => setAssetId(a.id)}
+                                  className={`min-h-[36px] px-3 rounded-full text-xs font-semibold border transition-all active:scale-95 ${active ? `${netCls} ring-2 ring-offset-1 ring-current` : `${netCls} opacity-70 hover:opacity-100`}`}
+                                  data-testid={`crypto-network-${a.id}`}
+                                >{a.network}</button>
+                              );
+                            })}
+                          </div>
+                        </>
+                      )}
+
+                      {selected && selected.address && (
+                        <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-950 p-4 flex flex-col sm:flex-row gap-4 items-center sm:items-start" data-testid="crypto-detail-card">
+                          <img src={qrUrl(selected.address)} alt={`${selected.symbol} QR`} className="rounded-lg bg-white p-2 h-40 w-40 shrink-0" data-testid="crypto-qr" />
+                          <div className="min-w-0 flex-1 w-full space-y-2">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-lg font-extrabold">{selected.symbol}</span>
+                              <span className={`text-[10px] uppercase font-semibold border rounded-full px-2 py-0.5 ${NETWORK_BADGE[selected.network] || "bg-neutral-100 text-neutral-700 border-neutral-300"}`}>
+                                {selected.network}
+                              </span>
+                            </div>
+                            <div className="font-mono text-xs break-all bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg p-2.5" data-testid="crypto-address">
+                              {selected.address}
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => doCopy(selected.address, "crypto")}
+                              className="min-h-[44px] px-3 rounded-lg border border-neutral-200 dark:border-neutral-700 hover:border-[#FF211F] hover:text-[#FF211F] active:scale-95 transition-all flex items-center gap-1.5 text-sm font-medium"
+                              data-testid="crypto-copy"
+                            >
+                              {copied === "crypto" ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                              {copied === "crypto" ? "Copied" : "Copy address"}
+                            </button>
+                            <p className="text-[11px] text-neutral-500">Send exactly <b>{format(total)}</b> worth of <b>{selected.symbol}</b> on <b>{selected.network}</b>. Wrong network = lost funds.</p>
+                          </div>
+                        </div>
+                      )}
+                      {selected && !selected.address && (
+                        <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-3">Address not configured for {selected.symbol} on {selected.network}. Pick another network.</div>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
             )}
 

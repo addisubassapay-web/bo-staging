@@ -244,6 +244,9 @@ class Order(BaseModel):
     # Storefront Push attribution — set when the buyer arrived via a shared link.
     share_ref: Optional[str] = None
     push_reward_amount: float = 0.0
+    # Payment method selected at checkout: card | wallet | crypto | bank
+    payment_method: Optional[str] = None
+    payment_currency: Optional[str] = None  # e.g. "ETH" / "SOL" for crypto, or manual method id for bank
     # Phase 2: Shipping (MOCKED EasyPost/Shippo)
     tracking_number: Optional[str] = None
     carrier: Optional[str] = None
@@ -260,6 +263,8 @@ class OrderCreate(BaseModel):
     shipping_address: dict = {}
     affiliate_code: Optional[str] = None
     share_ref: Optional[str] = None  # e.g. "push" when the buyer arrived from a Storefront Push share link
+    payment_method: Optional[str] = None  # card | wallet | crypto | bank
+    payment_currency: Optional[str] = None  # crypto symbol (ETH/SOL/…) or manual method id
 
 
 # =========================
@@ -370,6 +375,21 @@ class Settings(BaseModel):
     push_reward_amount: float = 2.0
     # Crypto deposit addresses shown to users on the Wallet page. Empty string = hidden.
     crypto_addresses: dict = Field(default_factory=lambda: {"BTC": "", "ETH": "", "USDC": "", "USDT": ""})
+    # Multi-asset / multi-network crypto deposit config. Each item:
+    # {id, symbol, network, address, active}
+    # symbol: BTC|ETH|SOL|BNB|USDC|USDT|MATIC|... · network: Bitcoin|Ethereum|Solana|BEP-20|Polygon|...
+    crypto_assets: List[dict] = Field(default_factory=lambda: [
+        {"id": "btc_bitcoin",   "symbol": "BTC",   "network": "Bitcoin",  "address": "", "active": True},
+        {"id": "eth_ethereum",  "symbol": "ETH",   "network": "Ethereum", "address": "", "active": True},
+        {"id": "sol_solana",    "symbol": "SOL",   "network": "Solana",   "address": "", "active": True},
+        {"id": "bnb_bep20",     "symbol": "BNB",   "network": "BEP-20",   "address": "", "active": True},
+        {"id": "usdc_ethereum", "symbol": "USDC",  "network": "Ethereum", "address": "", "active": True},
+        {"id": "usdc_solana",   "symbol": "USDC",  "network": "Solana",   "address": "", "active": True},
+        {"id": "usdc_polygon",  "symbol": "USDC",  "network": "Polygon",  "address": "", "active": True},
+        {"id": "usdt_ethereum", "symbol": "USDT",  "network": "Ethereum", "address": "", "active": True},
+        {"id": "usdt_bep20",    "symbol": "USDT",  "network": "BEP-20",   "address": "", "active": True},
+        {"id": "matic_polygon", "symbol": "MATIC", "network": "Polygon",  "address": "", "active": True},
+    ])
     # Admin-managed manual payment methods (bank transfer, mobile money, PayPal link, etc.)
     # Each item: {id, name, instructions, icon, active}
     manual_payment_methods: List[dict] = Field(default_factory=list)
@@ -1059,6 +1079,32 @@ async def create_order(payload: OrderCreate, user: dict = Depends(get_current_us
     amount = float(listing["price"])
     shipping_fee = 0.0 if listing.get("shipping_paid_by") == "seller" else 5.99
 
+    # Payment method validation — wallet payments must have sufficient balance.
+    method = (payload.payment_method or "").strip().lower() or None
+    if method and method not in ("card", "wallet", "crypto", "bank"):
+        raise HTTPException(400, "Invalid payment method")
+    total_due = round(amount + shipping_fee, 2)
+    if method == "wallet":
+        available = float(user.get("wallet_balance", 0.0) or 0.0)
+        if available < total_due:
+            raise HTTPException(400, f"Insufficient wallet balance. Available ${available:.2f}, need ${total_due:.2f}")
+        # Atomically debit buyer wallet (guards against race)
+        debit = await db.users.update_one(
+            {"id": user["id"], "wallet_balance": {"$gte": total_due}},
+            {"$inc": {"wallet_balance": -total_due}},
+        )
+        if debit.modified_count != 1:
+            raise HTTPException(400, "Insufficient wallet balance")
+        buyer_fresh = await db.users.find_one({"id": user["id"]}, {"_id": 0, "wallet_balance": 1}) or {}
+        await db.wallet_txs.insert_one(WalletTransaction(
+            user_id=user["id"],
+            type="adjustment",
+            amount=-total_due,
+            balance_after=float(buyer_fresh.get("wallet_balance", 0.0)),
+            description=f"Wallet payment: {listing['title']}",
+            related_order_id=None,
+        ).model_dump())
+
     # Platform fee
     platform_fee = round(amount * settings["platform_fee_pct"] / 100.0, 2)
 
@@ -1136,7 +1182,7 @@ async def create_order(payload: OrderCreate, user: dict = Depends(get_current_us
         amount=amount,
         shipping_fee=shipping_fee,
         shipping_address=payload.shipping_address,
-        status="paid",
+        status=("pending" if method in ("crypto", "bank") else "paid"),
         platform_fee=platform_fee,
         seller_earnings=seller_earnings,
         affiliate_link_id=affiliate_link["id"] if affiliate_link else None,
@@ -1148,6 +1194,8 @@ async def create_order(payload: OrderCreate, user: dict = Depends(get_current_us
         reseller_wholesale_cost=reseller_wholesale_cost,
         reseller_paid_wholesale=reseller_paid_wholesale,
         share_ref=(payload.share_ref or None),
+        payment_method=method,
+        payment_currency=(payload.payment_currency or None),
         estimated_delivery_at=datetime.now(timezone.utc) + timedelta(days=int(settings.get("delivery_days_estimate", 7))),
     )
     await db.orders.insert_one(order.model_dump())
@@ -1863,8 +1911,73 @@ async def get_payment_methods(_user: dict = Depends(get_current_user)):
     """User-facing: active crypto addresses & active manual methods for deposits."""
     s = await get_settings()
     crypto = {k: v for k, v in (s.get("crypto_addresses") or {}).items() if v}
+    assets = [a for a in (s.get("crypto_assets") or []) if a.get("active", True) and a.get("address")]
     manual = [m for m in (s.get("manual_payment_methods") or []) if m.get("active", True)]
-    return {"crypto_addresses": crypto, "manual_payment_methods": manual}
+    return {"crypto_addresses": crypto, "crypto_assets": assets, "manual_payment_methods": manual}
+
+
+@api_router.get("/admin/settings/payment-methods")
+async def admin_get_payment_methods(_admin: dict = Depends(require_admin)):
+    s = await get_settings()
+    return {
+        "crypto_addresses": s.get("crypto_addresses") or {"BTC": "", "ETH": "", "USDC": "", "USDT": ""},
+        "crypto_assets": s.get("crypto_assets") or [],
+        "manual_payment_methods": s.get("manual_payment_methods") or [],
+    }
+
+
+@api_router.put("/admin/settings/payment-methods")
+async def admin_update_payment_methods(payload: dict, _admin: dict = Depends(require_admin)):
+    updates: dict = {}
+    if "crypto_addresses" in payload:
+        ca = payload["crypto_addresses"]
+        if not isinstance(ca, dict):
+            raise HTTPException(400, "crypto_addresses must be an object")
+        updates["crypto_addresses"] = {str(k).upper()[:10]: str(v).strip() for k, v in ca.items()}
+    if "crypto_assets" in payload:
+        ca_list = payload["crypto_assets"]
+        if not isinstance(ca_list, list):
+            raise HTTPException(400, "crypto_assets must be a list")
+        clean_assets = []
+        for a in ca_list:
+            if not isinstance(a, dict):
+                continue
+            symbol = str(a.get("symbol", "")).strip().upper()[:10]
+            network = str(a.get("network", "")).strip()[:24]
+            if not symbol or not network:
+                continue
+            clean_assets.append({
+                "id": str(a.get("id") or f"{symbol.lower()}_{network.lower().replace('-', '').replace(' ', '')}"),
+                "symbol": symbol,
+                "network": network,
+                "address": str(a.get("address", "")).strip()[:200],
+                "active": bool(a.get("active", True)),
+            })
+        updates["crypto_assets"] = clean_assets
+    if "manual_payment_methods" in payload:
+        mpm = payload["manual_payment_methods"]
+        if not isinstance(mpm, list):
+            raise HTTPException(400, "manual_payment_methods must be a list")
+        clean = []
+        for m in mpm:
+            if not isinstance(m, dict):
+                continue
+            name = str(m.get("name", "")).strip()
+            if not name:
+                continue
+            clean.append({
+                "id": str(m.get("id") or uuid.uuid4().hex[:10]),
+                "name": name[:120],
+                "instructions": str(m.get("instructions", "")).strip()[:2000],
+                "icon": str(m.get("icon", "")).strip()[:60],
+                "active": bool(m.get("active", True)),
+            })
+        updates["manual_payment_methods"] = clean
+    if not updates:
+        raise HTTPException(400, "Nothing to update")
+    updates["updated_at"] = datetime.now(timezone.utc)
+    await db.settings.update_one({"id": "global"}, {"$set": updates}, upsert=True)
+    return await admin_get_payment_methods(_admin=_admin)
 
 
 @api_router.post("/wallet/deposit", response_model=DepositRequest)
@@ -1911,49 +2024,6 @@ async def create_deposit(payload: DepositRequestCreate, user: dict = Depends(get
 async def my_deposits(user: dict = Depends(get_current_user)):
     docs = await db.deposits.find({"user_id": user["id"]}, {"_id": 0}).sort("created_at", -1).to_list(100)
     return [DepositRequest(**d) for d in docs]
-
-
-@api_router.get("/admin/settings/payment-methods")
-async def admin_get_payment_methods(_admin: dict = Depends(require_admin)):
-    s = await get_settings()
-    return {
-        "crypto_addresses": s.get("crypto_addresses") or {"BTC": "", "ETH": "", "USDC": "", "USDT": ""},
-        "manual_payment_methods": s.get("manual_payment_methods") or [],
-    }
-
-
-@api_router.put("/admin/settings/payment-methods")
-async def admin_update_payment_methods(payload: dict, _admin: dict = Depends(require_admin)):
-    updates: dict = {}
-    if "crypto_addresses" in payload:
-        ca = payload["crypto_addresses"]
-        if not isinstance(ca, dict):
-            raise HTTPException(400, "crypto_addresses must be an object")
-        updates["crypto_addresses"] = {str(k).upper()[:10]: str(v).strip() for k, v in ca.items()}
-    if "manual_payment_methods" in payload:
-        mpm = payload["manual_payment_methods"]
-        if not isinstance(mpm, list):
-            raise HTTPException(400, "manual_payment_methods must be a list")
-        clean = []
-        for m in mpm:
-            if not isinstance(m, dict):
-                continue
-            name = str(m.get("name", "")).strip()
-            if not name:
-                continue
-            clean.append({
-                "id": str(m.get("id") or uuid.uuid4().hex[:10]),
-                "name": name[:120],
-                "instructions": str(m.get("instructions", "")).strip()[:2000],
-                "icon": str(m.get("icon", "")).strip()[:60],
-                "active": bool(m.get("active", True)),
-            })
-        updates["manual_payment_methods"] = clean
-    if not updates:
-        raise HTTPException(400, "Nothing to update")
-    updates["updated_at"] = datetime.now(timezone.utc)
-    await db.settings.update_one({"id": "global"}, {"$set": updates}, upsert=True)
-    return await admin_get_payment_methods(_admin=_admin)
 
 
 @api_router.get("/admin/deposits/pending", response_model=List[DepositRequest])
