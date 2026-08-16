@@ -4547,12 +4547,13 @@ async def startup():
             await asyncio.sleep(60)  # tick every 60 seconds
 
     async def apify_auto_sync_loop():
-        """Weekly Apify auto-sync, resume-safe across container restarts.
+        """Monthly Apify auto-sync, resume-safe across container restarts.
 
         On startup: reads last_sync_at from `sync_state`; if overdue, kicks off
-        immediately, else sleeps only until the next 7-day mark.
+        immediately, else sleeps only until the next 30-day mark.
         """
-        WEEK_SECONDS = 60 * 60 * 24 * 7
+        INTERVAL_DAYS = 30
+        INTERVAL_SECONDS = 60 * 60 * 24 * INTERVAL_DAYS
         # Small startup delay so DB, other loops, and health checks settle first.
         await asyncio.sleep(60)
         while True:
@@ -4583,7 +4584,7 @@ async def startup():
                     if last.tzinfo is None:
                         last = last.replace(tzinfo=timezone.utc)
                     elapsed = (now - last).total_seconds()
-                    wait = max(0, WEEK_SECONDS - elapsed)
+                    wait = max(0, INTERVAL_SECONDS - elapsed)
                 else:
                     # Never synced — run right away
                     wait = 0
@@ -4594,7 +4595,7 @@ async def startup():
                         {"id": "apify"},
                         {"$set": {
                             "next_scheduled_at": next_scheduled_at,
-                            "schedule_interval_days": 7,
+                            "schedule_interval_days": INTERVAL_DAYS,
                             "auto_schedule_enabled": True,
                         }},
                         upsert=True,
@@ -4605,7 +4606,7 @@ async def startup():
                 # Time to run — but only if not already running
                 state = await db.sync_state.find_one({"id": "apify"}, {"_id": 0}) or {}
                 if not state.get("sync_running"):
-                    logger.info("Starting scheduled Apify auto-sync (weekly)")
+                    logger.info(f"Starting scheduled Apify auto-sync (every {INTERVAL_DAYS} days)")
                     await import_from_apify(db, target_count=5000, replace_existing=True)
             except Exception as e:
                 logger.error(f"apify auto-sync loop failed: {e}")
@@ -4614,7 +4615,7 @@ async def startup():
                 continue
 
             # Schedule the next run marker
-            next_scheduled_at = datetime.now(timezone.utc) + timedelta(seconds=WEEK_SECONDS)
+            next_scheduled_at = datetime.now(timezone.utc) + timedelta(seconds=INTERVAL_SECONDS)
             await db.sync_state.update_one(
                 {"id": "apify"},
                 {"$set": {"next_scheduled_at": next_scheduled_at}},

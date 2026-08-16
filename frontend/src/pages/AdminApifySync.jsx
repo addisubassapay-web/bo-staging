@@ -167,7 +167,7 @@ const ApifySync = () => {
       </div>
       <p className="text-neutral-600 mb-6">
         Live product data scraped from Amazon.com via <span className="font-mono text-xs bg-neutral-100 px-1.5 py-0.5 rounded">junglee/amazon-crawler</span>.
-        Auto-syncs weekly; you can also trigger a manual sync below.
+        Auto-syncs monthly; you can also trigger a manual sync below.
       </p>
 
       <div className="grid md:grid-cols-2 gap-6">
@@ -230,14 +230,14 @@ const ApifySync = () => {
               <div className="flex items-center gap-2">
                 <span className={`flex items-center gap-1 text-xs font-medium ${status.auto_schedule_enabled ? "text-green-600" : "text-neutral-400"}`}>
                   <CheckCircle2 className="h-3 w-3" />
-                  {status.auto_schedule_enabled ? `Every ${status.schedule_interval_days ?? 7} days` : "Paused"}
+                  {status.auto_schedule_enabled ? `Every ${status.schedule_interval_days ?? 30} days` : "Paused"}
                 </span>
                 <button
                   type="button"
                   onClick={async () => {
                     try {
                       await api.post("/admin/sync/apify/schedule", { enabled: !status.auto_schedule_enabled });
-                      toast({ title: status.auto_schedule_enabled ? "Weekly auto-sync paused" : "Weekly auto-sync resumed" });
+                      toast({ title: status.auto_schedule_enabled ? "Monthly auto-sync paused" : "Monthly auto-sync resumed" });
                       load();
                     } catch (err) {
                       toast({ title: "Update failed", description: err.response?.data?.detail || "Try again", variant: "destructive" });
@@ -261,7 +261,7 @@ const ApifySync = () => {
                 <button
                   type="button"
                   onClick={async () => {
-                    if (!window.confirm("Trigger the scheduled weekly sync on the next loop tick (within ~60s)?")) return;
+                    if (!window.confirm("Trigger the scheduled monthly sync on the next loop tick (within ~60s)?")) return;
                     try {
                       await api.post("/admin/sync/apify/schedule", { run_now: true });
                       toast({ title: "Scheduled sync queued", description: "The weekly loop will pick it up within ~60s." });
@@ -284,7 +284,7 @@ const ApifySync = () => {
       <CategoryBreakdownCard perCategory={status.per_category} running={status.sync_running} />
 
       <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-900">
-        <strong>How it works:</strong> The <em>junglee/amazon-crawler</em> Apify actor scrapes Amazon.com bestseller pages across 11 department categories (Women, Men, Kids, Electronics, Home, Beauty, Sports, Toys, Books, Handmade, Other). Product data — including real photos, prices, ratings, and descriptions — is imported into MongoDB. A live-simulation loop rotates featured items every 60 seconds; a full re-scrape runs automatically once a week.
+        <strong>How it works:</strong> The <em>junglee/amazon-crawler</em> Apify actor scrapes Amazon.com bestseller pages across 11 department categories (Women, Men, Kids, Electronics, Home, Beauty, Sports, Toys, Books, Handmade, Other). Product data — including real photos, prices, ratings, and descriptions — is imported into MongoDB. A live-simulation loop rotates featured items every 60 seconds; a full re-scrape runs automatically once a month.
       </div>
     </div>
   );
