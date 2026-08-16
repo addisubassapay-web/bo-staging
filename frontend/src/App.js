@@ -43,7 +43,7 @@ function App() {
     <ThemeProvider>
       <LanguageProvider>
         <CurrencyProvider>
-          <div className="App min-h-screen flex flex-col bg-white text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100 transition-colors">
+          <div className="App min-h-screen w-full max-w-full overflow-x-hidden flex flex-col bg-white text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100 transition-colors">
             <SplashScreen />
             <BrowserRouter>
               <AuthProvider>

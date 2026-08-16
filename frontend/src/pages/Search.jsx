@@ -60,14 +60,16 @@ const Search = () => {
       .finally(() => setLoading(false));
   }, [q, category, condition, sort, min, max, page, size]);
 
-  // Reset to page 1 whenever filters (not page/size) change
+  // Reset to page 1 whenever filters (NOT page/size) change.
+  // Deliberately excluding page/params/setParams from deps — including page
+  // would re-trigger on every navigation and reset the user right back to 1.
   useEffect(() => {
     if (page !== 1) {
       const next = new URLSearchParams(params);
       next.set("page", "1");
       setParams(next, { replace: true });
     }
-  }, [q, category, condition, min, max, sort, page, params, setParams]);
+  }, [q, category, condition, min, max, sort]);
 
   const totalPages = Math.max(1, Math.ceil(total / size));
   const boundedPage = Math.min(page, totalPages);
@@ -316,7 +318,7 @@ const Pagination = ({ page, totalPages, pageWindow, goToPage }) => {
     setJumpTo("");
   };
   const cls = (active, disabled) =>
-    `h-9 min-w-9 px-2.5 rounded-md text-sm font-medium border transition inline-flex items-center justify-center gap-1 ${
+    `h-10 min-w-10 sm:h-9 sm:min-w-9 px-2.5 rounded-md text-sm font-medium border transition inline-flex items-center justify-center gap-1 ${
       active
         ? "bg-[#FF211F] text-white border-[#FF211F] shadow-sm"
         : disabled
@@ -363,7 +365,7 @@ const Pagination = ({ page, totalPages, pageWindow, goToPage }) => {
       </button>
 
       {totalPages > 7 && (
-        <form onSubmit={submitJump} className="ml-2 inline-flex items-center gap-2" data-testid="page-jump-form">
+        <form onSubmit={submitJump} className="w-full sm:w-auto sm:ml-2 mt-2 sm:mt-0 inline-flex items-center justify-center gap-2" data-testid="page-jump-form">
           <span className="text-xs text-neutral-500 dark:text-neutral-400">Go to</span>
           <input
             type="number"
@@ -372,13 +374,14 @@ const Pagination = ({ page, totalPages, pageWindow, goToPage }) => {
             value={jumpTo}
             onChange={(e) => setJumpTo(e.target.value)}
             placeholder={`1-${totalPages}`}
-            className="h-9 w-20 rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-2 text-sm text-center focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30 focus:border-[#2563EB] transition"
+            className="h-10 w-24 rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-2 text-sm text-center focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30 focus:border-[#2563EB] transition"
             data-testid="page-jump-input"
             aria-label="Jump to page"
+            inputMode="numeric"
           />
           <button
             type="submit"
-            className="h-9 px-3 rounded-md bg-gradient-to-r from-[#7DD3FC] to-[#2563EB] text-white text-xs font-semibold hover:brightness-110 transition"
+            className="h-10 px-4 rounded-md bg-gradient-to-r from-[#7DD3FC] to-[#2563EB] text-white text-xs font-semibold hover:brightness-110 transition min-h-[40px]"
             data-testid="page-jump-btn"
           >
             Go

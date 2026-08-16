@@ -193,7 +193,7 @@ const SearchAutocomplete = ({ value, onChange, onSubmit, placeholder, categories
     (suggestions.categories?.length || 0) > 0;
 
   return (
-    <div ref={boxRef} className="relative flex-1 max-w-3xl">
+    <div ref={boxRef} className="relative flex-1 min-w-0 max-w-3xl">
       <form
         onSubmit={(e) => { e.preventDefault(); submitQuery(value); onSubmit?.(e); }}
         data-testid="header-search-form"

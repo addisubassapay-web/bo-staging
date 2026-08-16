@@ -1,0 +1,552 @@
+{
+  "passed": true,
+  "failures": [],
+  "evidence": {
+    "base_url": "https://mercari-clone-1.preview.emergentagent.com",
+    "skill_lookup": "No relevant testing skill found.",
+    "desktop_initial_summary": {
+      "url": "https://mercari-clone-1.preview.emergentagent.com/search?size=24",
+      "summary": "Showing 1\u201324 of 2,708 items",
+      "first_index": 1
+    },
+    "after_click_page_3": {
+      "url": "https://mercari-clone-1.preview.emergentagent.com/search?size=24&page=3",
+      "summary": "Showing 49\u201372 of 2,708 items",
+      "first_index": 49
+    },
+    "after_next_from_page_3": {
+      "url": "https://mercari-clone-1.preview.emergentagent.com/search?size=24&page=4",
+      "summary": "Showing 73\u201396 of 2,708 items",
+      "first_index": 73
+    },
+    "after_jump_to_page_2": {
+      "url": "https://mercari-clone-1.preview.emergentagent.com/search?size=24&page=2",
+      "summary": "Showing 25\u201348 of 2,708 items",
+      "first_index": 25
+    },
+    "after_filter_reset": {
+      "url": "https://mercari-clone-1.preview.emergentagent.com/search?size=24&page=1&category=82a68761-a263-4f63-837f-5dd1362c2cd9",
+      "summary": "Showing 1\u201324 of 615 items",
+      "first_index": 1
+    },
+    "mobile_overflow": [
+      {
+        "viewport": {
+          "width": 320,
+          "height": 568
+        },
+        "route": "/",
+        "innerWidth": 320,
+        "docScrollWidth": 320,
+        "bodyScrollWidth": 320,
+        "clientWidth": 320,
+        "bodyClientWidth": 320,
+        "offenders": [
+          {
+            "tag": "aside",
+            "testid": "global-nav-panel",
+            "cls": "fixed top-0 bottom-0 left-0 z-50 w-[86%] max-w-sm bg-white dark:bg-neutral-950 shadow-2xl transform transition-transform",
+            "left": -275,
+            "right": 0,
+            "width": 275,
+            "scrollWidth": 275
+          },
+          {
+            "tag": "div",
+            "testid": "",
+            "cls": "flex items-center justify-between px-4 h-16 border-b border-neutral-200 dark:border-neutral-800 shrink-0",
+            "left": -275,
+            "right": 0,
+            "width": 275,
+            "scrollWidth": 275
+          },
+          {
+            "tag": "div",
+            "testid": "",
+            "cls": "flex items-center gap-2",
+            "left": -259,
+            "right": -90,
+            "width": 169,
+            "scrollWidth": 169
+          },
+          {
+            "tag": "img",
+            "testid": "",
+            "cls": "h-9 w-9 shrink-0",
+            "left": -259,
+            "right": -223,
+            "width": 36,
+            "scrollWidth": 36
+          },
+          {
+            "tag": "div",
+            "testid": "",
+            "cls": "leading-tight",
+            "left": -215,
+            "right": -90,
+            "width": 125,
+            "scrollWidth": 125
+          },
+          {
+            "tag": "div",
+            "testid": "",
+            "cls": "text-base font-bold text-neutral-900 dark:text-neutral-100",
+            "left": -215,
+            "right": -90,
+            "width": 125,
+            "scrollWidth": 125
+          },
+          {
+            "tag": "span",
+            "testid": "",
+            "cls": "text-[#FF7A18]",
+            "left": -147,
+            "right": -90,
+            "width": 57,
+            "scrollWidth": 0
+          },
+          {
+            "tag": "div",
+            "testid": "",
+            "cls": "text-[10px] text-neutral-500 dark:text-neutral-400 -mt-0.5",
+            "left": -215,
+            "right": -90,
+            "width": 125,
+            "scrollWidth": 125
+          }
+        ]
+      },
+      {
+        "viewport": {
+          "width": 320,
+          "height": 568
+        },
+        "route": "/search",
+        "innerWidth": 320,
+        "docScrollWidth": 320,
+        "bodyScrollWidth": 320,
+        "clientWidth": 320,
+        "bodyClientWidth": 320,
+        "offenders": [
+          {
+            "tag": "aside",
+            "testid": "global-nav-panel",
+            "cls": "fixed top-0 bottom-0 left-0 z-50 w-[86%] max-w-sm bg-white dark:bg-neutral-950 shadow-2xl transform transition-transform",
+            "left": -275,
+            "right": 0,
+            "width": 275,
+            "scrollWidth": 275
+          },
+          {
+            "tag": "div",
+            "testid": "",
+            "cls": "flex items-center justify-between px-4 h-16 border-b border-neutral-200 dark:border-neutral-800 shrink-0",
+            "left": -275,
+            "right": 0,
+            "width": 275,
+            "scrollWidth": 275
+          },
+          {
+            "tag": "div",
+            "testid": "",
+            "cls": "flex items-center gap-2",
+            "left": -259,
+            "right": -90,
+            "width": 169,
+            "scrollWidth": 169
+          },
+          {
+            "tag": "img",
+            "testid": "",
+            "cls": "h-9 w-9 shrink-0",
+            "left": -259,
+            "right": -223,
+            "width": 36,
+            "scrollWidth": 36
+          },
+          {
+            "tag": "div",
+            "testid": "",
+            "cls": "leading-tight",
+            "left": -215,
+            "right": -90,
+            "width": 125,
+            "scrollWidth": 125
+          },
+          {
+            "tag": "div",
+            "testid": "",
+            "cls": "text-base font-bold text-neutral-900 dark:text-neutral-100",
+            "left": -215,
+            "right": -90,
+            "width": 125,
+            "scrollWidth": 125
+          },
+          {
+            "tag": "span",
+            "testid": "",
+            "cls": "text-[#FF7A18]",
+            "left": -147,
+            "right": -90,
+            "width": 57,
+            "scrollWidth": 0
+          },
+          {
+            "tag": "div",
+            "testid": "",
+            "cls": "text-[10px] text-neutral-500 dark:text-neutral-400 -mt-0.5",
+            "left": -215,
+            "right": -90,
+            "width": 125,
+            "scrollWidth": 125
+          }
+        ]
+      },
+      {
+        "viewport": {
+          "width": 375,
+          "height": 812
+        },
+        "route": "/",
+        "innerWidth": 375,
+        "docScrollWidth": 375,
+        "bodyScrollWidth": 375,
+        "clientWidth": 375,
+        "bodyClientWidth": 375,
+        "offenders": [
+          {
+            "tag": "aside",
+            "testid": "global-nav-panel",
+            "cls": "fixed top-0 bottom-0 left-0 z-50 w-[86%] max-w-sm bg-white dark:bg-neutral-950 shadow-2xl transform transition-transform",
+            "left": -322,
+            "right": 0,
+            "width": 323,
+            "scrollWidth": 323
+          },
+          {
+            "tag": "div",
+            "testid": "",
+            "cls": "flex items-center justify-between px-4 h-16 border-b border-neutral-200 dark:border-neutral-800 shrink-0",
+            "left": -322,
+            "right": 0,
+            "width": 323,
+            "scrollWidth": 323
+          },
+          {
+            "tag": "div",
+            "testid": "",
+            "cls": "flex items-center gap-2",
+            "left": -306,
+            "right": -138,
+            "width": 169,
+            "scrollWidth": 169
+          },
+          {
+            "tag": "img",
+            "testid": "",
+            "cls": "h-9 w-9 shrink-0",
+            "left": -306,
+            "right": -270,
+            "width": 36,
+            "scrollWidth": 36
+          },
+          {
+            "tag": "div",
+            "testid": "",
+            "cls": "leading-tight",
+            "left": -262,
+            "right": -138,
+            "width": 125,
+            "scrollWidth": 125
+          },
+          {
+            "tag": "div",
+            "testid": "",
+            "cls": "text-base font-bold text-neutral-900 dark:text-neutral-100",
+            "left": -262,
+            "right": -138,
+            "width": 125,
+            "scrollWidth": 125
+          },
+          {
+            "tag": "span",
+            "testid": "",
+            "cls": "text-[#FF7A18]",
+            "left": -194,
+            "right": -138,
+            "width": 57,
+            "scrollWidth": 0
+          },
+          {
+            "tag": "div",
+            "testid": "",
+            "cls": "text-[10px] text-neutral-500 dark:text-neutral-400 -mt-0.5",
+            "left": -262,
+            "right": -138,
+            "width": 125,
+            "scrollWidth": 125
+          }
+        ]
+      },
+      {
+        "viewport": {
+          "width": 375,
+          "height": 812
+        },
+        "route": "/search",
+        "innerWidth": 375,
+        "docScrollWidth": 375,
+        "bodyScrollWidth": 375,
+        "clientWidth": 375,
+        "bodyClientWidth": 375,
+        "offenders": [
+          {
+            "tag": "aside",
+            "testid": "global-nav-panel",
+            "cls": "fixed top-0 bottom-0 left-0 z-50 w-[86%] max-w-sm bg-white dark:bg-neutral-950 shadow-2xl transform transition-transform",
+            "left": -322,
+            "right": 0,
+            "width": 323,
+            "scrollWidth": 323
+          },
+          {
+            "tag": "div",
+            "testid": "",
+            "cls": "flex items-center justify-between px-4 h-16 border-b border-neutral-200 dark:border-neutral-800 shrink-0",
+            "left": -322,
+            "right": 0,
+            "width": 323,
+            "scrollWidth": 323
+          },
+          {
+            "tag": "div",
+            "testid": "",
+            "cls": "flex items-center gap-2",
+            "left": -306,
+            "right": -138,
+            "width": 169,
+            "scrollWidth": 169
+          },
+          {
+            "tag": "img",
+            "testid": "",
+            "cls": "h-9 w-9 shrink-0",
+            "left": -306,
+            "right": -270,
+            "width": 36,
+            "scrollWidth": 36
+          },
+          {
+            "tag": "div",
+            "testid": "",
+            "cls": "leading-tight",
+            "left": -262,
+            "right": -138,
+            "width": 125,
+            "scrollWidth": 125
+          },
+          {
+            "tag": "div",
+            "testid": "",
+            "cls": "text-base font-bold text-neutral-900 dark:text-neutral-100",
+            "left": -262,
+            "right": -138,
+            "width": 125,
+            "scrollWidth": 125
+          },
+          {
+            "tag": "span",
+            "testid": "",
+            "cls": "text-[#FF7A18]",
+            "left": -194,
+            "right": -138,
+            "width": 57,
+            "scrollWidth": 0
+          },
+          {
+            "tag": "div",
+            "testid": "",
+            "cls": "text-[10px] text-neutral-500 dark:text-neutral-400 -mt-0.5",
+            "left": -262,
+            "right": -138,
+            "width": 125,
+            "scrollWidth": 125
+          }
+        ]
+      },
+      {
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "route": "/",
+        "innerWidth": 390,
+        "docScrollWidth": 390,
+        "bodyScrollWidth": 390,
+        "clientWidth": 390,
+        "bodyClientWidth": 390,
+        "offenders": [
+          {
+            "tag": "aside",
+            "testid": "global-nav-panel",
+            "cls": "fixed top-0 bottom-0 left-0 z-50 w-[86%] max-w-sm bg-white dark:bg-neutral-950 shadow-2xl transform transition-transform",
+            "left": -335,
+            "right": 0,
+            "width": 335,
+            "scrollWidth": 335
+          },
+          {
+            "tag": "div",
+            "testid": "",
+            "cls": "flex items-center justify-between px-4 h-16 border-b border-neutral-200 dark:border-neutral-800 shrink-0",
+            "left": -335,
+            "right": 0,
+            "width": 335,
+            "scrollWidth": 335
+          },
+          {
+            "tag": "div",
+            "testid": "",
+            "cls": "flex items-center gap-2",
+            "left": -319,
+            "right": -150,
+            "width": 169,
+            "scrollWidth": 169
+          },
+          {
+            "tag": "img",
+            "testid": "",
+            "cls": "h-9 w-9 shrink-0",
+            "left": -319,
+            "right": -283,
+            "width": 36,
+            "scrollWidth": 36
+          },
+          {
+            "tag": "div",
+            "testid": "",
+            "cls": "leading-tight",
+            "left": -275,
+            "right": -150,
+            "width": 125,
+            "scrollWidth": 125
+          },
+          {
+            "tag": "div",
+            "testid": "",
+            "cls": "text-base font-bold text-neutral-900 dark:text-neutral-100",
+            "left": -275,
+            "right": -150,
+            "width": 125,
+            "scrollWidth": 125
+          },
+          {
+            "tag": "span",
+            "testid": "",
+            "cls": "text-[#FF7A18]",
+            "left": -207,
+            "right": -150,
+            "width": 57,
+            "scrollWidth": 0
+          },
+          {
+            "tag": "div",
+            "testid": "",
+            "cls": "text-[10px] text-neutral-500 dark:text-neutral-400 -mt-0.5",
+            "left": -275,
+            "right": -150,
+            "width": 125,
+            "scrollWidth": 125
+          }
+        ]
+      },
+      {
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "route": "/search",
+        "innerWidth": 390,
+        "docScrollWidth": 390,
+        "bodyScrollWidth": 390,
+        "clientWidth": 390,
+        "bodyClientWidth": 390,
+        "offenders": [
+          {
+            "tag": "aside",
+            "testid": "global-nav-panel",
+            "cls": "fixed top-0 bottom-0 left-0 z-50 w-[86%] max-w-sm bg-white dark:bg-neutral-950 shadow-2xl transform transition-transform",
+            "left": -335,
+            "right": 0,
+            "width": 335,
+            "scrollWidth": 335
+          },
+          {
+            "tag": "div",
+            "testid": "",
+            "cls": "flex items-center justify-between px-4 h-16 border-b border-neutral-200 dark:border-neutral-800 shrink-0",
+            "left": -335,
+            "right": 0,
+            "width": 335,
+            "scrollWidth": 335
+          },
+          {
+            "tag": "div",
+            "testid": "",
+            "cls": "flex items-center gap-2",
+            "left": -319,
+            "right": -150,
+            "width": 169,
+            "scrollWidth": 169
+          },
+          {
+            "tag": "img",
+            "testid": "",
+            "cls": "h-9 w-9 shrink-0",
+            "left": -319,
+            "right": -283,
+            "width": 36,
+            "scrollWidth": 36
+          },
+          {
+            "tag": "div",
+            "testid": "",
+            "cls": "leading-tight",
+            "left": -275,
+            "right": -150,
+            "width": 125,
+            "scrollWidth": 125
+          },
+          {
+            "tag": "div",
+            "testid": "",
+            "cls": "text-base font-bold text-neutral-900 dark:text-neutral-100",
+            "left": -275,
+            "right": -150,
+            "width": 125,
+            "scrollWidth": 125
+          },
+          {
+            "tag": "span",
+            "testid": "",
+            "cls": "text-[#FF7A18]",
+            "left": -207,
+            "right": -150,
+            "width": 57,
+            "scrollWidth": 0
+          },
+          {
+            "tag": "div",
+            "testid": "",
+            "cls": "text-[10px] text-neutral-500 dark:text-neutral-400 -mt-0.5",
+            "left": -275,
+            "right": -150,
+            "width": 125,
+            "scrollWidth": 125
+          }
+        ]
+      }
+    ],
+    "error_text": ""
+  }
+}

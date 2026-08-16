@@ -29,8 +29,8 @@ const NewsletterStrip = () => {
 
   return (
     <div className="bg-gradient-to-r from-[#111827] via-[#0F1113] to-[#0B1220] border-b border-neutral-800/50">
-      <div className="max-w-7xl mx-auto px-4 py-6 flex flex-col md:flex-row items-center gap-4">
-        <div className="flex items-center gap-3 flex-1">
+      <div className="max-w-7xl mx-auto px-4 py-6 flex flex-col md:flex-row items-center gap-4 min-w-0">
+        <div className="flex items-center gap-3 flex-1 min-w-0">
           <div className="h-10 w-10 rounded-full bg-gradient-to-br from-[#7DD3FC] to-[#2563EB] grid place-items-center shrink-0">
             <Mail className="h-5 w-5 text-white" />
           </div>
@@ -39,14 +39,14 @@ const NewsletterStrip = () => {
             <div className="text-neutral-400 text-xs">Weekly picks · Flash sales · Zero spam · Unsubscribe anytime</div>
           </div>
         </div>
-        <form onSubmit={submit} className="w-full md:w-auto flex items-center gap-2" data-testid="newsletter-form">
+        <form onSubmit={submit} className="w-full md:w-auto flex flex-col sm:flex-row items-stretch sm:items-center gap-2 min-w-0" data-testid="newsletter-form">
           <input
             type="email"
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@example.com"
-            className="flex-1 md:w-72 h-11 px-4 rounded-full bg-white/10 border border-white/15 text-white placeholder:text-neutral-500 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB]/50 focus:border-[#2563EB] transition"
+            className="flex-1 min-w-0 sm:w-72 h-11 px-4 rounded-full bg-white/10 border border-white/15 text-white placeholder:text-neutral-500 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB]/50 focus:border-[#2563EB] transition"
             data-testid="newsletter-email-input"
             aria-label="Newsletter email"
           />

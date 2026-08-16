@@ -128,7 +128,7 @@ const Header = () => {
 
       {/* Main bar */}
       <div className={`border-b border-neutral-200 dark:border-neutral-800 transition-shadow ${compact ? "shadow-sm" : ""}`}>
-        <div className={`max-w-7xl mx-auto px-3 sm:px-4 flex items-center gap-2 sm:gap-3 transition-[height] duration-200 ${compact ? "h-14" : "h-16 sm:h-20"}`}>
+        <div className={`max-w-7xl mx-auto px-3 sm:px-4 flex items-center gap-2 sm:gap-3 transition-[height] duration-200 min-w-0 ${compact ? "h-14" : "h-16 sm:h-20"}`}>
           <GlobalNavMenu />
 
           <Link to="/" className="flex items-center gap-2 sm:gap-3 shrink-0" data-testid="brand-link">
@@ -320,7 +320,7 @@ const Header = () => {
 
       {/* Category ribbon (hidden when compact) */}
       <div className={`overflow-hidden transition-[max-height,opacity] duration-300 border-b border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 ${compact ? "max-h-0 opacity-0 border-b-0" : "max-h-16 opacity-100"}`}>
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 py-2 sm:py-2.5 flex items-center gap-2 overflow-x-auto scrollbar-hide">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 py-2 sm:py-2.5 flex items-center gap-2 overflow-x-auto scrollbar-hide min-w-0">
           <Link to="/search" data-testid="cat-pill-all">
             <button className="whitespace-nowrap px-4 sm:px-5 h-8 sm:h-9 rounded-full bg-gradient-to-r from-[#FF7A18] to-[#FF211F] text-white font-semibold text-xs sm:text-sm flex items-center gap-1.5 shrink-0 shadow-sm">
               <span className="text-base leading-none">▦</span> All Products
