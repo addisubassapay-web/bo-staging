@@ -33,6 +33,8 @@ const Checkout = () => {
   const [cryptoCcy, setCryptoCcy] = useState("");
   const [bankId, setBankId] = useState("");
   const [copied, setCopied] = useState("");
+  const [savedAddress, setSavedAddress] = useState(null);
+  const [coupon, setCoupon] = useState({ code: "", loading: false, discount: 0, description: "", error: "" });
 
   useEffect(() => {
     if (authLoading) return;
@@ -50,7 +52,46 @@ const Checkout = () => {
       const m = (d.manual_payment_methods || [])[0];
       if (m) setBankId(m.id);
     }).catch(() => {});
+    // Prefill from most-recent order's shipping address
+    api.get("/checkout/last-address").then((r) => {
+      if (r.data?.has_saved) {
+        setSavedAddress(r.data.address);
+      }
+    }).catch(() => {});
   }, [id, user, authLoading, navigate]);
+
+  const applySavedAddress = () => {
+    if (!savedAddress) return;
+    setAddress({
+      full_name: savedAddress.full_name || "",
+      street: savedAddress.street || "",
+      city: savedAddress.city || "",
+      state: savedAddress.state || "",
+      zip: savedAddress.zip || "",
+      country: savedAddress.country || "USA",
+    });
+    toast({ title: "Address prefilled from your last order" });
+  };
+
+  const validateCoupon = async () => {
+    if (!coupon.code.trim()) return;
+    setCoupon((c) => ({ ...c, loading: true, error: "" }));
+    try {
+      const subtotal = listing ? Number(listing.price) : 0;
+      const { data } = await api.post("/checkout/coupon/validate", {
+        code: coupon.code.trim().toUpperCase(),
+        subtotal,
+        item_count: 1,
+      });
+      setCoupon({ code: data.code, loading: false, discount: data.discount, description: data.description, error: "" });
+      toast({ title: `Coupon applied · -$${data.discount.toFixed(2)}` });
+    } catch (err) {
+      const msg = err.response?.data?.detail || "Coupon check failed";
+      setCoupon((c) => ({ ...c, loading: false, discount: 0, description: "", error: msg }));
+    }
+  };
+
+  const clearCoupon = () => setCoupon({ code: "", loading: false, discount: 0, description: "", error: "" });
 
   const doCopy = async (text, key) => {
     try {
@@ -144,7 +185,9 @@ const Checkout = () => {
   }
 
   const shippingFee = listing.shipping_paid_by === "buyer" ? 5.99 : 0;
-  const total = listing.price + shippingFee;
+  const subtotal = listing.price;
+  const discount = coupon.discount || 0;
+  const total = Math.max(0, subtotal + shippingFee - discount);
   const deliveryDays = publicSettings.delivery_days_estimate || 7;
   const eta = new Date(Date.now() + deliveryDays * 24 * 60 * 60 * 1000);
   const etaLabel = eta.toLocaleDateString(undefined, { month: "short", day: "numeric" });
@@ -161,7 +204,19 @@ const Checkout = () => {
       <form onSubmit={place} className="grid lg:grid-cols-[1fr_360px] gap-8">
         <div className="space-y-4">
           <section className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
-            <h2 className="font-bold text-lg mb-4 text-neutral-900 dark:text-neutral-100">{t("checkout.shippingAddress")}</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-bold text-lg text-neutral-900 dark:text-neutral-100">{t("checkout.shippingAddress")}</h2>
+              {savedAddress && (
+                <button
+                  type="button"
+                  onClick={applySavedAddress}
+                  className="text-xs font-semibold px-3 py-1.5 rounded-full bg-gradient-to-r from-[#7DD3FC] to-[#2563EB] text-white hover:brightness-110 transition"
+                  data-testid="prefill-saved-address"
+                >
+                  Use saved address
+                </button>
+              )}
+            </div>
             <div className="grid sm:grid-cols-2 gap-3">
               <div className="sm:col-span-2"><Label>{t("checkout.fullName")}</Label><Input value={address.full_name} onChange={(e) => setAddress({ ...address, full_name: e.target.value })} required className="mt-1" /></div>
               <div className="sm:col-span-2"><Label>{t("checkout.street")}</Label><Input value={address.street} onChange={(e) => setAddress({ ...address, street: e.target.value })} required className="mt-1" /></div>
@@ -414,6 +469,46 @@ const Checkout = () => {
               <span>{t("cart.shipping")}</span>
               <span className="tabular-nums font-medium">{format(shippingFee)}</span>
             </div>
+
+            {/* Coupon field with instant validation */}
+            <div className="pt-3 mt-1 border-t border-neutral-100 dark:border-neutral-800">
+              {coupon.discount > 0 ? (
+                <div className="flex items-center justify-between rounded-lg bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 px-3 py-2" data-testid="coupon-applied">
+                  <div className="min-w-0">
+                    <div className="text-xs font-semibold text-emerald-800 dark:text-emerald-200 truncate">{coupon.code} · -{format(coupon.discount)}</div>
+                    <div className="text-[11px] text-emerald-700 dark:text-emerald-300 truncate">{coupon.description}</div>
+                  </div>
+                  <button type="button" onClick={clearCoupon} className="text-emerald-700 hover:text-emerald-900 text-xs font-medium" data-testid="coupon-clear">Remove</button>
+                </div>
+              ) : (
+                <div>
+                  <label className="text-xs font-semibold text-neutral-500 dark:text-neutral-400">Have a coupon?</label>
+                  <div className="mt-1 flex gap-2">
+                    <input
+                      value={coupon.code}
+                      onChange={(e) => setCoupon((c) => ({ ...c, code: e.target.value.toUpperCase(), error: "" }))}
+                      onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), validateCoupon())}
+                      placeholder="WELCOME10"
+                      className="flex-1 h-10 px-3 rounded-md border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-sm font-mono uppercase tracking-wider focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30 focus:border-[#2563EB] transition"
+                      data-testid="coupon-input"
+                      maxLength={20}
+                    />
+                    <button type="button" onClick={validateCoupon} disabled={coupon.loading || !coupon.code.trim()} className="h-10 px-4 rounded-md bg-gradient-to-r from-[#7DD3FC] to-[#2563EB] text-white text-sm font-semibold hover:brightness-110 disabled:opacity-50 transition" data-testid="coupon-apply">
+                      {coupon.loading ? "…" : "Apply"}
+                    </button>
+                  </div>
+                  {coupon.error && <div className="text-[11px] text-red-600 dark:text-red-400 mt-1" data-testid="coupon-error">{coupon.error}</div>}
+                </div>
+              )}
+            </div>
+
+            {coupon.discount > 0 && (
+              <div className="flex justify-between text-emerald-700 dark:text-emerald-400">
+                <span>Coupon discount</span>
+                <span className="tabular-nums font-medium">-{format(coupon.discount)}</span>
+              </div>
+            )}
+
             <div className="rounded-lg bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 px-3 py-2 text-xs text-emerald-800 dark:text-emerald-200 flex items-center gap-2" data-testid="checkout-delivery-eta">
               <Lock className="h-3.5 w-3.5 shrink-0" />
               <div>
@@ -430,13 +525,33 @@ const Checkout = () => {
           <Button
             type="submit"
             disabled={placing || (payMethod === "wallet" && wallet && (wallet.balance ?? 0) < total)}
-            className="w-full mt-5 bg-gradient-to-r from-[#FF7A18] to-[#FF211F] hover:brightness-110 rounded-full h-12 min-h-[48px] font-bold shadow-lg shadow-[#FF211F]/30 disabled:opacity-60 hover:-translate-y-0.5 active:translate-y-0 transition-all"
+            className="w-full mt-5 bg-gradient-to-r from-[#FF7A18] to-[#FF211F] hover:brightness-110 rounded-full h-12 min-h-[48px] font-bold shadow-lg shadow-[#FF211F]/30 disabled:opacity-60 hover:-translate-y-0.5 active:translate-y-0 transition-all hidden lg:block"
             data-testid="place-order-btn"
           >
             {placing ? t("checkout.placing") : `${t("checkout.pay")} ${format(total)}`}
           </Button>
         </div>
       </form>
+
+      {/* Sticky mobile action bar — visible only on <lg screens */}
+      <div
+        className="lg:hidden fixed bottom-0 inset-x-0 z-40 border-t border-neutral-200 dark:border-neutral-800 bg-white/95 dark:bg-neutral-950/95 backdrop-blur px-4 py-3 flex items-center justify-between gap-3 shadow-[0_-4px_16px_rgba(0,0,0,0.08)]"
+        data-testid="sticky-checkout-bar"
+      >
+        <div className="min-w-0">
+          <div className="text-[11px] uppercase tracking-widest text-neutral-500 dark:text-neutral-400">{t("cart.total")}</div>
+          <div className="text-lg font-extrabold text-neutral-900 dark:text-neutral-100 tabular-nums">{format(total)}</div>
+        </div>
+        <Button
+          type="button"
+          onClick={place}
+          disabled={placing || (payMethod === "wallet" && wallet && (wallet.balance ?? 0) < total)}
+          className="flex-1 max-w-[240px] bg-gradient-to-r from-[#FF7A18] to-[#FF211F] hover:brightness-110 rounded-full h-12 min-h-[48px] font-bold shadow-lg shadow-[#FF211F]/30 disabled:opacity-60 transition-all"
+          data-testid="place-order-mobile-btn"
+        >
+          {placing ? t("checkout.placing") : t("checkout.pay")}
+        </Button>
+      </div>
     </div>
   );
 };

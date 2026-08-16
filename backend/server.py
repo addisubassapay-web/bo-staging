@@ -34,6 +34,7 @@ from routers.stores_search import router as stores_search_router
 from routers.shopping import router as shopping_router
 from routers.listings import router as listings_router
 from routers.personalized import router as personalized_router
+from routers.checkout import router as checkout_router
 
 
 ROOT_DIR = Path(__file__).parent
@@ -4436,6 +4437,7 @@ app.include_router(stores_search_router, prefix="/api")
 app.include_router(shopping_router, prefix="/api")
 app.include_router(listings_router, prefix="/api")
 app.include_router(personalized_router, prefix="/api")
+app.include_router(checkout_router, prefix="/api")
 
 app.add_middleware(
     CORSMiddleware,
