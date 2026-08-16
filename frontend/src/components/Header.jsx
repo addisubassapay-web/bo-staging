@@ -200,8 +200,19 @@ const Header = () => {
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button aria-label="Account" className="h-10 w-10 sm:h-11 sm:w-11 rounded-full bg-gradient-to-br from-[#7DD3FC] to-[#2563EB] text-white grid place-items-center font-bold text-sm hover:brightness-110 transition" data-testid="header-user-btn">
-                    {user.username?.[0]?.toUpperCase() || "U"}
+                  <button aria-label="Account" className="h-10 w-10 sm:h-11 sm:w-11 rounded-full bg-gradient-to-br from-[#7DD3FC] to-[#2563EB] text-white grid place-items-center font-bold text-sm hover:brightness-110 transition overflow-hidden ring-2 ring-white/60 dark:ring-neutral-800" data-testid="header-user-btn">
+                    {user.avatar ? (
+                      <img
+                        src={user.avatar}
+                        alt={user.username}
+                        className="h-full w-full object-cover"
+                        referrerPolicy="no-referrer"
+                        onError={(e) => { e.currentTarget.style.display = "none"; }}
+                        data-testid="header-user-avatar-img"
+                      />
+                    ) : (
+                      <span data-testid="header-user-initial">{user.username?.[0]?.toUpperCase() || "U"}</span>
+                    )}
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">

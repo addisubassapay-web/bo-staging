@@ -28,6 +28,7 @@ from routers.discovery import router as discovery_router
 from routers.users import router as users_router
 from routers.newsletter import router as newsletter_router
 from routers.google_auth import router as google_auth_router
+from routers.auth import router as auth_router
 
 
 ROOT_DIR = Path(__file__).parent
@@ -733,48 +734,6 @@ async def notify(user_id: str, ntype: str, title: str, body: str = "", link: Opt
     n = Notification(user_id=user_id, type=ntype, title=title, body=body, link=link)
     await db.notifications.insert_one(n.model_dump())
 
-
-# =========================
-# Auth Routes
-# =========================
-@api_router.post("/auth/register", response_model=AuthResponse)
-async def register(payload: UserCreate):
-    existing = await db.users.find_one({"$or": [{"email": payload.email}, {"username": payload.username}]})
-    if existing:
-        raise HTTPException(status_code=400, detail="Email or username already exists")
-    referred_by = None
-    if payload.referral_code:
-        ref = await db.users.find_one({"referral_code": payload.referral_code.upper()}, {"_id": 0, "id": 1})
-        if ref:
-            referred_by = ref["id"]
-    user = User(email=payload.email, username=payload.username, referred_by=referred_by)
-    doc = user.model_dump()
-    doc["password_hash"] = hash_password(payload.password)
-    await db.users.insert_one(doc)
-    # Signup bonus
-    settings = await get_settings()
-    if settings.get("signup_bonus", 0) > 0:
-        await credit_wallet(user.id, settings["signup_bonus"], "bonus", "Signup bonus")
-    if referred_by:
-        # notify referrer via wallet transaction with $0? Just a log entry
-        pass
-    token = create_token(user.id, user.role)
-    fresh = await db.users.find_one({"id": user.id}, {"_id": 0, "password_hash": 0})
-    return AuthResponse(token=token, user=UserPublic(**fresh))
-
-@api_router.post("/auth/login", response_model=AuthResponse)
-async def login(payload: UserLogin):
-    user = await db.users.find_one({"email": payload.email})
-    if not user or not verify_password(payload.password, user.get("password_hash", "")):
-        raise HTTPException(status_code=401, detail="Invalid credentials")
-    if not user.get("is_active", True):
-        raise HTTPException(status_code=403, detail="Account disabled")
-    token = create_token(user["id"], user["role"])
-    return AuthResponse(token=token, user=UserPublic(**to_public_user(user)))
-
-@api_router.get("/auth/me", response_model=UserPublic)
-async def me(user: dict = Depends(get_current_user)):
-    return UserPublic(**user)
 
 
 
@@ -3743,6 +3702,80 @@ async def wishlist_digest_loop():
         await asyncio.sleep(max(60, interval))
 
 
+async def newsletter_digest_loop():
+    """Weekly newsletter digest — pulls top listings + recent price drops and
+    MOCK-sends a Resend email to every active subscriber in db.newsletter_subscribers.
+    Interval controlled by NEWSLETTER_DIGEST_INTERVAL_SEC (default 7 days)."""
+    await asyncio.sleep(15)
+    while True:
+        try:
+            since = _now_utc() - timedelta(days=7)
+            top_listings = await db.listings.find(
+                {"status": "active"},
+                {"_id": 0, "id": 1, "title": 1, "price": 1, "images": 1, "likes_count": 1, "views_count": 1},
+            ).sort([("likes_count", -1), ("views_count", -1)]).to_list(6)
+            drops = await db.listings.find(
+                {"status": "active", "price_drop_at": {"$gte": since}, "previous_price": {"$gt": 0}},
+                {"_id": 0, "id": 1, "title": 1, "price": 1, "previous_price": 1, "price_drop_at": 1},
+            ).sort("price_drop_at", -1).to_list(6)
+
+            if not top_listings and not drops:
+                # Nothing worth sending this cycle
+                interval = int(os.environ.get("NEWSLETTER_DIGEST_INTERVAL_SEC", str(7 * 24 * 3600)))
+                await asyncio.sleep(max(60, interval))
+                continue
+
+            subject_bits = []
+            if drops:
+                subject_bits.append(f"{len(drops)} price drop(s)")
+            if top_listings:
+                subject_bits.append(f"{len(top_listings)} trending pick(s)")
+            subject = "Weekly Mercari digest: " + " · ".join(subject_bits)
+
+            body_lines = ["Hi there,", ""]
+            if drops:
+                body_lines.append("🔥 Price drops this week:")
+                for d in drops:
+                    body_lines.append(f"  - {d['title']}: ${d['previous_price']:.2f} → ${d['price']:.2f}")
+                body_lines.append("")
+            if top_listings:
+                body_lines.append("✨ Trending on Mercari:")
+                for t in top_listings:
+                    body_lines.append(f"  - {t['title']} — ${t['price']:.2f}")
+                body_lines.append("")
+            body_lines.append("Shop everything at Mercari Global.")
+            body_lines.append("To unsubscribe, POST /api/newsletter/unsubscribe with your email.")
+            body = "\n".join(body_lines)
+
+            sent = 0
+            async for sub in db.newsletter_subscribers.find(
+                {"unsubscribed": {"$ne": True}},
+                {"_id": 0, "email": 1},
+            ):
+                email_to = sub.get("email")
+                if not email_to:
+                    continue
+                logger.info(f"[MOCK Resend] to={email_to} subject={subject!r}")
+                await db.email_log.insert_one({
+                    "id": str(uuid.uuid4()),
+                    "to": email_to,
+                    "kind": "newsletter_digest",
+                    "subject": subject,
+                    "body": body,
+                    "drops": len(drops),
+                    "top_picks": len(top_listings),
+                    "sent_at": _now_utc(),
+                    "provider": "mock_resend",
+                })
+                sent += 1
+            if sent:
+                logger.info(f"[Newsletter] mock-sent digest to {sent} subscriber(s)")
+        except Exception as e:
+            logger.warning(f"newsletter_digest_loop error: {e}")
+        interval = int(os.environ.get("NEWSLETTER_DIGEST_INTERVAL_SEC", str(7 * 24 * 3600)))
+        await asyncio.sleep(max(60, interval))
+
+
 async def flash_deals_rotation_loop():
     """Refill the flash-deal pool at startup and shortly after midnight UTC each day."""
     await asyncio.sleep(3)
@@ -4433,6 +4466,7 @@ app.include_router(discovery_router, prefix="/api")
 app.include_router(users_router, prefix="/api")
 app.include_router(newsletter_router, prefix="/api")
 app.include_router(google_auth_router, prefix="/api")
+app.include_router(auth_router, prefix="/api")
 
 app.add_middleware(
     CORSMiddleware,
@@ -4535,6 +4569,7 @@ async def startup():
     asyncio.create_task(shipping_progress_loop())
     asyncio.create_task(flash_deals_rotation_loop())
     asyncio.create_task(wishlist_digest_loop())
+    asyncio.create_task(newsletter_digest_loop())
 
 
 @app.on_event("shutdown")
