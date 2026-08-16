@@ -130,9 +130,9 @@ const Header = () => {
 
           <Link to="/" className="flex items-center gap-2 sm:gap-3 shrink-0" data-testid="brand-link">
             <img
-              src="/logo-mark.png"
+              src="/logo-mark.svg"
               alt="Mercari"
-              className={`shrink-0 transition-all ${compact ? "h-8 w-8" : "h-9 w-9 sm:h-11 sm:w-11"}`}
+              className={`shrink-0 transition-all drop-shadow-sm ${compact ? "h-8 w-8" : "h-9 w-9 sm:h-11 sm:w-11"}`}
               data-testid="header-logo"
             />
             <div className={`hidden lg:block leading-tight transition-opacity ${compact ? "hidden xl:block" : ""}`}>
