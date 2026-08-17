@@ -14,6 +14,8 @@ import ListingDetail from "@/pages/ListingDetail";
 import Sell from "@/pages/Sell";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
+import ForgotPassword from "@/pages/ForgotPassword";
+import ResetPassword from "@/pages/ResetPassword";
 import Cart from "@/pages/Cart";
 import Checkout from "@/pages/Checkout";
 import Favorites from "@/pages/Favorites";
@@ -60,6 +62,8 @@ function App() {
                     <Route path="/dashboard/list-product" element={<Sell />} />
                     <Route path="/login" element={<Login />} />
                     <Route path="/register" element={<Register />} />
+                    <Route path="/forgot" element={<ForgotPassword />} />
+                    <Route path="/reset-password" element={<ResetPassword />} />
                     <Route path="/auth/callback" element={<AuthCallback />} />
                     <Route path="/cart" element={<Cart />} />
                     <Route path="/checkout/:id" element={<Checkout />} />

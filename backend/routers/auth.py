@@ -163,3 +163,78 @@ async def login(payload: dict, request: Request):
 async def me(user: dict = Depends(get_current_user)):
     _U, _UC, _UL, UserPublic, _AR = _models()
     return UserPublic(**user)
+
+
+@router.post("/auth/forgot-password")
+async def forgot_password(payload: dict):
+    """Start a password reset. Returns 200 regardless of whether the email
+    exists (prevents user enumeration). Generates a one-time token stored
+    with a 60-minute expiry and dispatches an email (mock provider until a
+    real EMAIL_PROVIDER key is set)."""
+    import secrets
+    email = (payload.get("email") or "").strip().lower()
+    if not email:
+        raise HTTPException(400, "Email is required")
+    db = get_db()
+    user = await db.users.find_one({"email": email}, {"_id": 0, "id": 1, "username": 1})
+    if user:
+        token = secrets.token_urlsafe(32)
+        await db.password_resets.insert_one({
+            "token": token,
+            "user_id": user["id"],
+            "email": email,
+            "created_at": _now(),
+            "expires_at": _now() + timedelta(minutes=60),
+            "used_at": None,
+        })
+        # Email dispatch — mock provider logs the reset URL. When
+        # EMAIL_PROVIDER is set later this will send a real message.
+        import os, logging
+        reset_url = f"{os.environ.get('FRONTEND_ORIGIN', 'https://mercari-clone-1.preview.emergentagent.com')}/reset-password?token={token}"
+        logging.getLogger("email").info(
+            f"[mock_email] password_reset to={email} url={reset_url}"
+        )
+        await db.email_log.insert_one({
+            "id": token[:16],
+            "kind": "password_reset",
+            "to": email,
+            "user_id": user["id"],
+            "url": reset_url,
+            "provider": "mock",
+            "sent_at": _now(),
+        })
+    # Always the same response — no user enumeration.
+    return {"ok": True, "message": "If that email is registered, a reset link is on its way."}
+
+
+@router.post("/auth/reset-password")
+async def reset_password(payload: dict):
+    """Consume a one-time reset token and set a new password. Also clears
+    any active lockout so the user can immediately sign in."""
+    token = (payload.get("token") or "").strip()
+    new_password = payload.get("new_password") or ""
+    if not token or len(new_password) < 6:
+        raise HTTPException(400, "Token required and password must be at least 6 characters")
+    db = get_db()
+    row = await db.password_resets.find_one({"token": token}, {"_id": 0})
+    if not row:
+        raise HTTPException(400, "Invalid or expired reset link")
+    if row.get("used_at"):
+        raise HTTPException(400, "This reset link has already been used")
+    expires = row.get("expires_at")
+    if expires and expires.tzinfo is None:
+        expires = expires.replace(tzinfo=timezone.utc)
+    if not expires or expires < _now():
+        raise HTTPException(400, "This reset link has expired. Request a new one.")
+
+    await db.users.update_one(
+        {"id": row["user_id"]},
+        {"$set": {
+            "password_hash": hash_password(new_password),
+            "failed_login_attempts": 0,
+            "locked_until": None,
+            "password_updated_at": _now(),
+        }},
+    )
+    await db.password_resets.update_one({"token": token}, {"$set": {"used_at": _now()}})
+    return {"ok": True, "message": "Password updated. You can now sign in."}

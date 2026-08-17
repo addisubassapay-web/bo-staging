@@ -61,6 +61,7 @@ const Dashboard = () => {
 
 const UsersMgr = () => {
   const [users, setUsers] = useState([]);
+  const [lockedOnly, setLockedOnly] = useState(false);
   const { toast } = useToast();
   const load = () => api.get("/admin/users").then((r) => setUsers(r.data));
   useEffect(() => { load(); }, []);
@@ -111,7 +112,23 @@ const UsersMgr = () => {
 
   return (
     <div>
-      <h2 className="text-2xl font-bold mb-4">Users</h2>
+      <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
+        <h2 className="text-2xl font-bold">Users</h2>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setLockedOnly(false)}
+            className={`h-8 px-3 rounded-full text-xs font-semibold transition border ${!lockedOnly ? "bg-neutral-900 text-white border-transparent" : "bg-white text-neutral-700 border-neutral-200 hover:border-[#2563EB] hover:text-[#2563EB]"}`}
+            data-testid="users-filter-all"
+          >All users ({users.length})</button>
+          <button
+            type="button"
+            onClick={() => setLockedOnly(true)}
+            className={`h-8 px-3 rounded-full text-xs font-semibold transition border inline-flex items-center gap-1 ${lockedOnly ? "bg-red-600 text-white border-transparent" : "bg-white text-red-700 border-red-200 hover:bg-red-50"}`}
+            data-testid="users-filter-locked"
+          >🔒 Locked only ({users.filter(isLocked).length})</button>
+        </div>
+      </div>
       <div className="bg-white border border-neutral-200 rounded-lg overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-neutral-50 text-left">
@@ -127,7 +144,7 @@ const UsersMgr = () => {
             </tr>
           </thead>
           <tbody>
-            {users.map((u) => (
+            {(lockedOnly ? users.filter(isLocked) : users).map((u) => (
               <tr key={u.id} className="border-t border-neutral-100" data-testid={`admin-user-${u.id}`}>
                 <td className="p-3">
                   <div className="flex items-center gap-2">
