@@ -9,7 +9,6 @@ import {
 
 const RECENT_KEY = "mercari_recent_searches";
 const MAX_RECENT = 8;
-const VIBE_HINTS = ["cozy autumn", "y2k glam", "minimalist desk", "streetwear", "beach picnic", "gamer setup"];
 
 const readRecent = () => { try { return JSON.parse(localStorage.getItem(RECENT_KEY) || "[]"); } catch { return []; } };
 const pushRecent = (q) => {
@@ -34,7 +33,6 @@ const SearchAutocomplete = ({ value, onChange, onSubmit, placeholder, categories
   const [countLoading, setCountLoading] = useState(false);
   const [voiceListening, setVoiceListening] = useState(false);
   const [imgLoading, setImgLoading] = useState(false);
-  const [hintIdx, setHintIdx] = useState(0);
   const boxRef = useRef(null);
   const scopeRef = useRef(null);
   const timerRef = useRef(null);
@@ -46,13 +44,6 @@ const SearchAutocomplete = ({ value, onChange, onSubmit, placeholder, categories
     setRecent(readRecent());
     api.get("/search/trending").then((r) => setTrending(r.data?.trending || [])).catch(() => {});
   }, []);
-
-  // Rotate vibe hint every 3.5s (when idle)
-  useEffect(() => {
-    if (value) return;
-    const iv = setInterval(() => setHintIdx((i) => (i + 1) % VIBE_HINTS.length), 3500);
-    return () => clearInterval(iv);
-  }, [value]);
 
   // Debounced suggestions
   useEffect(() => {
@@ -301,18 +292,6 @@ const SearchAutocomplete = ({ value, onChange, onSubmit, placeholder, categories
             <span><span className="text-[#FF211F] font-bold">{liveCount.toLocaleString()}</span> matches</span>
           ) : null}
         </div>
-      )}
-
-      {/* Vibe hint chip (idle) */}
-      {!value && !open && (
-        <button
-          type="button"
-          onClick={() => navigate(`/search?vibe=${encodeURIComponent(VIBE_HINTS[hintIdx])}`)}
-          className="hidden lg:flex absolute -bottom-6 left-4 text-[11px] items-center gap-1 text-[#FF211F] font-medium hover:underline"
-          data-testid="search-vibe-hint"
-        >
-          <Sparkles className="h-3 w-3" /> Try &ldquo;{VIBE_HINTS[hintIdx]}&rdquo; →
-        </button>
       )}
 
       {/* Dropdown */}
