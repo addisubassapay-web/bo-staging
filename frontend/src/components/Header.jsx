@@ -171,10 +171,10 @@ const Header = () => {
 
             <Link to="/marketplace">
               <button
-                className={`rounded-full bg-gradient-to-r from-[#FF7A18] to-[#FF211F] hover:brightness-110 text-white font-semibold text-sm shadow-sm hover:shadow-md transition-all flex items-center gap-1.5 ${compact ? "h-10 px-4" : "h-11 px-5"}`}
+                className={`rounded-full bg-gradient-to-r from-[#FF7A18] to-[#FF211F] hover:brightness-110 text-white font-semibold text-sm shadow-sm hover:shadow-md transition-all flex items-center gap-1.5 shrink-0 ${compact ? "h-10 px-3 sm:px-4" : "h-11 px-4 sm:px-5"}`}
                 data-testid="header-shopnow-btn"
               >
-                <ShoppingBag className="h-4 w-4" /> Shop Now
+                <ShoppingBag className="h-4 w-4" /> <span className="hidden xs:inline">Shop</span><span className="hidden sm:inline"> Now</span>
               </button>
             </Link>
 
@@ -188,10 +188,10 @@ const Header = () => {
 
             <Link to={user ? "/sell" : "/login"}>
               <button
-                className={`rounded-full bg-gradient-to-r from-[#7DD3FC] to-[#2563EB] hover:brightness-110 text-white font-semibold text-sm shadow-sm hover:shadow-md transition-all flex items-center gap-1.5 ${compact ? "h-10 px-4" : "h-11 px-5"}`}
+                className={`rounded-full bg-gradient-to-r from-[#7DD3FC] to-[#2563EB] hover:brightness-110 text-white font-semibold text-sm shadow-sm hover:shadow-md transition-all flex items-center gap-1.5 shrink-0 ${compact ? "h-10 px-3 sm:px-4" : "h-11 px-4 sm:px-5"}`}
                 data-testid="header-sell-btn"
               >
-                <Package className="h-4 w-4" /> {t("nav.sell")}
+                <Package className="h-4 w-4" /> <span className="hidden xs:inline">{t("nav.sell")}</span>
               </button>
             </Link>
 
