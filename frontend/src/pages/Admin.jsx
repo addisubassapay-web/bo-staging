@@ -10,12 +10,13 @@ import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { LayoutDashboard, Users, Package, ShoppingBag, FolderTree, Trash2, Star, Plus, Settings as SettingsIcon, Wallet, Store as StoreIcon, Save, Check, X as XIcon, Database, IdCard, LayoutGrid, GripVertical, AlertCircle, ShieldAlert, CheckCircle2, XCircle, Clock, MessageCircle, ChevronDown, ChevronUp, Bitcoin, CheckSquare, Square as SquareIcon, Ticket } from "lucide-react";
+import { LayoutDashboard, Users, Package, ShoppingBag, FolderTree, Trash2, Star, Plus, Settings as SettingsIcon, Wallet, Store as StoreIcon, Save, Check, X as XIcon, Database, IdCard, LayoutGrid, GripVertical, AlertCircle, ShieldAlert, CheckCircle2, XCircle, Clock, MessageCircle, ChevronDown, ChevronUp, Bitcoin, CheckSquare, Square as SquareIcon, Ticket, Mail } from "lucide-react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import AdminShelves from "@/pages/AdminShelves";
 import ApifySync from "@/pages/AdminApifySync";
 import AdminPaymentMethods from "@/pages/AdminPaymentMethods";
 import AdminLedgerAudit from "@/pages/AdminLedgerAudit";
+import AdminEmailLog from "@/pages/AdminEmailLog";
 
 const SidebarLink = ({ to, icon: Icon, children }) => (
   <NavLink
@@ -1398,6 +1399,7 @@ const Admin = () => {
         <SidebarLink to="/admin/seller-applications" icon={IdCard}>Seller applications</SidebarLink>
         <SidebarLink to="/admin/shelves" icon={LayoutGrid}>Homepage shelves</SidebarLink>
         <SidebarLink to="/admin/apify-sync" icon={Database}>Apify sync</SidebarLink>
+        <SidebarLink to="/admin/email-log" icon={Mail}>Email log</SidebarLink>
         <SidebarLink to="/admin/settings" icon={SettingsIcon}>Settings</SidebarLink>
       </aside>
       <main>
@@ -1415,6 +1417,7 @@ const Admin = () => {
           <Route path="seller-applications" element={<SellerApplicationsMgr />} />
           <Route path="shelves" element={<AdminShelves />} />
           <Route path="apify-sync" element={<ApifySync />} />
+          <Route path="email-log" element={<AdminEmailLog />} />
           <Route path="settings" element={<SettingsMgr />} />
         </Routes>
       </main>

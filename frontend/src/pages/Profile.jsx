@@ -6,11 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { Star, Edit, Trash2, Package as PackageIcon, CheckCircle2, Snowflake, Truck, Wallet as WalletIcon, BarChart3, Sparkles, Copy, Check, Share2, MessageSquare, Users, TrendingUp } from "lucide-react";
+import { Star, Edit, Trash2, Package as PackageIcon, CheckCircle2, Snowflake, Truck, Wallet as WalletIcon, BarChart3, Sparkles, Copy, Check, Share2, MessageSquare, Users, TrendingUp, Settings as SettingsIcon } from "lucide-react";
 import { ReviewOrderCard } from "@/components/Reviews";
 import { VerificationBadges } from "@/components/VerificationBadges";
 import ShippingTracker from "@/components/ShippingTracker";
 import DigestCard from "@/components/DigestCard";
+import EmailPreferences from "@/components/EmailPreferences";
 
 const BADGE_STEPS = [
   { key: "new", label: "New", threshold: { sales: 0, rating: 0 } },
@@ -346,6 +347,9 @@ const Profile = () => {
           <TabsTrigger value="listings">My listings ({listings.length})</TabsTrigger>
           <TabsTrigger value="orders">Purchases ({orders.length})</TabsTrigger>
           <TabsTrigger value="sales">Sales ({sales.length})</TabsTrigger>
+          <TabsTrigger value="settings" data-testid="profile-tab-settings">
+            <SettingsIcon className="h-3.5 w-3.5 mr-1.5" /> Settings
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="listings">
@@ -497,6 +501,10 @@ const Profile = () => {
               ))}
             </div>
           )}
+        </TabsContent>
+
+        <TabsContent value="settings">
+          <EmailPreferences />
         </TabsContent>
       </Tabs>
     </div>

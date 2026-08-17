@@ -112,6 +112,24 @@ const Checkout = () => {
     try {
       const affiliate_code = sessionStorage.getItem("affiliate_code") || null;
       const share_ref = sessionStorage.getItem("share_ref") || null;
+
+      // Real Stripe Checkout for card payments — everything else stays inline.
+      if (payMethod === "card") {
+        const { data } = await api.post("/checkout/stripe-session", {
+          listing_id: id,
+          quantity,
+          shipping_address: address,
+          origin_url: window.location.origin,
+          affiliate_code,
+          share_ref,
+        });
+        if (data?.checkout_url) {
+          window.location.href = data.checkout_url;
+          return;
+        }
+        throw new Error("Missing checkout URL from server");
+      }
+
       const { data } = await api.post("/orders", { listing_id: id, quantity, shipping_address: address, affiliate_code, share_ref, payment_method: payMethod });
       setDone(data);
       sessionStorage.removeItem("affiliate_code");
@@ -284,15 +302,25 @@ const Checkout = () => {
               })}
             </div>
 
-            {/* Card fields */}
+            {/* Card — real Stripe Checkout redirect */}
             {payMethod === "card" && (
               <div className="space-y-3 animate-in fade-in-50 duration-200" data-testid="pay-card-panel">
-                <div><Label>{t("checkout.cardNumber")}</Label><Input value={card.number} onChange={(e) => setCard({ ...card, number: e.target.value })} className="mt-1 h-11 tabular-nums" /></div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div><Label>{t("checkout.expiry")}</Label><Input value={card.exp} onChange={(e) => setCard({ ...card, exp: e.target.value })} className="mt-1 h-11 tabular-nums" /></div>
-                  <div><Label>{t("checkout.cvc")}</Label><Input value={card.cvc} onChange={(e) => setCard({ ...card, cvc: e.target.value })} className="mt-1 h-11 tabular-nums" /></div>
+                <div className="rounded-2xl border border-sky-200 bg-gradient-to-br from-sky-50 to-white p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="h-9 w-9 rounded-lg bg-sky-500 text-white grid place-items-center shrink-0">
+                      <Lock className="h-4 w-4" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-semibold text-neutral-900">Secure checkout by Stripe</div>
+                      <p className="text-xs text-neutral-600 mt-1">
+                        You&apos;ll be redirected to Stripe&apos;s hosted payment page to enter your card. We never see or store your card details. On success you&apos;ll return here with an order confirmation.
+                      </p>
+                      <p className="text-[11px] text-neutral-500 mt-2">
+                        Test mode — use card <span className="font-mono">4242 4242 4242 4242</span>, any future expiry, any CVC.
+                      </p>
+                    </div>
+                  </div>
                 </div>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400">{t("checkout.demoNote")}</p>
               </div>
             )}
 

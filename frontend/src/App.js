@@ -39,6 +39,8 @@ import SplashScreen from "@/components/SplashScreen";
 import AuthCallback from "@/pages/AuthCallback";
 import StoresMarketplace from "@/pages/StoresMarketplace";
 import AdminCoupons from "@/pages/AdminCoupons";
+import PaymentSuccess from "@/pages/PaymentSuccess";
+import PaymentCancel from "@/pages/PaymentCancel";
 
 function App() {
   return (
@@ -67,6 +69,8 @@ function App() {
                     <Route path="/auth/callback" element={<AuthCallback />} />
                     <Route path="/cart" element={<Cart />} />
                     <Route path="/checkout/:id" element={<Checkout />} />
+                    <Route path="/payment/success" element={<PaymentSuccess />} />
+                    <Route path="/payment/cancel" element={<PaymentCancel />} />
                     <Route path="/favorites" element={<Favorites />} />
                     <Route path="/profile" element={<Profile />} />
                     <Route path="/wallet" element={<Wallet />} />

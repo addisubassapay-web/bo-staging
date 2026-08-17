@@ -26,6 +26,16 @@ Exact replica of Mercari platform (mercari.com) — same color scheme (`#FF211F`
 
 ## Implemented (with dates)
 
+### Feb 2026 — Email Preferences UI, Admin Email Log Viewer, and Real Stripe Checkout
+- **Email Preferences UI** — new Settings tab on `/profile?tab=settings` renders `EmailPreferences` component with 6 category switches (order, sale, wallet, payout, dispute, system). Toggling calls `PUT /api/me/email-prefs` and persists per user. Backend `notify()` already respects the map — sends email only when the corresponding `email_prefs.<kind>` is not `false`.
+- **Admin Email Log** — new sidebar entry `/admin/email-log` (`AdminEmailLog.jsx`) surfaces every `email_log` record with columns for status/kind/recipient/subject/provider/error. Failed rows highlight red; "Failed only" filter and per-kind filter; one-click "Send test" input calls `POST /api/admin/email/test` for pipeline verification.
+- **Real Stripe Checkout** — the mock card path is replaced with a real Stripe Checkout Session. New router `routers/stripe_payments.py`:
+  - `POST /api/checkout/stripe-session` (auth) — server-side totals, saves pending payload to `stripe_pending_orders`, returns hosted `checkout_url`.
+  - `GET /api/payments/status/{session_id}` (public) — polls Stripe; on `paid` finalizes the order by calling `create_order()` idempotently so all existing side-effects (frozen escrow, notifications, ledger) apply.
+  - `POST /api/webhook/stripe` — signature-verified webhook that finalizes the same way.
+  - Frontend `Checkout.jsx` — when `payMethod === 'card'`, shows a "Secure checkout by Stripe" panel and redirects to the hosted checkout on submit. New `PaymentSuccess.jsx` polls the status endpoint and shows an order-confirmation card; `PaymentCancel.jsx` offers a retry link.
+- Uses shared Emergent Stripe sandbox key (`STRIPE_API_KEY=sk_test_emergent`) — no user credential needed. Test card `4242 4242 4242 4242`.
+
 ### Feb 2026 — Unified Ledger Service + Wallet ↔ Checkout Deposit Parity
 - **New `services/ledger.py`** — single source of truth for balance-affecting events. `apply_entry()` is atomic (`$inc` + guard) and always writes a paired `wallet_txs` row. Wrappers: `deposit_approved`, `purchase_debit`, `refund_credit`, `release_frozen`, `reconcile_reseller`.
 - **Every write path now routes through the ledger**: `create_order` wallet payment, dropship wholesale debit, deposit approval, manual + auto dispute refunds. `credit_wallet()` and legacy `release_frozen` are thin wrappers around the ledger for backward compatibility. Extended `WalletTransaction.type` literal with `deposit`, `purchase`, `wholesale_debit`.

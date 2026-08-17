@@ -36,6 +36,7 @@ from routers.listings import router as listings_router
 from routers.personalized import router as personalized_router
 from routers.checkout import router as checkout_router
 from routers.coupons import router as coupons_router
+from routers.stripe_payments import router as stripe_payments_router
 
 
 ROOT_DIR = Path(__file__).parent
@@ -105,6 +106,11 @@ class User(UserBase):
     stripe_status: Literal["none", "pending", "active", "restricted"] = "none"
     weekly_earnings_goal: float = 0.0
     weekly_digest_opt_in: bool = True
+    # Per-kind email preferences (true = send, false = opt-out).
+    email_prefs: dict = Field(default_factory=lambda: {
+        "order": True, "sale": True, "wallet": True,
+        "payout": True, "dispute": True, "system": True,
+    })
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class UserPublic(BaseModel):
@@ -140,6 +146,7 @@ class UserPublic(BaseModel):
     stripe_account_id: Optional[str] = None
     stripe_status: str = "none"
     weekly_earnings_goal: float = 0.0
+    email_prefs: Optional[dict] = None
     created_at: datetime
 
 class AuthResponse(BaseModel):
@@ -742,11 +749,43 @@ async def get_referral_chain(user_id: str, max_levels: int = 3) -> List[str]:
         current_id = u["referred_by"]
     return chain
 
+EMAIL_KINDS = {"order", "sale", "wallet", "payout", "dispute", "system"}
+
+
 async def notify(user_id: str, ntype: str, title: str, body: str = "", link: Optional[str] = None):
     if not user_id:
         return
     n = Notification(user_id=user_id, type=ntype, title=title, body=body, link=link)
     await db.notifications.insert_one(n.model_dump())
+
+    # Also dispatch an email for account-changing events, respecting the
+    # user's per-kind email preferences.
+    if ntype not in EMAIL_KINDS:
+        return
+    try:
+        user = await db.users.find_one(
+            {"id": user_id},
+            {"_id": 0, "email": 1, "username": 1, "email_prefs": 1},
+        )
+        if not user or not user.get("email"):
+            return
+        prefs = user.get("email_prefs") or {}
+        if prefs.get(ntype) is False:
+            return  # user opted out of this category
+        from services import mailer
+        from services.email_templates import _shell, FRONTEND
+        cta_url = f"{FRONTEND}{link}" if link and link.startswith("/") else (link or FRONTEND)
+        subject = f"{title}"
+        html = _shell(title, f"<p>Hi {user.get('username','')},</p><p>{body}</p>", cta_url, "Open Mercari")
+        result = await mailer.send_email(to=user["email"], subject=subject, html=html, tags=[f"notify:{ntype}"])
+        await db.email_log.insert_one({
+            "kind": ntype, "to": user["email"], "user_id": user_id,
+            "subject": subject, "provider": result.get("provider"),
+            "ok": result.get("ok"), "error": result.get("error"),
+            "sent_at": datetime.now(timezone.utc),
+        })
+    except Exception as e:
+        logger.error(f"notify email failed for {user_id} / {ntype}: {e}")
 
 
 
@@ -1327,6 +1366,33 @@ async def admin_update_user(user_id: str, updates: dict, _admin: dict = Depends(
     await db.users.update_one({"id": user_id}, {"$set": filtered})
     doc = await db.users.find_one({"id": user_id}, {"_id": 0, "password_hash": 0})
     return UserPublic(**doc) if doc else {"ok": True}
+
+@api_router.put("/me/email-prefs")
+async def update_email_prefs(payload: dict = Body(...), user: dict = Depends(get_current_user)):
+    """Update the current user's per-kind email opt-in map."""
+    allowed = {"order", "sale", "wallet", "payout", "dispute", "system"}
+    prefs = {k: bool(v) for k, v in (payload or {}).items() if k in allowed}
+    if not prefs:
+        raise HTTPException(400, "Provide at least one preference toggle")
+    current = (user.get("email_prefs") or {})
+    current.update(prefs)
+    await db.users.update_one({"id": user["id"]}, {"$set": {"email_prefs": current}})
+    return {"ok": True, "email_prefs": current}
+
+
+@api_router.get("/admin/email/log")
+async def admin_email_log(limit: int = 100, kind: Optional[str] = None,
+                           _admin: dict = Depends(require_admin)):
+    """List recent email attempts. Filters: `kind`. Sorted newest first."""
+    q: dict = {}
+    if kind:
+        q["kind"] = kind
+    rows = await db.email_log.find(q, {"_id": 0}).sort("sent_at", -1).to_list(min(500, max(1, limit)))
+    for r in rows:
+        if isinstance(r.get("sent_at"), datetime):
+            r["sent_at"] = r["sent_at"].isoformat()
+    return {"items": rows, "count": len(rows)}
+
 
 @api_router.post("/admin/email/test")
 async def admin_email_test(payload: dict = Body(...), _admin: dict = Depends(require_admin)):
@@ -5035,6 +5101,7 @@ app.include_router(listings_router, prefix="/api")
 app.include_router(personalized_router, prefix="/api")
 app.include_router(checkout_router, prefix="/api")
 app.include_router(coupons_router, prefix="/api")
+app.include_router(stripe_payments_router, prefix="/api")
 
 app.add_middleware(
     CORSMiddleware,
