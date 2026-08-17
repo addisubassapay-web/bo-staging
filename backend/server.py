@@ -125,6 +125,9 @@ class UserPublic(BaseModel):
     email_verified: bool = False
     resell_markup_override: Optional[float] = None
     created_at: Optional[datetime] = None
+    # Security — soft-lock state (surfaced to admins for one-click unlock)
+    failed_login_attempts: int = 0
+    locked_until: Optional[datetime] = None
     # Seller badge & resell caps ----------------------------------------
     # `badge` is auto-derived from sales_count + rating unless the admin
     # sets `resell_markup_override` — a hard cap (%) that bypasses the tier table.
@@ -1324,6 +1327,25 @@ async def admin_update_user(user_id: str, updates: dict, _admin: dict = Depends(
     await db.users.update_one({"id": user_id}, {"$set": filtered})
     doc = await db.users.find_one({"id": user_id}, {"_id": 0, "password_hash": 0})
     return UserPublic(**doc) if doc else {"ok": True}
+
+@api_router.post("/admin/users/{user_id}/unlock")
+async def admin_unlock_user(user_id: str, _admin: dict = Depends(require_admin)):
+    """Clear a soft-locked account so the user can sign in again. Resets
+    `failed_login_attempts` and `locked_until` and stamps an audit note."""
+    exists = await db.users.find_one({"id": user_id}, {"_id": 0, "id": 1, "username": 1})
+    if not exists:
+        raise HTTPException(404, "User not found")
+    await db.users.update_one(
+        {"id": user_id},
+        {"$set": {
+            "failed_login_attempts": 0,
+            "locked_until": None,
+            "unlocked_at": datetime.now(timezone.utc),
+            "unlocked_by_admin_id": _admin["id"],
+        }},
+    )
+    return {"ok": True, "user_id": user_id, "username": exists.get("username")}
+
 
 @api_router.delete("/admin/users/{user_id}")
 async def admin_delete_user(user_id: str, _admin: dict = Depends(require_admin)):

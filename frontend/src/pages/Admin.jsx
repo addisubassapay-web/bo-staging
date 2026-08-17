@@ -91,6 +91,24 @@ const UsersMgr = () => {
     }
   };
 
+  const unlock = async (u) => {
+    try {
+      await api.post(`/admin/users/${u.id}/unlock`);
+      toast({ title: `${u.username} unlocked`, description: "Failed-attempt counter reset. They can sign in again." });
+      load();
+    } catch (e) {
+      toast({ title: "Unlock failed", description: e?.response?.data?.detail || "Try again", variant: "destructive" });
+    }
+  };
+  const isLocked = (u) => {
+    if (!u.locked_until) return false;
+    return new Date(u.locked_until).getTime() > Date.now();
+  };
+  const lockSecondsLeft = (u) => {
+    if (!u.locked_until) return 0;
+    return Math.max(0, Math.floor((new Date(u.locked_until).getTime() - Date.now()) / 1000));
+  };
+
   return (
     <div>
       <h2 className="text-2xl font-bold mb-4">Users</h2>
@@ -104,6 +122,7 @@ const UsersMgr = () => {
               <th className="p-3">Sales</th>
               <th className="p-3" title="Personal markup cap that overrides the badge tier">Resell cap %</th>
               <th className="p-3">Status</th>
+              <th className="p-3">Login lock</th>
               <th className="p-3"></th>
             </tr>
           </thead>
@@ -153,6 +172,36 @@ const UsersMgr = () => {
                     <Switch checked={u.is_active} onCheckedChange={() => toggleActive(u)} />
                     <span className="text-xs text-neutral-500">{u.is_active ? "Active" : "Disabled"}</span>
                   </div>
+                </td>
+                <td className="p-3">
+                  {isLocked(u) ? (
+                    <div className="flex items-center gap-2" data-testid={`user-lock-cell-${u.id}`}>
+                      <span className="inline-flex items-center gap-1 rounded-full bg-red-50 text-red-700 border border-red-200 px-2 py-0.5 text-[11px] font-semibold">
+                        🔒 Locked · {lockSecondsLeft(u)}s
+                      </span>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => unlock(u)}
+                        className="h-7 px-2 text-xs border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+                        data-testid={`user-unlock-btn-${u.id}`}
+                      >Unlock</Button>
+                    </div>
+                  ) : u.failed_login_attempts > 0 ? (
+                    <div className="flex items-center gap-2" data-testid={`user-lock-cell-${u.id}`}>
+                      <span className="text-xs text-amber-600 font-semibold">{u.failed_login_attempts} failed</span>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => unlock(u)}
+                        className="h-7 px-2 text-xs text-neutral-500 hover:text-emerald-700"
+                        title="Reset failed-login counter"
+                        data-testid={`user-unlock-btn-${u.id}`}
+                      >Reset</Button>
+                    </div>
+                  ) : (
+                    <span className="text-xs text-neutral-400">—</span>
+                  )}
                 </td>
                 <td className="p-3 text-right">
                   <Button variant="ghost" size="sm" onClick={() => del(u)}><Trash2 className="h-4 w-4 text-neutral-500" /></Button>
