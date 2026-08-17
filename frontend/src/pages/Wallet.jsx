@@ -459,11 +459,22 @@ const ReinvestDialog = ({ open, onOpenChange, frozenBalance, onSubmitted }) => {
   const { toast } = useToast();
   const [amount, setAmount] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  useEffect(() => { if (open) setAmount(""); }, [open]);
+  const [quote, setQuote] = useState({ frozen_balance: 0, pending_wholesale: 0, max_reinvest: 0, open_orders: 0 });
+  const [loadingQuote, setLoadingQuote] = useState(false);
+  useEffect(() => {
+    if (!open) return;
+    setAmount("");
+    setLoadingQuote(true);
+    api.get("/wallet/reinvest/quote")
+      .then((r) => setQuote(r.data || { frozen_balance: frozenBalance, pending_wholesale: 0, max_reinvest: 0, open_orders: 0 }))
+      .catch(() => setQuote({ frozen_balance: frozenBalance, pending_wholesale: 0, max_reinvest: 0, open_orders: 0 }))
+      .finally(() => setLoadingQuote(false));
+  }, [open, frozenBalance]);
+  const cap = quote.max_reinvest || 0;
   const submit = async () => {
     const amt = parseFloat(amount);
     if (!amt || amt < 1) { toast({ title: "Enter a valid amount (≥ $1)", variant: "destructive" }); return; }
-    if (amt > frozenBalance) { toast({ title: "Not enough frozen balance", description: `Available frozen: $${frozenBalance.toFixed(2)}`, variant: "destructive" }); return; }
+    if (amt > cap) { toast({ title: "Above reinvest cap", description: `Your open orders need $${cap.toFixed(2)} in wholesale funding.`, variant: "destructive" }); return; }
     setSubmitting(true);
     try {
       const { data } = await api.post("/wallet/reinvest", { amount: amt });
@@ -483,12 +494,33 @@ const ReinvestDialog = ({ open, onOpenChange, frozenBalance, onSubmitted }) => {
         <DialogHeader><DialogTitle>Reinvest frozen funds</DialogTitle></DialogHeader>
         <div className="space-y-4 py-2">
           <div className="rounded-xl bg-gradient-to-br from-sky-50 to-blue-50 border border-blue-200 p-4">
-            <div className="text-xs uppercase font-semibold text-blue-800 tracking-wider">Frozen escrow available</div>
-            <div className="mt-1 text-3xl font-bold tabular-nums text-blue-900" data-testid="reinvest-frozen-value">${frozenBalance.toFixed(2)}</div>
+            <div className="text-xs uppercase font-semibold text-blue-800 tracking-wider">Reinvest cap</div>
+            <div className="mt-1 text-3xl font-bold tabular-nums text-blue-900" data-testid="reinvest-frozen-value">
+              {loadingQuote ? "…" : `$${cap.toFixed(2)}`}
+            </div>
             <p className="text-xs text-blue-900/70 mt-2 leading-relaxed">
-              Unlock a portion of your unreleased sale earnings so you can pay wholesale on incoming orders and ship faster. The amount moves from frozen → available and appears in your ledger as an advance.
+              Unlocks the wholesale funding your open dropship orders need. Capped at the lower of your frozen escrow and the total wholesale cost of un-fulfilled incoming orders.
             </p>
+            <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+              <div className="rounded-md bg-white/70 border border-blue-100 px-2 py-1.5" data-testid="reinvest-quote-frozen">
+                <div className="text-blue-700/80 uppercase tracking-wider text-[10px] font-semibold">Frozen escrow</div>
+                <div className="font-bold tabular-nums text-blue-900">${(quote.frozen_balance || 0).toFixed(2)}</div>
+              </div>
+              <div className="rounded-md bg-white/70 border border-blue-100 px-2 py-1.5" data-testid="reinvest-quote-pending">
+                <div className="text-blue-700/80 uppercase tracking-wider text-[10px] font-semibold">Open wholesale demand</div>
+                <div className="font-bold tabular-nums text-blue-900">${(quote.pending_wholesale || 0).toFixed(2)}</div>
+                <div className="text-[10px] text-blue-700/80">{quote.open_orders || 0} order{quote.open_orders === 1 ? "" : "s"}</div>
+              </div>
+            </div>
           </div>
+          {cap <= 0 && !loadingQuote && (
+            <div className="rounded-lg bg-neutral-50 border border-neutral-200 text-neutral-600 text-xs p-3" data-testid="reinvest-empty-hint">
+              You don&apos;t have any un-fulfilled dropship orders that need wholesale funding right now.
+              {quote.frozen_balance > 0 && quote.pending_wholesale === 0 && (
+                <span className="block mt-1">Your frozen escrow of ${quote.frozen_balance.toFixed(2)} will auto-release once your existing orders are delivered.</span>
+              )}
+            </div>
+          )}
           <div>
             <Label className="text-sm">Amount to unlock (USD)</Label>
             <Input
@@ -496,16 +528,17 @@ const ReinvestDialog = ({ open, onOpenChange, frozenBalance, onSubmitted }) => {
               inputMode="decimal"
               step="0.01"
               min={1}
-              max={frozenBalance}
+              max={cap}
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               placeholder="0.00"
               className="h-11 mt-1.5 text-base font-semibold tabular-nums"
+              disabled={cap <= 0}
               data-testid="reinvest-amount"
             />
             <div className="mt-2 flex gap-2">
               {[25, 50, 100].map((p) => {
-                const v = Math.floor(frozenBalance * (p / 100) * 100) / 100;
+                const v = Math.floor(cap * (p / 100) * 100) / 100;
                 return (
                   <button
                     key={p}
@@ -524,7 +557,7 @@ const ReinvestDialog = ({ open, onOpenChange, frozenBalance, onSubmitted }) => {
           <Button variant="outline" onClick={() => onOpenChange(false)} data-testid="reinvest-cancel">Cancel</Button>
           <Button
             onClick={submit}
-            disabled={submitting || !amount}
+            disabled={submitting || !amount || cap <= 0}
             className="bg-gradient-to-r from-[#7DD3FC] to-[#2563EB] hover:brightness-110"
             data-testid="reinvest-submit"
           >{submitting ? "Unlocking…" : "Unlock funds"}</Button>

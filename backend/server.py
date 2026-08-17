@@ -1951,6 +1951,75 @@ async def user_reconcile_wallet(user: dict = Depends(get_current_user)):
         raise HTTPException(500, str(e))
 
 
+async def _reinvest_quote(user: dict) -> dict:
+    """Compute the seller's pending wholesale demand — how much they will
+    owe (or have already fronted) to source sellers for in-progress
+    dropship orders whose funds haven't been released yet.
+
+    Returns {frozen_balance, pending_wholesale, max_reinvest} where
+    max_reinvest is capped at the min of the two so sellers only unlock
+    what they realistically need for open fulfillment obligations.
+    """
+    fresh = await db.users.find_one({"id": user["id"]}, {"_id": 0, "wallet_frozen_balance": 1}) or {}
+    frozen = round(float(fresh.get("wallet_frozen_balance", 0.0) or 0.0), 2)
+
+    settings = await get_settings()
+    badge = compute_seller_badge(user)
+    discounts = settings.get("resell_wholesale_discounts") or {"new": 0.0, "bronze": 5.0, "silver": 10.0, "gold": 15.0}
+    discount_pct = float(discounts.get(badge, 0.0))
+
+    # Un-fulfilled incoming orders where this user is the SELLER of a
+    # dropship listing. Anything past `funds_released` no longer counts.
+    orders = await db.orders.find(
+        {
+            "seller_id": user["id"],
+            "status": {"$in": ["paid", "shipped"]},
+            "funds_released": {"$ne": True},
+        },
+        {"_id": 0, "id": 1, "listing_id": 1, "quantity": 1, "reseller_wholesale_cost": 1,
+         "reseller_paid_wholesale": 1, "unit_price": 1},
+    ).to_list(500)
+
+    if not orders:
+        return {"frozen_balance": frozen, "pending_wholesale": 0.0, "max_reinvest": 0.0, "open_orders": 0}
+
+    listing_ids = list({o["listing_id"] for o in orders})
+    listings = {
+        d["id"]: d for d in await db.listings.find(
+            {"id": {"$in": listing_ids}, "imported_from_id": {"$ne": None}},
+            {"_id": 0, "id": 1, "base_price": 1, "imported_from_id": 1},
+        ).to_list(len(listing_ids))
+    }
+
+    pending = 0.0
+    open_count = 0
+    for o in orders:
+        listing = listings.get(o["listing_id"])
+        if not listing:
+            continue  # not a dropship listing → no wholesale demand
+        # Use recorded wholesale if we already debited it (source of truth),
+        # otherwise project it from base_price × qty × (1 - discount).
+        if o.get("reseller_paid_wholesale") and float(o.get("reseller_wholesale_cost") or 0) > 0:
+            pending += float(o["reseller_wholesale_cost"])
+        else:
+            base = float(listing.get("base_price") or 0.0) * int(o.get("quantity") or 1)
+            pending += round(base * (1 - discount_pct / 100.0), 2)
+        open_count += 1
+    pending = round(pending, 2)
+
+    return {
+        "frozen_balance": frozen,
+        "pending_wholesale": pending,
+        "max_reinvest": round(min(frozen, pending), 2),
+        "open_orders": open_count,
+    }
+
+
+@api_router.get("/wallet/reinvest/quote")
+async def reinvest_quote(user: dict = Depends(get_current_user)):
+    return await _reinvest_quote(user)
+
+
 @api_router.post("/wallet/reinvest")
 async def wallet_reinvest(payload: dict = Body(...), user: dict = Depends(get_current_user)):
     """Unlock a portion of the seller's frozen balance early so they can use
@@ -1971,6 +2040,19 @@ async def wallet_reinvest(payload: dict = Body(...), user: dict = Depends(get_cu
     frozen = round(float(fresh.get("wallet_frozen_balance", 0.0) or 0.0), 2)
     if amount > frozen:
         raise HTTPException(400, f"Insufficient frozen balance. Available frozen ${frozen:.2f}, requested ${amount:.2f}")
+
+    # Guardrail — cap unlock to open dropship-wholesale demand so sellers
+    # only tap escrow when they actually need cash for fulfillment.
+    quote = await _reinvest_quote(user)
+    max_reinvest = float(quote.get("max_reinvest", 0.0))
+    if max_reinvest <= 0:
+        raise HTTPException(400, "You have no un-fulfilled dropship orders that need wholesale funding right now.")
+    if amount > max_reinvest:
+        raise HTTPException(
+            400,
+            f"Reinvest cap is ${max_reinvest:.2f} — the wholesale cost of your open orders. "
+            f"Requested ${amount:.2f}.",
+        )
 
     order_id = payload.get("order_id") or None
     label = f"Reinvest advance{f' for order #{str(order_id)[:8]}' if order_id else ''}"
