@@ -5,9 +5,17 @@ Extracted from server.py in Server-Split Phase B. Uses the shim helpers
 declared in `routers.deps` (which lazy-import from server) plus a lazy
 import of the auth Pydantic models to avoid a circular import at
 module-load time.
+
+Security additions (Feb 2026):
+- Rate-limited login: after MAX_FAILED_ATTEMPTS bad passwords the account
+  is soft-locked for LOCKOUT_MINUTES. Successful login clears the counter.
+- Generic error message to avoid revealing which field was wrong.
+- IP-scoped throttle fallback for unknown-email attempts.
 """
 from __future__ import annotations
-from fastapi import APIRouter, Depends, HTTPException
+from datetime import datetime, timezone, timedelta
+
+from fastapi import APIRouter, Depends, HTTPException, Request
 
 from .deps import (
     get_db,
@@ -22,12 +30,43 @@ from .deps import (
 
 router = APIRouter()
 
+MAX_FAILED_ATTEMPTS = 5
+LOCKOUT_MINUTES = 15
+GENERIC_INVALID = "Invalid email or password"
+
 
 def _models():
     """Lazy import server-side Pydantic models. Server.py finishes loading
     before any router endpoint fires, so this is always safe at call time."""
     from server import User, UserCreate, UserLogin, UserPublic, AuthResponse
     return User, UserCreate, UserLogin, UserPublic, AuthResponse
+
+
+def _now():
+    return datetime.now(timezone.utc)
+
+
+async def _register_failed(db, user):
+    attempts = int(user.get("failed_login_attempts", 0)) + 1
+    updates: dict = {"failed_login_attempts": attempts, "last_failed_at": _now()}
+    if attempts >= MAX_FAILED_ATTEMPTS:
+        updates["locked_until"] = _now() + timedelta(minutes=LOCKOUT_MINUTES)
+    await db.users.update_one({"id": user["id"]}, {"$set": updates})
+
+
+async def _clear_failed(db, user_id):
+    await db.users.update_one(
+        {"id": user_id},
+        {"$set": {"failed_login_attempts": 0, "locked_until": None, "last_login_at": _now()}},
+    )
+
+
+def _seconds_left(locked_until) -> int:
+    if not locked_until:
+        return 0
+    if locked_until.tzinfo is None:
+        locked_until = locked_until.replace(tzinfo=timezone.utc)
+    return max(0, int((locked_until - _now()).total_seconds()))
 
 
 @router.post("/auth/register")
@@ -60,15 +99,62 @@ async def register(payload: dict):
 
 
 @router.post("/auth/login")
-async def login(payload: dict):
+async def login(payload: dict, request: Request):
     _U, _UC, UserLogin, UserPublic, AuthResponse = _models()
     body = UserLogin(**payload)
     db = get_db()
     user = await db.users.find_one({"email": body.email})
-    if not user or not verify_password(body.password, user.get("password_hash", "")):
-        raise HTTPException(status_code=401, detail="Invalid credentials")
+
+    # Rate-limit unknown emails per IP so attackers can't enumerate accounts.
+    if not user:
+        ip = (request.client.host if request.client else "unknown")
+        key = f"ip:{ip}"
+        ip_row = await db.login_throttle.find_one({"key": key}, {"_id": 0})
+        attempts = int((ip_row or {}).get("attempts", 0)) + 1
+        window_start = (ip_row or {}).get("window_start") or _now()
+        if window_start.tzinfo is None:
+            window_start = window_start.replace(tzinfo=timezone.utc)
+        if (_now() - window_start).total_seconds() > LOCKOUT_MINUTES * 60:
+            attempts = 1
+            window_start = _now()
+        await db.login_throttle.update_one(
+            {"key": key},
+            {"$set": {"attempts": attempts, "window_start": window_start, "last_at": _now()}},
+            upsert=True,
+        )
+        if attempts > MAX_FAILED_ATTEMPTS * 2:
+            raise HTTPException(status_code=429, detail="Too many attempts from this network. Try again later.")
+        raise HTTPException(status_code=401, detail=GENERIC_INVALID)
+
+    # Soft-lock check
+    locked_until = user.get("locked_until")
+    secs = _seconds_left(locked_until)
+    if secs > 0:
+        raise HTTPException(
+            status_code=423,
+            detail={
+                "detail": f"Account locked after too many failed attempts. Retry in {secs}s.",
+                "retry_after": secs,
+            },
+        )
+
+    if not verify_password(body.password, user.get("password_hash", "")):
+        await _register_failed(db, user)
+        remaining = MAX_FAILED_ATTEMPTS - (int(user.get("failed_login_attempts", 0)) + 1)
+        if remaining <= 0:
+            raise HTTPException(
+                status_code=423,
+                detail={
+                    "detail": f"Too many failed attempts. Account locked for {LOCKOUT_MINUTES} minutes.",
+                    "retry_after": LOCKOUT_MINUTES * 60,
+                },
+            )
+        raise HTTPException(status_code=401, detail=GENERIC_INVALID)
+
     if not user.get("is_active", True):
         raise HTTPException(status_code=403, detail="Account disabled")
+
+    await _clear_failed(db, user["id"])
     token = create_token(user["id"], user["role"])
     return AuthResponse(token=token, user=UserPublic(**to_public_user(user)))
 

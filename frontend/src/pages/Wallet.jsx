@@ -15,6 +15,7 @@ import {
   Snowflake, Copy, Check, Bitcoin, Building2, Plus, Minus, RotateCcw, Upload, X as XIcon, Sparkles,
   ChevronDown, ChevronUp,
 } from "lucide-react";
+import { useBalanceVisibility, BalanceValue, BalanceEyeToggle } from "@/components/BalanceMask";
 
 const typeMeta = {
   sale: { label: "Sale", color: "text-green-600" },
@@ -619,6 +620,7 @@ const Wallet = () => {
   const [rfOpen, setRfOpen] = useState(false);
   const [riOpen, setRiOpen] = useState(false);
   const [expandedTx, setExpandedTx] = useState(null);
+  const [balanceVisible, toggleBalance] = useBalanceVisibility();
 
   const load = async () => {
     const [w, m, d] = await Promise.allSettled([
@@ -660,12 +662,17 @@ const Wallet = () => {
 
       <div className="grid md:grid-cols-3 gap-4 mb-8">
         <div className="md:col-span-2 bg-gradient-to-br from-[#FF211F] to-[#c81816] text-white rounded-xl p-5 sm:p-6">
-          <div className="text-sm opacity-90">Available balance</div>
-          <div className="text-3xl sm:text-4xl font-bold mt-2" data-testid="wallet-available">{formatPrice(data.balance)}</div>
+          <div className="flex items-center justify-between">
+            <div className="text-sm opacity-90">Available balance</div>
+            <BalanceEyeToggle visible={balanceVisible} onToggle={toggleBalance} testId="wallet-balance-toggle" />
+          </div>
+          <div className="text-3xl sm:text-4xl font-bold mt-2" data-testid="wallet-available">
+            <BalanceValue value={data.balance} visible={balanceVisible} />
+          </div>
           {data.frozen_balance > 0 && (
             <div className="mt-3 inline-flex items-center gap-1.5 text-xs bg-white/15 backdrop-blur-sm rounded-full px-3 py-1" data-testid="wallet-frozen-chip">
               <Snowflake className="h-3.5 w-3.5" />
-              <span>Frozen: <span className="font-semibold tabular-nums">{formatPrice(data.frozen_balance)}</span></span>
+              <span>Frozen: <span className="font-semibold tabular-nums"><BalanceValue value={data.frozen_balance} visible={balanceVisible} /></span></span>
               <span className="opacity-80 hidden sm:inline">· released after delivery is confirmed</span>
             </div>
           )}

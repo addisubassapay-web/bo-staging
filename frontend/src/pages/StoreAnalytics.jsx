@@ -4,6 +4,7 @@ import api, { formatPrice } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useBalanceVisibility, BalanceValue, BalanceEyeToggle } from "@/components/BalanceMask";
 import confetti from "canvas-confetti";
 import {
   TrendingUp, DollarSign, Package, Eye, Heart, Wallet, Clock,
@@ -194,6 +195,7 @@ const StoreAnalytics = () => {
   const [latestPublished, setLatestPublished] = useState([]);
   const [myStoreSlug, setMyStoreSlug] = useState(null);
   const [discoveries, setDiscoveries] = useState({ items: [], total: 0 });
+  const [balanceVisible, toggleBalance] = useBalanceVisibility();
 
   useEffect(() => {
     if (!user) return;
@@ -295,23 +297,26 @@ const StoreAnalytics = () => {
         </div>
         <div className="relative mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
           <div className="bg-white/15 backdrop-blur rounded-xl p-3 border border-white/20">
-            <div className="text-xs opacity-80">Today</div>
-            <div className="text-xl font-bold tabular-nums">{money(t.today_earnings)}</div>
+            <div className="flex items-center justify-between">
+              <div className="text-xs opacity-80">Today</div>
+              <BalanceEyeToggle visible={balanceVisible} onToggle={toggleBalance} testId="analytics-balance-toggle" className="h-6 w-6" size={3} />
+            </div>
+            <div className="text-xl font-bold tabular-nums"><BalanceValue value={t.today_earnings} visible={balanceVisible} /></div>
             <div className="text-[11px] opacity-80">{t.today_orders} orders</div>
           </div>
           <div className="bg-white/15 backdrop-blur rounded-xl p-3 border border-white/20">
             <div className="text-xs opacity-80">30-day earnings</div>
-            <div className="text-xl font-bold tabular-nums">{money(t.earnings_30d)}</div>
+            <div className="text-xl font-bold tabular-nums"><BalanceValue value={t.earnings_30d} visible={balanceVisible} /></div>
             <div className="text-[11px] opacity-80">{t.orders_30d} orders</div>
           </div>
           <div className="bg-white/15 backdrop-blur rounded-xl p-3 border border-white/20">
             <div className="text-xs opacity-80">Wallet</div>
-            <div className="text-xl font-bold tabular-nums">{money(t.wallet_balance)}</div>
+            <div className="text-xl font-bold tabular-nums"><BalanceValue value={t.wallet_balance} visible={balanceVisible} /></div>
             <div className="text-[11px] opacity-80">Available now</div>
           </div>
           <div className="bg-white/15 backdrop-blur rounded-xl p-3 border border-white/20">
             <div className="text-xs opacity-80">Pending payout</div>
-            <div className="text-xl font-bold tabular-nums">{money(t.pending_payout)}</div>
+            <div className="text-xl font-bold tabular-nums"><BalanceValue value={t.pending_payout} visible={balanceVisible} /></div>
             <div className="text-[11px] opacity-80">{t.pending_payout > 0 ? "Processing" : "Nothing pending"}</div>
           </div>
         </div>
@@ -376,7 +381,7 @@ const StoreAnalytics = () => {
         <StatCard icon={Package} label="Active listings" value={data.listings.active} sub={`${data.listings.sold} sold total`} tone="orange" testid="stat-active" />
         <StatCard icon={Zap} label="Flash deals live" value={data.listings.flash} sub="Auto-rotated daily" tone="sky" testid="stat-flash" />
         <StatCard icon={Eye} label="Impressions" value={data.engagement.views.toLocaleString()} sub={`${data.engagement.likes.toLocaleString()} likes`} tone="violet" testid="stat-impressions" />
-        <StatCard icon={DollarSign} label="Wallet" value={money(t.wallet_balance)} sub={t.pending_payout > 0 ? `+ ${money(t.pending_payout)} pending` : "—"} tone="emerald" testid="stat-wallet" />
+        <StatCard icon={DollarSign} label="Wallet" value={balanceVisible ? money(t.wallet_balance) : "••••••"} sub={t.pending_payout > 0 ? `+ ${balanceVisible ? money(t.pending_payout) : "••••"} pending` : "—"} tone="emerald" testid="stat-wallet" />
       </div>
 
       {/* Recent orders */}
@@ -464,7 +469,7 @@ const StoreAnalytics = () => {
             </div>
             <p className="text-sm text-neutral-500 mt-1">Move your earnings to your bank once your wallet is above $10.</p>
             <div className="mt-3 flex items-baseline gap-2">
-              <span className="text-2xl font-bold">{money(t.wallet_balance)}</span>
+              <span className="text-2xl font-bold"><BalanceValue value={t.wallet_balance} visible={balanceVisible} /></span>
               <span className="text-xs text-neutral-500">available</span>
             </div>
             <Link to="/wallet"><Button className="mt-3 w-full bg-emerald-600 hover:bg-emerald-700">Withdraw</Button></Link>
