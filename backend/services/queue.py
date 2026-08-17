@@ -58,7 +58,11 @@ async def scrape_url_task(ctx: dict, job_id: str) -> dict:
 
     url = job["url"]
     try:
-        payload = await extract_product(url, geolocation=job.get("geolocation") or None)
+        payload = await extract_product(
+            url,
+            geolocation=job.get("geolocation") or None,
+            high_fidelity=bool(job.get("high_fidelity")),
+        )
         listing = normalize_product(payload)
 
         # Rehost images to R2 (falls back to supplier URL when R2 disabled)

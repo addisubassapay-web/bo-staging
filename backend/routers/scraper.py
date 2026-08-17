@@ -36,6 +36,17 @@ class ScrapeJobCreate(BaseModel):
     url: str = Field(..., min_length=8, max_length=2048)
     auto_publish: bool = False
     geolocation: Optional[str] = None  # e.g. "US", "GB"
+    high_fidelity: bool = False        # force browser rendering (paid tier)
+    category_id: Optional[str] = None  # remembered for downstream publish
+    batch_id: Optional[str] = None
+
+
+class BulkScrapeCreate(BaseModel):
+    urls: list[str] = Field(..., min_length=1, max_length=20)
+    category_id: Optional[str] = None
+    auto_publish: bool = False
+    geolocation: Optional[str] = None
+    high_fidelity: bool = False
 
 
 @router.post("/jobs")
@@ -54,7 +65,10 @@ async def create_scrape_job(payload: ScrapeJobCreate, user: dict = Depends(get_c
         "owner_email": user.get("email"),
         "url": payload.url,
         "geolocation": payload.geolocation,
+        "high_fidelity": bool(payload.high_fidelity),
         "auto_publish": bool(payload.auto_publish),
+        "category_id": payload.category_id,
+        "batch_id": payload.batch_id,
         "status": "queued",
         "provider": "zyte",
         "result": None,
@@ -73,6 +87,102 @@ async def create_scrape_job(payload: ScrapeJobCreate, user: dict = Depends(get_c
         )
         raise HTTPException(503, f"Queue unavailable: {e}")
     return {"id": job_id, "status": "queued", "url": payload.url}
+
+
+@router.post("/jobs/bulk")
+async def create_bulk_scrape(payload: BulkScrapeCreate, user: dict = Depends(get_current_user)):
+    """Enqueue up to 20 URLs at once with a shared category + batch id.
+    Bad URLs are rejected upfront; the response reports which ones queued."""
+    if not (os.environ.get("ZYTE_API_KEY") or "").strip():
+        raise HTTPException(503, "Zyte API key is not configured")
+
+    valid: list[str] = []
+    rejected: list[dict] = []
+    seen: set[str] = set()
+    for u in payload.urls:
+        u = (u or "").strip()
+        if not u:
+            continue
+        if u in seen:
+            rejected.append({"url": u, "reason": "duplicate"})
+            continue
+        seen.add(u)
+        if not _valid_url(u):
+            rejected.append({"url": u, "reason": "invalid_url"})
+        else:
+            valid.append(u)
+
+    if not valid:
+        raise HTTPException(400, "No valid URLs provided")
+
+    db = get_db()
+    batch_id = str(uuid.uuid4())
+    now = datetime.now(timezone.utc)
+    queued: list[dict] = []
+
+    for url in valid:
+        job_id = str(uuid.uuid4())
+        doc = {
+            "id": job_id,
+            "owner_id": user["id"],
+            "owner_email": user.get("email"),
+            "url": url,
+            "geolocation": payload.geolocation,
+            "high_fidelity": bool(payload.high_fidelity),
+            "auto_publish": bool(payload.auto_publish),
+            "category_id": payload.category_id,
+            "batch_id": batch_id,
+            "status": "queued",
+            "provider": "zyte",
+            "result": None,
+            "error": None,
+            "created_at": now,
+            "updated_at": now,
+            "attempts": 0,
+        }
+        await db.scraper_jobs.insert_one(doc)
+        try:
+            await enqueue_scrape(job_id)
+            queued.append({"id": job_id, "url": url})
+        except Exception as e:
+            await db.scraper_jobs.update_one(
+                {"id": job_id},
+                {"$set": {"status": "failed", "error": {"provider": "queue", "message": str(e)}}},
+            )
+            rejected.append({"url": url, "reason": f"queue_error: {e}"})
+
+    await db.scraper_batches.insert_one({
+        "id": batch_id,
+        "owner_id": user["id"],
+        "category_id": payload.category_id,
+        "high_fidelity": bool(payload.high_fidelity),
+        "total": len(queued),
+        "created_at": now,
+    })
+    return {
+        "batch_id": batch_id,
+        "queued_count": len(queued),
+        "queued": queued,
+        "rejected": rejected,
+    }
+
+
+@router.get("/batches/{batch_id}")
+async def get_batch_status(batch_id: str, user: dict = Depends(get_current_user)):
+    """Aggregate status for a bulk import batch."""
+    db = get_db()
+    batch = await db.scraper_batches.find_one({"id": batch_id}, {"_id": 0})
+    if not batch:
+        raise HTTPException(404, "Batch not found")
+    if batch.get("owner_id") != user["id"] and user.get("role") != "admin":
+        raise HTTPException(403, "Not your batch")
+    jobs = await db.scraper_jobs.find(
+        {"batch_id": batch_id}, {"_id": 0}
+    ).sort("created_at", 1).to_list(200)
+    counts = {"queued": 0, "running": 0, "done": 0, "failed": 0}
+    for j in jobs:
+        counts[j.get("status", "queued")] = counts.get(j.get("status", "queued"), 0) + 1
+    return {"batch": batch, "jobs": jobs, "counts": counts, "total": len(jobs)}
 
 
 @router.get("/jobs/{job_id}")

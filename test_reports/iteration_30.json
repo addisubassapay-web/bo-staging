@@ -1,0 +1,27 @@
+{
+  "summary": "Bulk URL Import + Amazon Full Pull (high_fidelity) tested end-to-end. Added 11 new pytest cases in test_scraper_bulk.py covering /scraper/jobs/bulk validation (all-invalid=400, >20=422, dedupe, invalid_url reason, missing auth), /scraper/batches/{id} (owner, 404, cross-user 403, admin can read, polling to completion), and POST /jobs with high_fidelity=true (flag persisted, extract_from resolves to browserHtml_hi/httpResponseBody/browserHtml). All 11 new tests pass. Regression test_scraper.py (14 tests) still passes. Frontend /sell → Import tab renders both single ImportFromUrl and BulkImportFromUrls panels; textarea counter shows 'N of 20 URLs'; category select loads /api/categories; hifi switch toggles; submit flips to progress view; polling every 3s updated counts 0→2 done; Reset button restores textarea; single ImportFromUrl hifi toggle sets data-state=checked and submits with high_fidelity:true. /admin/scraper regression page still shows Zyte pipeline health pills and jobs table (browserHtml_hi mode visible for hifi jobs).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_scraper.py",
+    "/app/backend/tests/test_scraper_bulk.py",
+    "/app/test_reports/pytest/scraper_bulk_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "routers/scraper.py: get_batch_status uses counts.get(status,'queued') defaulting unknown statuses into 'queued' — fine today (only 4 statuses exist) but could hide future status names. Consider explicit whitelist.",
+    "BulkImportFromUrls.jsx: Progress polling continues at 3s intervals even when the tab is hidden. Same nit as AdminScraper polling — consider document.visibilityState guard.",
+    "BulkImportFromUrls.jsx: 'Review N extracted items' button only renders when onBatchReady prop is passed. Sell.jsx currently mounts <BulkImportFromUrls /> without onBatchReady, so sellers cannot import bulk-extracted listings into the create form. Feature is essentially display-only right now — flagging as a follow-up product decision, not a bug per spec.",
+    "services/zyte.py extract_product high_fidelity path swallows any ZyteError and silently falls back to fast path — this hides plan-limit visibility. Consider logging the failure so admins see it in queue logs.",
+    "Pydantic max_length=20 returns 422 (FastAPI unprocessable entity) rather than 400. Spec said 'rejects >20 (Pydantic max_length)' so this is compliant; noting for the E1 in case a 400 was expected."
+  ],
+  "updated_files": ["/app/backend/tests/test_scraper_bulk.py"],
+  "success_rate": {"backend": "100% (25/25 pytest across test_scraper.py + test_scraper_bulk.py)", "frontend": "100% (bulk import flow, single hifi toggle, admin regression all pass)"},
+  "test_credentials": "sophia_style@demo.local / demo1234 (approved seller), admin@mercari.local / admin123",
+  "seed_data_creation": "Created 1 scraper_batches doc + ~4 additional scraper_jobs docs (2 bulk + 2 hifi single) via test runs against books.toscrape.com URLs.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Run pytest with `-o addopts=' '` to disable the pytest.ini xdist worker split; scraper tests share pytest.job_id/batch_id state across classes so xdist scatters fixtures. Test file: /app/backend/tests/test_scraper_bulk.py. Amazon URLs with high_fidelity=true will still return empty product data on the free Zyte tier — this is a plan limit, NOT a bug. Verified extract_from == 'browserHtml_hi' on books.toscrape via hifi flag.",
+  "rca of the issue": "No blocking issues. Frontend BulkImportFromUrls has 'Review N extracted items' CTA gated behind onBatchReady prop that Sell.jsx does not currently pass — sellers see the button code path never rendered. Not a bug per the review spec (which only required the button to exist in the component), but it means the extracted-items → create-listing loop is not wired for bulk yet. E1 may want to pass an onBatchReady callback into <BulkImportFromUrls /> from Sell.jsx in a follow-up."
+}

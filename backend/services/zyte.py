@@ -29,37 +29,54 @@ def _auth_header() -> str:
 
 
 async def extract_product(url: str, *, geolocation: Optional[str] = None,
+                          high_fidelity: bool = False,
                           timeout: float = DEFAULT_TIMEOUT) -> dict[str, Any]:
     """Ask Zyte to return a structured product object for the given URL.
 
     Tries fast `httpResponseBody` extraction first, then automatically falls
     back to `browserHtml` (JavaScript-rendered) when the fast path yields an
     empty product. Amazon, Best Buy, and similar JS-heavy sites need this.
+
+    When `high_fidelity=True` we skip the fast path entirely and go straight
+    to browser rendering with anti-bot mitigations enabled — used for Amazon
+    and other heavily-defended sites.
     """
+    if high_fidelity:
+        try:
+            result = await _extract_with_mode(url, "browserHtml", geolocation=geolocation,
+                                              timeout=max(timeout, 90.0), full_browser=True)
+            result["_extract_from"] = "browserHtml_hi"
+            return result
+        except ZyteError:
+            # Plan may not cover browser rendering — fall through to fast path.
+            pass
+
     result = await _extract_with_mode(url, "httpResponseBody", geolocation=geolocation, timeout=timeout)
     prod = result.get("product") or {}
-    # If the fast path yielded a usable product, return it.
     if prod.get("name") or prod.get("price") is not None:
         result["_extract_from"] = "httpResponseBody"
         return result
     # Fallback: JS-rendered extraction for SPA / bot-defended sites.
     try:
-        result = await _extract_with_mode(url, "browserHtml", geolocation=geolocation, timeout=max(timeout, 90.0))
+        result = await _extract_with_mode(url, "browserHtml", geolocation=geolocation,
+                                          timeout=max(timeout, 90.0))
         result["_extract_from"] = "browserHtml"
     except ZyteError:
-        # If the plan doesn't cover browserHtml, surface the original (empty)
-        # result so the caller can still see the URL/sku Zyte returned.
         result.setdefault("_extract_from", "httpResponseBody")
     return result
 
 
 async def _extract_with_mode(url: str, mode: str, *, geolocation: Optional[str] = None,
-                             timeout: float = DEFAULT_TIMEOUT) -> dict[str, Any]:
+                             timeout: float = DEFAULT_TIMEOUT,
+                             full_browser: bool = False) -> dict[str, Any]:
     payload: dict[str, Any] = {
         "url": url,
         "product": True,
         "productOptions": {"extractFrom": mode},
     }
+    if full_browser:
+        # Request the full browser pipeline (with Zyte's anti-bot proxy).
+        payload["browserHtml"] = True
     if geolocation:
         payload["geolocation"] = geolocation
 

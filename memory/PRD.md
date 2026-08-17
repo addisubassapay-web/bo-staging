@@ -26,6 +26,13 @@ Exact replica of Mercari platform (mercari.com) — same color scheme (`#FF211F`
 
 ## Implemented (with dates)
 
+### Feb 2026 — Bulk URL Import + Amazon Full Pull toggle
+- **Bulk import backend** — `POST /api/scraper/jobs/bulk` accepts up to 20 URLs with a shared `category_id`, dedupes per-request, rejects invalid URLs with a `reason`, and creates a `scraper_batches` document plus one `scraper_jobs` row per URL. `GET /api/scraper/batches/{id}` returns aggregate `counts` + per-job progress (owner or admin only).
+- **Amazon Full Pull (`high_fidelity`) toggle** — new query flag on both single and bulk endpoints. When true, `services/zyte.py` skips the fast path and requests `browserHtml:true` with the anti-bot proxy pipeline. `extract_from` field on the result records the mode used (`browserHtml_hi` / `browserHtml` / `httpResponseBody`).
+- **Frontend** — new `BulkImportFromUrls` component sits below the single URL panel on `/sell → Import from URL`. Textarea (max 20 lines), category select, "Amazon Full Pull" switch, live-progress bar + per-job cards with a "Use" button on each finished job that prefills the New listing form. Single ImportFromUrl also gained the same Amazon Full Pull switch.
+- **Testing** — iteration_30: 25/25 pytest (test_scraper.py + test_scraper_bulk.py), 100% frontend.
+- **Note** — the current Zyte free-tier key returns partial data for Amazon even with `browserHtml_hi`; the plumbing is verified and will unlock full extraction once the plan is upgraded.
+
 ### Feb 2026 — Zyte Scraper Pipeline with arq Queue + R2 Rehost (Alongside Apify)
 - **Zyte extraction service** (`services/zyte.py`) — POSTs to `https://api.zyte.com/v1/extract` with HTTP Basic Auth. Fast `httpResponseBody` mode with automatic fallback to `browserHtml` for JS-heavy sites. Normalizes Zyte's `product` schema → canonical listing shape (title/description/price/images/brand/sku).
 - **arq worker** (`services/queue.py`) — Python-native async Redis queue. Redis and arq worker supervised in `/etc/supervisor/conf.d/redis.conf` + `arq_worker.conf`. Worker loads backend/.env explicitly so Mongo/Zyte creds resolve outside FastAPI context.

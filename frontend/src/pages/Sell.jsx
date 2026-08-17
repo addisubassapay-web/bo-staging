@@ -12,6 +12,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import ResellFromCatalog from "@/components/ResellFromCatalog";
 import ImportFromUrl from "@/components/ImportFromUrl";
+import BulkImportFromUrls from "@/components/BulkImportFromUrls";
 import { Link } from "react-router-dom";
 
 const PLACEHOLDER_SEEDS = ["seed1", "seed2", "seed3", "seed4", "seed5", "seed6", "seed7", "seed8"];
@@ -303,7 +304,10 @@ const Sell = () => {
       {mode === "resell" ? (
         <ResellFromCatalog />
       ) : mode === "import" ? (
-        <div className="mt-8"><ImportFromUrl onImportReady={applyImport} /></div>
+        <div className="mt-8 space-y-6">
+          <ImportFromUrl onImportReady={applyImport} />
+          <BulkImportFromUrls onUseListing={applyImport} />
+        </div>
       ) : (
       <form onSubmit={submit} className="mt-8 space-y-8">
         {/* Photos */}

@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Sparkles, Link as LinkIcon, Loader2, CheckCircle2, XCircle, Clock, ArrowRight, ImageOff } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 
 const STATUS_META = {
   queued:  { label: "Queued",   cls: "bg-neutral-100 text-neutral-700",   Icon: Clock },
@@ -16,6 +17,7 @@ const STATUS_META = {
 const ImportFromUrl = ({ onImportReady }) => {
   const { toast } = useToast();
   const [url, setUrl] = useState("");
+  const [highFidelity, setHighFidelity] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -55,7 +57,7 @@ const ImportFromUrl = ({ onImportReady }) => {
     }
     setSubmitting(true);
     try {
-      await api.post("/scraper/jobs", { url });
+      await api.post("/scraper/jobs", { url, high_fidelity: highFidelity });
       toast({ title: "Import queued", description: "We'll extract the product data in the background." });
       setUrl("");
       await loadJobs();
@@ -82,25 +84,35 @@ const ImportFromUrl = ({ onImportReady }) => {
         </div>
       </div>
 
-      <form onSubmit={submit} className="mt-5 flex flex-wrap gap-2">
-        <div className="flex-1 min-w-[220px] relative">
-          <LinkIcon className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
-          <Input
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            placeholder="https://www.amazon.com/dp/…"
-            className="pl-9 h-11"
-            data-testid="import-url-input"
-          />
+      <form onSubmit={submit} className="mt-5 space-y-3">
+        <div className="flex flex-wrap gap-2">
+          <div className="flex-1 min-w-[220px] relative">
+            <LinkIcon className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
+            <Input
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              placeholder="https://www.amazon.com/dp/…"
+              className="pl-9 h-11"
+              data-testid="import-url-input"
+            />
+          </div>
+          <Button
+            type="submit"
+            disabled={submitting}
+            className="h-11 bg-[#FF211F] hover:bg-[#e01d1b]"
+            data-testid="import-url-submit"
+          >
+            {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : (<>Import <ArrowRight className="h-4 w-4 ml-1.5" /></>)}
+          </Button>
         </div>
-        <Button
-          type="submit"
-          disabled={submitting}
-          className="h-11 bg-[#FF211F] hover:bg-[#e01d1b]"
-          data-testid="import-url-submit"
-        >
-          {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : (<>Import <ArrowRight className="h-4 w-4 ml-1.5" /></>)}
-        </Button>
+        <label className="flex items-center gap-2 text-xs text-neutral-600 cursor-pointer select-none pl-1">
+          <Switch
+            checked={highFidelity}
+            onCheckedChange={setHighFidelity}
+            data-testid="import-hifi-toggle"
+          />
+          <span><span className="font-semibold text-neutral-800">Amazon Full Pull</span> — force browser rendering + anti-bot proxy for JS-heavy sites (uses more Zyte credits)</span>
+        </label>
       </form>
 
       <div className="mt-6">
