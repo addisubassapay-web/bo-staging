@@ -1328,6 +1328,30 @@ async def admin_update_user(user_id: str, updates: dict, _admin: dict = Depends(
     doc = await db.users.find_one({"id": user_id}, {"_id": 0, "password_hash": 0})
     return UserPublic(**doc) if doc else {"ok": True}
 
+@api_router.post("/admin/email/test")
+async def admin_email_test(payload: dict = Body(...), _admin: dict = Depends(require_admin)):
+    """Send a test email to any address so admins can verify the Hostinger
+    SMTP pipeline is live. Returns the provider result."""
+    to = (payload.get("to") or "").strip()
+    if "@" not in to:
+        raise HTTPException(400, "Provide a valid `to` email address")
+    from services import mailer
+    from services.email_templates import welcome as tpl
+    subject, html = tpl(to.split("@")[0])
+    result = await mailer.send_email(
+        to=to, subject=f"[test] {subject}", html=html, tags=["admin_test"],
+    )
+    await db.email_log.insert_one({
+        "kind": "admin_test", "to": to, "provider": result.get("provider"),
+        "ok": result.get("ok"), "error": result.get("error"),
+        "sent_at": datetime.now(timezone.utc),
+    })
+    return {
+        "configured": mailer.is_configured(),
+        **result,
+    }
+
+
 @api_router.post("/admin/users/{user_id}/unlock")
 async def admin_unlock_user(user_id: str, _admin: dict = Depends(require_admin)):
     """Clear a soft-locked account so the user can sign in again. Resets

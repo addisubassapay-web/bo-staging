@@ -179,6 +179,8 @@ async def forgot_password(payload: dict):
     user = await db.users.find_one({"email": email}, {"_id": 0, "id": 1, "username": 1})
     if user:
         token = secrets.token_urlsafe(32)
+        import os, logging
+        reset_url = f"{os.environ.get('FRONTEND_ORIGIN', 'https://mercari-clone-1.preview.emergentagent.com')}/reset-password?token={token}"
         await db.password_resets.insert_one({
             "token": token,
             "user_id": user["id"],
@@ -187,20 +189,27 @@ async def forgot_password(payload: dict):
             "expires_at": _now() + timedelta(minutes=60),
             "used_at": None,
         })
-        # Email dispatch — mock provider logs the reset URL. When
-        # EMAIL_PROVIDER is set later this will send a real message.
-        import os, logging
-        reset_url = f"{os.environ.get('FRONTEND_ORIGIN', 'https://mercari-clone-1.preview.emergentagent.com')}/reset-password?token={token}"
-        logging.getLogger("email").info(
-            f"[mock_email] password_reset to={email} url={reset_url}"
-        )
+        # Send the real email (Hostinger SMTP when EMAIL_PROVIDER is set,
+        # mock fallback otherwise). Failures never break the request.
+        try:
+            from services import mailer
+            from services.email_templates import password_reset as tpl
+            subject, html = tpl(reset_url, username=user.get("username"))
+            result = await mailer.send_email(
+                to=email, subject=subject, html=html, tags=["password_reset"]
+            )
+            provider = result.get("provider", "mock")
+        except Exception as e:
+            provider = f"error: {e}"
+            logging.getLogger("email").error(f"password_reset mailer failed: {e}")
+
         await db.email_log.insert_one({
             "id": token[:16],
             "kind": "password_reset",
             "to": email,
             "user_id": user["id"],
             "url": reset_url,
-            "provider": "mock",
+            "provider": provider,
             "sent_at": _now(),
         })
     # Always the same response — no user enumeration.
