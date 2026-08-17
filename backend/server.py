@@ -1951,6 +1951,70 @@ async def user_reconcile_wallet(user: dict = Depends(get_current_user)):
         raise HTTPException(500, str(e))
 
 
+@api_router.post("/wallet/reinvest")
+async def wallet_reinvest(payload: dict = Body(...), user: dict = Depends(get_current_user)):
+    """Unlock a portion of the seller's frozen balance early so they can use
+    the funds to pay wholesale/inventory costs on incoming orders. The
+    amount is moved from `wallet_frozen_balance` → `wallet_balance`. Both
+    legs go through the unified ledger for a full audit trail.
+
+    Body: {amount: float, order_id?: str}
+    """
+    try:
+        amount = round(float(payload.get("amount") or 0), 2)
+    except (TypeError, ValueError):
+        amount = 0.0
+    if amount < 1:
+        raise HTTPException(400, "Enter a valid amount (≥ $1)")
+
+    fresh = await db.users.find_one({"id": user["id"]}, {"_id": 0, "wallet_frozen_balance": 1}) or {}
+    frozen = round(float(fresh.get("wallet_frozen_balance", 0.0) or 0.0), 2)
+    if amount > frozen:
+        raise HTTPException(400, f"Insufficient frozen balance. Available frozen ${frozen:.2f}, requested ${amount:.2f}")
+
+    order_id = payload.get("order_id") or None
+    label = f"Reinvest advance{f' for order #{str(order_id)[:8]}' if order_id else ''}"
+
+    # Debit frozen bucket
+    try:
+        await ledger.apply_entry(
+            db,
+            user_id=user["id"],
+            delta=-amount,
+            tx_type="sale_released",
+            description=f"[frozen→available] {label}",
+            related_id=order_id,
+            frozen=True,
+            require_available=True,
+        )
+    except ledger.InsufficientFunds:
+        raise HTTPException(400, "Frozen balance changed since load — refresh and try again")
+
+    # Credit available bucket so wholesale/inventory payments can spend it.
+    await ledger.apply_entry(
+        db,
+        user_id=user["id"],
+        delta=amount,
+        tx_type="sale_released",
+        description=label,
+        related_id=order_id,
+    )
+
+    after = await db.users.find_one({"id": user["id"]}, {"_id": 0, "wallet_balance": 1, "wallet_frozen_balance": 1}) or {}
+    await notify(
+        user["id"], "wallet",
+        f"Reinvest — ${amount:.2f} unlocked",
+        f"${amount:.2f} moved from frozen escrow to your available balance. Use it to pay wholesale on incoming orders.",
+        "/wallet",
+    )
+    return {
+        "ok": True,
+        "amount": amount,
+        "balance": round(float(after.get("wallet_balance", 0.0)), 2),
+        "frozen_balance": round(float(after.get("wallet_frozen_balance", 0.0)), 2),
+    }
+
+
 @api_router.get("/wallet/deposit-methods")
 async def wallet_deposit_methods(_user: dict = Depends(get_current_user)):
     """Unified deposit methods feed — same admin-managed source that

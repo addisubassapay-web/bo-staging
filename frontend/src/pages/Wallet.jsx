@@ -12,7 +12,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import {
   Wallet as WalletIcon, ArrowDownRight, ArrowUpRight, Clock, CheckCircle2, XCircle,
-  Snowflake, Copy, Check, Bitcoin, Building2, Plus, Minus, RotateCcw, Upload, X as XIcon,
+  Snowflake, Copy, Check, Bitcoin, Building2, Plus, Minus, RotateCcw, Upload, X as XIcon, Sparkles,
 } from "lucide-react";
 
 const typeMeta = {
@@ -455,6 +455,85 @@ const WithdrawDialog = ({ open, onOpenChange, methods, onSubmitted }) => {
   );
 };
 
+const ReinvestDialog = ({ open, onOpenChange, frozenBalance, onSubmitted }) => {
+  const { toast } = useToast();
+  const [amount, setAmount] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  useEffect(() => { if (open) setAmount(""); }, [open]);
+  const submit = async () => {
+    const amt = parseFloat(amount);
+    if (!amt || amt < 1) { toast({ title: "Enter a valid amount (≥ $1)", variant: "destructive" }); return; }
+    if (amt > frozenBalance) { toast({ title: "Not enough frozen balance", description: `Available frozen: $${frozenBalance.toFixed(2)}`, variant: "destructive" }); return; }
+    setSubmitting(true);
+    try {
+      const { data } = await api.post("/wallet/reinvest", { amount: amt });
+      toast({
+        title: "Reinvest unlocked",
+        description: `$${amt.toFixed(2)} moved from frozen → available. New balance $${data.balance.toFixed(2)}.`,
+      });
+      onSubmitted?.();
+      onOpenChange(false);
+    } catch (e) {
+      toast({ title: "Reinvest failed", description: e?.response?.data?.detail || "Try again", variant: "destructive" });
+    } finally { setSubmitting(false); }
+  };
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md" data-testid="reinvest-dialog">
+        <DialogHeader><DialogTitle>Reinvest frozen funds</DialogTitle></DialogHeader>
+        <div className="space-y-4 py-2">
+          <div className="rounded-xl bg-gradient-to-br from-sky-50 to-blue-50 border border-blue-200 p-4">
+            <div className="text-xs uppercase font-semibold text-blue-800 tracking-wider">Frozen escrow available</div>
+            <div className="mt-1 text-3xl font-bold tabular-nums text-blue-900" data-testid="reinvest-frozen-value">${frozenBalance.toFixed(2)}</div>
+            <p className="text-xs text-blue-900/70 mt-2 leading-relaxed">
+              Unlock a portion of your unreleased sale earnings so you can pay wholesale on incoming orders and ship faster. The amount moves from frozen → available and appears in your ledger as an advance.
+            </p>
+          </div>
+          <div>
+            <Label className="text-sm">Amount to unlock (USD)</Label>
+            <Input
+              type="number"
+              inputMode="decimal"
+              step="0.01"
+              min={1}
+              max={frozenBalance}
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              placeholder="0.00"
+              className="h-11 mt-1.5 text-base font-semibold tabular-nums"
+              data-testid="reinvest-amount"
+            />
+            <div className="mt-2 flex gap-2">
+              {[25, 50, 100].map((p) => {
+                const v = Math.floor(frozenBalance * (p / 100) * 100) / 100;
+                return (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => setAmount(String(v))}
+                    disabled={v < 1}
+                    className="h-8 px-3 rounded-full border border-neutral-200 hover:border-[#2563EB] hover:text-[#2563EB] text-xs font-semibold disabled:opacity-40"
+                    data-testid={`reinvest-preset-${p}`}
+                  >{p}% (${v.toFixed(2)})</button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+        <DialogFooter className="gap-2">
+          <Button variant="outline" onClick={() => onOpenChange(false)} data-testid="reinvest-cancel">Cancel</Button>
+          <Button
+            onClick={submit}
+            disabled={submitting || !amount}
+            className="bg-gradient-to-r from-[#7DD3FC] to-[#2563EB] hover:brightness-110"
+            data-testid="reinvest-submit"
+          >{submitting ? "Unlocking…" : "Unlock funds"}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 const RefundsDialog = ({ open, onOpenChange, transactions }) => {
   const refunds = (transactions || []).filter((t) => t.type === "refund" || (t.type === "adjustment" && (t.description || "").toLowerCase().includes("refund")));
   const total = refunds.reduce((s, t) => s + Math.max(0, t.amount), 0);
@@ -504,6 +583,7 @@ const Wallet = () => {
   const [dpOpen, setDpOpen] = useState(false);
   const [wdOpen, setWdOpen] = useState(false);
   const [rfOpen, setRfOpen] = useState(false);
+  const [riOpen, setRiOpen] = useState(false);
 
   const load = async () => {
     const [w, m, d] = await Promise.allSettled([
@@ -570,6 +650,13 @@ const Wallet = () => {
               className="min-h-[44px] bg-white/20 hover:bg-white/30 text-white border border-white/40"
               data-testid="wallet-refunds-btn"
             ><RotateCcw className="h-4 w-4 mr-1" /> Refunds</Button>
+            <Button
+              onClick={() => setRiOpen(true)}
+              disabled={!(data.frozen_balance > 0)}
+              title={data.frozen_balance > 0 ? "Unlock frozen funds to pay wholesale on incoming orders" : "No frozen funds available yet"}
+              className="min-h-[44px] bg-white text-[#2563EB] hover:bg-blue-50 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+              data-testid="wallet-reinvest-btn"
+            ><Sparkles className="h-4 w-4 mr-1" /> Reinvest</Button>
             <Link to="/seller/payouts">
               <Button className="min-h-[44px] bg-white/20 hover:bg-white/30 text-white border border-white/40" data-testid="wallet-open-dashboard">
                 Payout dashboard →
@@ -699,6 +786,7 @@ const Wallet = () => {
       <DepositDialog open={dpOpen} onOpenChange={setDpOpen} onSubmitted={afterMutation} />
       <WithdrawDialog open={wdOpen} onOpenChange={setWdOpen} methods={methods} onSubmitted={afterMutation} />
       <RefundsDialog open={rfOpen} onOpenChange={setRfOpen} transactions={data.transactions} />
+      <ReinvestDialog open={riOpen} onOpenChange={setRiOpen} frozenBalance={data.frozen_balance || 0} onSubmitted={afterMutation} />
     </div>
   );
 };

@@ -567,6 +567,63 @@ const SettingsMgr = () => {
           </div>
         </section>
 
+        <section className="bg-white border border-neutral-200 rounded-lg p-5" data-testid="settings-bulk-tiers-section">
+          <h3 className="font-semibold mb-1">Bulk discount tiers</h3>
+          <p className="text-sm text-neutral-500 mb-3">
+            Reward bulk buyers with an automatic percentage-off at checkout. When multiple tiers match a quantity the highest <code className="text-xs bg-neutral-100 px-1 rounded">min_qty</code> wins. Leave empty to disable bulk discounts entirely.
+          </p>
+          <div className="space-y-2" data-testid="bulk-tiers-list">
+            {((settings.bulk_discount_tiers || [])).map((t, i) => (
+              <div key={i} className="flex items-center gap-2 rounded-lg border border-neutral-200 bg-neutral-50 p-3" data-testid={`bulk-tier-row-${i}`}>
+                <div className="flex-1 grid grid-cols-2 gap-2">
+                  <div>
+                    <Label className="text-xs">Min quantity</Label>
+                    <Input type="number" min={2} value={t.min_qty}
+                      onChange={(e) => {
+                        const v = parseInt(e.target.value) || 0;
+                        const next = [...settings.bulk_discount_tiers];
+                        next[i] = { ...next[i], min_qty: v };
+                        set("bulk_discount_tiers", next);
+                      }}
+                      className="mt-1 h-9" data-testid={`bulk-tier-minqty-${i}`} />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Discount %</Label>
+                    <Input type="number" step={0.5} min={0} max={90} value={t.discount_pct}
+                      onChange={(e) => {
+                        const v = parseFloat(e.target.value) || 0;
+                        const next = [...settings.bulk_discount_tiers];
+                        next[i] = { ...next[i], discount_pct: v };
+                        set("bulk_discount_tiers", next);
+                      }}
+                      className="mt-1 h-9" data-testid={`bulk-tier-pct-${i}`} />
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => set("bulk_discount_tiers", settings.bulk_discount_tiers.filter((_, j) => j !== i))}
+                  className="mt-4 h-9 px-3 rounded-md border border-red-200 text-red-600 hover:bg-red-50 text-xs font-semibold"
+                  data-testid={`bulk-tier-remove-${i}`}
+                >Remove</button>
+              </div>
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={() => set("bulk_discount_tiers", [...(settings.bulk_discount_tiers || []), { min_qty: 15, discount_pct: 15 }])}
+            className="mt-3 h-9 px-4 rounded-md border border-neutral-200 hover:border-[#2563EB] hover:text-[#2563EB] text-sm font-semibold"
+            data-testid="bulk-tier-add"
+          >+ Add tier</button>
+          {(settings.bulk_discount_tiers || []).length > 0 && (
+            <div className="mt-4 text-xs rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 p-3">
+              <b>Preview:</b>{" "}
+              {[...settings.bulk_discount_tiers].sort((a,b) => a.min_qty - b.min_qty).map((t, i, arr) => (
+                <span key={i}>{t.min_qty}+ units → {t.discount_pct}% off{i < arr.length - 1 ? " · " : ""}</span>
+              ))}
+            </div>
+          )}
+        </section>
+
         <section className="bg-white border border-neutral-200 rounded-lg p-5">
           <h3 className="font-semibold mb-3">Automation modes</h3>
           <p className="text-sm text-neutral-500 mb-3">Choose how new items are approved: instantly (auto), auto up to threshold (semi), or all manual.</p>
