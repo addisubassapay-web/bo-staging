@@ -337,7 +337,7 @@ class AffiliateLinkCreate(BaseModel):
 class WalletTransaction(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     user_id: str
-    type: Literal["sale", "sale_frozen", "sale_released", "affiliate", "referral", "dropship", "dropship_frozen", "dropship_released", "withdrawal", "adjustment", "bonus", "refund"]
+    type: Literal["sale", "sale_frozen", "sale_released", "affiliate", "referral", "dropship", "dropship_frozen", "dropship_released", "withdrawal", "adjustment", "bonus", "refund", "deposit", "purchase", "wholesale_debit"]
     amount: float  # positive = credit, negative = debit
     balance_after: float
     description: str = ""
@@ -671,6 +671,8 @@ async def get_settings() -> dict:
     # Merge defaults for any newly introduced fields so callers never see None
     return {**defaults, **doc}
 
+from services import ledger
+
 async def credit_wallet(
     user_id: str,
     amount: float,
@@ -679,55 +681,38 @@ async def credit_wallet(
     related_id: Optional[str] = None,
     frozen: bool = False,
 ):
-    """Credit or debit a user's wallet. When frozen=True the amount goes into
-    wallet_frozen_balance instead of the available wallet_balance. Debits are
-    always applied against the available balance."""
+    """Credit or debit a user's wallet. Thin wrapper around the unified
+    ledger service so every existing call site keeps working while new
+    code uses `services.ledger.apply_entry()` directly."""
     if amount == 0:
         return
-    user = await db.users.find_one({"id": user_id}, {"_id": 0})
-    if not user:
-        return
-    if frozen and amount > 0:
-        new_frozen = round(user.get("wallet_frozen_balance", 0.0) + amount, 2)
-        await db.users.update_one(
-            {"id": user_id}, {"$set": {"wallet_frozen_balance": new_frozen}}
+    try:
+        await ledger.apply_entry(
+            db,
+            user_id=user_id,
+            delta=float(amount),
+            tx_type=tx_type,  # type: ignore[arg-type]
+            description=description,
+            related_id=related_id,
+            frozen=frozen,
         )
-        balance_after = new_frozen  # tx record shows frozen balance after credit
-    else:
-        new_balance = round(user.get("wallet_balance", 0.0) + amount, 2)
-        await db.users.update_one({"id": user_id}, {"$set": {"wallet_balance": new_balance}})
-        balance_after = new_balance
-    tx = WalletTransaction(
-        user_id=user_id, type=tx_type, amount=amount,
-        balance_after=balance_after, description=description, related_id=related_id,
-        status="pending" if frozen else "completed",
-    )
-    await db.wallet_txs.insert_one(tx.model_dump())
+    except ledger.LedgerError as e:
+        logger.error(f"credit_wallet: {e}")
 
 
 async def release_frozen(user_id: str, amount: float, description: str, related_id: Optional[str] = None, tx_type: str = "sale_released"):
-    """Move `amount` from user's frozen balance into their available balance and log a tx."""
-    if amount <= 0:
-        return
-    user = await db.users.find_one({"id": user_id}, {"_id": 0})
-    if not user:
-        return
-    frozen = float(user.get("wallet_frozen_balance", 0.0))
-    take = min(frozen, round(amount, 2))
-    if take <= 0:
-        return
-    new_frozen = round(frozen - take, 2)
-    new_balance = round(user.get("wallet_balance", 0.0) + take, 2)
-    await db.users.update_one(
-        {"id": user_id},
-        {"$set": {"wallet_frozen_balance": new_frozen, "wallet_balance": new_balance}},
-    )
-    tx = WalletTransaction(
-        user_id=user_id, type=tx_type, amount=take,
-        balance_after=new_balance, description=description, related_id=related_id,
-        status="completed",
-    )
-    await db.wallet_txs.insert_one(tx.model_dump())
+    """Move `amount` from user's frozen balance into their available balance and log a tx.
+    Delegates to the unified ledger service."""
+    try:
+        await ledger.release_frozen(
+            db,
+            user_id=user_id,
+            amount=amount,
+            order_id=related_id,
+            description=description,
+        )
+    except ledger.LedgerError as e:
+        logger.error(f"release_frozen: {e}")
 
 async def get_referral_chain(user_id: str, max_levels: int = 3) -> List[str]:
     """Return referrer chain for a user: [L1, L2, L3, ...] up to max_levels."""
@@ -966,25 +951,17 @@ async def create_order(payload: OrderCreate, user: dict = Depends(get_current_us
         raise HTTPException(400, "Invalid payment method")
     total_due = round(amount + shipping_fee, 2)
     if method == "wallet":
-        available = float(user.get("wallet_balance", 0.0) or 0.0)
-        if available < total_due:
+        try:
+            await ledger.purchase_debit(
+                db,
+                user_id=user["id"],
+                amount=total_due,
+                order_id="pending",  # updated after order id is minted
+                description=f"Wallet payment × {quantity}: {listing['title']}",
+            )
+        except ledger.InsufficientFunds:
+            available = float(user.get("wallet_balance", 0.0) or 0.0)
             raise HTTPException(400, f"Insufficient wallet balance. Available ${available:.2f}, need ${total_due:.2f}")
-        # Atomically debit buyer wallet (guards against race)
-        debit = await db.users.update_one(
-            {"id": user["id"], "wallet_balance": {"$gte": total_due}},
-            {"$inc": {"wallet_balance": -total_due}},
-        )
-        if debit.modified_count != 1:
-            raise HTTPException(400, "Insufficient wallet balance")
-        buyer_fresh = await db.users.find_one({"id": user["id"]}, {"_id": 0, "wallet_balance": 1}) or {}
-        await db.wallet_txs.insert_one(WalletTransaction(
-            user_id=user["id"],
-            type="adjustment",
-            amount=-total_due,
-            balance_after=float(buyer_fresh.get("wallet_balance", 0.0)),
-            description=f"Wallet payment × {quantity}: {listing['title']}",
-            related_order_id=None,
-        ).model_dump())
 
     # Platform fee — scales with the total merchandise amount.
     platform_fee = round(amount * settings["platform_fee_pct"] / 100.0, 2)
@@ -1019,16 +996,21 @@ async def create_order(payload: OrderCreate, user: dict = Depends(get_current_us
                 discounts = settings.get("resell_wholesale_discounts") or {"new": 0.0, "bronze": 5.0, "silver": 10.0, "gold": 15.0}
                 discount_pct = float(discounts.get(badge, 0.0))
                 wholesale_cost = round(retail_base * (1 - discount_pct / 100.0), 2)
-                # Atomic wallet debit — only debits if reseller has enough available balance.
-                debit_res = await db.users.update_one(
-                    {"id": listing["seller_id"], "wallet_balance": {"$gte": wholesale_cost}},
-                    {"$inc": {"wallet_balance": -wholesale_cost}},
-                )
-                if debit_res.modified_count == 1:
+                # Route the wholesale charge through the unified ledger.
+                try:
+                    await ledger.apply_entry(
+                        db,
+                        user_id=listing["seller_id"],
+                        delta=-wholesale_cost,
+                        tx_type="wholesale_debit",
+                        description=f"Wholesale cost × {quantity}: {listing['title']}",
+                        related_id="pending",
+                        require_available=True,
+                    )
                     reseller_paid_wholesale = True
                     reseller_wholesale_cost = wholesale_cost
                     dropship_source_earnings = wholesale_cost
-                else:
+                except ledger.InsufficientFunds:
                     dropship_source_earnings = retail_base
             else:
                 dropship_source_earnings = retail_base
@@ -1867,6 +1849,134 @@ async def admin_update_payment_methods(payload: dict, _admin: dict = Depends(req
     return await admin_get_payment_methods(_admin=_admin)
 
 
+@api_router.post("/admin/wallet/reconcile/{user_id}")
+async def admin_reconcile_wallet(user_id: str, _admin: dict = Depends(require_admin)):
+    """Recompute a user's available balance from the wallet_txs ledger.
+    Useful for reseller-earnings sync after out-of-band price updates on
+    dropship-source listings, or to self-heal any drift.
+    Returns {user_id, delta, balance, reconciled}."""
+    exists = await db.users.find_one({"id": user_id}, {"_id": 0, "id": 1})
+    if not exists:
+        raise HTTPException(404, "User not found")
+    try:
+        return await ledger.reconcile_reseller(db, user_id=user_id)
+    except ledger.LedgerError as e:
+        raise HTTPException(500, str(e))
+
+
+@api_router.post("/wallet/reconcile")
+async def user_reconcile_wallet(user: dict = Depends(get_current_user)):
+    """Users can trigger a self-reconcile on their own wallet."""
+    try:
+        return await ledger.reconcile_reseller(db, user_id=user["id"])
+    except ledger.LedgerError as e:
+        raise HTTPException(500, str(e))
+
+
+@api_router.get("/wallet/deposit-methods")
+async def wallet_deposit_methods(_user: dict = Depends(get_current_user)):
+    """Unified deposit methods feed — same admin-managed source that
+    powers the Checkout Payment page (crypto addresses + manual
+    payment methods). Shape matches `WalletDialogs.DepositDialog`."""
+    s = await get_settings()
+    # Crypto — one entry per (symbol, network) address so buyers can
+    # pick the network. Falls back to the flat crypto_addresses map for
+    # legacy configs.
+    crypto: List[dict] = []
+    assets = s.get("crypto_assets") or []
+    if assets:
+        for a in assets:
+            if not a.get("address") or a.get("active") is False:
+                continue
+            crypto.append({
+                "id": a.get("id") or a["symbol"],
+                "currency": a["symbol"],
+                "network": a.get("network", ""),
+                "address": a["address"],
+                "label": a.get("label") or f"{a['symbol']}{(' · ' + a['network']) if a.get('network') else ''}",
+            })
+    else:
+        for sym, addr in (s.get("crypto_addresses") or {}).items():
+            if not addr:
+                continue
+            crypto.append({"id": sym, "currency": sym, "network": "", "address": addr, "label": sym})
+
+    manual: List[dict] = []
+    for m in s.get("manual_payment_methods") or []:
+        if m.get("active", True) is False:
+            continue
+        manual.append({
+            "id": m.get("id"),
+            "name": m.get("name", "Manual method"),
+            "instructions": m.get("instructions", ""),
+            "kind": m.get("kind", "bank"),
+        })
+    return {"crypto": crypto, "manual": manual}
+
+
+@api_router.post("/wallet/deposit/pending", response_model=DepositRequest)
+async def create_deposit_pending(payload: dict = Body(...), user: dict = Depends(get_current_user)):
+    """Preferred deposit-submission endpoint used by the Wallet UI.
+    Payload shape matches `WalletDialogs.DepositDialog.submit`.
+    Accepts `method` = "crypto" | "manual" and either `currency` or
+    `method_id` for the target method. Reuses the same admin-managed
+    config as the Checkout Payment page."""
+    try:
+        amount = float(payload.get("amount") or 0)
+    except (TypeError, ValueError):
+        amount = 0.0
+    method = str(payload.get("method") or "").lower()
+    reference = str(payload.get("reference") or "").strip()
+    note = str(payload.get("note") or "").strip()
+    if amount < 1:
+        raise HTTPException(400, "Enter a valid amount (≥ $1)")
+    if method not in ("crypto", "manual"):
+        raise HTTPException(400, "Invalid deposit method")
+    if not reference:
+        raise HTTPException(400, "Transaction reference is required")
+
+    s = await get_settings()
+    currency_or_id = ""
+    if method == "crypto":
+        currency = str(payload.get("currency") or "").upper()
+        if not currency:
+            raise HTTPException(400, "Choose a cryptocurrency")
+        # Validate against admin-managed crypto_assets first, fall back to legacy map.
+        assets = [a for a in (s.get("crypto_assets") or []) if a.get("active", True)]
+        valid = any(a.get("symbol") == currency and a.get("address") for a in assets) \
+            or bool((s.get("crypto_addresses") or {}).get(currency))
+        if not valid:
+            raise HTTPException(400, f"{currency} deposits are not enabled")
+        currency_or_id = currency
+    else:
+        method_id = str(payload.get("method_id") or "")
+        if not method_id:
+            raise HTTPException(400, "Choose a payment method")
+        match = next((m for m in (s.get("manual_payment_methods") or [])
+                       if m.get("id") == method_id and m.get("active", True)), None)
+        if not match:
+            raise HTTPException(400, "Payment method not available")
+        currency_or_id = method_id
+
+    dep = DepositRequest(
+        user_id=user["id"], user_name=user.get("username", ""),
+        amount=round(amount, 2),
+        method=method,
+        currency=currency_or_id,
+        reference=reference,
+        note=note,
+        screenshot_url=payload.get("screenshot_url"),
+    )
+    await db.deposits.insert_one(dep.model_dump())
+    await notify(
+        user["id"], "wallet",
+        f"Deposit submitted — ${dep.amount:.2f}",
+        "We're reviewing your deposit. You'll be credited once confirmed.",
+        "/wallet",
+    )
+    return dep
+
+
 @api_router.post("/wallet/deposit", response_model=DepositRequest)
 async def create_deposit(payload: DepositRequestCreate, user: dict = Depends(get_current_user)):
     if not payload.amount or payload.amount <= 0:
@@ -1937,9 +2047,12 @@ async def admin_approve_deposit(dep_id: str, _admin: dict = Depends(require_admi
         {"$set": {"status": "approved", "processed_at": datetime.now(timezone.utc)}},
     )
     label = dep.get("currency") or dep.get("method", "deposit")
-    await credit_wallet(
-        dep["user_id"], float(dep["amount"]), "adjustment",
-        f"Deposit approved — {label}", dep_id,
+    await ledger.deposit_approved(
+        db,
+        user_id=dep["user_id"],
+        amount=float(dep["amount"]),
+        deposit_id=dep_id,
+        label=label,
     )
     await notify(
         dep["user_id"], "wallet",
@@ -4236,15 +4349,22 @@ async def create_dispute(payload: DisputeCreate, user: dict = Depends(get_curren
     ):
         now = datetime.now(timezone.utc)
         resolution_msg = f"Auto-refunded — orders at or under ${threshold:.2f} are refunded instantly."
-        # Credit buyer, debit seller
-        await credit_wallet(
-            dispute.buyer_id, dispute.amount, "adjustment",
-            f"Auto-refund for dispute #{dispute.id[:8]}", dispute.id,
+        # Credit buyer via ledger's refund path, debit seller via adjustment.
+        await ledger.refund_credit(
+            db,
+            user_id=dispute.buyer_id,
+            amount=dispute.amount,
+            order_id=order["id"],
+            description=f"Auto-refund for dispute #{dispute.id[:8]}",
         )
         seller_debit = float(order["seller_earnings"]) if order.get("seller_earnings") is not None else dispute.amount
-        await credit_wallet(
-            dispute.seller_id, -seller_debit, "adjustment",
-            f"Auto-refund chargeback for dispute #{dispute.id[:8]}", dispute.id,
+        await ledger.apply_entry(
+            db,
+            user_id=dispute.seller_id,
+            delta=-seller_debit,
+            tx_type="refund",
+            description=f"Auto-refund chargeback for dispute #{dispute.id[:8]}",
+            related_id=order["id"],
         )
         await db.orders.update_one({"id": order["id"]}, {"$set": {"status": "cancelled"}})
         await db.disputes.update_one(
@@ -4342,16 +4462,23 @@ async def admin_resolve_dispute(
         # Refund: credit the buyer wallet, debit the seller earnings for that order
         amount = float(d.get("amount", 0))
         if amount > 0:
-            await credit_wallet(
-                d["buyer_id"], amount, "adjustment",
-                f"Refund for dispute #{dispute_id[:8]}", dispute_id,
+            await ledger.refund_credit(
+                db,
+                user_id=d["buyer_id"],
+                amount=amount,
+                order_id=d["order_id"],
+                description=f"Refund for dispute #{dispute_id[:8]}",
             )
-            # Best-effort debit of seller wallet (uses seller_earnings if we have it)
+            # Debit seller earnings for that order (uses seller_earnings if we have it)
             order = await db.orders.find_one({"id": d["order_id"]}, {"_id": 0})
             seller_debit = float(order["seller_earnings"]) if (order and order.get("seller_earnings") is not None) else amount
-            await credit_wallet(
-                d["seller_id"], -seller_debit, "adjustment",
-                f"Chargeback for dispute #{dispute_id[:8]}", dispute_id,
+            await ledger.apply_entry(
+                db,
+                user_id=d["seller_id"],
+                delta=-seller_debit,
+                tx_type="refund",
+                description=f"Chargeback for dispute #{dispute_id[:8]}",
+                related_id=dispute_id,
             )
         # Mark order as cancelled
         await db.orders.update_one({"id": d["order_id"]}, {"$set": {"status": "cancelled"}})

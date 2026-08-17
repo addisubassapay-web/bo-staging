@@ -26,7 +26,14 @@ Exact replica of Mercari platform (mercari.com) — same color scheme (`#FF211F`
 
 ## Implemented (with dates)
 
-### Feb 2026 — Weekly Apify Auto-Sync (Resume-Safe + Admin-Controllable)
+### Feb 2026 — Unified Ledger Service + Wallet ↔ Checkout Deposit Parity
+- **New `services/ledger.py`** — single source of truth for balance-affecting events. `apply_entry()` is atomic (`$inc` + guard) and always writes a paired `wallet_txs` row. Wrappers: `deposit_approved`, `purchase_debit`, `refund_credit`, `release_frozen`, `reconcile_reseller`.
+- **Every write path now routes through the ledger**: `create_order` wallet payment, dropship wholesale debit, deposit approval, manual + auto dispute refunds. `credit_wallet()` and legacy `release_frozen` are thin wrappers around the ledger for backward compatibility. Extended `WalletTransaction.type` literal with `deposit`, `purchase`, `wholesale_debit`.
+- **Wallet ↔ Checkout deposit parity** — Added `GET /api/wallet/deposit-methods` + `POST /api/wallet/deposit/pending` that read the SAME admin config (`crypto_assets` + `manual_payment_methods`) as the Checkout Payment page. Refactored `pages/Wallet.jsx` `DepositDialog` to consume this endpoint. Verified live: dropdown now shows all 5 admin-configured crypto networks (ETH·Ethereum, BNB·Ethereum, BTC·BTC, USDC·Ethereum, USDT·Ethereum) with per-network warning text — identical to Checkout.
+- **Reconcile endpoints** — `POST /api/wallet/reconcile` (self-heal) and `POST /api/admin/wallet/reconcile/{user_id}` recompute a user's available balance from the ledger and post an `adjustment` for any drift (useful for reseller earnings sync after external price/inventory events).
+- **E2E verified**: manual $100 deposit → tx `deposit`, purchase 2× → tx `purchase` −$44.24 debited atomically, insufficient-funds returns 400 with clear message.
+
+### Feb 2026 — Cart/Checkout Mobile Strict-Fit + Marketplace Data Hygiene
 - **Weekly Amazon refresh** — `apify_auto_sync_loop()` in `server.py` rewritten to be resume-safe: on every startup it reads `last_sync_at`, sleeps only until the next 7-day mark (not a fresh full week), and auto-clears stuck `sync_running` locks older than 6 hours. Persists `next_scheduled_at` + `schedule_interval_days` in `sync_state`.
 - **Admin controls** — new `POST /api/admin/sync/apify/schedule` accepts `{enabled: bool, run_now: bool}` to pause/resume the loop or force the next tick to run within ~60s. Non-admin blocked (401), empty payload rejected (400).
 - **Sync status expanded** — `GET /api/admin/sync/status` now returns `next_scheduled_at`, `schedule_interval_days`, `auto_schedule_enabled` alongside the existing counters.

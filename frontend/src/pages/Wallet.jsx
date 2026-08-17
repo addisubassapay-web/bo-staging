@@ -68,15 +68,18 @@ const CopyBtn = ({ text, testid }) => {
   );
 };
 
-const DepositDialog = ({ open, onOpenChange, methods, onSubmitted }) => {
+const DepositDialog = ({ open, onOpenChange, onSubmitted }) => {
   const { toast } = useToast();
-  const cryptoList = Object.entries(methods?.crypto_addresses || {});
-  const manualList = methods?.manual_payment_methods || [];
+  // Unified deposit methods — same admin-managed source used by the Checkout Payment page.
+  // Endpoint shape: { crypto: [{id, currency, network, address, label}], manual: [{id, name, instructions, kind}] }
+  const [methods, setMethods] = useState({ crypto: [], manual: [] });
+  const cryptoList = methods.crypto || [];
+  const manualList = methods.manual || [];
   const hasCrypto = cryptoList.length > 0;
   const hasManual = manualList.length > 0;
-  const [tab, setTab] = useState(hasCrypto ? "crypto" : (hasManual ? "manual" : "crypto"));
-  const [currency, setCurrency] = useState(cryptoList[0]?.[0] || "");
-  const [manualId, setManualId] = useState(manualList[0]?.id || "");
+  const [tab, setTab] = useState("crypto");
+  const [cryptoIdx, setCryptoIdx] = useState(0);          // index into cryptoList
+  const [manualId, setManualId] = useState("");
   const [amount, setAmount] = useState("");
   const [reference, setReference] = useState("");
   const [note, setNote] = useState("");
@@ -86,16 +89,22 @@ const DepositDialog = ({ open, onOpenChange, methods, onSubmitted }) => {
 
   useEffect(() => {
     if (!open) return;
-    setTab(hasCrypto ? "crypto" : (hasManual ? "manual" : "crypto"));
-    setCurrency(cryptoList[0]?.[0] || "");
-    setManualId(manualList[0]?.id || "");
+    api.get("/wallet/deposit-methods").then((r) => {
+      const data = r.data || { crypto: [], manual: [] };
+      setMethods(data);
+      const c = data.crypto || [];
+      const m = data.manual || [];
+      setTab(c.length > 0 ? "crypto" : (m.length > 0 ? "manual" : "crypto"));
+      setCryptoIdx(0);
+      setManualId(m[0]?.id || "");
+    }).catch(() => setMethods({ crypto: [], manual: [] }));
     setAmount("");
     setReference("");
     setNote("");
     setScreenshotUrl("");
   }, [open]);
 
-  const selectedAddress = currency ? (methods?.crypto_addresses || {})[currency] : "";
+  const activeCrypto = cryptoList[cryptoIdx] || null;
   const selectedManual = manualList.find((m) => m.id === manualId);
 
   const uploadScreenshot = async (file) => {
@@ -122,21 +131,17 @@ const DepositDialog = ({ open, onOpenChange, methods, onSubmitted }) => {
     const amt = parseFloat(amount);
     if (!amt || amt <= 0) { toast({ title: "Enter a valid amount", variant: "destructive" }); return; }
     if (tab === "crypto") {
-      if (!currency) { toast({ title: "Choose a cryptocurrency", variant: "destructive" }); return; }
+      if (!activeCrypto) { toast({ title: "Choose a cryptocurrency", variant: "destructive" }); return; }
       if (!reference.trim()) { toast({ title: "Transaction hash is required", variant: "destructive" }); return; }
     } else {
       if (!manualId) { toast({ title: "Choose a payment method", variant: "destructive" }); return; }
     }
     setSubmitting(true);
     try {
-      await api.post("/wallet/deposit", {
-        amount: amt,
-        method: tab,
-        currency: tab === "crypto" ? currency : manualId,
-        reference: reference.trim(),
-        note: note.trim(),
-        screenshot_url: screenshotUrl || null,
-      });
+      const body = tab === "crypto"
+        ? { amount: amt, method: "crypto", currency: activeCrypto.currency, reference: reference.trim(), note: note.trim(), screenshot_url: screenshotUrl || null }
+        : { amount: amt, method: "manual", method_id: manualId, reference: reference.trim(), note: note.trim(), screenshot_url: screenshotUrl || null };
+      await api.post("/wallet/deposit/pending", body);
       toast({ title: "Deposit submitted", description: "An admin will review and credit your wallet once confirmed." });
       onSubmitted?.();
       onOpenChange(false);
@@ -183,36 +188,38 @@ const DepositDialog = ({ open, onOpenChange, methods, onSubmitted }) => {
               <div className="space-y-4">
                 <div>
                   <Label className="text-sm">Cryptocurrency</Label>
-                  <Select value={currency} onValueChange={setCurrency}>
+                  <Select value={String(cryptoIdx)} onValueChange={(v) => setCryptoIdx(Number(v))}>
                     <SelectTrigger className="h-11 mt-1.5" data-testid="deposit-currency-select">
                       <SelectValue placeholder="Choose currency" />
                     </SelectTrigger>
                     <SelectContent>
-                      {cryptoList.map(([k]) => (
-                        <SelectItem key={k} value={k}>{k}</SelectItem>
+                      {cryptoList.map((c, i) => (
+                        <SelectItem key={c.id} value={String(i)}>{c.label || c.currency}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
 
-                {selectedAddress && (
+                {activeCrypto && (
                   <div className="border border-neutral-200 rounded-xl p-4 bg-neutral-50 flex flex-col sm:flex-row gap-4 items-center sm:items-start">
                     <img
-                      src={qrUrl(selectedAddress)}
-                      alt={`${currency} QR code`}
+                      src={qrUrl(activeCrypto.address)}
+                      alt={`${activeCrypto.currency} QR code`}
                       width={QR_SIZE}
                       height={QR_SIZE}
                       className="rounded-lg bg-white p-2 shrink-0"
                       data-testid="deposit-qr"
                     />
                     <div className="w-full min-w-0 flex-1 space-y-2">
-                      <div className="text-xs uppercase tracking-wider text-neutral-500 font-semibold">{currency} address</div>
-                      <div className="font-mono text-xs break-all bg-white border border-neutral-200 rounded-lg p-2.5" data-testid="deposit-address">{selectedAddress}</div>
+                      <div className="text-xs uppercase tracking-wider text-neutral-500 font-semibold">
+                        {activeCrypto.currency} address{activeCrypto.network ? ` · ${activeCrypto.network}` : ""}
+                      </div>
+                      <div className="font-mono text-xs break-all bg-white border border-neutral-200 rounded-lg p-2.5" data-testid="deposit-address">{activeCrypto.address}</div>
                       <div className="flex gap-2">
-                        <CopyBtn text={selectedAddress} testid="deposit-copy-address" />
+                        <CopyBtn text={activeCrypto.address} testid="deposit-copy-address" />
                       </div>
                       <p className="text-[11px] text-neutral-500 leading-relaxed">
-                        Send only <b>{currency}</b> to this address. Sending any other asset may result in permanent loss.
+                        Send only <b>{activeCrypto.currency}</b>{activeCrypto.network ? <> on the <b>{activeCrypto.network}</b> network</> : null} to this address. Sending any other asset may result in permanent loss.
                       </p>
                     </div>
                   </div>
@@ -689,7 +696,7 @@ const Wallet = () => {
         )}
       </div>
 
-      <DepositDialog open={dpOpen} onOpenChange={setDpOpen} methods={methods} onSubmitted={afterMutation} />
+      <DepositDialog open={dpOpen} onOpenChange={setDpOpen} onSubmitted={afterMutation} />
       <WithdrawDialog open={wdOpen} onOpenChange={setWdOpen} methods={methods} onSubmitted={afterMutation} />
       <RefundsDialog open={rfOpen} onOpenChange={setRfOpen} transactions={data.transactions} />
     </div>
