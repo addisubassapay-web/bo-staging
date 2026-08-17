@@ -476,6 +476,15 @@ const Profile = () => {
                             <CheckCircle2 className="h-3 w-3" /> Paid out
                           </span>
                         )}
+                        {o.reinvest_funded_amount > 0 && (
+                          <span
+                            className="inline-flex items-center gap-1 text-xs font-semibold text-blue-800 bg-gradient-to-r from-sky-100 to-blue-100 border border-blue-200 rounded-full px-2 py-0.5"
+                            title={`$${o.reinvest_funded_amount.toFixed(2)} was reinvested from your frozen escrow to cover wholesale on this order.`}
+                            data-testid={`reinvest-pill-${o.id}`}
+                          >
+                            <Sparkles className="h-3 w-3" /> Reinvested from frozen · {formatPrice(o.reinvest_funded_amount)}
+                          </span>
+                        )}
                       </div>
                     </div>
                     <div className="text-right">

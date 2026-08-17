@@ -256,6 +256,8 @@ class Order(BaseModel):
     # Reseller wholesale-debit fulfillment (Feb 2026):
     reseller_wholesale_cost: float = 0.0
     reseller_paid_wholesale: bool = False
+    reinvest_funded_amount: float = 0.0  # portion of wholesale funded via wallet Reinvest advance
+    reinvest_funded_at: Optional[datetime] = None
     # Storefront Push attribution — set when the buyer arrived via a shared link.
     share_ref: Optional[str] = None
     push_reward_amount: float = 0.0
@@ -2082,6 +2084,63 @@ async def wallet_reinvest(payload: dict = Body(...), user: dict = Depends(get_cu
         related_id=order_id,
     )
 
+    # Trace the cash flow — allocate the unlocked amount FIFO across the
+    # seller's open dropship orders so the UI can render a "Reinvested from
+    # frozen · $X" pill on each funded row.
+    remaining = amount
+    settings2 = await get_settings()
+    badge = compute_seller_badge(user)
+    discounts = settings2.get("resell_wholesale_discounts") or {"new": 0.0, "bronze": 5.0, "silver": 10.0, "gold": 15.0}
+    discount_pct = float(discounts.get(badge, 0.0))
+    open_orders = await db.orders.find(
+        {
+            "seller_id": user["id"],
+            "status": {"$in": ["paid", "shipped"]},
+            "funds_released": {"$ne": True},
+        },
+        {"_id": 0, "id": 1, "listing_id": 1, "quantity": 1,
+         "reseller_wholesale_cost": 1, "reseller_paid_wholesale": 1,
+         "reinvest_funded_amount": 1, "created_at": 1},
+    ).sort("created_at", 1).to_list(500)
+    listing_ids = list({o["listing_id"] for o in open_orders})
+    dropship_ids = {
+        d["id"] for d in await db.listings.find(
+            {"id": {"$in": listing_ids}, "imported_from_id": {"$ne": None}},
+            {"_id": 0, "id": 1, "base_price": 1},
+        ).to_list(len(listing_ids))
+    }
+    listing_by_id = {
+        d["id"]: d for d in await db.listings.find(
+            {"id": {"$in": list(dropship_ids)}},
+            {"_id": 0, "id": 1, "base_price": 1},
+        ).to_list(len(dropship_ids))
+    } if dropship_ids else {}
+    now = datetime.now(timezone.utc)
+    funded_orders: List[str] = []
+    for o in open_orders:
+        if remaining <= 0.005:
+            break
+        if o["listing_id"] not in dropship_ids:
+            continue
+        # Wholesale cost for this order (recorded or projected)
+        if o.get("reseller_paid_wholesale") and float(o.get("reseller_wholesale_cost") or 0) > 0:
+            cost = float(o["reseller_wholesale_cost"])
+        else:
+            base = float((listing_by_id.get(o["listing_id"]) or {}).get("base_price") or 0.0) * int(o.get("quantity") or 1)
+            cost = round(base * (1 - discount_pct / 100.0), 2)
+        already_funded = float(o.get("reinvest_funded_amount") or 0)
+        need = round(max(0.0, cost - already_funded), 2)
+        if need <= 0:
+            continue
+        alloc = round(min(need, remaining), 2)
+        await db.orders.update_one(
+            {"id": o["id"]},
+            {"$inc": {"reinvest_funded_amount": alloc},
+             "$set": {"reinvest_funded_at": now}},
+        )
+        remaining = round(remaining - alloc, 2)
+        funded_orders.append(o["id"])
+
     after = await db.users.find_one({"id": user["id"]}, {"_id": 0, "wallet_balance": 1, "wallet_frozen_balance": 1}) or {}
     await notify(
         user["id"], "wallet",
@@ -2094,6 +2153,8 @@ async def wallet_reinvest(payload: dict = Body(...), user: dict = Depends(get_cu
         "amount": amount,
         "balance": round(float(after.get("wallet_balance", 0.0)), 2),
         "frozen_balance": round(float(after.get("wallet_frozen_balance", 0.0)), 2),
+        "funded_orders": funded_orders,
+        "unallocated": remaining,
     }
 
 
