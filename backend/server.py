@@ -348,6 +348,9 @@ class WalletTransaction(BaseModel):
     related_id: Optional[str] = None
     status: Literal["completed", "pending"] = "completed"
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    # Populated on Reinvest-advance credit rows so the UI can render an
+    # expandable trail of which orders each advance funded.
+    funded_orders: List[str] = Field(default_factory=list)
 
 class WithdrawalRequest(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -1756,11 +1759,25 @@ async def get_wallet(user: dict = Depends(get_current_user)):
     pending_wd = await db.withdrawals.find({"user_id": user["id"], "status": {"$in": ["pending", "approved"]}}, {"_id": 0}).to_list(100)
     # Refresh from DB to be safe with concurrent orders
     fresh = await db.users.find_one({"id": user["id"]}, {"_id": 0, "wallet_balance": 1, "wallet_frozen_balance": 1}) or {}
+    # Resolve any Reinvest-advance nested order refs into lightweight cards
+    funded_order_ids: List[str] = []
+    for t in txs:
+        funded_order_ids.extend(t.get("funded_orders") or [])
+    orders_by_id: dict = {}
+    if funded_order_ids:
+        for o in await db.orders.find(
+            {"id": {"$in": list(set(funded_order_ids))}},
+            {"_id": 0, "id": 1, "listing_title": 1, "listing_image": 1,
+             "amount": 1, "quantity": 1, "status": 1,
+             "reinvest_funded_amount": 1, "created_at": 1},
+        ).to_list(len(funded_order_ids)):
+            orders_by_id[o["id"]] = o
     return {
         "balance": fresh.get("wallet_balance", user.get("wallet_balance", 0.0)),
         "frozen_balance": fresh.get("wallet_frozen_balance", 0.0),
         "transactions": [WalletTransaction(**t).model_dump() for t in txs],
         "pending_withdrawals": [WithdrawalRequest(**w).model_dump() for w in pending_wd],
+        "orders_by_id": orders_by_id,
     }
 
 @api_router.post("/wallet/withdraw", response_model=WithdrawalRequest)
@@ -2075,7 +2092,7 @@ async def wallet_reinvest(payload: dict = Body(...), user: dict = Depends(get_cu
         raise HTTPException(400, "Frozen balance changed since load — refresh and try again")
 
     # Credit available bucket so wholesale/inventory payments can spend it.
-    await ledger.apply_entry(
+    credit_tx = await ledger.apply_entry(
         db,
         user_id=user["id"],
         delta=amount,
@@ -2140,6 +2157,15 @@ async def wallet_reinvest(payload: dict = Body(...), user: dict = Depends(get_cu
         )
         remaining = round(remaining - alloc, 2)
         funded_orders.append(o["id"])
+
+    # Attach the funded_orders list to the credit tx so the wallet UI can
+    # render an expandable trail linking each Reinvest advance to the exact
+    # orders it funded.
+    if credit_tx and credit_tx.get("id") and funded_orders:
+        await db.wallet_txs.update_one(
+            {"id": credit_tx["id"]},
+            {"$set": {"funded_orders": funded_orders}},
+        )
 
     after = await db.users.find_one({"id": user["id"]}, {"_id": 0, "wallet_balance": 1, "wallet_frozen_balance": 1}) or {}
     await notify(

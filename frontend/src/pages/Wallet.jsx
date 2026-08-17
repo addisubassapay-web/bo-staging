@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   Wallet as WalletIcon, ArrowDownRight, ArrowUpRight, Clock, CheckCircle2, XCircle,
   Snowflake, Copy, Check, Bitcoin, Building2, Plus, Minus, RotateCcw, Upload, X as XIcon, Sparkles,
+  ChevronDown, ChevronUp,
 } from "lucide-react";
 
 const typeMeta = {
@@ -617,6 +618,7 @@ const Wallet = () => {
   const [wdOpen, setWdOpen] = useState(false);
   const [rfOpen, setRfOpen] = useState(false);
   const [riOpen, setRiOpen] = useState(false);
+  const [expandedTx, setExpandedTx] = useState(null);
 
   const load = async () => {
     const [w, m, d] = await Promise.allSettled([
@@ -777,40 +779,135 @@ const Wallet = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {data.transactions.map((t) => (
-                    <tr key={t.id} className="border-t border-neutral-100">
-                      <td className="p-3">
-                        <Badge variant="secondary" className={typeMeta[t.type]?.color || ""}>{typeMeta[t.type]?.label || t.type}</Badge>
-                      </td>
-                      <td className="p-3 text-neutral-700">{t.description}</td>
-                      <td className={`p-3 text-right font-medium ${t.amount >= 0 ? "text-green-600" : "text-red-600"}`}>
-                        {t.amount >= 0 ? <ArrowDownRight className="h-3 w-3 inline mr-0.5" /> : <ArrowUpRight className="h-3 w-3 inline mr-0.5" />}
-                        {formatPrice(Math.abs(t.amount))}
-                      </td>
-                      <td className="p-3 text-right text-neutral-600">{formatPrice(t.balance_after)}</td>
-                      <td className="p-3 text-right text-neutral-500 text-xs">{new Date(t.created_at).toLocaleDateString()}</td>
-                    </tr>
-                  ))}
+                  {data.transactions.map((t) => {
+                    const funded = t.funded_orders || [];
+                    const isExpandable = funded.length > 0;
+                    const expanded = expandedTx === t.id;
+                    return (
+                      <React.Fragment key={t.id}>
+                        <tr
+                          className={`border-t border-neutral-100 ${isExpandable ? "cursor-pointer hover:bg-blue-50/40" : ""}`}
+                          onClick={() => isExpandable && setExpandedTx(expanded ? null : t.id)}
+                          data-testid={isExpandable ? `reinvest-tx-row-${t.id}` : undefined}
+                        >
+                          <td className="p-3">
+                            <Badge variant="secondary" className={typeMeta[t.type]?.color || ""}>{typeMeta[t.type]?.label || t.type}</Badge>
+                          </td>
+                          <td className="p-3 text-neutral-700">
+                            <div className="flex items-center gap-2">
+                              <span>{t.description}</span>
+                              {isExpandable && (
+                                <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-blue-800 bg-gradient-to-r from-sky-100 to-blue-100 border border-blue-200 rounded-full px-2 py-0.5">
+                                  <Sparkles className="h-3 w-3" /> {funded.length} order{funded.length === 1 ? "" : "s"} funded
+                                  {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td className={`p-3 text-right font-medium ${t.amount >= 0 ? "text-green-600" : "text-red-600"}`}>
+                            {t.amount >= 0 ? <ArrowDownRight className="h-3 w-3 inline mr-0.5" /> : <ArrowUpRight className="h-3 w-3 inline mr-0.5" />}
+                            {formatPrice(Math.abs(t.amount))}
+                          </td>
+                          <td className="p-3 text-right text-neutral-600">{formatPrice(t.balance_after)}</td>
+                          <td className="p-3 text-right text-neutral-500 text-xs">{new Date(t.created_at).toLocaleDateString()}</td>
+                        </tr>
+                        {isExpandable && expanded && (
+                          <tr className="bg-gradient-to-br from-sky-50/40 to-blue-50/30" data-testid={`reinvest-tx-detail-${t.id}`}>
+                            <td colSpan={5} className="p-3">
+                              <div className="text-[11px] uppercase font-semibold text-blue-800 tracking-wider mb-2">
+                                Funded orders ({funded.length})
+                              </div>
+                              <div className="space-y-2">
+                                {funded.map((oid) => {
+                                  const o = (data.orders_by_id || {})[oid];
+                                  if (!o) return (
+                                    <div key={oid} className="text-xs text-neutral-500 font-mono">#{oid.slice(0,8)} · (deleted)</div>
+                                  );
+                                  return (
+                                    <Link
+                                      key={oid}
+                                      to={`/profile?tab=sales`}
+                                      className="flex items-center gap-3 rounded-lg bg-white border border-blue-100 p-2 hover:border-[#2563EB] transition"
+                                      data-testid={`reinvest-funded-order-${oid}`}
+                                    >
+                                      {o.listing_image && (
+                                        <img src={o.listing_image} alt="" className="h-10 w-10 rounded object-cover shrink-0" />
+                                      )}
+                                      <div className="flex-1 min-w-0">
+                                        <div className="text-sm font-medium text-neutral-900 line-clamp-1">{o.listing_title}</div>
+                                        <div className="text-[11px] text-neutral-500">
+                                          #{o.id.slice(0,8)} · qty {o.quantity} · {o.status}
+                                        </div>
+                                      </div>
+                                      <div className="text-right shrink-0">
+                                        <div className="text-sm font-bold tabular-nums text-blue-800">{formatPrice(o.reinvest_funded_amount)}</div>
+                                        <div className="text-[10px] text-neutral-400">reinvested</div>
+                                      </div>
+                                    </Link>
+                                  );
+                                })}
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
             {/* Mobile cards */}
             <div className="sm:hidden space-y-2">
-              {data.transactions.map((t) => (
-                <div key={t.id} className="border border-neutral-200 rounded-lg p-3">
-                  <div className="flex items-center justify-between gap-2 mb-1">
-                    <Badge variant="secondary" className={typeMeta[t.type]?.color || ""}>{typeMeta[t.type]?.label || t.type}</Badge>
-                    <span className={`font-semibold ${t.amount >= 0 ? "text-green-600" : "text-red-600"}`}>
-                      {t.amount >= 0 ? "+" : "-"}{formatPrice(Math.abs(t.amount))}
-                    </span>
+              {data.transactions.map((t) => {
+                const funded = t.funded_orders || [];
+                const expanded = expandedTx === t.id;
+                return (
+                  <div key={t.id} className="border border-neutral-200 rounded-lg p-3">
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <Badge variant="secondary" className={typeMeta[t.type]?.color || ""}>{typeMeta[t.type]?.label || t.type}</Badge>
+                      <span className={`font-semibold ${t.amount >= 0 ? "text-green-600" : "text-red-600"}`}>
+                        {t.amount >= 0 ? "+" : "-"}{formatPrice(Math.abs(t.amount))}
+                      </span>
+                    </div>
+                    <div className="text-sm text-neutral-700">{t.description}</div>
+                    <div className="flex justify-between mt-1 text-xs text-neutral-500">
+                      <span>Balance: {formatPrice(t.balance_after)}</span>
+                      <span>{new Date(t.created_at).toLocaleDateString()}</span>
+                    </div>
+                    {funded.length > 0 && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => setExpandedTx(expanded ? null : t.id)}
+                          className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-blue-800 bg-gradient-to-r from-sky-100 to-blue-100 border border-blue-200 rounded-full px-2 py-0.5"
+                          data-testid={`reinvest-tx-toggle-${t.id}`}
+                        >
+                          <Sparkles className="h-3 w-3" /> {funded.length} order{funded.length === 1 ? "" : "s"} funded
+                          {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                        </button>
+                        {expanded && (
+                          <div className="mt-2 space-y-1.5" data-testid={`reinvest-tx-detail-${t.id}`}>
+                            {funded.map((oid) => {
+                              const o = (data.orders_by_id || {})[oid];
+                              if (!o) return <div key={oid} className="text-xs font-mono text-neutral-500">#{oid.slice(0,8)}</div>;
+                              return (
+                                <Link key={oid} to="/profile?tab=sales" className="flex items-center gap-2 bg-white border border-blue-100 rounded-md p-1.5">
+                                  {o.listing_image && <img src={o.listing_image} alt="" className="h-8 w-8 rounded object-cover shrink-0" />}
+                                  <div className="flex-1 min-w-0 text-xs">
+                                    <div className="font-medium line-clamp-1">{o.listing_title}</div>
+                                    <div className="text-neutral-500">qty {o.quantity} · {o.status}</div>
+                                  </div>
+                                  <div className="text-xs font-bold text-blue-800 tabular-nums">{formatPrice(o.reinvest_funded_amount)}</div>
+                                </Link>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </>
+                    )}
                   </div>
-                  <div className="text-sm text-neutral-700">{t.description}</div>
-                  <div className="flex justify-between mt-1 text-xs text-neutral-500">
-                    <span>Balance: {formatPrice(t.balance_after)}</span>
-                    <span>{new Date(t.created_at).toLocaleDateString()}</span>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </>
         )}
