@@ -37,6 +37,7 @@ from routers.personalized import router as personalized_router
 from routers.checkout import router as checkout_router
 from routers.coupons import router as coupons_router
 from routers.stripe_payments import router as stripe_payments_router
+from routers.scraper import router as scraper_router
 
 
 ROOT_DIR = Path(__file__).parent
@@ -5102,6 +5103,7 @@ app.include_router(personalized_router, prefix="/api")
 app.include_router(checkout_router, prefix="/api")
 app.include_router(coupons_router, prefix="/api")
 app.include_router(stripe_payments_router, prefix="/api")
+app.include_router(scraper_router, prefix="/api")
 
 app.add_middleware(
     CORSMiddleware,

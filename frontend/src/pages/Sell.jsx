@@ -7,10 +7,11 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Camera, X, Upload, DollarSign, Sparkles, Wand2, PackagePlus, PenLine, Lock, ShieldCheck, Clock as ClockIcon } from "lucide-react";
+import { Camera, X, Upload, DollarSign, Sparkles, Wand2, PackagePlus, PenLine, Lock, ShieldCheck, Clock as ClockIcon, Link as LinkIcon } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import ResellFromCatalog from "@/components/ResellFromCatalog";
+import ImportFromUrl from "@/components/ImportFromUrl";
 import { Link } from "react-router-dom";
 
 const PLACEHOLDER_SEEDS = ["seed1", "seed2", "seed3", "seed4", "seed5", "seed6", "seed7", "seed8"];
@@ -83,7 +84,22 @@ const Sell = () => {
   const [enhancingIdx, setEnhancingIdx] = useState(-1);
   const [enhanceAllBusy, setEnhanceAllBusy] = useState(false);
   const [prePublishOpen, setPrePublishOpen] = useState(false);
-  const [mode, setMode] = useState("new"); // "new" | "resell"
+  const [mode, setMode] = useState("new"); // "new" | "resell" | "import"
+
+  const applyImport = (listing /* , job */) => {
+    setForm((prev) => ({
+      ...prev,
+      title: listing?.title || prev.title,
+      description: listing?.description || prev.description,
+      price: listing?.price ? String(listing.price) : prev.price,
+      brand: listing?.brand || prev.brand,
+    }));
+    if (Array.isArray(listing?.images) && listing.images.length > 0) {
+      setImages(listing.images.slice(0, 8));
+    }
+    setMode("new");
+    toast({ title: "Prefilled from URL", description: "Review the details and publish when ready." });
+  };
 
   const enhanceAll = async () => {
     if (images.length === 0) return;
@@ -256,8 +272,8 @@ const Sell = () => {
         <SellerGate status={user?.seller_status} />
       ) : (
       <>
-      {/* Mode toggle: new listing vs resell existing */}
-      <div className="mt-6 grid grid-cols-2 gap-2 p-1 rounded-full bg-neutral-100 dark:bg-neutral-800 max-w-md" data-testid="sell-mode-toggle">
+      {/* Mode toggle: new listing vs resell existing vs import from URL */}
+      <div className="mt-6 grid grid-cols-3 gap-2 p-1 rounded-full bg-neutral-100 dark:bg-neutral-800 max-w-2xl" data-testid="sell-mode-toggle">
         <button
           type="button"
           onClick={() => setMode("new")}
@@ -272,12 +288,22 @@ const Sell = () => {
           className={`h-10 rounded-full text-sm font-semibold transition inline-flex items-center justify-center gap-1.5 ${mode === "resell" ? "bg-white dark:bg-neutral-950 text-[#FF211F] shadow-sm" : "text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-neutral-100"}`}
           data-testid="sell-mode-resell"
         >
-          <PackagePlus className="h-4 w-4" /> Resell existing item
+          <PackagePlus className="h-4 w-4" /> Resell existing
+        </button>
+        <button
+          type="button"
+          onClick={() => setMode("import")}
+          className={`h-10 rounded-full text-sm font-semibold transition inline-flex items-center justify-center gap-1.5 ${mode === "import" ? "bg-white dark:bg-neutral-950 text-[#FF211F] shadow-sm" : "text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-neutral-100"}`}
+          data-testid="sell-mode-import"
+        >
+          <LinkIcon className="h-4 w-4" /> Import from URL
         </button>
       </div>
 
       {mode === "resell" ? (
         <ResellFromCatalog />
+      ) : mode === "import" ? (
+        <div className="mt-8"><ImportFromUrl onImportReady={applyImport} /></div>
       ) : (
       <form onSubmit={submit} className="mt-8 space-y-8">
         {/* Photos */}

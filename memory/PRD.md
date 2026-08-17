@@ -26,6 +26,15 @@ Exact replica of Mercari platform (mercari.com) — same color scheme (`#FF211F`
 
 ## Implemented (with dates)
 
+### Feb 2026 — Zyte Scraper Pipeline with arq Queue + R2 Rehost (Alongside Apify)
+- **Zyte extraction service** (`services/zyte.py`) — POSTs to `https://api.zyte.com/v1/extract` with HTTP Basic Auth. Fast `httpResponseBody` mode with automatic fallback to `browserHtml` for JS-heavy sites. Normalizes Zyte's `product` schema → canonical listing shape (title/description/price/images/brand/sku).
+- **arq worker** (`services/queue.py`) — Python-native async Redis queue. Redis and arq worker supervised in `/etc/supervisor/conf.d/redis.conf` + `arq_worker.conf`. Worker loads backend/.env explicitly so Mongo/Zyte creds resolve outside FastAPI context.
+- **Cloudflare R2 storage** (`services/r2_storage.py`) — S3-compatible client via boto3. Env-gated: when `R2_ACCOUNT_ID/R2_ACCESS_KEY_ID/R2_SECRET_ACCESS_KEY/R2_BUCKET` are set, images are streamed & rehosted; otherwise the supplier URL is returned unchanged. Deterministic keys prevent duplicate uploads.
+- **Scraper API** (`routers/scraper.py`): `POST /api/scraper/jobs` (auth) enqueues, `GET /api/scraper/jobs/{id}` polls, `GET /api/scraper/jobs` lists user's own, `GET /api/scraper/admin/jobs` admin all, `GET /api/scraper/status` health probe (Zyte + Redis + R2).
+- **Sell → Import from URL** — third tab on `/sell` with `ImportFromUrl` component; sellers paste any Amazon/Shopify/eBay/etc. URL, watch a live-polling recent-imports list, and click "Use" to prefill the New listing form.
+- **Admin Zyte scraper page** (`/admin/scraper`) — health pills for Zyte/arq/R2, per-status filter, auto-refresh every 5s, full jobs table with error surfaces.
+- Apify sync remains untouched — Zyte runs alongside as a new source.
+
 ### Feb 2026 — Email Preferences UI, Admin Email Log Viewer, and Real Stripe Checkout
 - **Email Preferences UI** — new Settings tab on `/profile?tab=settings` renders `EmailPreferences` component with 6 category switches (order, sale, wallet, payout, dispute, system). Toggling calls `PUT /api/me/email-prefs` and persists per user. Backend `notify()` already respects the map — sends email only when the corresponding `email_prefs.<kind>` is not `false`.
 - **Admin Email Log** — new sidebar entry `/admin/email-log` (`AdminEmailLog.jsx`) surfaces every `email_log` record with columns for status/kind/recipient/subject/provider/error. Failed rows highlight red; "Failed only" filter and per-kind filter; one-click "Send test" input calls `POST /api/admin/email/test` for pipeline verification.
