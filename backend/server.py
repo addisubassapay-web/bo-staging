@@ -238,6 +238,8 @@ class Order(BaseModel):
     listing_image: Optional[str] = None
     quantity: int = 1
     unit_price: Optional[float] = None
+    bulk_discount_pct: float = 0.0
+    bulk_discount_amount: float = 0.0
     amount: float
     shipping_fee: float = 0.0
     status: Literal["pending", "paid", "shipped", "delivered", "cancelled"] = "paid"
@@ -390,6 +392,12 @@ class Settings(BaseModel):
     # Storefront Push reward: fixed bonus (USD) credited to the seller when their share link
     # converts to their first-ever share-attributed sale. Set to 0 to disable.
     push_reward_amount: float = 2.0
+    # Bulk-buyer reward tiers. Each item: {min_qty, discount_pct}. The highest
+    # tier whose min_qty is satisfied wins. Empty list disables bulk discounts.
+    bulk_discount_tiers: List[dict] = Field(default_factory=lambda: [
+        {"min_qty": 5, "discount_pct": 5.0},
+        {"min_qty": 10, "discount_pct": 10.0},
+    ])
     # Crypto deposit addresses shown to users on the Wallet page. Empty string = hidden.
     crypto_addresses: dict = Field(default_factory=lambda: {"BTC": "", "ETH": "", "USDC": "", "USDT": ""})
     # Multi-asset / multi-network crypto deposit config. Each item:
@@ -941,7 +949,19 @@ async def create_order(payload: OrderCreate, user: dict = Depends(get_current_us
 
     settings = await get_settings()
     unit_price = float(listing["price"])
-    amount = round(unit_price * quantity, 2)
+    gross = round(unit_price * quantity, 2)
+    # Bulk-buyer reward — auto-applied server-side so it's always correct.
+    bulk_tiers = settings.get("bulk_discount_tiers") or [
+        {"min_qty": 5, "discount_pct": 5.0},
+        {"min_qty": 10, "discount_pct": 10.0},
+    ]
+    active_tier = max(
+        (t for t in bulk_tiers if quantity >= int(t.get("min_qty", 0))),
+        key=lambda t: float(t.get("min_qty", 0)), default=None,
+    )
+    bulk_discount_pct = float(active_tier["discount_pct"]) if active_tier else 0.0
+    bulk_discount_amount = round(gross * bulk_discount_pct / 100.0, 2)
+    amount = round(gross - bulk_discount_amount, 2)
     # Flat shipping (one shipment covers the whole bulk order).
     shipping_fee = 0.0 if listing.get("shipping_paid_by") == "seller" else 5.99
 
@@ -1044,6 +1064,8 @@ async def create_order(payload: OrderCreate, user: dict = Depends(get_current_us
         listing_image=listing["images"][0] if listing.get("images") else None,
         quantity=quantity,
         unit_price=unit_price,
+        bulk_discount_pct=bulk_discount_pct,
+        bulk_discount_amount=bulk_discount_amount,
         amount=amount,
         shipping_fee=shipping_fee,
         shipping_address=payload.shipping_address,
@@ -1849,6 +1871,62 @@ async def admin_update_payment_methods(payload: dict, _admin: dict = Depends(req
     return await admin_get_payment_methods(_admin=_admin)
 
 
+@api_router.get("/admin/wallet/audit")
+async def admin_wallet_audit(_admin: dict = Depends(require_admin), limit: int = 500):
+    """List users whose current `wallet_balance` drifted from the sum of their
+    ledger entries in `wallet_txs`. Returns the top |drift| first so admins
+    can spot problems fast.
+    """
+    limit = max(10, min(int(limit or 500), 2000))
+    # 1) Ledger totals per user (available bucket only).
+    available_types = ["deposit", "purchase", "refund", "sale_released",
+                       "wholesale_debit", "affiliate", "referral",
+                       "withdrawal", "adjustment", "sale", "dropship_released",
+                       "bonus"]
+    pipeline = [
+        {"$match": {"type": {"$in": available_types}}},
+        {"$group": {"_id": "$user_id", "expected": {"$sum": "$amount"}}},
+    ]
+    ledger_rows = await db.wallet_txs.aggregate(pipeline).to_list(10_000)
+    ledger_by_uid = {r["_id"]: round(float(r["expected"]), 2) for r in ledger_rows}
+
+    # 2) Pull user snapshots for the affected + everyone with a non-zero balance.
+    user_ids = set(ledger_by_uid.keys())
+    users = await db.users.find(
+        {"$or": [
+            {"id": {"$in": list(user_ids)}},
+            {"wallet_balance": {"$gt": 0}},
+        ]},
+        {"_id": 0, "id": 1, "username": 1, "email": 1, "role": 1,
+         "wallet_balance": 1, "wallet_frozen_balance": 1},
+    ).to_list(10_000)
+
+    audit = []
+    for u in users:
+        current = round(float(u.get("wallet_balance", 0.0)), 2)
+        expected = ledger_by_uid.get(u["id"], 0.0)
+        drift = round(current - expected, 2)
+        if abs(drift) < 0.01:
+            continue
+        audit.append({
+            "user_id": u["id"],
+            "username": u.get("username"),
+            "email": u.get("email"),
+            "role": u.get("role"),
+            "current_balance": current,
+            "expected_balance": expected,
+            "drift": drift,
+            "frozen_balance": round(float(u.get("wallet_frozen_balance", 0.0)), 2),
+        })
+
+    audit.sort(key=lambda r: abs(r["drift"]), reverse=True)
+    return {
+        "items": audit[:limit],
+        "total_drifted": len(audit),
+        "sum_drift": round(sum(r["drift"] for r in audit), 2),
+    }
+
+
 @api_router.post("/admin/wallet/reconcile/{user_id}")
 async def admin_reconcile_wallet(user_id: str, _admin: dict = Depends(require_admin)):
     """Recompute a user's available balance from the wallet_txs ledger.
@@ -2426,6 +2504,10 @@ async def public_settings():
     return {
         "delivery_days_estimate": s.get("delivery_days_estimate", 7),
         "delivery_auto_release_days": s.get("delivery_auto_release_days", 14),
+        "bulk_discount_tiers": s.get("bulk_discount_tiers") or [
+            {"min_qty": 5, "discount_pct": 5.0},
+            {"min_qty": 10, "discount_pct": 10.0},
+        ],
     }
 
 
@@ -2444,6 +2526,7 @@ async def admin_update_settings(updates: dict, _admin: dict = Depends(require_ad
         "dispute_auto_refund_excluded_reasons",
         "delivery_days_estimate", "delivery_auto_release_days",
         "resell_markup_caps", "resell_wholesale_discounts", "push_reward_amount",
+        "bulk_discount_tiers",
     }
     filtered = {k: v for k, v in updates.items() if k in allowed}
     # Sanitize the exclusion list — only accept known dispute reasons

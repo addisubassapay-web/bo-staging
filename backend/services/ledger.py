@@ -173,10 +173,9 @@ async def release_frozen(db, *, user_id: str, amount: float, order_id: Optional[
 
 
 async def reconcile_reseller(db, *, user_id: str) -> Dict[str, Any]:
-    """Sync a reseller's wallet_balance to the sum of their ledger entries.
-    Used as a self-heal when an external process (e.g. price update on a
-    dropship source listing) needs to re-derive earnings. Returns the delta
-    applied and the new balance.
+    """Force `wallet_balance` to match the sum of the user's `wallet_txs`
+    ledger entries (ledger is the source of truth). Posts an audit row with
+    amount=0 for paper trail whenever a drift is healed.
     """
     pipeline = [
         {"$match": {"user_id": user_id}},
@@ -185,7 +184,8 @@ async def reconcile_reseller(db, *, user_id: str) -> Dict[str, Any]:
             "available": {"$sum": {"$cond": [
                 {"$in": ["$type", ["deposit", "purchase", "refund", "sale_released",
                                     "wholesale_debit", "affiliate", "referral",
-                                    "withdrawal", "adjustment"]]},
+                                    "withdrawal", "adjustment", "sale",
+                                    "dropship_released", "bonus"]]},
                 "$amount", 0]}},
         }},
     ]
@@ -193,17 +193,28 @@ async def reconcile_reseller(db, *, user_id: str) -> Dict[str, Any]:
     expected = round(float(rows[0]["available"]) if rows else 0.0, 2)
 
     user = await db.users.find_one({"id": user_id}, {"_id": 0, "wallet_balance": 1})
-    current = round(float((user or {}).get("wallet_balance", 0.0)), 2)
+    if not user:
+        raise LedgerError(f"User {user_id} not found")
+    current = round(float(user.get("wallet_balance", 0.0)), 2)
     delta = round(expected - current, 2)
     if delta == 0:
         return {"user_id": user_id, "delta": 0.0, "balance": current, "reconciled": False}
-    await apply_entry(
-        db,
-        user_id=user_id,
-        delta=delta,
-        tx_type="adjustment",
-        description=f"Reseller earnings sync ({'+' if delta > 0 else ''}{delta:.2f})",
-    )
+
+    # Force wallet to match the ledger (ledger is the source of truth).
+    await db.users.update_one({"id": user_id}, {"$set": {"wallet_balance": expected}})
+    # Zero-amount audit row so the reconcile is discoverable in tx history
+    # without shifting the ledger sum (keeps wallet == sum(wallet_txs.amount)).
+    await db.wallet_txs.insert_one({
+        "id": str(uuid.uuid4()),
+        "user_id": user_id,
+        "type": "adjustment",
+        "amount": 0.0,
+        "balance_after": expected,
+        "description": f"Ledger reconcile: wallet {current:+.2f} → {expected:.2f} (drift {delta:+.2f} healed)",
+        "related_id": None,
+        "status": "completed",
+        "created_at": datetime.now(timezone.utc),
+    })
     return {"user_id": user_id, "delta": delta, "balance": expected, "reconciled": True}
 
 

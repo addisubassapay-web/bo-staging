@@ -190,10 +190,21 @@ const Checkout = () => {
 
   const shippingFee = listing.shipping_paid_by === "buyer" ? 5.99 : 0;
   const unitPrice = listing.price;
-  const subtotal = unitPrice * quantity;
+  const gross = unitPrice * quantity;
+  const bulkTiers = publicSettings.bulk_discount_tiers || [];
+  const activeBulkTier = bulkTiers
+    .filter((t) => quantity >= (t.min_qty || 0))
+    .sort((a, b) => (b.min_qty || 0) - (a.min_qty || 0))[0];
+  const bulkPct = activeBulkTier?.discount_pct || 0;
+  const bulkAmount = Math.round(gross * bulkPct) / 100;
+  const subtotal = gross - bulkAmount;
   const discount = coupon.discount || 0;
   const total = Math.max(0, subtotal + shippingFee - discount);
   const setQty = (n) => setQuantity(Math.max(1, Math.min(99, Number(n) || 1)));
+  // What quantity unlocks the NEXT bulk tier? (shown as an upsell nudge)
+  const nextBulkTier = bulkTiers
+    .filter((t) => quantity < (t.min_qty || 0))
+    .sort((a, b) => (a.min_qty || 0) - (b.min_qty || 0))[0];
   const deliveryDays = publicSettings.delivery_days_estimate || 7;
   const eta = new Date(Date.now() + deliveryDays * 24 * 60 * 60 * 1000);
   const etaLabel = eta.toLocaleDateString(undefined, { month: "short", day: "numeric" });
@@ -508,6 +519,12 @@ const Checkout = () => {
             {quantity >= 5 && (
               <div className="mt-2 text-[11px] text-emerald-700 dark:text-emerald-300 font-semibold" data-testid="bulk-badge">
                 Bulk order · {quantity}× units
+                {bulkPct > 0 && <span className="ml-1">· −{bulkPct}% applied</span>}
+              </div>
+            )}
+            {nextBulkTier && quantity < nextBulkTier.min_qty && (
+              <div className="mt-2 text-[11px] text-neutral-500 dark:text-neutral-400" data-testid="bulk-nudge">
+                Add {nextBulkTier.min_qty - quantity} more to unlock <b className="text-emerald-700 dark:text-emerald-300">{nextBulkTier.discount_pct}% off</b>
               </div>
             )}
           </div>
@@ -518,8 +535,14 @@ const Checkout = () => {
                 {t("checkout.item")}
                 {quantity > 1 && <span className="text-neutral-400 dark:text-neutral-500"> · {format(unitPrice)} × {quantity}</span>}
               </span>
-              <span className="tabular-nums font-medium" data-testid="summary-subtotal">{format(subtotal)}</span>
+              <span className="tabular-nums font-medium" data-testid="summary-subtotal">{format(gross)}</span>
             </div>
+            {bulkAmount > 0 && (
+              <div className="flex justify-between text-emerald-700 dark:text-emerald-400" data-testid="bulk-discount-row">
+                <span>Bulk discount ({bulkPct}% off for {quantity}+ units)</span>
+                <span className="tabular-nums font-medium">−{format(bulkAmount)}</span>
+              </div>
+            )}
             <div className="flex justify-between text-neutral-700 dark:text-neutral-300">
               <span>{t("cart.shipping")}</span>
               <span className="tabular-nums font-medium">{format(shippingFee)}</span>

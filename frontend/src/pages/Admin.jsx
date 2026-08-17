@@ -15,6 +15,7 @@ import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import AdminShelves from "@/pages/AdminShelves";
 import ApifySync from "@/pages/AdminApifySync";
 import AdminPaymentMethods from "@/pages/AdminPaymentMethods";
+import AdminLedgerAudit from "@/pages/AdminLedgerAudit";
 
 const SidebarLink = ({ to, icon: Icon, children }) => (
   <NavLink
@@ -1267,6 +1268,7 @@ const Admin = () => {
         <SidebarLink to="/admin/orders" icon={ShoppingBag}>Orders</SidebarLink>
         <SidebarLink to="/admin/categories" icon={FolderTree}>Categories</SidebarLink>
         <SidebarLink to="/admin/withdrawals" icon={Wallet}>Withdrawals</SidebarLink>
+        <SidebarLink to="/admin/ledger-audit" icon={Wallet}>Ledger audit</SidebarLink>
         <SidebarLink to="/admin/payment-methods" icon={Bitcoin}>Payment methods</SidebarLink>
         <SidebarLink to="/admin/coupons" icon={Ticket}>Coupons</SidebarLink>
         <SidebarLink to="/admin/disputes" icon={AlertCircle}>Disputes</SidebarLink>
@@ -1284,6 +1286,7 @@ const Admin = () => {
           <Route path="orders" element={<OrdersMgr />} />
           <Route path="categories" element={<CategoriesMgr />} />
           <Route path="withdrawals" element={<WithdrawalsMgr />} />
+          <Route path="ledger-audit" element={<AdminLedgerAudit />} />
           <Route path="payment-methods" element={<AdminPaymentMethods />} />
           <Route path="disputes" element={<DisputesMgr />} />
           <Route path="seller-applications" element={<SellerApplicationsMgr />} />
