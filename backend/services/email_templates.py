@@ -86,3 +86,37 @@ def account_locked(username: str, unlock_url: str):
         "For your safety, we&apos;ve auto-unlocked it if this was you. If not, please reset your password.</p>"
     )
     return subject, _shell("Account safety alert", body, unlock_url, "Reset password")
+
+
+def catalog_seed_complete(username: str, provider: str, query: str, pages: int,
+                          products_total: int, products_published: int,
+                          duration_seconds: int, credits_spent: int):
+    subject = f"Your seed of “{query}” is live — {products_published} products added"
+    friendly_provider = {
+        "amazon_search": "Amazon search",
+        "amazon_bestsellers": "Amazon bestsellers",
+        "mercari_search": "Mercari search",
+    }.get(provider, provider)
+    minutes = max(1, duration_seconds // 60)
+    body = (
+        f"<p>Hi {username}, your automated catalog seed just finished.</p>"
+        "<table role='presentation' cellpadding='0' cellspacing='0' width='100%' "
+        "style='background:#F8FAFC;border-radius:12px;padding:14px;margin:12px 0;'>"
+        f"<tr><td style='padding:6px 0;'><b>Source</b></td><td>{friendly_provider}</td></tr>"
+        f"<tr><td style='padding:6px 0;'><b>Keyword</b></td><td>{query}</td></tr>"
+        f"<tr><td style='padding:6px 0;'><b>Pages crawled</b></td><td>{pages}</td></tr>"
+        f"<tr><td style='padding:6px 0;'><b>Products extracted</b></td><td>{products_total}</td></tr>"
+        f"<tr><td style='padding:6px 0;'><b>Published live</b></td>"
+        f"<td style='color:#059669;font-weight:700;'>{products_published}</td></tr>"
+        f"<tr><td style='padding:6px 0;'><b>Zyte credits used</b></td><td>{credits_spent}</td></tr>"
+        f"<tr><td style='padding:6px 0;'><b>Duration</b></td><td>~{minutes} min</td></tr>"
+        "</table>"
+        "<p>All items are already live in your storefront under the category you chose. "
+        "Tap below to review them or start another seed.</p>"
+    )
+    return subject, _shell(
+        "Seed complete",
+        body,
+        f"{FRONTEND}/profile?tab=listings",
+        "Review your listings",
+    )

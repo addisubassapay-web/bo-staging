@@ -26,6 +26,12 @@ Exact replica of Mercari platform (mercari.com) — same color scheme (`#FF211F`
 
 ## Implemented (with dates)
 
+### Feb 2026 — "Seed 1,000 In One Click" Preset + Completion Email
+- **One-click preset** — new button at the top of `PaginatedSeedScrape` (`seed-preset-1000`) that auto-fills pages=20, Auto-Publish=on, Amazon Full Pull=on (for Amazon providers). Cost ~20 Zyte credits → typically 300-600+ live listings.
+- **Super-batch completion email** — arq worker now detects when every child page of a super-batch has finished (done or failed) and sends a branded "Seed complete" email via Hostinger SMTP with source/keyword/pages/products/credits/duration stats. Compare-and-set flag prevents duplicate sends across concurrent workers. Respects `email_prefs.system=false` opt-outs.
+- **Timezone fix** — normalized MongoDB's naive datetimes before subtracting from `datetime.now(tz=UTC)` to prevent the completion hook from crashing.
+- **Verified** end-to-end: seed for "desk lamp" ran 2 pages → 119 live listings in ~90s and delivered the real completion email to the seller (`provider=hostinger, ok=true, subject="Your seed of "desk lamp" is live — 119 products added"`).
+
 ### Feb 2026 — Paid Zyte Key + Concurrent Image Rehost
 - **Zyte paid key** — `ZYTE_API_KEY` rotated to the user's paid $100 plan credential. Amazon extraction now returns full data: verified `amazon_search` for "wireless headphones" pulled 23 real products (correct titles, prices, images) in 28 seconds via one productList call. Prior trial-tier limitations lifted with zero code changes.
 - **Concurrent image rehost** — `rehost_many()` now dispatches all fetches via `asyncio.gather` instead of a sequential loop. Benchmark on 8 images: **2.70s → 0.55s = 4.91× speedup**. Critical for 1,000-URL CSV runs where each listing has multiple images.

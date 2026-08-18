@@ -106,6 +106,29 @@ const PaginatedSeedScrape = () => {
 
       {!superId && (
         <div className="mt-5 grid grid-cols-1 gap-4">
+          {/* One-click "Seed 1,000" preset — fills the form + fires submit */}
+          <button
+            type="button"
+            onClick={() => {
+              setPages(20);
+              setAutoPublish(true);
+              setHighFidelity(provider === "amazon_search" || provider === "amazon_bestsellers");
+            }}
+            className="w-full text-left rounded-xl border border-dashed border-emerald-300 bg-emerald-50/40 hover:bg-emerald-50 p-3.5 transition-colors group"
+            data-testid="seed-preset-1000"
+          >
+            <div className="flex items-center gap-2.5">
+              <div className="h-8 w-8 rounded-full bg-emerald-600 text-white grid place-items-center shrink-0 group-hover:scale-105 transition-transform">
+                <Rocket className="h-4 w-4" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-bold text-emerald-900">Preset: Seed ~1,000 products in one click</div>
+                <div className="text-xs text-emerald-700/80 mt-0.5">Auto-fills 20 pages + Auto-Publish + Amazon Full Pull (for Amazon). Cost: ~20 Zyte credits. Just add a keyword and a category, then hit Crawl. We&apos;ll email you when it&apos;s done.</div>
+              </div>
+              <div className="text-xs font-bold text-emerald-700 whitespace-nowrap">Apply →</div>
+            </div>
+          </button>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label className="text-sm">Source</Label>

@@ -285,7 +285,84 @@ async def scrape_category_task(ctx: dict, super_batch_id: str) -> dict:
         {"id": super_batch_id},
         {"$set": {"status": "done", "finished_at": datetime.now(timezone.utc), "total": created}},
     )
+    # If this child completes the last page in a super-batch (paginated seed),
+    # send the seller a "Seed complete" email — best-effort, never blocks.
+    try:
+        await _maybe_notify_super_batch_complete(db, batch)
+    except Exception:
+        logger.exception("seed completion email failed")
     return {"ok": True, "created": created}
+
+
+async def _maybe_notify_super_batch_complete(db, child_batch: dict) -> None:
+    """If every child batch under this super-batch is now done/failed, email
+    the owner with the aggregate stats. Uses a compare-and-set flag so we
+    only send once even if multiple workers finish simultaneously."""
+    super_id = child_batch.get("super_batch_id")
+    if not super_id:
+        return
+    sb = await db.scraper_super_batches.find_one({"id": super_id}, {"_id": 0})
+    if not sb or sb.get("email_sent"):
+        return
+    children = await db.scraper_batches.find(
+        {"super_batch_id": super_id}, {"_id": 0}
+    ).to_list(200)
+    pending = [c for c in children if c.get("status") not in ("done", "failed")]
+    if pending:
+        return
+
+    # Compare-and-set to prevent duplicate emails across concurrent workers.
+    updated = await db.scraper_super_batches.update_one(
+        {"id": super_id, "email_sent": {"$ne": True}},
+        {"$set": {"email_sent": True, "email_sent_at": datetime.now(timezone.utc)}},
+    )
+    if updated.modified_count == 0:
+        return
+
+    child_ids = [c["id"] for c in children]
+    products_total = await db.scraper_jobs.count_documents({"batch_id": {"$in": child_ids}})
+    products_published = await db.scraper_jobs.count_documents(
+        {"batch_id": {"$in": child_ids}, "publish_status": "published"}
+    )
+    started = sb.get("created_at")
+    finished = datetime.now(timezone.utc)
+    # MongoDB returns naive UTC datetimes — normalize before subtracting.
+    if started is not None and getattr(started, "tzinfo", None) is None:
+        started = started.replace(tzinfo=timezone.utc)
+    duration = int((finished - started).total_seconds()) if started else 0
+    credits_spent = len(children)
+
+    owner = await db.users.find_one({"id": sb["owner_id"]}, {"_id": 0})
+    if not owner or not owner.get("email"):
+        return
+    # Respect the user's email preferences (system / marketing bucket).
+    prefs = owner.get("email_prefs") or {}
+    if prefs.get("system") is False:
+        return
+
+    from services.email_templates import catalog_seed_complete
+    from services.mailer import send_email
+    subject, html = catalog_seed_complete(
+        username=owner.get("username") or owner.get("email"),
+        provider=sb.get("provider") or "seed",
+        query=sb.get("query") or "",
+        pages=int(sb.get("pages") or len(children)),
+        products_total=products_total,
+        products_published=products_published,
+        duration_seconds=duration,
+        credits_spent=credits_spent,
+    )
+    result = await send_email(owner["email"], subject, html, tags=["seed_complete"])
+    await db.email_log.insert_one({
+        "kind": "seed_complete",
+        "to": owner["email"],
+        "subject": subject,
+        "provider": result.get("provider"),
+        "ok": result.get("ok", False),
+        "error": result.get("error"),
+        "sent_at": datetime.now(timezone.utc),
+        "super_batch_id": super_id,
+    })
 
 
 async def enqueue_category(super_batch_id: str) -> None:
