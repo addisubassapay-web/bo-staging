@@ -219,6 +219,12 @@ async def get_payment_status(session_id: str, request: Request):
                 )
                 # Trigger order finalization now (same as webhook path).
                 await _finalize_paid_order(db, session_id)
+                # Also finalize store-boost purchases (idempotent).
+                try:
+                    from .store_boosts import finalize_paid_boost
+                    await finalize_paid_boost(db, session_id)
+                except Exception:
+                    logger.exception("boost finalize failed for %s", session_id)
                 record = await db.payment_transactions.find_one({"session_id": session_id}, {"_id": 0})
         except Exception as e:
             logger.warning(f"stripe status poll failed for {session_id}: {e}")
@@ -259,5 +265,11 @@ async def stripe_webhook(request: Request):
                       "updated_at": datetime.now(timezone.utc)}},
         )
         await _finalize_paid_order(db, session_id)
+        # Also grant store boost if this session was a boost purchase.
+        try:
+            from .store_boosts import finalize_paid_boost
+            await finalize_paid_boost(db, session_id)
+        except Exception:
+            logger.exception("boost finalize failed for %s", session_id)
 
     return {"received": True}

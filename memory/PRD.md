@@ -26,6 +26,14 @@ Exact replica of Mercari platform (mercari.com) — same color scheme (`#FF211F`
 
 ## Implemented (with dates)
 
+### Feb 2026 — Sponsored Store Slots (paid + admin comp)
+- **`store_boosts` router** (5 endpoints) — tiers: bronze (1×, $5/7d), silver (2×, $12/14d), gold (3×, $25/30d). Boosts stored on `store.boosts[]` with `active_boost_score` cached for O(1) sorts.
+- **Paid path** — `POST /api/store-boost/checkout` opens a real Stripe Checkout Session (reuses the marketplace's existing Stripe wrapper). On payment success both the webhook and the poll-status endpoint call `finalize_paid_boost` (idempotent) which grants the boost. New session_id → boost mapping persisted in `store_boost_orders`.
+- **Admin comp path** — `POST /api/admin/store-boost {store_id, tier, category_id?, days, reason?}` grants free boosts with `source='admin_comp'`. `GET /api/admin/store-boosts` and `POST /api/admin/store-boost/revoke` round out the CRUD.
+- **Storefront search sort** — `/api/stores-search` now sorts by `active_boost_score` DESC first (then followers, featured_rank, created_at). Category-scoped boosts kick in automatically when the caller filters by category. Verified: gold-boosted store jumps to position #1 across search results.
+- **Frontend** — new `AdminStoreBoosts` admin page (sidebar link "Store boosts") with a grant form (typeahead store picker, tier/category/days/reason) and an active-boosts table with revoke. Seller-side `BoostMyStore` component on the Sell → Import tab shows active boosts + a 3-tier picker + scope select + one-click Stripe checkout.
+- **Datetime hardening** — normalized naive-vs-aware MongoDB datetimes on read, matching the fix applied to the best-sellers rotation.
+
 ### Feb 2026 — Suggest Keywords + Bulk Restore + Seed Analytics + Store Search
 - **Suggest Keywords** — `GET /api/scraper/suggest-keywords` uses each seller's top-3 categories and calls Emergent LLM (`openai/gpt-4o-mini`) to return 5 high-signal buyer keywords per category. Falls back to a curated preset when the LLM key is missing so the button is never empty. Frontend "Suggest keywords" button on the Saved Seeds form renders the groups as tap-to-fill pills.
 - **Bulk Restore** — `POST /api/scraper/demoted/bulk-restore` un-demotes every stale listing at its `supplier_last_price`, skipping `supplier_gone` rows (which would 404 for buyers). Returns `{restored, repriced, skipped_gone}`. New button on the Best Sellers Rotation panel with a confirm dialog.

@@ -74,9 +74,9 @@ async def search_stores(
             {"_id": 0, "id": 1, "name": 1, "slug": 1, "tagline": 1, "logo": 1,
              "banner": 1, "verified_tier": 1, "followers_count": 1, "total_sales": 1,
              "featured_rank": 1, "created_at": 1, "owner_id": 1, "is_active": 1,
-             "category_ids": 1},
+             "category_ids": 1, "active_boost_score": 1},
         )
-        .sort([("followers_count", -1), ("featured_rank", 1), ("created_at", -1)])
+        .sort([("active_boost_score", -1), ("followers_count", -1), ("featured_rank", 1), ("created_at", -1)])
         .skip(skip)
         .limit(limit)
     )

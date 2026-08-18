@@ -17,6 +17,7 @@ import CategoryScrapeAtScale from "@/components/CategoryScrapeAtScale";
 import PaginatedSeedScrape from "@/components/PaginatedSeedScrape";
 import SavedSeeds from "@/components/SavedSeeds";
 import BestSellersRotation from "@/components/BestSellersRotation";
+import BoostMyStore from "@/components/BoostMyStore";
 import QuotaWidget from "@/components/QuotaWidget";
 import { Link } from "react-router-dom";
 
@@ -311,6 +312,7 @@ const Sell = () => {
       ) : mode === "import" ? (
         <div className="mt-8 space-y-6">
           <QuotaWidget />
+          <BoostMyStore />
           <PaginatedSeedScrape />
           <SavedSeeds />
           <BestSellersRotation />

@@ -19,6 +19,7 @@ import AdminLedgerAudit from "@/pages/AdminLedgerAudit";
 import AdminEmailLog from "@/pages/AdminEmailLog";
 import AdminScraper from "@/pages/AdminScraper";
 import AdminQuotas from "@/pages/AdminQuotas";
+import AdminStoreBoosts from "@/pages/AdminStoreBoosts";
 
 const SidebarLink = ({ to, icon: Icon, children }) => (
   <NavLink
@@ -1403,6 +1404,7 @@ const Admin = () => {
         <SidebarLink to="/admin/apify-sync" icon={Database}>Apify sync</SidebarLink>
         <SidebarLink to="/admin/scraper" icon={Zap}>Zyte scraper</SidebarLink>
         <SidebarLink to="/admin/quotas" icon={Zap}>Zyte quotas</SidebarLink>
+        <SidebarLink to="/admin/store-boosts" icon={StoreIcon}>Store boosts</SidebarLink>
         <SidebarLink to="/admin/email-log" icon={Mail}>Email log</SidebarLink>
         <SidebarLink to="/admin/settings" icon={SettingsIcon}>Settings</SidebarLink>
       </aside>
@@ -1423,6 +1425,7 @@ const Admin = () => {
           <Route path="apify-sync" element={<ApifySync />} />
           <Route path="scraper" element={<AdminScraper />} />
           <Route path="quotas" element={<AdminQuotas />} />
+          <Route path="store-boosts" element={<AdminStoreBoosts />} />
           <Route path="email-log" element={<AdminEmailLog />} />
           <Route path="settings" element={<SettingsMgr />} />
         </Routes>
