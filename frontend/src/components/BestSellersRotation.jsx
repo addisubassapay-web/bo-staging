@@ -111,8 +111,33 @@ const BestSellersRotation = () => {
 
       {demoted.length > 0 && (
         <div className="mt-5">
-          <div className="text-sm font-semibold flex items-center gap-2 mb-2">
-            <AlertTriangle className="h-4 w-4 text-rose-500" /> Demoted listings ({demoted.length})
+          <div className="text-sm font-semibold flex items-center gap-2 mb-2 justify-between">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-rose-500" /> Demoted listings ({demoted.length})
+            </div>
+            <Button
+              variant="outline" size="sm"
+              onClick={async () => {
+                if (!window.confirm(`Restore all ${demoted.length} demoted listings at the new supplier prices?`)) return;
+                setBusy("bulk-restore");
+                try {
+                  const { data } = await api.post("/scraper/demoted/bulk-restore");
+                  toast({
+                    title: "Bulk restore complete",
+                    description: `${data.restored} restored · ${data.repriced} repriced · ${data.skipped_gone} skipped (supplier gone)`,
+                  });
+                  await load();
+                } catch (e) {
+                  toast({ title: "Bulk restore failed", variant: "destructive" });
+                } finally { setBusy(null); }
+              }}
+              disabled={busy === "bulk-restore"}
+              data-testid="bulk-restore-btn"
+            >
+              {busy === "bulk-restore"
+                ? <><Loader2 className="h-3 w-3 mr-1.5 animate-spin" /> Restoring…</>
+                : <><ArrowUpCircle className="h-3 w-3 mr-1.5" /> Restore all at new prices</>}
+            </Button>
           </div>
           <div className="space-y-2 max-h-96 overflow-y-auto pr-1">
             {demoted.map((row) => {

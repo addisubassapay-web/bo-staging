@@ -26,6 +26,12 @@ Exact replica of Mercari platform (mercari.com) — same color scheme (`#FF211F`
 
 ## Implemented (with dates)
 
+### Feb 2026 — Suggest Keywords + Bulk Restore + Seed Analytics + Store Search
+- **Suggest Keywords** — `GET /api/scraper/suggest-keywords` uses each seller's top-3 categories and calls Emergent LLM (`openai/gpt-4o-mini`) to return 5 high-signal buyer keywords per category. Falls back to a curated preset when the LLM key is missing so the button is never empty. Frontend "Suggest keywords" button on the Saved Seeds form renders the groups as tap-to-fill pills.
+- **Bulk Restore** — `POST /api/scraper/demoted/bulk-restore` un-demotes every stale listing at its `supplier_last_price`, skipping `supplier_gone` rows (which would 404 for buyers). Returns `{restored, repriced, skipped_gone}`. New button on the Best Sellers Rotation panel with a confirm dialog.
+- **Seed Analytics** — `GET /api/scraper/saved-seeds/{id}/analytics` aggregates every super-batch produced by that seed: total runs, avg products/run, avg credits/run, live-conversion %, plus the last 50 individual run rows. New chart icon on each Saved Seeds row expands an inline analytics grid with 4 stat cards + a "Recent runs" list.
+- **Store search in header** — `SearchAutocomplete` now also queries `/api/stores-search` in parallel with `/api/search/suggest` and renders a "Stores" section above Categories. Tapping any store navigates straight to `/store/<slug>`. Verified: searching "sophia" finds the seller's store.
+
 ### Feb 2026 — Best Sellers Rotation (weekly + on-demand)
 - **Listing model** gained `demoted`, `demoted_reason`, `last_supplier_check_at`, `supplier_last_price` fields.
 - **`services/best_sellers.py`** — for each seller, re-fetches up to top-100 auto-imported listings (sorted by views + likes) via Zyte's `extract_product`. If supplier price drifts ≥ 15% (up or down), listing is demoted with reason `supplier_price_shift`. If Zyte returns empty (bot-blocked / delisted), demoted with `supplier_gone`. Respects each user's monthly Zyte quota — silently skips when out of credits.

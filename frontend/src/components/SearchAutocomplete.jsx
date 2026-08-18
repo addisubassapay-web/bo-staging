@@ -4,7 +4,7 @@ import api from "@/lib/api";
 import { useLang } from "@/context/LanguageContext";
 import { useCurrency } from "@/context/CurrencyContext";
 import {
-  Search, ChevronDown, Clock, TrendingUp, X, Tag, Folder, Mic, Camera, Sparkles, Loader2,
+  Search, ChevronDown, Clock, TrendingUp, X, Tag, Folder, Mic, Camera, Sparkles, Loader2, Store as StoreIcon,
 } from "lucide-react";
 
 const RECENT_KEY = "mercari_recent_searches";
@@ -23,7 +23,7 @@ const SearchAutocomplete = ({ value, onChange, onSubmit, placeholder, categories
   const navigate = useNavigate();
   const { t } = useLang();
   const { format } = useCurrency();
-  const [suggestions, setSuggestions] = useState({ items: [], queries: [], brands: [], categories: [] });
+  const [suggestions, setSuggestions] = useState({ items: [], queries: [], brands: [], categories: [], stores: [] });
   const [open, setOpen] = useState(false);
   const [scope, setScope] = useState("");
   const [scopePickerOpen, setScopePickerOpen] = useState(false);
@@ -49,18 +49,22 @@ const SearchAutocomplete = ({ value, onChange, onSubmit, placeholder, categories
   useEffect(() => {
     const q = value.trim();
     if (q.length < 2) {
-      setSuggestions({ items: [], queries: [], brands: [], categories: [] });
+      setSuggestions({ items: [], queries: [], brands: [], categories: [], stores: [] });
       return;
     }
     clearTimeout(timerRef.current);
     timerRef.current = setTimeout(async () => {
       try {
-        const { data } = await api.get("/search/suggest", { params: { q, limit: 6 } });
+        const [s, st] = await Promise.all([
+          api.get("/search/suggest", { params: { q, limit: 6 } }),
+          api.get("/stores-search", { params: { q, limit: 4, include_inactive: false } }).catch(() => ({ data: { items: [] } })),
+        ]);
         setSuggestions({
-          items: data.items || [],
-          queries: data.queries || [],
-          brands: data.brands || [],
-          categories: data.categories || [],
+          items: s.data.items || [],
+          queries: s.data.queries || [],
+          brands: s.data.brands || [],
+          categories: s.data.categories || [],
+          stores: st.data.items || [],
         });
       } catch { /* ignore */ }
     }, 180);
@@ -181,7 +185,10 @@ const SearchAutocomplete = ({ value, onChange, onSubmit, placeholder, categories
     (suggestions.items?.length || 0) +
     (suggestions.queries?.length || 0) +
     (suggestions.brands?.length || 0) +
-    (suggestions.categories?.length || 0) > 0;
+    (suggestions.categories?.length || 0) +
+    (suggestions.stores?.length || 0) > 0;
+
+  const goToStore = (slug) => { setOpen(false); navigate(`/store/${slug}`); };
 
   return (
     <div ref={boxRef} className="relative flex-1 min-w-0 max-w-3xl">
@@ -324,6 +331,33 @@ const SearchAutocomplete = ({ value, onChange, onSubmit, placeholder, categories
                       </button>
                     ))}
                   </div>
+                </div>
+              )}
+              {suggestions.stores?.length > 0 && (
+                <div className="px-4 py-2.5 border-b border-neutral-100 dark:border-neutral-800">
+                  <div className="text-[10px] uppercase tracking-wider text-neutral-500 dark:text-neutral-400 font-semibold mb-1.5 flex items-center gap-1.5"><StoreIcon className="h-3 w-3" /> Stores</div>
+                  <ul className="space-y-1">
+                    {suggestions.stores.map((s) => (
+                      <li key={s.id}>
+                        <button
+                          onMouseDown={(e) => { e.preventDefault(); goToStore(s.slug || s.id); }}
+                          className="w-full flex items-center gap-3 px-2 py-1.5 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 text-left transition"
+                          data-testid={`suggest-store-${s.slug || s.id}`}
+                        >
+                          {s.logo_url
+                            ? <img src={s.logo_url} alt="" className="h-8 w-8 rounded-full object-cover bg-neutral-100 shrink-0" />
+                            : <div className="h-8 w-8 rounded-full bg-gradient-to-br from-[#FF7A18] to-[#FF211F] text-white grid place-items-center shrink-0"><StoreIcon className="h-3.5 w-3.5" /></div>}
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm text-neutral-900 dark:text-neutral-100 truncate font-medium">{s.name}</div>
+                            {s.tagline && <div className="text-[11px] text-neutral-500 truncate">{s.tagline}</div>}
+                          </div>
+                          {typeof s.listings_count === "number" && (
+                            <div className="text-[11px] text-neutral-500 tabular-nums">{s.listings_count} items</div>
+                          )}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               )}
               {suggestions.categories?.length > 0 && (

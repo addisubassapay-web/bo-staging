@@ -617,6 +617,165 @@ async def restore_demoted(listing_id: str, payload: RestoreListing, user: dict =
     return {"ok": True, "listing_id": listing_id, **update}
 
 
+@router.post("/demoted/bulk-restore")
+async def bulk_restore_demoted(user: dict = Depends(get_current_user)):
+    """One-click restore-all for every demoted listing this user owns. Each
+    listing's price is set to its `supplier_last_price` (when available);
+    listings without a fresh supplier price are restored at their old price."""
+    db = get_db()
+    rows = await db.listings.find(
+        {"seller_id": user["id"], "demoted": True},
+        {"_id": 0, "id": 1, "price": 1, "supplier_last_price": 1, "demoted_reason": 1},
+    ).to_list(500)
+    restored = repriced = skipped = 0
+    for row in rows:
+        # Skip 'supplier_gone' rows — they'd 404 for buyers.
+        if row.get("demoted_reason") == "supplier_gone":
+            skipped += 1
+            continue
+        update = {"demoted": False, "demoted_reason": None, "status": "active"}
+        if row.get("supplier_last_price"):
+            update["previous_price"] = float(row.get("price") or 0)
+            update["price"] = float(row["supplier_last_price"])
+            repriced += 1
+        await db.listings.update_one({"id": row["id"]}, {"$set": update})
+        restored += 1
+    return {"restored": restored, "repriced": repriced, "skipped_gone": skipped}
+
+
+# =========================================================================
+# Seed Analytics — per-seed history and conversion metrics
+# =========================================================================
+@router.get("/saved-seeds/{seed_id}/analytics")
+async def seed_analytics(seed_id: str, user: dict = Depends(get_current_user)):
+    """Aggregate stats across every super-batch this saved seed has produced.
+    Returns totals, averages, and the last N run records for a mini-chart."""
+    db = get_db()
+    seed = await db.saved_seeds.find_one({"id": seed_id}, {"_id": 0})
+    if not seed:
+        raise HTTPException(404, "Saved seed not found")
+    if seed["owner_id"] != user["id"] and user.get("role") != "admin":
+        raise HTTPException(403, "Not your seed")
+
+    supers = await db.scraper_super_batches.find(
+        {"saved_seed_id": seed_id}, {"_id": 0}
+    ).sort("created_at", -1).to_list(50)
+
+    runs = []
+    total_products = 0
+    total_published = 0
+    total_credits = 0
+    for sb in supers:
+        child_ids = sb.get("child_batch_ids") or []
+        prods = await db.scraper_jobs.count_documents({"batch_id": {"$in": child_ids}}) if child_ids else 0
+        pub = await db.scraper_jobs.count_documents(
+            {"batch_id": {"$in": child_ids}, "publish_status": "published"}
+        ) if child_ids else 0
+        credits = int(sb.get("pages") or len(child_ids))
+        total_products += prods
+        total_published += pub
+        total_credits += credits
+        runs.append({
+            "super_batch_id": sb["id"],
+            "created_at": sb.get("created_at"),
+            "pages": sb.get("pages"),
+            "products_extracted": prods,
+            "products_published": pub,
+            "credits_spent": credits,
+        })
+    n = max(1, len(supers))
+    return {
+        "seed": seed,
+        "runs": runs,
+        "totals": {
+            "runs": len(supers),
+            "products_extracted": total_products,
+            "products_published": total_published,
+            "credits_spent": total_credits,
+        },
+        "averages": {
+            "products_per_run": round(total_products / n, 1),
+            "published_per_run": round(total_published / n, 1),
+            "credits_per_run": round(total_credits / n, 1),
+            "live_conversion_pct": round((total_published / total_products) * 100, 1) if total_products else 0.0,
+        },
+    }
+
+
+# =========================================================================
+# Suggest Keywords — AI-generated seed ideas for seller's top categories
+# =========================================================================
+@router.get("/suggest-keywords")
+async def suggest_keywords(user: dict = Depends(get_current_user)):
+    """Emergent-LLM-backed keyword suggestions grouped by the seller's top
+    categories. Falls back to a curated preset when the LLM is unavailable so
+    the button never returns empty."""
+    db = get_db()
+    # Find the user's top 3 categories by listing count.
+    pipeline = [
+        {"$match": {"seller_id": user["id"], "status": "active"}},
+        {"$group": {"_id": {"id": "$category_id", "name": "$category_name"}, "n": {"$sum": 1}}},
+        {"$sort": {"n": -1}},
+        {"$limit": 3},
+    ]
+    top = await db.listings.aggregate(pipeline).to_list(3)
+    if not top:
+        # Cold-start fallback — use platform-wide top categories.
+        cat_docs = await db.categories.find({}, {"_id": 0, "id": 1, "name": 1}).limit(3).to_list(3)
+        top = [{"_id": {"id": c["id"], "name": c["name"]}, "n": 0} for c in cat_docs]
+
+    groups: list[dict] = []
+    llm_ok = False
+    try:
+        from emergentintegrations.llm.chat import LlmChat, UserMessage
+        import uuid as _uuid
+        key = os.environ.get("EMERGENT_LLM_KEY") or ""
+        if key:
+            chat = LlmChat(
+                api_key=key,
+                session_id=f"kw-{_uuid.uuid4()}",
+                system_message=(
+                    "You are a marketplace SEO expert. Given a category name, "
+                    "suggest exactly 5 short (1-4 word) high-signal buyer search "
+                    "keywords for Amazon-style sourcing. Reply as a JSON array of strings only, no prose."
+                ),
+            ).with_model("openai", "gpt-4o-mini")
+            import json as _json
+            for c in top:
+                cat_name = c["_id"]["name"]
+                reply = await chat.send_message(UserMessage(text=f"Category: {cat_name}"))
+                text = str(reply).strip()
+                # Extract JSON array — model sometimes wraps in code fences.
+                if "```" in text:
+                    text = text.split("```")[1].lstrip("json").strip()
+                try:
+                    kws = _json.loads(text)
+                    kws = [str(k).strip() for k in kws if str(k).strip()][:5]
+                except Exception:
+                    kws = []
+                if kws:
+                    groups.append({"category_id": c["_id"]["id"], "category_name": cat_name, "keywords": kws})
+            llm_ok = bool(groups)
+    except Exception:
+        llm_ok = False
+
+    if not llm_ok:
+        # Curated fallback per top category (still useful, no LLM needed).
+        fallback = {
+            "Electronics": ["wireless earbuds", "smart watch", "portable charger", "led strip lights", "phone tripod"],
+            "Fashion": ["vintage denim", "graphic tee", "sneakers", "gold chain", "leather bag"],
+            "Home": ["desk lamp", "kitchen organizer", "throw blanket", "candle set", "wall art"],
+            "Beauty": ["face serum", "makeup brushes", "hair curler", "nail kit", "skincare set"],
+            "Toys": ["lego set", "board game", "stuffed animal", "rc car", "puzzle 1000"],
+        }
+        for c in top:
+            name = c["_id"]["name"]
+            kws = fallback.get(name) or fallback.get(name.split()[0]) or ["trending gift", "under $25", "best seller", "gift for her", "gift for him"]
+            groups.append({"category_id": c["_id"]["id"], "category_name": name, "keywords": kws})
+
+    return {"groups": groups, "llm_ok": llm_ok}
+
+
 # =========================================================================
 # Saved Seeds — persist favorite keywords + nightly auto-run
 # =========================================================================

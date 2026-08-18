@@ -7,7 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Bookmark, Plus, Play, Trash2, Loader2, Sparkles, Clock } from "lucide-react";
+import { Bookmark, Plus, Play, Trash2, Loader2, Sparkles, Clock, Lightbulb, BarChart3, X } from "lucide-react";
 
 const PROVIDERS = [
   { id: "amazon_search", label: "Amazon — search" },
@@ -30,6 +30,34 @@ const SavedSeeds = () => {
     enabled: true,
   });
   const [busy, setBusy] = useState(null);
+  const [suggestions, setSuggestions] = useState(null);
+  const [suggesting, setSuggesting] = useState(false);
+  const [analytics, setAnalytics] = useState({}); // seed_id -> data
+
+  const suggest = async () => {
+    setSuggesting(true);
+    try {
+      const { data } = await api.get("/scraper/suggest-keywords");
+      setSuggestions(data);
+      if (!data.groups?.length) toast({ title: "No suggestions yet — publish a few listings first" });
+    } catch (e) {
+      toast({ title: "Couldn't fetch suggestions", variant: "destructive" });
+    } finally { setSuggesting(false); }
+  };
+
+  const openAnalytics = async (row) => {
+    if (analytics[row.id]) {
+      setAnalytics((a) => { const n = { ...a }; delete n[row.id]; return n; });
+      return;
+    }
+    setBusy(row.id + ":analytics");
+    try {
+      const { data } = await api.get(`/scraper/saved-seeds/${row.id}/analytics`);
+      setAnalytics((a) => ({ ...a, [row.id]: data }));
+    } catch (e) {
+      toast({ title: "Failed to load analytics", variant: "destructive" });
+    } finally { setBusy(null); }
+  };
 
   const load = async () => {
     setLoading(true);
@@ -128,6 +156,44 @@ const SavedSeeds = () => {
 
       {showForm && (
         <div className="mt-4 p-4 rounded-xl bg-neutral-50 border border-neutral-200 space-y-3" data-testid="saved-seeds-form">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="text-xs text-neutral-600">Fill in the fields below, or let AI suggest high-signal keywords based on your top-selling categories.</div>
+            <Button
+              variant="outline" size="sm"
+              onClick={suggest}
+              disabled={suggesting}
+              data-testid="suggest-keywords-btn"
+            >
+              {suggesting
+                ? <><Loader2 className="h-3 w-3 mr-1.5 animate-spin" /> Thinking…</>
+                : <><Lightbulb className="h-3 w-3 mr-1.5 text-amber-500" /> Suggest keywords</>}
+            </Button>
+          </div>
+          {suggestions?.groups?.length > 0 && (
+            <div className="rounded-lg border border-amber-200 bg-amber-50/60 p-3 space-y-2" data-testid="suggestion-groups">
+              <div className="text-xs font-semibold text-amber-800 flex items-center justify-between">
+                <span>Suggestions {suggestions.llm_ok ? <span className="text-[10px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded-full ml-1">AI</span> : <span className="text-[10px] bg-neutral-100 text-neutral-600 px-1.5 py-0.5 rounded-full ml-1">Preset</span>}</span>
+                <button className="text-neutral-500 hover:text-neutral-900" onClick={() => setSuggestions(null)}><X className="h-3 w-3" /></button>
+              </div>
+              {suggestions.groups.map((g) => (
+                <div key={g.category_id}>
+                  <div className="text-[11px] text-neutral-500 mb-1">{g.category_name}</div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {g.keywords.map((k) => (
+                      <button
+                        key={k}
+                        onClick={() => setForm({ ...form, query: k, category_id: g.category_id })}
+                        className="px-2.5 py-1 rounded-full bg-white border border-amber-300 text-xs font-medium hover:bg-amber-100 transition"
+                        data-testid={`suggest-kw-${k.replace(/\s+/g, '-')}`}
+                      >
+                        {k}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <Label className="text-sm">Source</Label>
@@ -208,6 +274,15 @@ const SavedSeeds = () => {
             </div>
             <Switch checked={!!r.enabled} onCheckedChange={() => toggle(r)} disabled={busy === r.id + ":toggle"} data-testid={`saved-seed-toggle-${r.id.slice(0,8)}`} />
             <Button
+              variant="ghost" size="sm"
+              onClick={() => openAnalytics(r)}
+              disabled={busy === r.id + ":analytics"}
+              data-testid={`saved-seed-analytics-${r.id.slice(0,8)}`}
+              title="View history"
+            >
+              {busy === r.id + ":analytics" ? <Loader2 className="h-3 w-3 animate-spin" /> : <BarChart3 className="h-3 w-3" />}
+            </Button>
+            <Button
               variant="outline" size="sm"
               onClick={() => runNow(r)}
               disabled={busy === r.id + ":run" || !r.enabled}
@@ -223,6 +298,42 @@ const SavedSeeds = () => {
             >
               <Trash2 className="h-3 w-3 text-red-500" />
             </Button>
+          </div>
+        ))}
+        {rows.map((r) => analytics[r.id] && (
+          <div key={r.id + "-analytics"} className="ml-11 p-3 rounded-lg bg-neutral-50 border border-neutral-100 text-xs space-y-2" data-testid={`saved-seed-analytics-panel-${r.id.slice(0,8)}`}>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <div className="bg-white rounded p-2">
+                <div className="text-neutral-500 text-[10px]">Total runs</div>
+                <div className="font-bold tabular-nums">{analytics[r.id].totals.runs}</div>
+              </div>
+              <div className="bg-white rounded p-2">
+                <div className="text-neutral-500 text-[10px]">Avg products / run</div>
+                <div className="font-bold tabular-nums">{analytics[r.id].averages.products_per_run}</div>
+              </div>
+              <div className="bg-white rounded p-2">
+                <div className="text-neutral-500 text-[10px]">Live conversion</div>
+                <div className="font-bold tabular-nums text-emerald-700">{analytics[r.id].averages.live_conversion_pct}%</div>
+              </div>
+              <div className="bg-white rounded p-2">
+                <div className="text-neutral-500 text-[10px]">Total credits</div>
+                <div className="font-bold tabular-nums">{analytics[r.id].totals.credits_spent}</div>
+              </div>
+            </div>
+            {analytics[r.id].runs.slice(0, 8).length > 0 && (
+              <div>
+                <div className="text-[10px] uppercase tracking-wider text-neutral-500 font-semibold mt-1 mb-1">Recent runs</div>
+                <div className="space-y-1">
+                  {analytics[r.id].runs.slice(0, 8).map((run) => (
+                    <div key={run.super_batch_id} className="flex justify-between items-center bg-white rounded px-2 py-1">
+                      <span className="text-neutral-500 tabular-nums">{run.created_at ? new Date(run.created_at).toLocaleDateString() : "—"}</span>
+                      <span className="tabular-nums">{run.products_published}/{run.products_extracted} live</span>
+                      <span className="text-neutral-500 tabular-nums">{run.credits_spent}c</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         ))}
       </div>
