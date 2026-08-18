@@ -209,6 +209,12 @@ class Listing(BaseModel):
     previous_price: Optional[float] = None
     # Scraper import tracking (Zyte pipeline dedupe key)
     source_url: Optional[str] = None
+    # Best-sellers rotation — set when a weekly re-check detects supplier
+    # price drift or the source disappearing.
+    demoted: bool = False
+    demoted_reason: Optional[str] = None  # 'supplier_price_shift' | 'supplier_gone'
+    last_supplier_check_at: Optional[datetime] = None
+    supplier_last_price: Optional[float] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class ListingCreate(BaseModel):

@@ -549,6 +549,75 @@ async def get_super_batch_status(super_batch_id: str, user: dict = Depends(get_c
 
 
 # =========================================================================
+# Best Sellers Rotation — weekly re-check + demotion of stale imports
+# =========================================================================
+@router.get("/best-sellers/status")
+async def best_sellers_status(user: dict = Depends(get_current_user)):
+    """Small dashboard payload: last cron run + this user's demoted count."""
+    db = get_db()
+    last = await db.best_sellers_runs.find_one({}, {"_id": 0}, sort=[("finished_at", -1)])
+    demoted = await db.listings.count_documents({"seller_id": user["id"], "demoted": True})
+    eligible = await db.listings.count_documents(
+        {"seller_id": user["id"], "source_url": {"$ne": None}}
+    )
+    return {
+        "last_run": last,
+        "your_demoted": demoted,
+        "your_eligible": eligible,
+        "drift_threshold_pct": 15,
+        "cron": "weekly Monday 08:00 UTC",
+    }
+
+
+@router.post("/best-sellers/refresh")
+async def best_sellers_refresh_now(user: dict = Depends(get_current_user), limit: int = 20):
+    """Manual re-check of the caller's top-N (default 20) auto-imports.
+    Costs 1 Zyte credit per listing checked."""
+    from services.best_sellers import refresh_user_top_listings
+    limit = max(1, min(int(limit), 100))
+    db = get_db()
+    await assert_can_spend(db, user, cost=limit)
+    return await refresh_user_top_listings(db, user, limit=limit)
+
+
+@router.get("/demoted")
+async def list_demoted(user: dict = Depends(get_current_user)):
+    """Listings this user has that were demoted by the rotation."""
+    db = get_db()
+    rows = await db.listings.find(
+        {"seller_id": user["id"], "demoted": True},
+        {"_id": 0, "id": 1, "title": 1, "price": 1, "supplier_last_price": 1,
+         "demoted_reason": 1, "source_url": 1, "images": 1,
+         "last_supplier_check_at": 1, "category_name": 1},
+    ).sort("last_supplier_check_at", -1).to_list(200)
+    return {"items": rows, "count": len(rows)}
+
+
+class RestoreListing(BaseModel):
+    new_price: Optional[float] = Field(None, gt=0)
+
+
+@router.post("/demoted/{listing_id}/restore")
+async def restore_demoted(listing_id: str, payload: RestoreListing, user: dict = Depends(get_current_user)):
+    """Un-demote a listing (optionally updating its price to the new supplier
+    price). Sets status back to 'active' and clears the demoted flag."""
+    db = get_db()
+    row = await db.listings.find_one({"id": listing_id, "seller_id": user["id"]}, {"_id": 0})
+    if not row:
+        raise HTTPException(404, "Listing not found")
+    update = {
+        "demoted": False,
+        "demoted_reason": None,
+        "status": "active",
+    }
+    if payload.new_price:
+        update["previous_price"] = float(row.get("price") or 0)
+        update["price"] = float(payload.new_price)
+    await db.listings.update_one({"id": listing_id}, {"$set": update})
+    return {"ok": True, "listing_id": listing_id, **update}
+
+
+# =========================================================================
 # Saved Seeds — persist favorite keywords + nightly auto-run
 # =========================================================================
 class SavedSeedCreate(BaseModel):

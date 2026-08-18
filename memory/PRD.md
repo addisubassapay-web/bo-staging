@@ -26,6 +26,14 @@ Exact replica of Mercari platform (mercari.com) — same color scheme (`#FF211F`
 
 ## Implemented (with dates)
 
+### Feb 2026 — Best Sellers Rotation (weekly + on-demand)
+- **Listing model** gained `demoted`, `demoted_reason`, `last_supplier_check_at`, `supplier_last_price` fields.
+- **`services/best_sellers.py`** — for each seller, re-fetches up to top-100 auto-imported listings (sorted by views + likes) via Zyte's `extract_product`. If supplier price drifts ≥ 15% (up or down), listing is demoted with reason `supplier_price_shift`. If Zyte returns empty (bot-blocked / delisted), demoted with `supplier_gone`. Respects each user's monthly Zyte quota — silently skips when out of credits.
+- **Weekly arq cron** — `cron_best_sellers_rotation` runs every Monday at 08:00 UTC. Persists a run summary in `best_sellers_runs`.
+- **Endpoints** — `GET /api/scraper/best-sellers/status`, `POST /api/scraper/best-sellers/refresh?limit=N` (manual, up to 100), `GET /api/scraper/demoted`, `POST /api/scraper/demoted/{id}/restore` (optionally with `new_price`).
+- **Frontend `BestSellersRotation` component** on the Import tab — stats grid (eligible / demoted / drift threshold / last cron run), one-click "Rotate now (top 20)" button, and a per-row demoted table with inline "new price" input + Restore button.
+- **Verified**: bumped a stored listing price by 50% → next rotation demoted it (`checked:1, demoted_price:1`); restore call flipped it back to `active` with the corrected price.
+
 ### Feb 2026 — Dedupe On Import + Saved Seeds & Daily Cron
 - **Dedupe on import** — `Listing.source_url` now persisted on every auto-published scrape. Pre-flight check on `/jobs`, `/jobs/bulk`, `/jobs/csv`, `/jobs/paginated` filters out URLs the same seller has already imported (saves Zyte credits). Post-extract `_publish_from_result` also dedupes just before insert — `scraper_jobs.publish_status="skipped_duplicate"` with a back-reference to the existing listing id. Verified: 2nd scrape of same URL returns HTTP 409, bulk rejects dupes with `reason:"already_imported"` while queuing fresh URLs.
 - **Saved seeds CRUD** — new `saved_seeds` collection + endpoints `POST/GET/PATCH/DELETE /api/scraper/saved-seeds` and `POST /api/scraper/saved-seeds/{id}/run` for on-demand replay. Owner-only access.

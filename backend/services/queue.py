@@ -396,6 +396,13 @@ async def cron_run_saved_seeds(ctx: dict) -> dict:
     return await run_all_enabled(db)
 
 
+async def cron_best_sellers_rotation(ctx: dict) -> dict:
+    """Weekly arq cron — re-checks every seller's top-100 auto-imports."""
+    from services.best_sellers import refresh_all_users
+    db = _db()
+    return await refresh_all_users(db)
+
+
 # --- Worker settings -----------------------------------------------------
 from arq import cron
 
@@ -405,6 +412,8 @@ class WorkerSettings:
     cron_jobs = [
         # Daily at 09:00 UTC — hands-off catalog growth for every seller.
         cron(cron_run_saved_seeds, hour=9, minute=0, run_at_startup=False),
+        # Weekly on Monday at 08:00 UTC — best sellers rotation / demotion.
+        cron(cron_best_sellers_rotation, weekday="mon", hour=8, minute=0, run_at_startup=False),
     ]
     redis_settings = _redis_settings()
     max_jobs = 5
