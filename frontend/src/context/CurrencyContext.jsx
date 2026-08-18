@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from "react";
 import api from "@/lib/api";
-import { detectGeo, chooseInitial } from "@/lib/geoDetect";
 
 const CurrencyContext = createContext(null);
 
@@ -32,13 +31,37 @@ export const CURRENCY_LIST = Object.keys(CURRENCY_META);
 
 export const CurrencyProvider = ({ children }) => {
   const [currency, setCurrencyState] = useState(() => {
-    const geo = detectGeo();
-    return chooseInitial("mercari_currency", "USD", geo.currency);
+    // Currency defaults to explicit user pick (localStorage) or USD.
+    // We deliberately DO NOT auto-persist the geo-detected currency here so
+    // that <GeoCurrencyPrompt/> can show the "You're browsing from X — switch
+    // to Y?" banner on the very first visit and let the user confirm. Once
+    // they accept or dismiss, the choice is persisted.
+    try {
+      const existing = localStorage.getItem("mercari_currency");
+      if (existing) return existing;
+    } catch { /* ignore */ }
+    return "USD";
   });
-  const [rateData, setRateData] = useState(FALLBACK_RATES);
+  const [rateData, setRateData] = useState(() => {
+    // Warm-start from cached rates so first paint uses the freshest known
+    // rate (avoids a flash of stale fallback numbers on subsequent visits).
+    try {
+      const cached = localStorage.getItem("mercari_rates");
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed && parsed.rates) return parsed;
+      }
+    } catch { /* ignore */ }
+    return FALLBACK_RATES;
+  });
 
   useEffect(() => {
-    api.get("/currency/rates").then((r) => setRateData(r.data)).catch(() => {});
+    api.get("/currency/rates").then((r) => {
+      setRateData(r.data);
+      // Cache to localStorage so `formatPrice` in api.js (and any other
+      // non-context call site) can format with live rates too.
+      try { localStorage.setItem("mercari_rates", JSON.stringify(r.data)); } catch { /* ignore */ }
+    }).catch(() => {});
   }, []);
 
   const setCurrency = useCallback((c) => {
@@ -62,10 +85,11 @@ export const CurrencyProvider = ({ children }) => {
         return new Intl.NumberFormat(meta.locale, {
           style: "currency",
           currency,
-          maximumFractionDigits: currency === "JPY" ? 0 : 2,
+          // Zero-decimal currencies per Intl standard.
+          maximumFractionDigits: currency === "JPY" || currency === "KRW" ? 0 : 2,
         }).format(value);
       } catch {
-        return `${meta.symbol}${value.toFixed(currency === "JPY" ? 0 : 2)}`;
+        return `${meta.symbol}${value.toFixed(currency === "JPY" || currency === "KRW" ? 0 : 2)}`;
       }
     },
     [convert, currency],

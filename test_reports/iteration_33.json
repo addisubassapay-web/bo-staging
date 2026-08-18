@@ -1,0 +1,40 @@
+{
+  "summary": "Tested Wallet i18n (EN/JA/AR), regional Intl formatting, GeoCurrencyPrompt deep-link, and backend ledger bucket sync/reconcile/withdraw guard. All 6 backend tests pass. UI verified in all 3 locales after fixing a small hero-balance bug (BalanceValue hardcoded '$') that leaked raw USD on the wallet hero. GeoCurrencyPrompt fires correctly on a listing deep-link with a fresh browser context (fr-FR → suggests EUR), and choice persists.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "GET /api/wallet", "issue": "`bucket` field is stored in Mongo but stripped by WalletTransaction Pydantic model on serialization. Server-side reconcile still works (reads Mongo directly), but frontends cannot distinguish frozen vs available tx rows without inferring from `type`. Consider adding `bucket: Optional[str] = None` to WalletTransaction."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "Wallet.jsx hero balance (BalanceValue)", "issue": "Fixed during testing: hero available/frozen balance was rendered via BalanceValue which hardcodes `$${value.toFixed(2)}`, causing raw USD ($52.50) to appear on the wallet page in JA/AR/INR modes while surrounding tx amounts were correctly localized. Fix wraps the value with useCurrency().format before passing to BalanceValue (which already accepts strings).", "selector": "[data-testid='wallet-available']", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_wallet_sync_bucket.py",
+    "/app/test_reports/pytest/wallet_sync_bucket.xml"
+  ],
+  "action_items": [
+    "OPTIONAL: Add `bucket: Optional[Literal['available','frozen']]` to WalletTransaction Pydantic model so frontends can visualize which bucket a tx belongs to (server reconcile is unaffected).",
+    "Consider extending the hero-balance formatter fix to BalanceValue itself (accept a formatter fn) so this class of drift can't recur in future callers."
+  ],
+  "critical_code_review_comments": [
+    "BalanceMask.BalanceValue fallback branch hard-codes '$' + toFixed(2). This is a landmine: any component that passes a raw number will silently render USD regardless of active currency. Recommend removing the number-branch or requiring a formatted string.",
+    "WalletTransaction pydantic model doesn't surface `bucket` — the payload contract diverges from the persisted document. Consider a `model_config = {extra: allow}` or explicit field.",
+    "GeoCurrencyPrompt is correctly mounted OUTSIDE <Routes> in App.js so it fires on any deep-link. Confirmed working with a fresh fr-FR context on /listing/:id."
+  ],
+  "updated_files": [
+    "/app/frontend/src/pages/Wallet.jsx",
+    "/app/backend/tests/test_wallet_sync_bucket.py"
+  ],
+  "success_rate": {"backend": "100% (6/6)", "frontend": "100% after hero-balance fix"},
+  "test_credentials": "admin@mercari.local / admin123 (used); sophia_style@demo.local / demo1234 (fallback)",
+  "seed_data_creation": "None — used existing demo data. Admin reconcile idempotent (delta≈0 on second call).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Wallet i18n now complete across EN/JA/AR + INR/JPY/AED formatting via Intl.NumberFormat. Screenshots at /app/test_reports/wallet_ja_fixed.png and wallet_ar_fixed.png. Backend ledger bucket sync verified: audit endpoint OK, admin reconcile idempotent, self-reconcile OK, withdraw-overdraft returns 400. GeoCurrencyPrompt data-testid='geo-currency-prompt' confirmed to appear on deep-link /listing/:id in a fresh context and persists via mrc_geo_currency_prompt_dismissed + mercari_currency in localStorage.",
+  "rca_of_the_issue": "Hero balance leaked USD in JA/AR: Wallet.jsx passed a raw number to <BalanceValue value={data.balance}>, and BalanceValue's fallback branch stringifies it as `$${n.toFixed(2)}` — hard-coded dollar sign, ignoring active currency. Root cause: BalanceValue predates the new i18n formatter wiring and was not migrated. Mitigation applied: wrap value with useCurrency().format() before passing, which BalanceValue accepts as a string on its first branch."
+}

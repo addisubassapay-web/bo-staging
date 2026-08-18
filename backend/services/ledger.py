@@ -93,6 +93,11 @@ async def apply_entry(
         "balance_after": balance_after,
         "description": description,
         "related_id": related_id,
+        # Explicit bucket tag — critical for correct reconciliation. Without
+        # this, "sale_released" pairs (frozen debit + available credit) would
+        # cancel out in the sum and produce false drift for every seller who
+        # ever confirmed a delivery.
+        "bucket": "frozen" if frozen else "available",
         "status": "pending" if frozen and delta > 0 else "completed",
         "created_at": datetime.now(timezone.utc),
     }
@@ -174,20 +179,20 @@ async def release_frozen(db, *, user_id: str, amount: float, order_id: Optional[
 
 async def reconcile_reseller(db, *, user_id: str) -> Dict[str, Any]:
     """Force `wallet_balance` to match the sum of the user's `wallet_txs`
-    ledger entries (ledger is the source of truth). Posts an audit row with
-    amount=0 for paper trail whenever a drift is healed.
+    ledger entries in the AVAILABLE bucket (ledger is the source of truth).
+    Posts an audit row with amount=0 for paper trail whenever a drift is
+    healed.
     """
     pipeline = [
-        {"$match": {"user_id": user_id}},
-        {"$group": {
-            "_id": None,
-            "available": {"$sum": {"$cond": [
-                {"$in": ["$type", ["deposit", "purchase", "refund", "sale_released",
-                                    "wholesale_debit", "affiliate", "referral",
-                                    "withdrawal", "adjustment", "sale",
-                                    "dropship_released", "bonus"]]},
-                "$amount", 0]}},
+        {"$match": {
+            "user_id": user_id,
+            # Only sum txs that actually affected wallet_balance. Older rows
+            # that pre-date the `bucket` tag are backfilled at startup, but
+            # if any slipped through, treat missing bucket as "available"
+            # via a $ifNull compare below.
+            "$expr": {"$ne": [{"$ifNull": ["$bucket", "available"]}, "frozen"]},
         }},
+        {"$group": {"_id": None, "available": {"$sum": "$amount"}}},
     ]
     rows = await db.wallet_txs.aggregate(pipeline).to_list(1)
     expected = round(float(rows[0]["available"]) if rows else 0.0, 2)
@@ -224,3 +229,69 @@ class LedgerError(Exception):
 
 class InsufficientFunds(LedgerError):
     """Raised when require_available=True and the balance is too low."""
+
+
+async def backfill_bucket_tags(db) -> Dict[str, int]:
+    """One-shot migration: tag every legacy `wallet_txs` doc that predates the
+    explicit `bucket` field. Safe to run repeatedly — matches only rows where
+    `bucket` is missing.
+
+    Heuristic:
+      * type in {sale_frozen, dropship_frozen}          → bucket=frozen
+      * type == sale_released AND description starts    → bucket=frozen
+        with "[frozen→available]" (i.e. the debit leg
+        of the release)
+      * everything else                                 → bucket=available
+    """
+    frozen_credit = await db.wallet_txs.update_many(
+        {"bucket": {"$exists": False}, "type": {"$in": ["sale_frozen", "dropship_frozen"]}},
+        {"$set": {"bucket": "frozen"}},
+    )
+    frozen_release_debit = await db.wallet_txs.update_many(
+        {"bucket": {"$exists": False}, "type": "sale_released",
+         "description": {"$regex": r"^\[frozen"}},
+        {"$set": {"bucket": "frozen"}},
+    )
+    available_rest = await db.wallet_txs.update_many(
+        {"bucket": {"$exists": False}},
+        {"$set": {"bucket": "available"}},
+    )
+    return {
+        "frozen_credits": frozen_credit.modified_count,
+        "frozen_release_debits": frozen_release_debit.modified_count,
+        "available_rest": available_rest.modified_count,
+    }
+
+
+async def reconcile_frozen(db, *, user_id: str) -> Dict[str, Any]:
+    """Same as reconcile_reseller but for the frozen bucket. Ensures
+    `wallet_frozen_balance` matches sum(wallet_txs where bucket='frozen')."""
+    pipeline = [
+        {"$match": {"user_id": user_id, "bucket": "frozen"}},
+        {"$group": {"_id": None, "frozen": {"$sum": "$amount"}}},
+    ]
+    rows = await db.wallet_txs.aggregate(pipeline).to_list(1)
+    expected = round(float(rows[0]["frozen"]) if rows else 0.0, 2)
+
+    user = await db.users.find_one({"id": user_id}, {"_id": 0, "wallet_frozen_balance": 1})
+    if not user:
+        raise LedgerError(f"User {user_id} not found")
+    current = round(float(user.get("wallet_frozen_balance", 0.0)), 2)
+    delta = round(expected - current, 2)
+    if delta == 0:
+        return {"user_id": user_id, "delta": 0.0, "frozen_balance": current, "reconciled": False}
+
+    await db.users.update_one({"id": user_id}, {"$set": {"wallet_frozen_balance": expected}})
+    await db.wallet_txs.insert_one({
+        "id": str(uuid.uuid4()),
+        "user_id": user_id,
+        "type": "adjustment",
+        "amount": 0.0,
+        "balance_after": expected,
+        "description": f"Frozen ledger reconcile: {current:+.2f} → {expected:.2f} (drift {delta:+.2f} healed)",
+        "related_id": None,
+        "bucket": "frozen",
+        "status": "completed",
+        "created_at": datetime.now(timezone.utc),
+    })
+    return {"user_id": user_id, "delta": delta, "frozen_balance": expected, "reconciled": True}

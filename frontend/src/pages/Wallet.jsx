@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import api, { formatPrice } from "@/lib/api";
+import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,6 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/context/AuthContext";
+import { useCurrency } from "@/context/CurrencyContext";
+import { useLang } from "@/context/LanguageContext";
 import { useToast } from "@/hooks/use-toast";
 import {
   Wallet as WalletIcon, ArrowDownRight, ArrowUpRight, Clock, CheckCircle2, XCircle,
@@ -17,19 +19,22 @@ import {
 } from "lucide-react";
 import { useBalanceVisibility, BalanceValue, BalanceEyeToggle } from "@/components/BalanceMask";
 
-const typeMeta = {
-  sale: { label: "Sale", color: "text-green-600" },
-  sale_frozen: { label: "Sale (frozen)", color: "text-amber-600" },
-  sale_released: { label: "Sale released", color: "text-emerald-600" },
-  affiliate: { label: "Affiliate", color: "text-blue-600" },
-  referral: { label: "Referral", color: "text-purple-600" },
-  dropship: { label: "Dropship", color: "text-teal-600" },
-  dropship_frozen: { label: "Dropship (frozen)", color: "text-amber-600" },
-  dropship_released: { label: "Dropship released", color: "text-emerald-600" },
-  bonus: { label: "Bonus", color: "text-amber-600" },
-  adjustment: { label: "Deposit", color: "text-green-600" },
-  refund: { label: "Refund", color: "text-blue-600" },
-  withdrawal: { label: "Withdrawal", color: "text-red-600" },
+const typeMetaKeys = {
+  sale: { key: "wallet.type.sale", color: "text-green-600" },
+  sale_frozen: { key: "wallet.type.sale_frozen", color: "text-amber-600" },
+  sale_released: { key: "wallet.type.sale_released", color: "text-emerald-600" },
+  affiliate: { key: "wallet.type.affiliate", color: "text-blue-600" },
+  referral: { key: "wallet.type.referral", color: "text-purple-600" },
+  dropship: { key: "wallet.type.dropship", color: "text-teal-600" },
+  dropship_frozen: { key: "wallet.type.dropship_frozen", color: "text-amber-600" },
+  dropship_released: { key: "wallet.type.dropship_released", color: "text-emerald-600" },
+  bonus: { key: "wallet.type.bonus", color: "text-amber-600" },
+  adjustment: { key: "wallet.type.adjustment", color: "text-green-600" },
+  refund: { key: "wallet.type.refund", color: "text-blue-600" },
+  deposit: { key: "wallet.type.deposit", color: "text-green-600" },
+  purchase: { key: "wallet.type.purchase", color: "text-red-600" },
+  wholesale_debit: { key: "wallet.type.wholesale_debit", color: "text-red-600" },
+  withdrawal: { key: "wallet.type.withdrawal", color: "text-red-600" },
 };
 
 const statusIcon = (s) => {
@@ -570,39 +575,41 @@ const ReinvestDialog = ({ open, onOpenChange, frozenBalance, onSubmitted }) => {
 };
 
 const RefundsDialog = ({ open, onOpenChange, transactions }) => {
+  const { format: formatPrice } = useCurrency();
+  const { t } = useLang();
   const refunds = (transactions || []).filter((t) => t.type === "refund" || (t.type === "adjustment" && (t.description || "").toLowerCase().includes("refund")));
   const total = refunds.reduce((s, t) => s + Math.max(0, t.amount), 0);
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto" data-testid="refunds-dialog">
-        <DialogHeader><DialogTitle>Refund history</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>{t("wallet.refunds.title") || "Refund history"}</DialogTitle></DialogHeader>
         <div className="space-y-4">
           <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-4">
-            <div className="text-xs uppercase tracking-wider text-neutral-500 font-semibold">Total refunded to your wallet</div>
+            <div className="text-xs uppercase tracking-wider text-neutral-500 font-semibold">{t("wallet.refunds.totalLabel") || "Total refunded to your wallet"}</div>
             <div className="text-2xl font-bold text-emerald-600 mt-1 tabular-nums" data-testid="refunds-total">{formatPrice(total)}</div>
-            <p className="text-[11px] text-neutral-500 mt-2">Refunds happen automatically when a dispute is resolved in your favor.</p>
+            <p className="text-[11px] text-neutral-500 mt-2">{t("wallet.refunds.helper") || "Refunds happen automatically when a dispute is resolved in your favor."}</p>
           </div>
           {refunds.length === 0 ? (
-            <div className="py-8 text-center text-sm text-neutral-500">No refunds yet.</div>
+            <div className="py-8 text-center text-sm text-neutral-500">{t("wallet.refunds.empty") || "No refunds yet."}</div>
           ) : (
             <div className="border border-neutral-200 rounded-lg divide-y divide-neutral-100 overflow-hidden">
-              {refunds.map((t) => (
-                <div key={t.id} className="p-3 flex items-center justify-between gap-2" data-testid={`refund-row-${t.id}`}>
+              {refunds.map((tx) => (
+                <div key={tx.id} className="p-3 flex items-center justify-between gap-2" data-testid={`refund-row-${tx.id}`}>
                   <div className="min-w-0">
-                    <div className="text-sm text-neutral-800 truncate">{t.description}</div>
-                    <div className="text-[11px] text-neutral-500">{new Date(t.created_at).toLocaleString()}</div>
+                    <div className="text-sm text-neutral-800 truncate">{tx.description}</div>
+                    <div className="text-[11px] text-neutral-500">{new Date(tx.created_at).toLocaleString()}</div>
                   </div>
-                  <div className="text-sm font-semibold text-emerald-600 tabular-nums shrink-0">+{formatPrice(Math.abs(t.amount))}</div>
+                  <div className="text-sm font-semibold text-emerald-600 tabular-nums shrink-0">+{formatPrice(Math.abs(tx.amount))}</div>
                 </div>
               ))}
             </div>
           )}
           <div className="text-xs text-neutral-500">
-            Need a refund on a recent order? <Link to="/disputes" className="text-[#FF211F] font-medium hover:underline">Open a dispute →</Link>
+            {t("wallet.refunds.disputeHint") || "Need a refund on a recent order?"} <Link to="/disputes" className="text-[#FF211F] font-medium hover:underline">{t("wallet.refunds.openDispute") || "Open a dispute →"}</Link>
           </div>
         </div>
         <DialogFooter>
-          <Button onClick={() => onOpenChange(false)} className="min-h-[44px] w-full sm:w-auto bg-[#FF211F] hover:bg-[#e01d1b]" data-testid="refunds-close">Close</Button>
+          <Button onClick={() => onOpenChange(false)} className="min-h-[44px] w-full sm:w-auto bg-[#FF211F] hover:bg-[#e01d1b]" data-testid="refunds-close">{t("wallet.close") || "Close"}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -611,6 +618,11 @@ const RefundsDialog = ({ open, onOpenChange, transactions }) => {
 
 const Wallet = () => {
   const { user, loading, refresh } = useAuth();
+  const { format: formatPrice } = useCurrency();
+  const { t } = useLang();
+  const typeMeta = Object.fromEntries(
+    Object.entries(typeMetaKeys).map(([k, v]) => [k, { label: t(v.key) || k, color: v.color }]),
+  );
   const navigate = useNavigate();
   const [data, setData] = useState(null);
   const [methods, setMethods] = useState({ crypto_addresses: {}, manual_payment_methods: [] });
@@ -646,8 +658,8 @@ const Wallet = () => {
 
   if (!data) return <div className="max-w-4xl mx-auto px-4 py-8">Loading…</div>;
 
-  const earnedByType = data.transactions.reduce((acc, t) => {
-    if (t.amount > 0) acc[t.type] = (acc[t.type] || 0) + t.amount;
+  const earnedByType = data.transactions.reduce((acc, tx) => {
+    if (tx.amount > 0) acc[tx.type] = (acc[tx.type] || 0) + tx.amount;
     return acc;
   }, {});
 
@@ -657,23 +669,23 @@ const Wallet = () => {
     <div className="max-w-4xl mx-auto px-4 py-6 sm:py-8">
       <div className="flex items-center gap-2 mb-6">
         <WalletIcon className="h-6 w-6 text-[#FF211F]" />
-        <h1 className="text-2xl sm:text-3xl font-bold">Wallet</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold">{t("wallet.title") || "Wallet"}</h1>
       </div>
 
       <div className="grid md:grid-cols-3 gap-4 mb-8">
         <div className="md:col-span-2 bg-gradient-to-br from-[#FF211F] to-[#c81816] text-white rounded-xl p-5 sm:p-6">
           <div className="flex items-center justify-between">
-            <div className="text-sm opacity-90">Available balance</div>
+            <div className="text-sm opacity-90">{t("wallet.available") || "Available balance"}</div>
             <BalanceEyeToggle visible={balanceVisible} onToggle={toggleBalance} testId="wallet-balance-toggle" />
           </div>
           <div className="text-3xl sm:text-4xl font-bold mt-2" data-testid="wallet-available">
-            <BalanceValue value={data.balance} visible={balanceVisible} />
+            <BalanceValue value={formatPrice(data.balance)} visible={balanceVisible} />
           </div>
           {data.frozen_balance > 0 && (
             <div className="mt-3 inline-flex items-center gap-1.5 text-xs bg-white/15 backdrop-blur-sm rounded-full px-3 py-1" data-testid="wallet-frozen-chip">
               <Snowflake className="h-3.5 w-3.5" />
-              <span>Frozen: <span className="font-semibold tabular-nums"><BalanceValue value={data.frozen_balance} visible={balanceVisible} /></span></span>
-              <span className="opacity-80 hidden sm:inline">· released after delivery is confirmed</span>
+              <span>{t("wallet.frozen") || "Frozen"}: <span className="font-semibold tabular-nums"><BalanceValue value={formatPrice(data.frozen_balance)} visible={balanceVisible} /></span></span>
+              <span className="opacity-80 hidden sm:inline">· {t("wallet.frozenNote") || "released after delivery is confirmed"}</span>
             </div>
           )}
           <div className="mt-4 flex gap-2 flex-wrap">
@@ -681,36 +693,36 @@ const Wallet = () => {
               onClick={() => setDpOpen(true)}
               className="min-h-[44px] bg-white text-[#FF211F] hover:bg-neutral-100 font-semibold"
               data-testid="wallet-deposit-btn"
-            ><Plus className="h-4 w-4 mr-1" /> Deposit</Button>
+            ><Plus className="h-4 w-4 mr-1" /> {t("wallet.deposit") || "Deposit"}</Button>
             <Button
               onClick={() => setWdOpen(true)}
               className="min-h-[44px] bg-white/20 hover:bg-white/30 text-white border border-white/40"
               data-testid="wallet-withdraw-btn"
-            ><Minus className="h-4 w-4 mr-1" /> Withdraw</Button>
+            ><Minus className="h-4 w-4 mr-1" /> {t("wallet.withdraw") || "Withdraw"}</Button>
             <Button
               onClick={() => setRfOpen(true)}
               className="min-h-[44px] bg-white/20 hover:bg-white/30 text-white border border-white/40"
               data-testid="wallet-refunds-btn"
-            ><RotateCcw className="h-4 w-4 mr-1" /> Refunds</Button>
+            ><RotateCcw className="h-4 w-4 mr-1" /> {t("wallet.refunds") || "Refunds"}</Button>
             <Button
               onClick={() => setRiOpen(true)}
               disabled={!(data.frozen_balance > 0)}
-              title={data.frozen_balance > 0 ? "Unlock frozen funds to pay wholesale on incoming orders" : "No frozen funds available yet"}
+              title={data.frozen_balance > 0 ? (t("wallet.reinvestHint") || "Unlock frozen funds to pay wholesale on incoming orders") : (t("wallet.reinvestEmpty") || "No frozen funds available yet")}
               className="min-h-[44px] bg-white text-[#2563EB] hover:bg-blue-50 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
               data-testid="wallet-reinvest-btn"
-            ><Sparkles className="h-4 w-4 mr-1" /> Reinvest</Button>
+            ><Sparkles className="h-4 w-4 mr-1" /> {t("wallet.reinvest") || "Reinvest"}</Button>
             <Link to="/seller/payouts">
               <Button className="min-h-[44px] bg-white/20 hover:bg-white/30 text-white border border-white/40" data-testid="wallet-open-dashboard">
-                Payout dashboard →
+                {t("wallet.payoutDashboard") || "Payout dashboard →"}
               </Button>
             </Link>
           </div>
         </div>
 
         <div className="bg-white border border-neutral-200 rounded-xl p-4 sm:p-5">
-          <div className="text-xs uppercase text-neutral-500 mb-2 font-semibold tracking-wider">Earnings by source</div>
+          <div className="text-xs uppercase text-neutral-500 mb-2 font-semibold tracking-wider">{t("wallet.earningsBySource") || "Earnings by source"}</div>
           {Object.keys(earnedByType).length === 0 ? (
-            <div className="text-sm text-neutral-500">No earnings yet.</div>
+            <div className="text-sm text-neutral-500">{t("wallet.noEarnings") || "No earnings yet."}</div>
           ) : (
             <div className="space-y-2">
               {Object.entries(earnedByType).map(([k, v]) => (
@@ -726,14 +738,14 @@ const Wallet = () => {
 
       {(deposits.length > 0) && (
         <div className="mb-8">
-          <h2 className="font-semibold mb-3">Deposit requests</h2>
+          <h2 className="font-semibold mb-3">{t("wallet.depositRequests") || "Deposit requests"}</h2>
           <div className="space-y-2">
             {deposits.slice(0, 6).map((d) => (
               <div key={d.id} className="flex items-center justify-between border border-neutral-200 rounded-lg p-3 flex-wrap gap-2" data-testid={`deposit-row-${d.id}`}>
                 <div className="flex items-center gap-3 min-w-0">
                   {statusIcon(d.status)}
                   <div className="min-w-0">
-                    <div className="font-medium">{formatPrice(d.amount)} <span className="text-xs text-neutral-500 font-normal">· {d.method === "crypto" ? (d.currency || "crypto") : "manual"}</span></div>
+                    <div className="font-medium">{formatPrice(d.amount)} <span className="text-xs text-neutral-500 font-normal">· {d.method === "crypto" ? (d.currency || (t("wallet.crypto") || "crypto")) : (t("wallet.manual") || "manual")}</span></div>
                     <div className="text-xs text-neutral-500 truncate max-w-[60vw]">{new Date(d.created_at).toLocaleDateString()} {d.reference && `· ${d.reference.slice(0, 20)}${d.reference.length > 20 ? "…" : ""}`}</div>
                   </div>
                 </div>
@@ -742,14 +754,14 @@ const Wallet = () => {
             ))}
           </div>
           {pendingDeposits.length > 0 && (
-            <p className="text-xs text-neutral-500 mt-2">{pendingDeposits.length} pending review by admin.</p>
+            <p className="text-xs text-neutral-500 mt-2">{(t("wallet.pendingReview") || "{n} pending review by admin.").replace("{n}", String(pendingDeposits.length))}</p>
           )}
         </div>
       )}
 
       {data.pending_withdrawals?.length > 0 && (
         <div className="mb-8">
-          <h2 className="font-semibold mb-3">Pending withdrawals</h2>
+          <h2 className="font-semibold mb-3">{t("wallet.pendingWithdrawals") || "Pending withdrawals"}</h2>
           <div className="space-y-2">
             {data.pending_withdrawals.map((w) => (
               <div key={w.id} className="flex items-center justify-between border border-neutral-200 rounded-lg p-3">
@@ -757,7 +769,7 @@ const Wallet = () => {
                   {statusIcon(w.status)}
                   <div>
                     <div className="font-medium">{formatPrice(w.amount)}</div>
-                    <div className="text-xs text-neutral-500">Requested {new Date(w.created_at).toLocaleDateString()}</div>
+                    <div className="text-xs text-neutral-500">{t("wallet.requested") || "Requested"} {new Date(w.created_at).toLocaleDateString()}</div>
                   </div>
                 </div>
                 <Badge variant="secondary" className="capitalize">{w.status}</Badge>
@@ -768,9 +780,9 @@ const Wallet = () => {
       )}
 
       <div>
-        <h2 className="font-semibold mb-3">Transactions</h2>
+        <h2 className="font-semibold mb-3">{t("wallet.transactions") || "Transactions"}</h2>
         {data.transactions.length === 0 ? (
-          <div className="text-center py-10 border border-dashed rounded-xl text-neutral-500">No transactions yet.</div>
+          <div className="text-center py-10 border border-dashed rounded-xl text-neutral-500">{t("wallet.noTransactions") || "No transactions yet."}</div>
         ) : (
           <>
             {/* Desktop table */}
@@ -778,51 +790,51 @@ const Wallet = () => {
               <table className="w-full text-sm">
                 <thead className="bg-neutral-50 text-start">
                   <tr>
-                    <th className="p-3">Type</th>
-                    <th className="p-3">Description</th>
-                    <th className="p-3 text-right">Amount</th>
-                    <th className="p-3 text-right">Balance</th>
-                    <th className="p-3 text-right">Date</th>
+                    <th className="p-3">{t("wallet.col.type") || "Type"}</th>
+                    <th className="p-3">{t("wallet.col.description") || "Description"}</th>
+                    <th className="p-3 text-right">{t("wallet.col.amount") || "Amount"}</th>
+                    <th className="p-3 text-right">{t("wallet.col.balance") || "Balance"}</th>
+                    <th className="p-3 text-right">{t("wallet.col.date") || "Date"}</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {data.transactions.map((t) => {
-                    const funded = t.funded_orders || [];
+                  {data.transactions.map((tx) => {
+                    const funded = tx.funded_orders || [];
                     const isExpandable = funded.length > 0;
-                    const expanded = expandedTx === t.id;
+                    const expanded = expandedTx === tx.id;
                     return (
-                      <React.Fragment key={t.id}>
+                      <React.Fragment key={tx.id}>
                         <tr
                           className={`border-t border-neutral-100 ${isExpandable ? "cursor-pointer hover:bg-blue-50/40" : ""}`}
-                          onClick={() => isExpandable && setExpandedTx(expanded ? null : t.id)}
-                          data-testid={isExpandable ? `reinvest-tx-row-${t.id}` : undefined}
+                          onClick={() => isExpandable && setExpandedTx(expanded ? null : tx.id)}
+                          data-testid={isExpandable ? `reinvest-tx-row-${tx.id}` : undefined}
                         >
                           <td className="p-3">
-                            <Badge variant="secondary" className={typeMeta[t.type]?.color || ""}>{typeMeta[t.type]?.label || t.type}</Badge>
+                            <Badge variant="secondary" className={typeMeta[tx.type]?.color || ""}>{typeMeta[tx.type]?.label || tx.type}</Badge>
                           </td>
                           <td className="p-3 text-neutral-700">
                             <div className="flex items-center gap-2">
-                              <span>{t.description}</span>
+                              <span>{tx.description}</span>
                               {isExpandable && (
                                 <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-blue-800 bg-gradient-to-r from-sky-100 to-blue-100 border border-blue-200 rounded-full px-2 py-0.5">
-                                  <Sparkles className="h-3 w-3" /> {funded.length} order{funded.length === 1 ? "" : "s"} funded
+                                  <Sparkles className="h-3 w-3" /> {(t("wallet.ordersFunded") || "{n} order{s} funded").replace("{n}", String(funded.length)).replace("{s}", funded.length === 1 ? "" : "s")}
                                   {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
                                 </span>
                               )}
                             </div>
                           </td>
-                          <td className={`p-3 text-right font-medium ${t.amount >= 0 ? "text-green-600" : "text-red-600"}`}>
-                            {t.amount >= 0 ? <ArrowDownRight className="h-3 w-3 inline mr-0.5" /> : <ArrowUpRight className="h-3 w-3 inline mr-0.5" />}
-                            {formatPrice(Math.abs(t.amount))}
+                          <td className={`p-3 text-right font-medium ${tx.amount >= 0 ? "text-green-600" : "text-red-600"}`}>
+                            {tx.amount >= 0 ? <ArrowDownRight className="h-3 w-3 inline mr-0.5" /> : <ArrowUpRight className="h-3 w-3 inline mr-0.5" />}
+                            {formatPrice(Math.abs(tx.amount))}
                           </td>
-                          <td className="p-3 text-right text-neutral-600">{formatPrice(t.balance_after)}</td>
-                          <td className="p-3 text-right text-neutral-500 text-xs">{new Date(t.created_at).toLocaleDateString()}</td>
+                          <td className="p-3 text-right text-neutral-600">{formatPrice(tx.balance_after)}</td>
+                          <td className="p-3 text-right text-neutral-500 text-xs">{new Date(tx.created_at).toLocaleDateString()}</td>
                         </tr>
                         {isExpandable && expanded && (
-                          <tr className="bg-gradient-to-br from-sky-50/40 to-blue-50/30" data-testid={`reinvest-tx-detail-${t.id}`}>
+                          <tr className="bg-gradient-to-br from-sky-50/40 to-blue-50/30" data-testid={`reinvest-tx-detail-${tx.id}`}>
                             <td colSpan={5} className="p-3">
                               <div className="text-[11px] uppercase font-semibold text-blue-800 tracking-wider mb-2">
-                                Funded orders ({funded.length})
+                                {(t("wallet.fundedOrders") || "Funded orders ({n})").replace("{n}", String(funded.length))}
                               </div>
                               <div className="space-y-2">
                                 {funded.map((oid) => {
@@ -848,7 +860,7 @@ const Wallet = () => {
                                       </div>
                                       <div className="text-right shrink-0">
                                         <div className="text-sm font-bold tabular-nums text-blue-800">{formatPrice(o.reinvest_funded_amount)}</div>
-                                        <div className="text-[10px] text-neutral-400">reinvested</div>
+                                        <div className="text-[10px] text-neutral-400">{t("wallet.reinvested") || "reinvested"}</div>
                                       </div>
                                     </Link>
                                   );
@@ -865,35 +877,35 @@ const Wallet = () => {
             </div>
             {/* Mobile cards */}
             <div className="sm:hidden space-y-2">
-              {data.transactions.map((t) => {
-                const funded = t.funded_orders || [];
-                const expanded = expandedTx === t.id;
+              {data.transactions.map((tx) => {
+                const funded = tx.funded_orders || [];
+                const expanded = expandedTx === tx.id;
                 return (
-                  <div key={t.id} className="border border-neutral-200 rounded-lg p-3">
+                  <div key={tx.id} className="border border-neutral-200 rounded-lg p-3">
                     <div className="flex items-center justify-between gap-2 mb-1">
-                      <Badge variant="secondary" className={typeMeta[t.type]?.color || ""}>{typeMeta[t.type]?.label || t.type}</Badge>
-                      <span className={`font-semibold ${t.amount >= 0 ? "text-green-600" : "text-red-600"}`}>
-                        {t.amount >= 0 ? "+" : "-"}{formatPrice(Math.abs(t.amount))}
+                      <Badge variant="secondary" className={typeMeta[tx.type]?.color || ""}>{typeMeta[tx.type]?.label || tx.type}</Badge>
+                      <span className={`font-semibold ${tx.amount >= 0 ? "text-green-600" : "text-red-600"}`}>
+                        {tx.amount >= 0 ? "+" : "-"}{formatPrice(Math.abs(tx.amount))}
                       </span>
                     </div>
-                    <div className="text-sm text-neutral-700">{t.description}</div>
+                    <div className="text-sm text-neutral-700">{tx.description}</div>
                     <div className="flex justify-between mt-1 text-xs text-neutral-500">
-                      <span>Balance: {formatPrice(t.balance_after)}</span>
-                      <span>{new Date(t.created_at).toLocaleDateString()}</span>
+                      <span>{t("wallet.balanceLabel") || "Balance"}: {formatPrice(tx.balance_after)}</span>
+                      <span>{new Date(tx.created_at).toLocaleDateString()}</span>
                     </div>
                     {funded.length > 0 && (
                       <>
                         <button
                           type="button"
-                          onClick={() => setExpandedTx(expanded ? null : t.id)}
+                          onClick={() => setExpandedTx(expanded ? null : tx.id)}
                           className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-blue-800 bg-gradient-to-r from-sky-100 to-blue-100 border border-blue-200 rounded-full px-2 py-0.5"
-                          data-testid={`reinvest-tx-toggle-${t.id}`}
+                          data-testid={`reinvest-tx-toggle-${tx.id}`}
                         >
-                          <Sparkles className="h-3 w-3" /> {funded.length} order{funded.length === 1 ? "" : "s"} funded
+                          <Sparkles className="h-3 w-3" /> {(t("wallet.ordersFunded") || "{n} order{s} funded").replace("{n}", String(funded.length)).replace("{s}", funded.length === 1 ? "" : "s")}
                           {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
                         </button>
                         {expanded && (
-                          <div className="mt-2 space-y-1.5" data-testid={`reinvest-tx-detail-${t.id}`}>
+                          <div className="mt-2 space-y-1.5" data-testid={`reinvest-tx-detail-${tx.id}`}>
                             {funded.map((oid) => {
                               const o = (data.orders_by_id || {})[oid];
                               if (!o) return <div key={oid} className="text-xs font-mono text-neutral-500">#{oid.slice(0,8)}</div>;

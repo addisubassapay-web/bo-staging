@@ -375,6 +375,11 @@ class WalletTransaction(BaseModel):
     related_id: Optional[str] = None
     status: Literal["completed", "pending"] = "completed"
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    # Bucket the row belongs to — either affects wallet_balance (available)
+    # or wallet_frozen_balance (frozen). Populated by ledger.apply_entry so
+    # frontends can render the two buckets separately and reconcile is
+    # unambiguous.
+    bucket: Optional[Literal["available", "frozen"]] = None
     # Populated on Reinvest-advance credit rows so the UI can render an
     # expandable trail of which orders each advance funded.
     funded_orders: List[str] = Field(default_factory=list)
@@ -1171,20 +1176,9 @@ async def create_order(payload: OrderCreate, user: dict = Depends(get_current_us
             dropship_source_seller_id, dropship_source_earnings, "dropship_frozen",
             f"Dropship sale (held until delivery): {listing['title']}", order.id, frozen=True,
         )
-    # If reseller wallet was debited for wholesale, log the transaction so the
-    # debit is visible in their wallet history.
-    if reseller_paid_wholesale and reseller_wholesale_cost > 0:
-        fresh = await db.users.find_one({"id": listing["seller_id"]}, {"_id": 0, "wallet_balance": 1}) or {}
-        tx = WalletTransaction(
-            user_id=listing["seller_id"],
-            type="adjustment",
-            amount=-reseller_wholesale_cost,
-            balance_after=float(fresh.get("wallet_balance", 0.0)),
-            description=f"Wholesale cost auto-paid: {listing['title']}",
-            related_id=order.id,
-            status="completed",
-        )
-        await db.wallet_txs.insert_one(tx.model_dump())
+    # (Wholesale debit was already recorded via ledger.apply_entry above —
+    # do NOT insert a second wallet_txs row here or reconcile will see a
+    # phantom 2× drift.)
     for rp in referral_payouts:
         await credit_wallet(rp["user_id"], rp["amount"], "referral", f"Referral L{rp['level']} bonus", order.id)
 
@@ -1915,7 +1909,11 @@ async def request_withdrawal(payload: WithdrawalRequestCreate, user: dict = Depe
     min_wd = settings.get("min_withdrawal", 10.0)
     if payload.amount < min_wd:
         raise HTTPException(400, f"Minimum withdrawal is ${min_wd}")
-    if payload.amount > user.get("wallet_balance", 0.0):
+    # Read fresh balance so we don't authorise on a stale user dict.
+    fresh = await db.users.find_one(
+        {"id": user["id"]}, {"_id": 0, "wallet_balance": 1}
+    ) or {}
+    if payload.amount > float(fresh.get("wallet_balance", 0.0) or 0.0):
         raise HTTPException(400, "Insufficient balance")
 
     mode = settings.get("withdrawal_mode", "manual")
@@ -1936,8 +1934,22 @@ async def request_withdrawal(payload: WithdrawalRequestCreate, user: dict = Depe
     await db.withdrawals.insert_one(wd.model_dump())
 
     if initial_status == "paid":
-        # debit wallet immediately
-        await credit_wallet(user["id"], -payload.amount, "withdrawal", f"Withdrawal #{wd.id[:8]}", wd.id)
+        # debit wallet immediately — atomic with an available-balance guard so
+        # two concurrent auto-approved withdrawals can't overdraw the user.
+        try:
+            await ledger.apply_entry(
+                db,
+                user_id=user["id"],
+                delta=-payload.amount,
+                tx_type="withdrawal",
+                description=f"Withdrawal #{wd.id[:8]}",
+                related_id=wd.id,
+                require_available=True,
+            )
+        except ledger.InsufficientFunds:
+            # Roll the request back so the withdrawal is not orphaned.
+            await db.withdrawals.delete_one({"id": wd.id})
+            raise HTTPException(400, "Insufficient balance")
 
     return wd
 
@@ -2026,13 +2038,12 @@ async def admin_wallet_audit(_admin: dict = Depends(require_admin), limit: int =
     can spot problems fast.
     """
     limit = max(10, min(int(limit or 500), 2000))
-    # 1) Ledger totals per user (available bucket only).
-    available_types = ["deposit", "purchase", "refund", "sale_released",
-                       "wholesale_debit", "affiliate", "referral",
-                       "withdrawal", "adjustment", "sale", "dropship_released",
-                       "bonus"]
+    # 1) Ledger totals per user (available bucket only). Uses the explicit
+    #    `bucket` tag written by ledger.apply_entry (backfilled at startup
+    #    for legacy rows). Filtering by type would double-count sale_released
+    #    (frozen debit + available credit share the same type).
     pipeline = [
-        {"$match": {"type": {"$in": available_types}}},
+        {"$match": {"$expr": {"$ne": [{"$ifNull": ["$bucket", "available"]}, "frozen"]}}},
         {"$group": {"_id": "$user_id", "expected": {"$sum": "$amount"}}},
     ]
     ledger_rows = await db.wallet_txs.aggregate(pipeline).to_list(10_000)
@@ -5192,6 +5203,16 @@ async def startup():
     )
     # Ensure settings doc exists
     await get_settings()
+
+    # Ledger backfill: tag legacy wallet_txs docs with an explicit `bucket`
+    # field so reconciliation aggregations can filter frozen vs available
+    # without double-counting sale_released pairs. Idempotent.
+    try:
+        result = await ledger.backfill_bucket_tags(db)
+        if any(result.values()):
+            logger.info(f"[startup] wallet_txs bucket backfill: {result}")
+    except Exception as e:
+        logger.error(f"[startup] wallet_txs bucket backfill failed: {e}")
 
     # Start background live-sync simulation
     async def live_sync_loop():
