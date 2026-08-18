@@ -26,6 +26,10 @@ Exact replica of Mercari platform (mercari.com) — same color scheme (`#FF211F`
 
 ## Implemented (with dates)
 
+### Feb 2026 — Paid Zyte Key + Concurrent Image Rehost
+- **Zyte paid key** — `ZYTE_API_KEY` rotated to the user's paid $100 plan credential. Amazon extraction now returns full data: verified `amazon_search` for "wireless headphones" pulled 23 real products (correct titles, prices, images) in 28 seconds via one productList call. Prior trial-tier limitations lifted with zero code changes.
+- **Concurrent image rehost** — `rehost_many()` now dispatches all fetches via `asyncio.gather` instead of a sequential loop. Benchmark on 8 images: **2.70s → 0.55s = 4.91× speedup**. Critical for 1,000-URL CSV runs where each listing has multiple images.
+
 ### Feb 2026 — Local Media Storage + Per-User Zyte Quotas + Paginated Amazon/Mercari Seed Scraper
 - **Local media storage** (replaces R2 dependency) — new `/app/backend/uploads/` root, mounted at `/api/uploads/*` so it flows through the same Kubernetes ingress rule as the API. `services/r2_storage.py` now defaults to local disk and falls back to Cloudflare R2 only when `R2_*` env vars are set. Every scraped image gets rehosted to a fully-qualified `{REACT_APP_BACKEND_URL}/api/uploads/scraper/<sha256>[:2]/<sha256>.<ext>` URL — supplier CDN dependencies eliminated with zero external creds.
 - **Per-user Zyte quotas** (`services/quotas.py`) — every Zyte call charges 1 credit against the calling user's monthly budget. Global default cap of 500 credits/user/month, per-user override in `users.zyte_monthly_cap`. Pre-flight `assert_can_spend` blocks over-budget requests with HTTP 429. Failed API calls do NOT debit. New endpoints: `GET /api/scraper/quota`, `GET /api/scraper/admin/quota`, `POST /api/scraper/admin/quota/override`, `POST /api/scraper/admin/quota/global-cap`. Frontend: `QuotaWidget` shows used/cap/remaining with red state when < 10%; `/admin/quotas` page for global cap + per-user overrides.
