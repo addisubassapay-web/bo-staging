@@ -13,7 +13,7 @@ import json as _json
 import httpx
 from pathlib import Path
 from pydantic import BaseModel, Field, EmailStr
-from typing import List, Optional, Literal
+from typing import List, Optional, Literal, Dict, Any
 import uuid
 import asyncio
 from datetime import datetime, timezone, timedelta
@@ -5224,6 +5224,160 @@ async def auto_confirm_delivery_loop():
         await asyncio.sleep(max(60, interval))
 
 
+async def auto_confirm_nudge_loop():
+    """Buyer pre-release reminder — 24h before an order's escrow auto-releases,
+    email + notify the buyer so they can either confirm early or flag a real
+    problem. Fires exactly once per order (guarded by `pre_auto_confirm_nudge_sent`).
+
+    Ticks every 30 min so a nudge lands in a tight ~30-min band around the
+    24h-remaining mark.
+    """
+    await asyncio.sleep(45)
+    while True:
+        try:
+            release_after_h = int(os.environ.get("AUTO_CONFIRM_AFTER_HOURS", "72"))
+            nudge_before_h = int(os.environ.get("AUTO_CONFIRM_NUDGE_BEFORE_HOURS", "24"))
+            # target: delivered_at + (release_after - nudge_before) has passed
+            # → delivered_at <= now - (release_after - nudge_before)
+            target_offset = release_after_h - nudge_before_h  # e.g. 72 - 24 = 48h
+            now = datetime.now(timezone.utc)
+            target_cutoff = now - timedelta(hours=target_offset)
+            cursor = db.orders.find(
+                {
+                    "shipping_status": "delivered",
+                    "shipping_delivered_at": {"$lte": target_cutoff},
+                    "funds_released": {"$ne": True},
+                    "pre_auto_confirm_nudge_sent": {"$ne": True},
+                    "seller_earnings": {"$gt": 0},
+                },
+                {"_id": 0, "id": 1, "buyer_id": 1, "seller_id": 1,
+                 "listing_title": 1, "listing_image": 1, "seller_name": 1,
+                 "shipping_delivered_at": 1, "seller_earnings": 1},
+            )
+            sent = 0
+            async for o in cursor:
+                # Atomic guard so two workers can't nudge the same order twice.
+                res = await db.orders.update_one(
+                    {"id": o["id"], "pre_auto_confirm_nudge_sent": {"$ne": True}},
+                    {"$set": {
+                        "pre_auto_confirm_nudge_sent": True,
+                        "pre_auto_confirm_nudge_at": now,
+                    }},
+                )
+                if res.modified_count == 0:
+                    continue
+                # Compute the exact auto-release time to render in the email.
+                delivered_at = o.get("shipping_delivered_at")
+                if isinstance(delivered_at, datetime) and delivered_at.tzinfo is None:
+                    delivered_at = delivered_at.replace(tzinfo=timezone.utc)
+                release_at = (delivered_at + timedelta(hours=release_after_h)) if delivered_at else None
+                release_str = release_at.strftime("%b %d at %H:%M UTC") if release_at else "in ~24h"
+                title = f"Auto-releasing soon: {o.get('listing_title','your order')}"
+                body = (
+                    f"Your seller's earnings for this order auto-release on {release_str} "
+                    f"(≈24h from now) if you haven't confirmed delivery. If everything arrived "
+                    f"as expected, confirming now unlocks their payout immediately. Not delivered "
+                    f"or an issue? Open a dispute and the release will be paused."
+                )
+                await notify(o["buyer_id"], "order", title, body, f"/profile?tab=orders")
+                sent += 1
+            if sent:
+                logger.info(f"[auto-confirm-nudge] sent {sent} pre-release reminders")
+        except Exception as e:
+            logger.warning(f"auto_confirm_nudge_loop error: {e}")
+        interval = int(os.environ.get("AUTO_CONFIRM_NUDGE_INTERVAL_SEC", "1800"))
+        await asyncio.sleep(max(60, interval))
+
+
+# =========================
+# Live Cash-Out Ticker — anonymized public feed of recent frozen→available
+# releases so quiet-hour visitors see the platform is buzzing. Data source:
+# the same `sale_released` / `dropship_released` tx rows the wallet ledger
+# already writes on delivery confirmation. We anonymize the username to
+# `soph…` (first 4 chars + ellipsis) to protect PII while still feeling
+# real. Cached in-memory 15s to keep the poll cost negligible.
+# =========================
+_TICKER_CACHE: Dict[str, Any] = {"at": 0.0, "rows": []}
+
+
+@api_router.get("/wallet/ticker")
+async def wallet_ticker(limit: int = 15, minutes: int = 120):
+    """Anonymized recent-release feed for the header ticker.
+
+    Returns up to `limit` rows (max 30) representing frozen→available
+    releases within the last `minutes` minutes (max 1440). Every payload
+    is opinionated: username masked to `abcd…`, listing title truncated,
+    positive amounts only. No auth required — this is intentionally
+    public social proof.
+    """
+    limit = max(1, min(int(limit or 15), 30))
+    minutes = max(5, min(int(minutes or 120), 1440))
+
+    # 15-second cache — the ticker only refreshes every 30s anyway.
+    now_ts = _now_utc().timestamp()
+    if now_ts - _TICKER_CACHE.get("at", 0) < 15:
+        cached = _TICKER_CACHE.get("rows", [])
+        # Trim to caller-requested limit but keep the fresh cache warm.
+        return cached[:limit]
+
+    cutoff = _now_utc() - timedelta(minutes=minutes)
+    # We want the CREDIT side of the release (positive amount in the
+    # available bucket) — that's the "money hit the seller" event.
+    docs = await db.wallet_txs.find(
+        {
+            "type": {"$in": ["sale_released", "dropship_released"]},
+            "bucket": {"$ne": "frozen"},
+            "amount": {"$gt": 0},
+            "created_at": {"$gte": cutoff},
+        },
+        {"_id": 0, "user_id": 1, "amount": 1, "created_at": 1, "description": 1, "related_id": 1},
+    ).sort("created_at", -1).limit(limit).to_list(limit)
+
+    user_ids = list({d["user_id"] for d in docs if d.get("user_id")})
+    users_by_id: Dict[str, dict] = {}
+    if user_ids:
+        async for u in db.users.find({"id": {"$in": user_ids}}, {"_id": 0, "id": 1, "username": 1}):
+            users_by_id[u["id"]] = u
+
+    def mask(name: Optional[str]) -> str:
+        if not name:
+            return "someone"
+        base = name.split("@")[0]
+        return (base[:4] + "…") if len(base) > 4 else base
+
+    def _to_aware(dt):
+        if isinstance(dt, str):
+            try:
+                dt = datetime.fromisoformat(dt.replace("Z", "+00:00"))
+            except Exception:
+                return None
+        if isinstance(dt, datetime) and dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt
+
+    rows: List[dict] = []
+    now = _now_utc()
+    for d in docs:
+        u = users_by_id.get(d.get("user_id"), {})
+        created = _to_aware(d.get("created_at"))
+        ago_min = int((now - created).total_seconds() / 60) if created else 0
+        # Strip the "Released: " / "Auto-released ..." prefix in descriptions
+        # so the ticker line reads clean.
+        desc = (d.get("description") or "").split(":", 1)
+        title = desc[-1].strip() if len(desc) > 1 else desc[0]
+        title = (title[:40] + "…") if len(title) > 40 else title
+        rows.append({
+            "seller_masked": mask(u.get("username")),
+            "amount": round(float(d.get("amount", 0.0)), 2),
+            "ago_min": ago_min,
+            "listing_title": title,
+        })
+
+    _TICKER_CACHE["at"] = now_ts
+    _TICKER_CACHE["rows"] = rows
+    return rows
+
+
 async def _dispatch_auto_confirm(hours: int, dry_run: bool = False) -> dict:
     """Manual one-pass runner for the auto-confirm logic. Extracted so the
     admin trigger endpoint and the background loop share exactly one
@@ -5702,40 +5856,98 @@ def _sitemap_url_block(path: str, lastmod: Optional[str], origin: str, changefre
     )
 
 
-@app.get("/api/sitemap.xml")
-async def sitemap_xml(request: Request):
-    """Public sitemap covering marketplace root, category pages, storefronts,
-    and every active listing. Each URL includes hreflang alternates for the
-    12 supported languages so international SERPs surface localized snippets.
-    Cached 1h at the CDN edge."""
-    # Prefer x-forwarded-host (set by public ingress) → BACKEND_PUBLIC_URL env
-    # → services.email_templates.FRONTEND → the raw Host header (dev only).
-    # This ensures Google indexes the canonical https URL, not the internal
-    # k8s cluster host.
+_SITEMAP_LISTINGS_PER_SHARD = 40_000  # under Google's 50k / 50MB per-file limit
+
+
+def _resolve_origin(request: Request) -> str:
     fwd_host = request.headers.get("x-forwarded-host")
     fwd_proto = request.headers.get("x-forwarded-proto", "https")
     if fwd_host:
-        origin = f"{fwd_proto}://{fwd_host}"
-    else:
-        origin = os.environ.get("BACKEND_PUBLIC_URL") or os.environ.get("FRONTEND_ORIGIN")
-        if not origin:
-            from services.email_templates import FRONTEND as _FE
-            origin = _FE
-    origin = origin.rstrip("/")
+        return f"{fwd_proto}://{fwd_host}".rstrip("/")
+    origin = os.environ.get("BACKEND_PUBLIC_URL") or os.environ.get("FRONTEND_ORIGIN")
+    if not origin:
+        from services.email_templates import FRONTEND as _FE
+        origin = _FE
+    return origin.rstrip("/")
 
-    blocks: List[str] = []
+
+async def _listings_total() -> int:
+    return await db.listings.count_documents({"status": "active"})
+
+
+@app.get("/api/sitemap_index.xml")
+async def sitemap_index(request: Request):
+    """Sitemap index (RFC-compliant) — always returned regardless of catalog
+    size so bots have a single stable discovery URL. Points at:
+      * `/api/sitemap-core.xml`         (homepage + marketplace + stores)
+      * `/api/sitemap-categories.xml`   (all category pages)
+      * `/api/sitemap-storefronts.xml`  (up to 5k storefronts)
+      * `/api/sitemap-listings-{N}.xml` (40k listings per shard — as many
+        shards as active listings require, scales past 45k / 50k / infinity)
+    """
+    origin = _resolve_origin(request)
     now_iso = datetime.now(timezone.utc).date().isoformat()
+    total = await _listings_total()
+    shard_count = max(1, (total + _SITEMAP_LISTINGS_PER_SHARD - 1) // _SITEMAP_LISTINGS_PER_SHARD)
 
-    # Homepage + static discovery pages (high priority)
-    for path in ("/", "/marketplace", "/marketplace/stores"):
-        blocks.append(_sitemap_url_block(path, now_iso, origin, "daily", "1.0" if path == "/" else "0.9"))
+    entries = [
+        f"<sitemap><loc>{origin}/api/sitemap-core.xml</loc><lastmod>{now_iso}</lastmod></sitemap>",
+        f"<sitemap><loc>{origin}/api/sitemap-categories.xml</loc><lastmod>{now_iso}</lastmod></sitemap>",
+        f"<sitemap><loc>{origin}/api/sitemap-storefronts.xml</loc><lastmod>{now_iso}</lastmod></sitemap>",
+    ]
+    for n in range(1, shard_count + 1):
+        entries.append(
+            f"<sitemap><loc>{origin}/api/sitemap-listings-{n}.xml</loc>"
+            f"<lastmod>{now_iso}</lastmod></sitemap>"
+        )
+    xml = (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+        + "".join(entries) + "</sitemapindex>"
+    )
+    return Response(content=xml, media_type="application/xml",
+                    headers={"Cache-Control": "public, max-age=3600, s-maxage=3600"})
 
-    # Category pages
-    async for c in db.categories.find({}, {"_id": 0, "id": 1, "slug": 1, "updated_at": 1}):
+
+def _wrap_urlset(blocks: List[str]) -> str:
+    return (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" '
+        'xmlns:xhtml="http://www.w3.org/1999/xhtml">'
+        + "".join(blocks) + "</urlset>"
+    )
+
+
+@app.get("/api/sitemap-core.xml")
+async def sitemap_core(request: Request):
+    origin = _resolve_origin(request)
+    now_iso = datetime.now(timezone.utc).date().isoformat()
+    blocks = [
+        _sitemap_url_block("/", now_iso, origin, "daily", "1.0"),
+        _sitemap_url_block("/marketplace", now_iso, origin, "daily", "0.9"),
+        _sitemap_url_block("/marketplace/stores", now_iso, origin, "daily", "0.9"),
+    ]
+    return Response(content=_wrap_urlset(blocks), media_type="application/xml",
+                    headers={"Cache-Control": "public, max-age=3600, s-maxage=3600"})
+
+
+@app.get("/api/sitemap-categories.xml")
+async def sitemap_categories(request: Request):
+    origin = _resolve_origin(request)
+    now_iso = datetime.now(timezone.utc).date().isoformat()
+    blocks: List[str] = []
+    async for c in db.categories.find({}, {"_id": 0, "id": 1, "slug": 1}):
         slug = c.get("slug") or c.get("id")
         blocks.append(_sitemap_url_block(f"/search?category={slug}", now_iso, origin, "daily", "0.7"))
+    return Response(content=_wrap_urlset(blocks), media_type="application/xml",
+                    headers={"Cache-Control": "public, max-age=3600, s-maxage=3600"})
 
-    # Storefronts
+
+@app.get("/api/sitemap-storefronts.xml")
+async def sitemap_storefronts(request: Request):
+    origin = _resolve_origin(request)
+    now_iso = datetime.now(timezone.utc).date().isoformat()
+    blocks: List[str] = []
     async for s in db.stores.find({"status": {"$ne": "banned"}}, {"_id": 0, "slug": 1, "updated_at": 1}).limit(5000):
         if not s.get("slug"):
             continue
@@ -5743,48 +5955,82 @@ async def sitemap_xml(request: Request):
         if isinstance(lm, datetime):
             lm = lm.date().isoformat()
         blocks.append(_sitemap_url_block(f"/store/{s['slug']}", lm or now_iso, origin, "weekly", "0.6"))
+    return Response(content=_wrap_urlset(blocks), media_type="application/xml",
+                    headers={"Cache-Control": "public, max-age=3600, s-maxage=3600"})
 
-    # Active listings — capped at 45k so we stay under the 50k / 50MB
-    # per-sitemap limit. If we outgrow this, split into paginated sitemaps
-    # and expose a sitemap index.
+
+@app.get("/api/sitemap-listings-{shard}.xml")
+async def sitemap_listings_shard(shard: int, request: Request):
+    """One shard of ≤40k listing URLs. Cursor paginated (skip/limit) so we
+    stay well under Google's 50k / 50MB per-file limit forever."""
+    if shard < 1:
+        raise HTTPException(400, "shard must be >= 1")
+    origin = _resolve_origin(request)
+    now_iso = datetime.now(timezone.utc).date().isoformat()
+    skip = (shard - 1) * _SITEMAP_LISTINGS_PER_SHARD
+    blocks: List[str] = []
     async for l in db.listings.find(
         {"status": "active"},
         {"_id": 0, "id": 1, "updated_at": 1, "created_at": 1},
-    ).sort("updated_at", -1).limit(45000):
+    ).sort("updated_at", -1).skip(skip).limit(_SITEMAP_LISTINGS_PER_SHARD):
         lm = l.get("updated_at") or l.get("created_at")
         if isinstance(lm, datetime):
             lm = lm.date().isoformat()
         blocks.append(_sitemap_url_block(f"/listing/{l['id']}", lm or now_iso, origin, "weekly", "0.7"))
+    if not blocks:
+        # Empty shard → return an empty urlset with 404 so bots stop trying
+        # to fetch out-of-range shard numbers.
+        raise HTTPException(404, "empty shard")
+    return Response(content=_wrap_urlset(blocks), media_type="application/xml",
+                    headers={"Cache-Control": "public, max-age=3600, s-maxage=3600"})
 
-    xml = (
-        '<?xml version="1.0" encoding="UTF-8"?>'
-        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" '
-        'xmlns:xhtml="http://www.w3.org/1999/xhtml">'
-        + "".join(blocks)
-        + "</urlset>"
-    )
-    return Response(
-        content=xml,
-        media_type="application/xml",
-        headers={"Cache-Control": "public, max-age=3600, s-maxage=3600"},
-    )
+
+@app.get("/api/sitemap.xml")
+async def sitemap_xml(request: Request):
+    """Legacy single-file sitemap kept for backwards-compat with any bots
+    that discovered it before the index existed. It emits the first
+    shard's worth of listings + core + categories + storefronts. For the
+    canonical modern discovery URL, see `/api/sitemap_index.xml` (which is
+    what our robots.txt advertises)."""
+    origin = _resolve_origin(request)
+    now_iso = datetime.now(timezone.utc).date().isoformat()
+
+    blocks: List[str] = []
+    for path in ("/", "/marketplace", "/marketplace/stores"):
+        blocks.append(_sitemap_url_block(path, now_iso, origin, "daily", "1.0" if path == "/" else "0.9"))
+    async for c in db.categories.find({}, {"_id": 0, "id": 1, "slug": 1}):
+        slug = c.get("slug") or c.get("id")
+        blocks.append(_sitemap_url_block(f"/search?category={slug}", now_iso, origin, "daily", "0.7"))
+    async for s in db.stores.find({"status": {"$ne": "banned"}}, {"_id": 0, "slug": 1, "updated_at": 1}).limit(5000):
+        if not s.get("slug"):
+            continue
+        lm = s.get("updated_at")
+        if isinstance(lm, datetime):
+            lm = lm.date().isoformat()
+        blocks.append(_sitemap_url_block(f"/store/{s['slug']}", lm or now_iso, origin, "weekly", "0.6"))
+    async for l in db.listings.find(
+        {"status": "active"},
+        {"_id": 0, "id": 1, "updated_at": 1, "created_at": 1},
+    ).sort("updated_at", -1).limit(_SITEMAP_LISTINGS_PER_SHARD):
+        lm = l.get("updated_at") or l.get("created_at")
+        if isinstance(lm, datetime):
+            lm = lm.date().isoformat()
+        blocks.append(_sitemap_url_block(f"/listing/{l['id']}", lm or now_iso, origin, "weekly", "0.7"))
+    return Response(content=_wrap_urlset(blocks), media_type="application/xml",
+                    headers={"Cache-Control": "public, max-age=3600, s-maxage=3600"})
 
 
 @app.get("/api/robots.txt")
 async def robots_txt(request: Request):
-    fwd_host = request.headers.get("x-forwarded-host")
-    fwd_proto = request.headers.get("x-forwarded-proto", "https")
-    if fwd_host:
-        origin = f"{fwd_proto}://{fwd_host}"
-    else:
-        origin = os.environ.get("BACKEND_PUBLIC_URL") or os.environ.get("FRONTEND_ORIGIN", "")
-    origin = origin.rstrip("/")
+    origin = _resolve_origin(request)
     body = (
         "User-agent: *\n"
         "Disallow: /admin\n"
         "Disallow: /api/\n"
+        "Allow: /api/sitemap_index.xml\n"
         "Allow: /api/sitemap.xml\n"
-        f"Sitemap: {origin}/api/sitemap.xml\n"
+        "Allow: /api/sitemap-\n"
+        f"Sitemap: {origin}/api/sitemap_index.xml\n"
     )
     return Response(content=body, media_type="text/plain", headers={"Cache-Control": "public, max-age=3600"})
 
@@ -5982,6 +6228,7 @@ async def startup():
     asyncio.create_task(newsletter_digest_loop())
     asyncio.create_task(escrow_digest_loop())
     asyncio.create_task(auto_confirm_delivery_loop())
+    asyncio.create_task(auto_confirm_nudge_loop())
 
 
 @app.on_event("shutdown")

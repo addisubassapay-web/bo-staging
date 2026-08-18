@@ -23,6 +23,7 @@ import GlobalNavMenu from "@/components/GlobalNavMenu";
 import CommandPalette, { useCommandPaletteShortcut } from "@/components/CommandPalette";
 import BrandMark from "@/components/BrandMark";
 import LangCurrencySwitcher from "@/components/LangCurrencySwitcher";
+import CashOutTicker from "@/components/CashOutTicker";
 
 const TopStrip = ({ user, onLogout }) => {
   const { t } = useLang();
@@ -129,6 +130,12 @@ const Header = () => {
     <header className="sticky top-0 z-40 bg-white dark:bg-neutral-950 transition-colors">
       <div className={`overflow-hidden transition-[max-height,opacity] duration-300 ${compact ? "max-h-0 opacity-0" : "max-h-16 opacity-100"}`}>
         <TopStrip user={user} onLogout={() => { logout(); navigate("/"); }} />
+      </div>
+
+      {/* Live cash-out ticker — anonymized "Just released +$X" marquee for
+          social proof. Hidden on mobile and on compact-scroll to avoid noise. */}
+      <div className={`overflow-hidden transition-[max-height,opacity] duration-300 ${compact ? "max-h-0 opacity-0" : "max-h-8 opacity-100"}`}>
+        <CashOutTicker />
       </div>
 
       {/* Main bar */}

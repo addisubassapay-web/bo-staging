@@ -326,6 +326,9 @@ const DICT = {
     "escrow.showLess": "Show less",
     "escrow.helper": "You'll also get a weekly email digest of stuck orders.",
     "escrow.viewAll": "View all sales →",
+    "ticker.label": "Live cash-outs",
+    "ticker.justNow": "just now",
+    "ticker.minAgo": "{n}m ago",
   },
   es: {
     "nav.categories": "Categorías",
