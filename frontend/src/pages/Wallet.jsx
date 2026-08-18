@@ -659,22 +659,13 @@ const Wallet = () => {
     await load();
   };
 
-  // Live wallet stream — surfaces a toast whenever a frozen sale auto-releases
-  // (or any wallet/payout notification fires) and refreshes the balance so
-  // the number ticks up without a page reload.
-  const { toast } = useToast();
+  // Wallet listens to the same stream as the app-wide GlobalWalletToaster
+  // and refreshes balances on each new row. Toasts are fired by the
+  // GlobalWalletToaster component (mounted in App.js) so users still get
+  // notified when browsing other pages — Wallet does *not* re-toast to
+  // avoid duplicates.
   useNotificationStream(
-    (rows) => {
-      rows.forEach((n) => {
-        toast({
-          title: n.title || (t("wallet.stream.newActivity") || "New wallet activity"),
-          description: n.body || "",
-          duration: 6000,
-        });
-      });
-      // Any new wallet/payout row means balances shifted — pull fresh data.
-      afterMutation();
-    },
+    () => { afterMutation(); },
     "wallet,payout",
     15000,
     !!user,

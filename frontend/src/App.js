@@ -42,6 +42,7 @@ import AdminCoupons from "@/pages/AdminCoupons";
 import PaymentSuccess from "@/pages/PaymentSuccess";
 import PaymentCancel from "@/pages/PaymentCancel";
 import GeoCurrencyPrompt from "@/components/GeoCurrencyPrompt";
+import GlobalWalletToaster from "@/components/GlobalWalletToaster";
 
 function App() {
   return (
@@ -95,6 +96,7 @@ function App() {
                 <Footer />
                 <Toaster />
                 <GeoCurrencyPrompt />
+                <GlobalWalletToaster />
               </AuthProvider>
             </BrowserRouter>
           </div>

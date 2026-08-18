@@ -12,6 +12,7 @@ import { VerificationBadges } from "@/components/VerificationBadges";
 import ShippingTracker from "@/components/ShippingTracker";
 import DigestCard from "@/components/DigestCard";
 import EmailPreferences from "@/components/EmailPreferences";
+import AutoConfirmCountdown from "@/components/AutoConfirmCountdown";
 
 const BADGE_STEPS = [
   { key: "new", label: "New", threshold: { sales: 0, rating: 0 } },
@@ -475,6 +476,7 @@ const Profile = () => {
                             <Snowflake className="h-3 w-3" /> Funds frozen · releases on delivery
                           </span>
                         )}
+                        <AutoConfirmCountdown order={o} />
                         {o.funds_released && (
                           <span className="inline-flex items-center gap-1 text-xs text-emerald-700 bg-emerald-50 rounded-full px-2 py-0.5">
                             <CheckCircle2 className="h-3 w-3" /> Paid out

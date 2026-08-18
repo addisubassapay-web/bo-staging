@@ -298,7 +298,9 @@ class Order(BaseModel):
     shipping_status: Optional[str] = None  # label_created, in_transit, delivered
     estimated_delivery: Optional[str] = None
     estimated_delivery_at: Optional[datetime] = None  # projected arrival date (order.created_at + delivery_days_estimate)
+    shipping_delivered_at: Optional[datetime] = None  # set by shipping progression loop when carrier reports delivered — gates auto-confirm
     delivery_confirmed_at: Optional[datetime] = None  # set when buyer or auto-release marks delivery
+    auto_confirmed: bool = False  # true when funds were released by auto-confirm loop (buyer didn't confirm manually)
     funds_released: bool = False  # true once seller/dropship-source frozen earnings are released to available balance
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
@@ -5660,6 +5662,131 @@ async def seed_data():
 @api_router.get("/")
 async def root():
     return {"message": "Mercari Clone API", "status": "ok"}
+
+
+# =========================
+# Language-aware SEO — /sitemap.xml + /robots.txt
+# =========================
+# We ship one HTML bundle with client-side i18n, so instead of duplicating
+# every URL under `/en/`, `/ja/`, etc. we emit sitemap entries with an
+# xhtml:link rel="alternate" hreflang="..." row per language. Google, Bing,
+# and Yandex all consume this format and each localized snippet ranks in
+# its own regional SERP without cannibalising.
+_SITEMAP_LANGS = ["en", "es", "fr", "de", "pt", "it", "ja", "zh", "ar", "hi", "ko", "ru"]
+
+
+def _xml_escape(s: str) -> str:
+    return (
+        (s or "")
+        .replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace('"', "&quot;")
+        .replace("'", "&apos;")
+    )
+
+
+def _sitemap_url_block(path: str, lastmod: Optional[str], origin: str, changefreq: str = "weekly", priority: str = "0.5") -> str:
+    """Emit one <url> block with all language alternates."""
+    default = f"{origin}{path}"
+    alts = "".join(
+        f'<xhtml:link rel="alternate" hreflang="{lang}" href="{_xml_escape(default)}?lang={lang}"/>'
+        for lang in _SITEMAP_LANGS
+    )
+    alts += f'<xhtml:link rel="alternate" hreflang="x-default" href="{_xml_escape(default)}"/>'
+    lm = f"<lastmod>{_xml_escape(lastmod)}</lastmod>" if lastmod else ""
+    return (
+        f"<url><loc>{_xml_escape(default)}</loc>{lm}"
+        f"<changefreq>{changefreq}</changefreq><priority>{priority}</priority>"
+        f"{alts}</url>"
+    )
+
+
+@app.get("/api/sitemap.xml")
+async def sitemap_xml(request: Request):
+    """Public sitemap covering marketplace root, category pages, storefronts,
+    and every active listing. Each URL includes hreflang alternates for the
+    12 supported languages so international SERPs surface localized snippets.
+    Cached 1h at the CDN edge."""
+    # Prefer x-forwarded-host (set by public ingress) → BACKEND_PUBLIC_URL env
+    # → services.email_templates.FRONTEND → the raw Host header (dev only).
+    # This ensures Google indexes the canonical https URL, not the internal
+    # k8s cluster host.
+    fwd_host = request.headers.get("x-forwarded-host")
+    fwd_proto = request.headers.get("x-forwarded-proto", "https")
+    if fwd_host:
+        origin = f"{fwd_proto}://{fwd_host}"
+    else:
+        origin = os.environ.get("BACKEND_PUBLIC_URL") or os.environ.get("FRONTEND_ORIGIN")
+        if not origin:
+            from services.email_templates import FRONTEND as _FE
+            origin = _FE
+    origin = origin.rstrip("/")
+
+    blocks: List[str] = []
+    now_iso = datetime.now(timezone.utc).date().isoformat()
+
+    # Homepage + static discovery pages (high priority)
+    for path in ("/", "/marketplace", "/marketplace/stores"):
+        blocks.append(_sitemap_url_block(path, now_iso, origin, "daily", "1.0" if path == "/" else "0.9"))
+
+    # Category pages
+    async for c in db.categories.find({}, {"_id": 0, "id": 1, "slug": 1, "updated_at": 1}):
+        slug = c.get("slug") or c.get("id")
+        blocks.append(_sitemap_url_block(f"/search?category={slug}", now_iso, origin, "daily", "0.7"))
+
+    # Storefronts
+    async for s in db.stores.find({"status": {"$ne": "banned"}}, {"_id": 0, "slug": 1, "updated_at": 1}).limit(5000):
+        if not s.get("slug"):
+            continue
+        lm = s.get("updated_at")
+        if isinstance(lm, datetime):
+            lm = lm.date().isoformat()
+        blocks.append(_sitemap_url_block(f"/store/{s['slug']}", lm or now_iso, origin, "weekly", "0.6"))
+
+    # Active listings — capped at 45k so we stay under the 50k / 50MB
+    # per-sitemap limit. If we outgrow this, split into paginated sitemaps
+    # and expose a sitemap index.
+    async for l in db.listings.find(
+        {"status": "active"},
+        {"_id": 0, "id": 1, "updated_at": 1, "created_at": 1},
+    ).sort("updated_at", -1).limit(45000):
+        lm = l.get("updated_at") or l.get("created_at")
+        if isinstance(lm, datetime):
+            lm = lm.date().isoformat()
+        blocks.append(_sitemap_url_block(f"/listing/{l['id']}", lm or now_iso, origin, "weekly", "0.7"))
+
+    xml = (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" '
+        'xmlns:xhtml="http://www.w3.org/1999/xhtml">'
+        + "".join(blocks)
+        + "</urlset>"
+    )
+    return Response(
+        content=xml,
+        media_type="application/xml",
+        headers={"Cache-Control": "public, max-age=3600, s-maxage=3600"},
+    )
+
+
+@app.get("/api/robots.txt")
+async def robots_txt(request: Request):
+    fwd_host = request.headers.get("x-forwarded-host")
+    fwd_proto = request.headers.get("x-forwarded-proto", "https")
+    if fwd_host:
+        origin = f"{fwd_proto}://{fwd_host}"
+    else:
+        origin = os.environ.get("BACKEND_PUBLIC_URL") or os.environ.get("FRONTEND_ORIGIN", "")
+    origin = origin.rstrip("/")
+    body = (
+        "User-agent: *\n"
+        "Disallow: /admin\n"
+        "Disallow: /api/\n"
+        "Allow: /api/sitemap.xml\n"
+        f"Sitemap: {origin}/api/sitemap.xml\n"
+    )
+    return Response(content=body, media_type="text/plain", headers={"Cache-Control": "public, max-age=3600"})
 
 
 app.include_router(api_router)
