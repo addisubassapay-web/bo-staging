@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { useBalanceVisibility, BalanceValue, BalanceEyeToggle } from "@/components/BalanceMask";
 import BalanceHealthTile from "@/components/BalanceHealthTile";
+import StuckEscrowAlerts from "@/components/StuckEscrowAlerts";
 
 const typeMetaKeys = {
   sale: { key: "wallet.type.sale", color: "text-green-600" },
@@ -741,6 +742,9 @@ const Wallet = () => {
       <div className="mb-8">
         <BalanceHealthTile health={data.health} />
       </div>
+
+      {/* Stuck Escrow Alerts — orders past their ETA that need a buyer nudge */}
+      <StuckEscrowAlerts />
 
       {(deposits.length > 0) && (
         <div className="mb-8">

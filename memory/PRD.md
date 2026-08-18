@@ -26,6 +26,13 @@ Exact replica of Mercari platform (mercari.com) — same color scheme (`#FF211F`
 
 ## Implemented (with dates)
 
+### Feb 2026 — Escrow Alerts Digest (weekly email + in-wallet nudge)
+- **Backend loop** `escrow_digest_loop` — runs every 7d (dev-tunable via `ESCROW_DIGEST_INTERVAL_SEC`); scans every seller with unreleased escrow, groups orders past `estimated_delivery_at` by ≥`ESCROW_DIGEST_THRESHOLD_DAYS` (default 3), and sends a branded HTML digest via the existing Hostinger SMTP mailer (real send verified: `provider=hostinger, ok=True`). Respects both `weekly_digest_opt_in` and per-kind `email_prefs.payout`. Also fires an in-app `payout` notification so opt-out sellers still see the alert.
+- **Admin endpoint** `POST /api/admin/escrow-digest/dispatch {threshold_days?, dry_run?}` — one-click preview/trigger with per-seller counters (scanned/sent/skipped_opt_out/skipped_no_stuck).
+- **Seller preview endpoint** `GET /api/wallet/escrow-alerts?threshold_days=0` — same data the digest would email, powers the new in-wallet UI.
+- **New `<StuckEscrowAlerts/>` component** on `/wallet` (mounted below Balance Health Tile) — amber-toned card listing stuck orders with thumb/buyer/overdue-days + a **one-click "Nudge"** button that hits `POST /api/orders/{id}/nudge-buyer` (24h rate-limited per order, tracks `nudge_count`). Sends an in-app + email reminder to the buyer to confirm delivery.
+- **i18n**: `escrow.*` keys in EN (fallback). Verified rendering in EN + JA screenshots.
+
 ### Feb 2026 — Balance Health Tile
 - **New `/wallet` page mini-card** (`BalanceHealthTile.jsx`) surfaces live money-flow at a glance: a two-tone gauge bar splitting available vs frozen with percent labels, a 3-metric grid (in-flight order count, avg days-in-escrow, oldest days-in-escrow with a stuck-escrow amber alert at ≥14 days), and a "Next release" card with the oldest-ETA order's thumbnail + amount + human ETA ("Releases today", "~3 days", or "Overdue — buyer hasn't confirmed").
 - **Backend**: `GET /api/wallet` extended with a `health` object — computes in-flight orders (funds_released=false), average and oldest days-in-flight, and the next expected release from the earliest `estimated_delivery_at`. Datetime-tz-safe.

@@ -1230,6 +1230,45 @@ async def create_order(payload: OrderCreate, user: dict = Depends(get_current_us
     return order
 
 
+@api_router.post("/orders/{order_id}/nudge-buyer")
+async def nudge_buyer_confirm(order_id: str, user: dict = Depends(get_current_user)):
+    """Seller-triggered nudge — sends the buyer an in-app + email reminder to
+    confirm delivery so escrow funds unlock. Rate-limited to once every 24h
+    per order to prevent spam. Returns {ok, next_available_at}."""
+    order = await db.orders.find_one({"id": order_id}, {"_id": 0})
+    if not order:
+        raise HTTPException(404, "Order not found")
+    if order.get("seller_id") != user["id"] and user.get("role") != "admin":
+        raise HTTPException(403, "Only the seller or an admin can nudge the buyer")
+    if order.get("funds_released"):
+        raise HTTPException(400, "Funds already released")
+
+    now = datetime.now(timezone.utc)
+    last_nudge = order.get("last_nudge_at")
+    if isinstance(last_nudge, str):
+        try:
+            last_nudge = datetime.fromisoformat(last_nudge.replace("Z", "+00:00"))
+        except Exception:
+            last_nudge = None
+    if last_nudge and last_nudge.tzinfo is None:
+        last_nudge = last_nudge.replace(tzinfo=timezone.utc)
+    if last_nudge and (now - last_nudge) < timedelta(hours=24):
+        wait_h = round(24 - (now - last_nudge).total_seconds() / 3600, 1)
+        raise HTTPException(429, f"Already nudged recently. Try again in {wait_h}h.")
+
+    await db.orders.update_one(
+        {"id": order_id},
+        {"$set": {"last_nudge_at": now}, "$inc": {"nudge_count": 1}},
+    )
+    title = f"Please confirm delivery: {order.get('listing_title','your order')}"
+    body = (
+        f"Your seller sent a friendly reminder to confirm delivery for order "
+        f"#{order_id[:8]}. Confirming unlocks their earnings and closes the sale."
+    )
+    await notify(order["buyer_id"], "order", title, body, f"/profile?tab=orders")
+    return {"ok": True, "nudged_at": now.isoformat()}
+
+
 @api_router.post("/orders/{order_id}/confirm-delivery", response_model=Order)
 async def confirm_delivery(order_id: str, user: dict = Depends(get_current_user)):
     """Buyer confirms they received the item. Releases the seller's (and dropship
@@ -4484,6 +4523,259 @@ async def newsletter_digest_loop():
         await asyncio.sleep(max(60, interval))
 
 
+# =========================
+# Escrow Alerts Digest — weekly email listing seller orders stuck in escrow
+# past their ETA. Sellers can nudge buyers to confirm delivery and unlock funds.
+# =========================
+async def _build_escrow_alerts_for_seller(seller_id: str, threshold_days: int = 0) -> dict:
+    """Return {stuck: [...], total_frozen: float} for a single seller.
+
+    A "stuck" order = funds_released is false AND (estimated_delivery_at is
+    past OR order is more than 14d old with no ETA). `threshold_days` grants
+    a grace period — 0 = anything past ETA, 3 = only ≥3 days overdue.
+    """
+    now = datetime.now(timezone.utc)
+    cutoff = now - timedelta(days=threshold_days)
+    orders = await db.orders.find(
+        {
+            "seller_id": seller_id,
+            "funds_released": False,
+            "seller_earnings": {"$gt": 0},
+        },
+        {"_id": 0, "id": 1, "listing_title": 1, "listing_image": 1,
+         "seller_earnings": 1, "estimated_delivery_at": 1, "created_at": 1,
+         "buyer_name": 1, "shipping_status": 1, "status": 1},
+    ).to_list(500)
+
+    def _to_aware(dt):
+        if dt is None:
+            return None
+        if isinstance(dt, str):
+            try:
+                dt = datetime.fromisoformat(dt.replace("Z", "+00:00"))
+            except Exception:
+                return None
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt
+
+    stuck: List[dict] = []
+    for o in orders:
+        eta = _to_aware(o.get("estimated_delivery_at"))
+        created = _to_aware(o.get("created_at"))
+        # An order is stuck if ETA has passed by ≥ threshold, or (no ETA and
+        # order was created > 14 days ago).
+        is_past_eta = eta is not None and eta < cutoff
+        is_old_no_eta = eta is None and created is not None and (now - created).days > 14
+        if not (is_past_eta or is_old_no_eta):
+            continue
+        overdue_days = (now - eta).days if eta else (now - created).days if created else 0
+        stuck.append({
+            "order_id": o["id"],
+            "listing_title": o.get("listing_title") or "Order",
+            "listing_image": o.get("listing_image"),
+            "buyer_name": o.get("buyer_name"),
+            "amount": round(float(o.get("seller_earnings", 0.0)), 2),
+            "eta": eta.isoformat() if eta else None,
+            "overdue_days": max(0, overdue_days),
+            "shipping_status": o.get("shipping_status") or o.get("status"),
+        })
+    stuck.sort(key=lambda r: r["overdue_days"], reverse=True)
+    total_frozen = round(sum(r["amount"] for r in stuck), 2)
+    return {"stuck": stuck, "total_frozen": total_frozen}
+
+
+def _render_escrow_digest_html(username: str, stuck: List[dict], total_frozen: float) -> str:
+    """Compose the digest body HTML using the standard branded shell."""
+    from services.email_templates import _shell, FRONTEND
+    rows = []
+    for s in stuck[:20]:
+        eta_line = ""
+        if s.get("eta"):
+            try:
+                eta_dt = datetime.fromisoformat(s["eta"].replace("Z", "+00:00"))
+                eta_line = eta_dt.strftime("%b %d, %Y")
+            except Exception:
+                eta_line = s["eta"]
+        thumb = (
+            f'<img src="{s["listing_image"]}" width="48" height="48" '
+            f'style="border-radius:8px;object-fit:cover;vertical-align:middle;margin-right:12px;" alt="">'
+            if s.get("listing_image") else ""
+        )
+        rows.append(
+            f'<tr><td style="padding:10px 0;border-bottom:1px solid #F1F5F9;">'
+            f'<div style="display:flex;align-items:center;">{thumb}'
+            f'<div style="display:inline-block;vertical-align:middle;">'
+            f'<div style="font-weight:600;color:#111827;">{s["listing_title"]}</div>'
+            f'<div style="font-size:12px;color:#6B7280;">'
+            f'Buyer: {s.get("buyer_name") or "—"} · '
+            f'ETA {eta_line or "n/a"} · '
+            f'<span style="color:#B45309;font-weight:600;">{s["overdue_days"]} day(s) overdue</span>'
+            f'</div></div>'
+            f'<div style="float:right;font-weight:700;color:#059669;">${s["amount"]:.2f}</div>'
+            f'</div></td></tr>'
+        )
+    body = (
+        f"<p>Hi {username or 'there'},</p>"
+        f"<p>You have <b>{len(stuck)}</b> order(s) still holding "
+        f"<b>${total_frozen:.2f}</b> in escrow past their expected delivery date. "
+        f"Buyers can confirm delivery from their orders page — a quick nudge often "
+        f"unlocks funds within hours.</p>"
+        f"<table role='presentation' width='100%' cellpadding='0' cellspacing='0' "
+        f"style='margin-top:12px;'>"
+        + "".join(rows)
+        + "</table>"
+    )
+    if len(stuck) > 20:
+        body += f"<p style='color:#6B7280;font-size:12px;'>+ {len(stuck) - 20} more not shown</p>"
+    return _shell(
+        f"{len(stuck)} order(s) stuck in escrow",
+        body,
+        f"{FRONTEND}/wallet",
+        "Review escrow →",
+    )
+
+
+async def _dispatch_escrow_digest(threshold_days: int = 3, dry_run: bool = False) -> dict:
+    """Run one pass of the escrow-alerts digest across every seller who has
+    stuck orders. Returns counters for the admin trigger endpoint."""
+    from services import mailer
+
+    seller_ids: set = set()
+    async for o in db.orders.find(
+        {"funds_released": False, "seller_earnings": {"$gt": 0}},
+        {"_id": 0, "seller_id": 1},
+    ):
+        if o.get("seller_id"):
+            seller_ids.add(o["seller_id"])
+
+    scanned = 0
+    sent = 0
+    skipped_opt_out = 0
+    skipped_no_stuck = 0
+    for sid in seller_ids:
+        scanned += 1
+        seller = await db.users.find_one(
+            {"id": sid},
+            {"_id": 0, "id": 1, "email": 1, "username": 1,
+             "weekly_digest_opt_in": 1, "email_prefs": 1},
+        )
+        if not seller or not seller.get("email"):
+            continue
+        if seller.get("weekly_digest_opt_in", True) is False:
+            skipped_opt_out += 1
+            continue
+        prefs = seller.get("email_prefs") or {}
+        # Reuse the existing "payout" opt-out lane — escrow is payout-adjacent.
+        if prefs.get("payout") is False:
+            skipped_opt_out += 1
+            continue
+
+        report = await _build_escrow_alerts_for_seller(sid, threshold_days=threshold_days)
+        if not report["stuck"]:
+            skipped_no_stuck += 1
+            continue
+
+        subject = (
+            f"{len(report['stuck'])} order(s) stuck in escrow · "
+            f"${report['total_frozen']:.2f} awaiting release"
+        )
+        html = _render_escrow_digest_html(
+            seller.get("username", "there"),
+            report["stuck"],
+            report["total_frozen"],
+        )
+
+        if dry_run:
+            sent += 1
+            continue
+
+        try:
+            result = await mailer.send_email(
+                to=seller["email"], subject=subject, html=html,
+                tags=["escrow_digest"],
+            )
+        except Exception as e:
+            logger.warning(f"escrow_digest send failed for {sid}: {e}")
+            result = {"ok": False, "error": str(e), "provider": "unknown"}
+
+        await db.email_log.insert_one({
+            "id": str(uuid.uuid4()),
+            "user_id": sid,
+            "to": seller["email"],
+            "kind": "escrow_digest",
+            "subject": subject,
+            "orders_count": len(report["stuck"]),
+            "total_frozen": report["total_frozen"],
+            "provider": result.get("provider"),
+            "ok": result.get("ok"),
+            "error": result.get("error"),
+            "sent_at": datetime.now(timezone.utc),
+        })
+        # In-app notification too so sellers who skip email still see it.
+        await notify(
+            sid, "payout", subject,
+            f"{len(report['stuck'])} order(s) with ${report['total_frozen']:.2f} in escrow "
+            f"are past their delivery ETA. Nudge buyers to confirm and unlock funds.",
+            "/wallet",
+        )
+        sent += 1
+
+    logger.info(
+        f"[escrow-digest] scanned={scanned} sent={sent} "
+        f"skipped_opt_out={skipped_opt_out} skipped_no_stuck={skipped_no_stuck} "
+        f"dry_run={dry_run}"
+    )
+    return {
+        "scanned": scanned,
+        "sent": sent,
+        "skipped_opt_out": skipped_opt_out,
+        "skipped_no_stuck": skipped_no_stuck,
+        "dry_run": dry_run,
+    }
+
+
+async def escrow_digest_loop():
+    """Weekly loop that dispatches escrow alert digests to sellers with orders
+    past their delivery ETA. Interval controlled by ESCROW_DIGEST_INTERVAL_SEC
+    (default 7 days). Threshold controlled by ESCROW_DIGEST_THRESHOLD_DAYS
+    (default 3 — only orders ≥3d overdue trigger a digest email)."""
+    await asyncio.sleep(20)
+    while True:
+        try:
+            threshold = int(os.environ.get("ESCROW_DIGEST_THRESHOLD_DAYS", "3"))
+            await _dispatch_escrow_digest(threshold_days=threshold, dry_run=False)
+        except Exception as e:
+            logger.warning(f"escrow_digest_loop error: {e}")
+        interval = int(os.environ.get("ESCROW_DIGEST_INTERVAL_SEC", str(7 * 24 * 3600)))
+        await asyncio.sleep(max(60, interval))
+
+
+@api_router.post("/admin/escrow-digest/dispatch")
+async def admin_escrow_digest_dispatch(
+    payload: dict = Body(default={}),
+    _admin: dict = Depends(require_admin),
+):
+    """One-click admin trigger for the escrow alert digest.
+    Body: {threshold_days?: int (default 3), dry_run?: bool (default false)}.
+    Returns per-seller counters. Use dry_run=true to preview without sending."""
+    threshold = int(payload.get("threshold_days", 3) or 3)
+    dry_run = bool(payload.get("dry_run", False))
+    return await _dispatch_escrow_digest(threshold_days=threshold, dry_run=dry_run)
+
+
+@api_router.get("/wallet/escrow-alerts")
+async def wallet_escrow_alerts(
+    user: dict = Depends(get_current_user),
+    threshold_days: int = 0,
+):
+    """Per-seller preview of the escrow-alerts digest — powers the in-wallet
+    "Stuck escrow" tile and lets sellers see exactly which orders would be
+    listed in the next weekly digest email."""
+    threshold_days = max(0, min(int(threshold_days or 0), 30))
+    return await _build_escrow_alerts_for_seller(user["id"], threshold_days=threshold_days)
+
+
 async def flash_deals_rotation_loop():
     """Refill the flash-deal pool at startup and shortly after midnight UTC each day."""
     await asyncio.sleep(3)
@@ -5373,6 +5665,7 @@ async def startup():
     asyncio.create_task(flash_deals_rotation_loop())
     asyncio.create_task(wishlist_digest_loop())
     asyncio.create_task(newsletter_digest_loop())
+    asyncio.create_task(escrow_digest_loop())
 
 
 @app.on_event("shutdown")
