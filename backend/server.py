@@ -3210,8 +3210,34 @@ async def send_chat_message(payload: MessageCreate, user: dict = Depends(get_cur
 # PHASE 2: NOTIFICATIONS
 # =========================
 @api_router.get("/notifications", response_model=List[Notification])
-async def list_notifications(user: dict = Depends(get_current_user), limit: int = 50):
-    docs = await db.notifications.find({"user_id": user["id"]}, {"_id": 0}).sort("created_at", -1).to_list(limit)
+async def list_notifications(
+    user: dict = Depends(get_current_user),
+    limit: int = 50,
+    since: Optional[str] = None,
+    types: Optional[str] = None,
+):
+    """List a user's notifications, newest first.
+
+    * `since` — ISO datetime filter (`?since=2026-02-18T10:00:00Z`). Powers
+      the wallet toast stream: the client polls with the timestamp of the
+      last row it has seen so we only return brand-new rows.
+    * `types` — CSV of Notification.type values to narrow the stream
+      (e.g. `types=wallet,payout` for money-flow toasts only).
+    """
+    q: dict = {"user_id": user["id"]}
+    if since:
+        try:
+            since_dt = datetime.fromisoformat(since.replace("Z", "+00:00"))
+            if since_dt.tzinfo is None:
+                since_dt = since_dt.replace(tzinfo=timezone.utc)
+            q["created_at"] = {"$gt": since_dt}
+        except Exception:
+            pass  # ignore malformed timestamps rather than 400 the poll
+    if types:
+        wanted = [t.strip() for t in types.split(",") if t.strip()]
+        if wanted:
+            q["type"] = {"$in": wanted}
+    docs = await db.notifications.find(q, {"_id": 0}).sort("created_at", -1).to_list(limit)
     return [Notification(**d) for d in docs]
 
 @api_router.post("/notifications/read-all")
@@ -5095,9 +5121,15 @@ async def shipping_progress_loop():
                 if not nxt:
                     continue
                 ev = event_details(nxt, o.get("carrier", "Carrier"))
+                order_updates: dict = {"shipping_status": nxt}
+                # Stamp a real delivery timestamp so the buyer auto-confirm
+                # loop can decide when to release escrow. Without this we'd
+                # have to scan shipping_events on every pass.
+                if nxt == "delivered":
+                    order_updates["shipping_delivered_at"] = _now_utc()
                 await db.orders.update_one(
                     {"id": o["id"]},
-                    {"$set": {"shipping_status": nxt}, "$push": {"shipping_events": ev}},
+                    {"$set": order_updates, "$push": {"shipping_events": ev}},
                 )
                 await notify(o["buyer_id"], "order",
                              f"Shipping update: {nxt.replace('_',' ').title()}",
@@ -5106,6 +5138,162 @@ async def shipping_progress_loop():
         except Exception as e:
             logger.warning(f"shipping_progress_loop error: {e}")
         await asyncio.sleep(30)
+
+
+async def auto_confirm_delivery_loop():
+    """Buyer Auto-Confirm — release escrow N days after tracking reports the
+    parcel as delivered, if the buyer hasn't manually confirmed. Keeps seller
+    cash flow moving without a manual nudge.
+
+    * Threshold (default 72h) tunable via `AUTO_CONFIRM_AFTER_HOURS`.
+    * Loop interval (default 1h) tunable via `AUTO_CONFIRM_INTERVAL_SEC`.
+    * Only orders with `shipping_delivered_at` set (i.e. carrier-confirmed
+      delivery from the shipping loop) qualify. Orders confirmed manually
+      have `funds_released: True` and are naturally excluded.
+    """
+    await asyncio.sleep(30)
+    while True:
+        try:
+            hours = int(os.environ.get("AUTO_CONFIRM_AFTER_HOURS", "72"))
+            cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
+            cursor = db.orders.find(
+                {
+                    "shipping_status": "delivered",
+                    "shipping_delivered_at": {"$lte": cutoff},
+                    "funds_released": {"$ne": True},
+                    "seller_earnings": {"$gt": 0},
+                },
+                {"_id": 0, "id": 1, "seller_id": 1, "buyer_id": 1,
+                 "seller_earnings": 1, "listing_title": 1,
+                 "dropship_source_seller_id": 1, "dropship_source_earnings": 1},
+            )
+            released_count = 0
+            async for o in cursor:
+                now = datetime.now(timezone.utc)
+                # Atomic idempotency guard: only proceed if we're the first
+                # worker to flip funds_released — cheap protection against
+                # racing this loop against a manual /confirm-delivery.
+                res = await db.orders.update_one(
+                    {"id": o["id"], "funds_released": {"$ne": True}},
+                    {"$set": {
+                        "funds_released": True,
+                        "delivery_confirmed_at": now.isoformat(),
+                        "auto_confirmed": True,
+                        "auto_confirmed_at": now,
+                        "status": "delivered",
+                    }},
+                )
+                if res.modified_count == 0:
+                    continue
+                try:
+                    if float(o.get("seller_earnings", 0.0)) > 0:
+                        await release_frozen(
+                            o["seller_id"], float(o["seller_earnings"]),
+                            f"Auto-released (buyer inactivity): {o.get('listing_title','sale')}",
+                            o["id"], tx_type="sale_released",
+                        )
+                        await notify(
+                            o["seller_id"], "wallet",
+                            f"Funds released: {o.get('listing_title','')}",
+                            f"${float(o['seller_earnings']):.2f} auto-released after "
+                            f"{hours}h of buyer inactivity on order #{o['id'][:8]}.",
+                            "/wallet",
+                        )
+                    if o.get("dropship_source_seller_id") and float(o.get("dropship_source_earnings", 0.0)) > 0:
+                        await release_frozen(
+                            o["dropship_source_seller_id"], float(o["dropship_source_earnings"]),
+                            f"Auto-released dropship earnings: {o.get('listing_title','sale')}",
+                            o["id"], tx_type="dropship_released",
+                        )
+                        await notify(
+                            o["dropship_source_seller_id"], "wallet",
+                            f"Dropship funds released: {o.get('listing_title','')}",
+                            f"${float(o['dropship_source_earnings']):.2f} auto-released.",
+                            "/wallet",
+                        )
+                    released_count += 1
+                except Exception as inner:
+                    logger.error(f"auto_confirm release failed for {o['id']}: {inner}")
+            if released_count:
+                logger.info(f"[auto-confirm] released {released_count} order(s) past {hours}h")
+        except Exception as e:
+            logger.warning(f"auto_confirm_delivery_loop error: {e}")
+        interval = int(os.environ.get("AUTO_CONFIRM_INTERVAL_SEC", "3600"))
+        await asyncio.sleep(max(60, interval))
+
+
+async def _dispatch_auto_confirm(hours: int, dry_run: bool = False) -> dict:
+    """Manual one-pass runner for the auto-confirm logic. Extracted so the
+    admin trigger endpoint and the background loop share exactly one
+    implementation."""
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
+    q = {
+        "shipping_status": "delivered",
+        "shipping_delivered_at": {"$lte": cutoff},
+        "funds_released": {"$ne": True},
+        "seller_earnings": {"$gt": 0},
+    }
+    matched = await db.orders.count_documents(q)
+    if dry_run:
+        return {"matched": matched, "released": 0, "dry_run": True, "threshold_hours": hours}
+    released = 0
+    cursor = db.orders.find(q, {"_id": 0})
+    async for o in cursor:
+        now = datetime.now(timezone.utc)
+        res = await db.orders.update_one(
+            {"id": o["id"], "funds_released": {"$ne": True}},
+            {"$set": {
+                "funds_released": True,
+                "delivery_confirmed_at": now.isoformat(),
+                "auto_confirmed": True,
+                "auto_confirmed_at": now,
+                "status": "delivered",
+            }},
+        )
+        if res.modified_count == 0:
+            continue
+        try:
+            if float(o.get("seller_earnings", 0.0)) > 0:
+                await release_frozen(
+                    o["seller_id"], float(o["seller_earnings"]),
+                    f"Auto-released (buyer inactivity): {o.get('listing_title','sale')}",
+                    o["id"], tx_type="sale_released",
+                )
+                await notify(
+                    o["seller_id"], "wallet",
+                    f"Funds released: {o.get('listing_title','')}",
+                    f"${float(o['seller_earnings']):.2f} auto-released after "
+                    f"{hours}h of buyer inactivity on order #{o['id'][:8]}.",
+                    "/wallet",
+                )
+            if o.get("dropship_source_seller_id") and float(o.get("dropship_source_earnings", 0.0)) > 0:
+                await release_frozen(
+                    o["dropship_source_seller_id"], float(o["dropship_source_earnings"]),
+                    f"Auto-released dropship earnings: {o.get('listing_title','sale')}",
+                    o["id"], tx_type="dropship_released",
+                )
+                await notify(
+                    o["dropship_source_seller_id"], "wallet",
+                    f"Dropship funds released: {o.get('listing_title','')}",
+                    f"${float(o['dropship_source_earnings']):.2f} auto-released.",
+                    "/wallet",
+                )
+            released += 1
+        except Exception as inner:
+            logger.error(f"auto_confirm release failed for {o['id']}: {inner}")
+    return {"matched": matched, "released": released, "dry_run": False, "threshold_hours": hours}
+
+
+@api_router.post("/admin/auto-confirm/dispatch")
+async def admin_auto_confirm_dispatch(
+    payload: dict = Body(default={}),
+    _admin: dict = Depends(require_admin),
+):
+    """One-click admin trigger for the buyer auto-confirm sweep.
+    Body: {threshold_hours?: int (default from env 72), dry_run?: bool}."""
+    hours = int(payload.get("threshold_hours", os.environ.get("AUTO_CONFIRM_AFTER_HOURS", "72")))
+    dry_run = bool(payload.get("dry_run", False))
+    return await _dispatch_auto_confirm(hours=hours, dry_run=dry_run)
 
 
 # =========================
@@ -5666,6 +5854,7 @@ async def startup():
     asyncio.create_task(wishlist_digest_loop())
     asyncio.create_task(newsletter_digest_loop())
     asyncio.create_task(escrow_digest_loop())
+    asyncio.create_task(auto_confirm_delivery_loop())
 
 
 @app.on_event("shutdown")

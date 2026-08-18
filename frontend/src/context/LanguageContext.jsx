@@ -3,6 +3,65 @@ import { detectGeo, chooseInitial } from "@/lib/geoDetect";
 
 const LanguageContext = createContext(null);
 
+// Google + Bing hreflang tags let each localized variant of the SAME URL
+// rank in its own regional SERP without cannibalising. We serve one HTML
+// bundle with client-side i18n, so the tags all point back to the current
+// path + `?lang=xx`, plus an `x-default` variant for locale-less crawlers.
+const SEO_LANGS = [
+  { code: "en", hreflang: "en" },
+  { code: "es", hreflang: "es" },
+  { code: "fr", hreflang: "fr" },
+  { code: "de", hreflang: "de" },
+  { code: "pt", hreflang: "pt" },
+  { code: "it", hreflang: "it" },
+  { code: "ja", hreflang: "ja" },
+  { code: "zh", hreflang: "zh" },
+  { code: "ar", hreflang: "ar" },
+  { code: "hi", hreflang: "hi" },
+  { code: "ko", hreflang: "ko" },
+  { code: "ru", hreflang: "ru" },
+];
+
+const applyHreflangAlternates = (currentLang) => {
+  if (typeof document === "undefined") return;
+  const head = document.head;
+  if (!head) return;
+  // Clean any previously-injected alternates so switching language doesn't
+  // leave stale duplicates behind.
+  head.querySelectorAll('link[data-i18n="hreflang"]').forEach((el) => el.remove());
+  const base = `${window.location.origin}${window.location.pathname}`;
+  const buildUrl = (code) => {
+    const params = new URLSearchParams(window.location.search);
+    params.set("lang", code);
+    return `${base}?${params.toString()}`;
+  };
+  SEO_LANGS.forEach(({ code, hreflang }) => {
+    const link = document.createElement("link");
+    link.setAttribute("rel", "alternate");
+    link.setAttribute("hreflang", hreflang);
+    link.setAttribute("href", buildUrl(code));
+    link.setAttribute("data-i18n", "hreflang");
+    head.appendChild(link);
+  });
+  // x-default — the version Google should show when no locale matches.
+  const xDefault = document.createElement("link");
+  xDefault.setAttribute("rel", "alternate");
+  xDefault.setAttribute("hreflang", "x-default");
+  xDefault.setAttribute("href", buildUrl("en"));
+  xDefault.setAttribute("data-i18n", "hreflang");
+  head.appendChild(xDefault);
+  // og:locale so social crawlers pick the right OpenGraph variant.
+  let og = head.querySelector('meta[property="og:locale"]');
+  if (!og) {
+    og = document.createElement("meta");
+    og.setAttribute("property", "og:locale");
+    head.appendChild(og);
+  }
+  const ogMap = { en: "en_US", es: "es_ES", fr: "fr_FR", de: "de_DE", pt: "pt_BR",
+    it: "it_IT", ja: "ja_JP", zh: "zh_CN", ar: "ar_AE", hi: "hi_IN", ko: "ko_KR", ru: "ru_RU" };
+  og.setAttribute("content", ogMap[currentLang] || "en_US");
+};
+
 /**
  * Minimal i18n. Covers the most-visible header + nav + product-card strings.
  * Falls back to English for any missing key. Full app localization is a follow-up.
@@ -1670,15 +1729,27 @@ export const LANGUAGES = [
 
 export const LanguageProvider = ({ children }) => {
   const [lang, setLangState] = useState(() => {
+    // A `?lang=xx` URL param wins over stored/geo preference so hreflang
+    // alternates and Google's translated SERP snippets resolve correctly
+    // when a crawler follows them.
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const urlLang = params.get("lang");
+      if (urlLang && SEO_LANGS.some((l) => l.code === urlLang)) return urlLang;
+    } catch { /* ignore */ }
     const geo = detectGeo();
     return chooseInitial("mercari_lang", "en", geo.lang);
   });
 
-  // Apply direction on mount for RTL languages
+  // Apply direction + hreflang alternates so search engines index each
+  // localized variant at the same URL. Runs whenever the picked language
+  // changes so bots crawling with an `Accept-Language` header see the
+  // correct <html lang> immediately.
   useEffect(() => {
     try {
       document.documentElement.setAttribute("lang", lang);
       document.documentElement.setAttribute("dir", lang === "ar" ? "rtl" : "ltr");
+      applyHreflangAlternates(lang);
     } catch { /* ignore */ }
   }, [lang]);
 
@@ -1689,6 +1760,7 @@ export const LanguageProvider = ({ children }) => {
       document.documentElement.setAttribute("lang", l);
       // RTL for Arabic — flip layout direction so headers, cart, forms mirror correctly.
       document.documentElement.setAttribute("dir", l === "ar" ? "rtl" : "ltr");
+      applyHreflangAlternates(l);
     } catch { /* ignore */ }
   }, []);
 

@@ -20,6 +20,7 @@ import {
 import { useBalanceVisibility, BalanceValue, BalanceEyeToggle } from "@/components/BalanceMask";
 import BalanceHealthTile from "@/components/BalanceHealthTile";
 import StuckEscrowAlerts from "@/components/StuckEscrowAlerts";
+import { useNotificationStream } from "@/hooks/useNotificationStream";
 
 const typeMetaKeys = {
   sale: { key: "wallet.type.sale", color: "text-green-600" },
@@ -657,6 +658,27 @@ const Wallet = () => {
     await refresh();
     await load();
   };
+
+  // Live wallet stream — surfaces a toast whenever a frozen sale auto-releases
+  // (or any wallet/payout notification fires) and refreshes the balance so
+  // the number ticks up without a page reload.
+  const { toast } = useToast();
+  useNotificationStream(
+    (rows) => {
+      rows.forEach((n) => {
+        toast({
+          title: n.title || (t("wallet.stream.newActivity") || "New wallet activity"),
+          description: n.body || "",
+          duration: 6000,
+        });
+      });
+      // Any new wallet/payout row means balances shifted — pull fresh data.
+      afterMutation();
+    },
+    "wallet,payout",
+    15000,
+    !!user,
+  );
 
   if (!data) return <div className="max-w-4xl mx-auto px-4 py-8">Loading…</div>;
 
