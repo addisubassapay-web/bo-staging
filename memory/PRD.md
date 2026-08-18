@@ -26,6 +26,11 @@ Exact replica of Mercari platform (mercari.com) — same color scheme (`#FF211F`
 
 ## Implemented (with dates)
 
+### Feb 2026 — Balance Health Tile
+- **New `/wallet` page mini-card** (`BalanceHealthTile.jsx`) surfaces live money-flow at a glance: a two-tone gauge bar splitting available vs frozen with percent labels, a 3-metric grid (in-flight order count, avg days-in-escrow, oldest days-in-escrow with a stuck-escrow amber alert at ≥14 days), and a "Next release" card with the oldest-ETA order's thumbnail + amount + human ETA ("Releases today", "~3 days", or "Overdue — buyer hasn't confirmed").
+- **Backend**: `GET /api/wallet` extended with a `health` object — computes in-flight orders (funds_released=false), average and oldest days-in-flight, and the next expected release from the earliest `estimated_delivery_at`. Datetime-tz-safe.
+- **i18n**: All 20 new keys added in en/ja/ar dictionaries under `wallet.health.*`. Verified rendering in EN/JA (¥ zero-decimal Intl formatting) and AR (RTL layout mirrors bar + metrics + release card).
+
 ### Feb 2026 — Wallet i18n + Regional Intl Formatting + Balance Ledger Sync
 - **Wallet page fully localized** — `/app/frontend/src/pages/Wallet.jsx` migrated from static `formatPrice` (api.js) to `useCurrency().format` (context) + wrapped every user-facing string (title, tabs, columns, buttons, refunds dialog, funded-orders trail) with `t(...)`. Renamed loop variable `t → tx` to avoid shadowing the translate function. Added new `wallet.*` dictionary keys for en (fallback), ja (CJK), ar (RTL); other languages fall back gracefully.
 - **Regional price formatting** — `formatPrice` in `/app/frontend/src/lib/api.js` and `format` in `CurrencyContext` both use `Intl.NumberFormat(locale, { style:'currency', currency, maximumFractionDigits: currency in {JPY,KRW} ? 0 : 2 })` — proper Lakh grouping for INR (en-IN), zero decimals for JPY/KRW, EUR/AED/CNY/BRL locales all handled. `formatPrice` static rates extended to all 13 currencies + reads live rates from `localStorage.mercari_rates` (cached by `CurrencyContext` on load).

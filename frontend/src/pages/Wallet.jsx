@@ -18,6 +18,7 @@ import {
   ChevronDown, ChevronUp,
 } from "lucide-react";
 import { useBalanceVisibility, BalanceValue, BalanceEyeToggle } from "@/components/BalanceMask";
+import BalanceHealthTile from "@/components/BalanceHealthTile";
 
 const typeMetaKeys = {
   sale: { key: "wallet.type.sale", color: "text-green-600" },
@@ -734,6 +735,11 @@ const Wallet = () => {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Balance Health Tile — live money-flow gauge (escrow split, days-in-flight, next release ETA) */}
+      <div className="mb-8">
+        <BalanceHealthTile health={data.health} />
       </div>
 
       {(deposits.length > 0) && (

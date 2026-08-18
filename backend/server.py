@@ -1882,6 +1882,71 @@ async def get_wallet(user: dict = Depends(get_current_user)):
     pending_wd = await db.withdrawals.find({"user_id": user["id"], "status": {"$in": ["pending", "approved"]}}, {"_id": 0}).to_list(100)
     # Refresh from DB to be safe with concurrent orders
     fresh = await db.users.find_one({"id": user["id"]}, {"_id": 0, "wallet_balance": 1, "wallet_frozen_balance": 1}) or {}
+
+    # ---- Balance Health metrics (drives the "Balance Health Tile" on /wallet)
+    # In-flight orders = seller earnings frozen in escrow, waiting on delivery.
+    inflight_orders = await db.orders.find(
+        {"seller_id": user["id"], "funds_released": False, "seller_earnings": {"$gt": 0}},
+        {"_id": 0, "id": 1, "listing_title": 1, "listing_image": 1,
+         "seller_earnings": 1, "estimated_delivery_at": 1, "created_at": 1},
+    ).sort("estimated_delivery_at", 1).to_list(500)
+
+    now = datetime.now(timezone.utc)
+
+    def _to_aware(dt):
+        if dt is None:
+            return None
+        if isinstance(dt, str):
+            try:
+                dt = datetime.fromisoformat(dt.replace("Z", "+00:00"))
+            except Exception:
+                return None
+        # Naive datetimes coming out of Mongo are treated as UTC.
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt
+
+    days_in_flight_samples: List[float] = []
+    for o in inflight_orders:
+        created = _to_aware(o.get("created_at"))
+        if created:
+            days_in_flight_samples.append((now - created).total_seconds() / 86400.0)
+
+    avg_days_in_flight = round(sum(days_in_flight_samples) / len(days_in_flight_samples), 1) if days_in_flight_samples else 0.0
+    oldest_days_in_flight = round(max(days_in_flight_samples), 1) if days_in_flight_samples else 0.0
+
+    next_release = None
+    if inflight_orders:
+        # Oldest ETA first (already sorted).
+        first = inflight_orders[0]
+        eta = _to_aware(first.get("estimated_delivery_at"))
+        eta_days = round((eta - now).total_seconds() / 86400.0, 1) if eta else None
+        next_release = {
+            "order_id": first["id"],
+            "listing_title": first.get("listing_title"),
+            "listing_image": first.get("listing_image"),
+            "amount": round(float(first.get("seller_earnings", 0.0)), 2),
+            "estimated_delivery_at": eta.isoformat() if eta else None,
+            "eta_days": eta_days,
+            "overdue": (eta_days is not None and eta_days < 0),
+        }
+
+    available = round(float(fresh.get("wallet_balance", user.get("wallet_balance", 0.0))), 2)
+    frozen = round(float(fresh.get("wallet_frozen_balance", 0.0)), 2)
+    total_flow = available + frozen
+    frozen_pct = round((frozen / total_flow) * 100, 1) if total_flow > 0 else 0.0
+
+    health = {
+        "available": available,
+        "frozen": frozen,
+        "frozen_pct": frozen_pct,
+        "orders_in_flight": len(inflight_orders),
+        "avg_days_in_flight": avg_days_in_flight,
+        "oldest_days_in_flight": oldest_days_in_flight,
+        "next_release": next_release,
+    }
+    # ---- /Balance Health metrics
+
     # Resolve any Reinvest-advance nested order refs into lightweight cards
     funded_order_ids: List[str] = []
     for t in txs:
@@ -1901,6 +1966,7 @@ async def get_wallet(user: dict = Depends(get_current_user)):
         "transactions": [WalletTransaction(**t).model_dump() for t in txs],
         "pending_withdrawals": [WithdrawalRequest(**w).model_dump() for w in pending_wd],
         "orders_by_id": orders_by_id,
+        "health": health,
     }
 
 @api_router.post("/wallet/withdraw", response_model=WithdrawalRequest)
