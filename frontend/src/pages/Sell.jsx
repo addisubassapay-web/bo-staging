@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import ResellFromCatalog from "@/components/ResellFromCatalog";
 import ImportFromUrl from "@/components/ImportFromUrl";
 import BulkImportFromUrls from "@/components/BulkImportFromUrls";
+import CategoryScrapeAtScale from "@/components/CategoryScrapeAtScale";
 import { Link } from "react-router-dom";
 
 const PLACEHOLDER_SEEDS = ["seed1", "seed2", "seed3", "seed4", "seed5", "seed6", "seed7", "seed8"];
@@ -305,6 +306,7 @@ const Sell = () => {
         <ResellFromCatalog />
       ) : mode === "import" ? (
         <div className="mt-8 space-y-6">
+          <CategoryScrapeAtScale />
           <ImportFromUrl onImportReady={applyImport} />
           <BulkImportFromUrls onUseListing={applyImport} />
         </div>

@@ -1,0 +1,37 @@
+{
+  "summary": "Iteration 31 covers the Category-at-Scale + CSV bulk import + auto-publish feature. Added 19 new pytest cases (test_scraper_category_csv.py) that validate: POST /api/scraper/jobs/category (invalid URL 400, auto_publish w/o category 400, unknown category 400, missing auth 401, happy-path against books.toscrape.com/catalogue/category/books/mystery_3 → batch.status='done', total>=1, publish_status='published' + published_listing_id present on each done job, and the created listings appear in /api/listings?category_id=<same> with status='active'); POST /api/scraper/jobs/csv (same validation + auto_publish requires category, cap=1000 via 422, happy-path with 2 URLs both auto-published live); /api/scraper/jobs/bulk additions (auto_publish requires category, invalid category 400, cap raised → 100 URLs accepted, >500 → 422). All 19 new tests pass. Also updated the stale test in test_scraper_bulk.py (old cap 20→500). Full regression: 24/25 pre-existing scraper tests pass (the one that changed was updated). Frontend verified end-to-end via Playwright as sophia_style@demo.local: /sell → Import tab renders 3 stacked panels in the correct order (scale @ y=370 → single ImportFromUrl → bulk @ y=2918). CategoryScrapeAtScale exposes all required data-testids (scale-import-panel, scale-tab-category, scale-tab-csv, scale-category-url, scale-category-select, scale-autopublish, scale-hifi, scale-import-submit). Auto-publish switch defaults to ON. Guard toast 'Pick a category first' fires when auto_publish=ON + no category chosen. Submitting a books.toscrape category URL with category+auto_publish hits POST /scraper/jobs/category (network confirmed), flips to progress view, polls /scraper/batches/{id} every 3s, and renders '20 extracted' + '20 live' badges + full progress bar + per-job cards each with title/price/'live' badge/'Done' status. 'Start another batch' + 'View your 20 live listings →' both present when published>0.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_scraper_category_csv.py",
+    "/app/backend/tests/test_scraper_bulk.py",
+    "/app/backend/tests/test_scraper.py",
+    "/app/test_reports/pytest/scraper_category_csv.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "routers/scraper.py: /jobs/csv duplicates ~90% of the code in /jobs/bulk (same URL normalization, seen-set, dedupe, per-URL doc insert, batch record). Consider extracting an internal _enqueue_bulk(urls, category_id, auto_publish, high_fidelity, kind) helper — will make future changes (rate limits, per-user quotas, tag propagation) atomic.",
+    "routers/scraper.py: CsvScrapeCreate is missing the `geolocation` field that BulkScrapeCreate has — minor inconsistency, csv jobs always store geolocation=None. Not a bug per spec but flagging.",
+    "routers/scraper.py: /jobs/csv silently skips empty strings without adding them to `rejected` while duplicates ARE added — the /jobs/bulk endpoint is consistent (skips empties silently AND does NOT add empties to rejected either). Behavior matches, but I'd document the empty-line skip.",
+    "CategoryScrapeAtScale.jsx: The toast description string uses `&apos;` literal instead of the rendered apostrophe — this will show 'You&apos;ll' inside the toast. Minor UI polish issue.",
+    "CategoryScrapeAtScale.jsx: Polling loop starts a 3s interval and only stops when both counts.queued==0 AND counts.running==0 AND batch.status != queued/running. For a /jobs/csv batch the batch record has no `status` field, so the loop can only rely on the counts — which works but is fragile. Consider adding batch.status='done' when the last job flips to done/failed for both csv and bulk kinds too (currently only the category worker sets it).",
+    "CategoryScrapeAtScale.jsx: onError image handler `e.currentTarget.style.display = 'none'` leaves the surrounding rounded box empty rather than falling back to <ImageOff/>. Cosmetic.",
+    "scraper.py: get_batch_status returns all jobs.to_list(200) capped to 200 — a /jobs/csv batch with 1000 URLs will silently truncate. Acceptable for the current preview view (only the first 100 are rendered anyway) but the response shape lies about `total`.",
+    "Sell.jsx did not receive an `onBatchReady` prop for BulkImportFromUrls in the last iteration — same regression flag from iteration 30 still applies for bulk (scale panel doesn't need it since it auto-publishes)."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_scraper_category_csv.py",
+    "/app/backend/tests/test_scraper_bulk.py"
+  ],
+  "success_rate": {
+    "backend": "100% (19/19 new + 24/24 relevant regression after cap update)",
+    "frontend": "100% (all core flows verified: 3-panel order, tab switching, guard toast, submit → progress view → live badges → reset link)"
+  },
+  "test_credentials": "sophia_style@demo.local / demo1234 (approved seller), admin@mercari.local / admin123",
+  "seed_data_creation": "Created ~24 scraper_jobs docs (20 from category batch + 2 CSV + 100 from bulk cap test + minor bulk validation) and ~5 scraper_batches docs, plus ~22 live listings under category 'Women' via auto-publish. All test URLs use books.toscrape.com so no real cost.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "New test file is /app/backend/tests/test_scraper_category_csv.py — run with `REACT_APP_BACKEND_URL=... pytest ... -o addopts=' '` to disable pytest.ini's xdist worker split (module-scoped pytest.category_batch_id state is shared across test classes). The category worker fans one Zyte productList call into N jobs pre-marked status='done' (no per-job Zyte call) so batches finish very quickly (<10s) for books.toscrape/mystery_3. Auto-publish under category 'Women' will accumulate seed listings over runs; if listing count drift matters, use a fresh category or clean up scraper_batches.owner_id=<sophia>. Bulk cap of 500 confirmed in schema. CSV cap of 1000 confirmed. All three panels visible on /sell → Import from URL tab: CategoryScrapeAtScale (top) → ImportFromUrl (middle) → BulkImportFromUrls (bottom).",
+  "rca of the issue": "N/A — no failing feature. The only pre-existing test that failed (test_over_20_returns_422) was correctly failing because the spec raised the bulk cap from 20→500; test updated to test_over_500_returns_422 to match the new schema."
+}

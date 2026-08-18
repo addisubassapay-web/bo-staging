@@ -60,8 +60,8 @@ class TestBulkValidation:
                           headers=_hdr(user_token), timeout=15)
         assert r.status_code == 400, r.text
 
-    def test_over_20_returns_422(self, user_token):
-        urls = [f"https://books.toscrape.com/catalogue/x_{i}.html" for i in range(21)]
+    def test_over_500_returns_422(self, user_token):
+        urls = [f"https://books.toscrape.com/catalogue/x_{i}.html" for i in range(501)]
         r = requests.post(f"{API}/scraper/jobs/bulk",
                           json={"urls": urls}, headers=_hdr(user_token), timeout=15)
         assert r.status_code == 422, r.text

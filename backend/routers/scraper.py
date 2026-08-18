@@ -18,7 +18,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from .deps import get_db, get_current_user, require_admin
-from services.queue import enqueue_scrape
+from services.queue import enqueue_scrape, enqueue_category
 from services.r2_storage import storage_status
 
 router = APIRouter(prefix="/scraper", tags=["scraper"])
@@ -42,7 +42,15 @@ class ScrapeJobCreate(BaseModel):
 
 
 class BulkScrapeCreate(BaseModel):
-    urls: list[str] = Field(..., min_length=1, max_length=20)
+    urls: list[str] = Field(..., min_length=1, max_length=500)
+    category_id: Optional[str] = None
+    auto_publish: bool = False
+    geolocation: Optional[str] = None
+    high_fidelity: bool = False
+
+
+class CategoryScrapeCreate(BaseModel):
+    url: str = Field(..., min_length=8, max_length=2048)
     category_id: Optional[str] = None
     auto_publish: bool = False
     geolocation: Optional[str] = None
@@ -95,6 +103,14 @@ async def create_bulk_scrape(payload: BulkScrapeCreate, user: dict = Depends(get
     Bad URLs are rejected upfront; the response reports which ones queued."""
     if not (os.environ.get("ZYTE_API_KEY") or "").strip():
         raise HTTPException(503, "Zyte API key is not configured")
+    if payload.auto_publish and not payload.category_id:
+        raise HTTPException(400, "Auto-publish requires a category_id")
+
+    db = get_db()
+    if payload.category_id:
+        cat = await db.categories.find_one({"id": payload.category_id}, {"_id": 0})
+        if not cat:
+            raise HTTPException(400, "Invalid category_id")
 
     valid: list[str] = []
     rejected: list[dict] = []
@@ -155,6 +171,145 @@ async def create_bulk_scrape(payload: BulkScrapeCreate, user: dict = Depends(get
         "id": batch_id,
         "owner_id": user["id"],
         "category_id": payload.category_id,
+        "high_fidelity": bool(payload.high_fidelity),
+        "total": len(queued),
+        "created_at": now,
+    })
+    return {
+        "batch_id": batch_id,
+        "queued_count": len(queued),
+        "queued": queued,
+        "rejected": rejected,
+    }
+
+
+@router.post("/jobs/category")
+async def create_category_scrape(payload: CategoryScrapeCreate, user: dict = Depends(get_current_user)):
+    """Fan-out one Zyte productList call into many pre-extracted job rows.
+    Point it at an Amazon search page, an eBay category, a Shopify collection,
+    etc. and Zyte returns 30-100 products in a single call. When
+    `auto_publish=true` + `category_id` is set, each product goes live
+    immediately under that category."""
+    if not _valid_url(payload.url):
+        raise HTTPException(400, "Enter a valid http(s) URL")
+    if not (os.environ.get("ZYTE_API_KEY") or "").strip():
+        raise HTTPException(503, "Zyte API key is not configured")
+    if payload.auto_publish and not payload.category_id:
+        raise HTTPException(400, "Auto-publish requires a category_id")
+
+    db = get_db()
+    if payload.category_id:
+        cat = await db.categories.find_one({"id": payload.category_id}, {"_id": 0})
+        if not cat:
+            raise HTTPException(400, "Invalid category_id")
+
+    now = datetime.now(timezone.utc)
+    batch_id = str(uuid.uuid4())
+    await db.scraper_batches.insert_one({
+        "id": batch_id,
+        "owner_id": user["id"],
+        "owner_email": user.get("email"),
+        "kind": "category",
+        "source_url": payload.url,
+        "category_id": payload.category_id,
+        "high_fidelity": bool(payload.high_fidelity),
+        "auto_publish": bool(payload.auto_publish),
+        "geolocation": payload.geolocation,
+        "status": "queued",
+        "total": 0,
+        "created_at": now,
+    })
+    try:
+        await enqueue_category(batch_id)
+    except Exception as e:
+        await db.scraper_batches.update_one(
+            {"id": batch_id}, {"$set": {"status": "failed", "error": {"message": str(e)}}},
+        )
+        raise HTTPException(503, f"Queue unavailable: {e}")
+    return {"batch_id": batch_id, "status": "queued", "kind": "category"}
+
+
+class CsvScrapeCreate(BaseModel):
+    urls: list[str] = Field(..., min_length=1, max_length=1000)
+    category_id: Optional[str] = None
+    auto_publish: bool = False
+    high_fidelity: bool = False
+
+
+@router.post("/jobs/csv")
+async def create_csv_scrape(payload: CsvScrapeCreate, user: dict = Depends(get_current_user)):
+    """Ingest a CSV / spreadsheet paste — up to 1,000 URLs per request.
+    Internally reuses the same enqueue path as /jobs/bulk so each URL gets
+    a full /product extract via arq. Response mirrors /jobs/bulk."""
+    if not (os.environ.get("ZYTE_API_KEY") or "").strip():
+        raise HTTPException(503, "Zyte API key is not configured")
+    if payload.auto_publish and not payload.category_id:
+        raise HTTPException(400, "Auto-publish requires a category_id")
+
+    db = get_db()
+    if payload.category_id:
+        cat = await db.categories.find_one({"id": payload.category_id}, {"_id": 0})
+        if not cat:
+            raise HTTPException(400, "Invalid category_id")
+
+    valid: list[str] = []
+    rejected: list[dict] = []
+    seen: set[str] = set()
+    for u in payload.urls:
+        u = (u or "").strip()
+        if not u or u in seen:
+            if u in seen:
+                rejected.append({"url": u, "reason": "duplicate"})
+            continue
+        seen.add(u)
+        if not _valid_url(u):
+            rejected.append({"url": u, "reason": "invalid_url"})
+        else:
+            valid.append(u)
+
+    if not valid:
+        raise HTTPException(400, "No valid URLs provided")
+
+    batch_id = str(uuid.uuid4())
+    now = datetime.now(timezone.utc)
+    queued: list[dict] = []
+    for url in valid:
+        job_id = str(uuid.uuid4())
+        doc = {
+            "id": job_id,
+            "owner_id": user["id"],
+            "owner_email": user.get("email"),
+            "url": url,
+            "geolocation": None,
+            "high_fidelity": bool(payload.high_fidelity),
+            "auto_publish": bool(payload.auto_publish),
+            "category_id": payload.category_id,
+            "batch_id": batch_id,
+            "status": "queued",
+            "provider": "zyte",
+            "result": None,
+            "error": None,
+            "created_at": now,
+            "updated_at": now,
+            "attempts": 0,
+        }
+        await db.scraper_jobs.insert_one(doc)
+        try:
+            await enqueue_scrape(job_id)
+            queued.append({"id": job_id, "url": url})
+        except Exception as e:
+            await db.scraper_jobs.update_one(
+                {"id": job_id},
+                {"$set": {"status": "failed", "error": {"provider": "queue", "message": str(e)}}},
+            )
+            rejected.append({"url": url, "reason": f"queue_error: {e}"})
+
+    await db.scraper_batches.insert_one({
+        "id": batch_id,
+        "owner_id": user["id"],
+        "kind": "csv",
+        "category_id": payload.category_id,
+        "auto_publish": bool(payload.auto_publish),
         "high_fidelity": bool(payload.high_fidelity),
         "total": len(queued),
         "created_at": now,

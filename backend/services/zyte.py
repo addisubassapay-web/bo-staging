@@ -66,6 +66,77 @@ async def extract_product(url: str, *, geolocation: Optional[str] = None,
     return result
 
 
+async def extract_product_list(url: str, *, geolocation: Optional[str] = None,
+                               high_fidelity: bool = False,
+                               timeout: float = 120.0) -> dict[str, Any]:
+    """Ask Zyte for a `productList` from a category or search results URL.
+
+    Returns Zyte's raw payload; caller normalizes each item via
+    `normalize_product_list_item`. Example URL:
+        https://www.amazon.com/s?k=wireless+headphones
+    """
+    payload: dict[str, Any] = {
+        "url": url,
+        "productList": True,
+    }
+    if high_fidelity:
+        payload["browserHtml"] = True
+    if geolocation:
+        payload["geolocation"] = geolocation
+
+    async with httpx.AsyncClient(timeout=timeout) as client:
+        r = await client.post(
+            ZYTE_ENDPOINT,
+            json=payload,
+            headers={"Authorization": _auth_header(), "Content-Type": "application/json"},
+        )
+        if r.status_code >= 400:
+            try:
+                data = r.json()
+            except Exception:
+                data = {"detail": r.text}
+            raise ZyteError(status=r.status_code, detail=data)
+        return r.json()
+
+
+def normalize_product_list_item(item: dict[str, Any], *, source_url: str = "") -> dict[str, Any]:
+    """Flatten a single element of Zyte's productList into our shape.
+
+    productList items are lighter than /product output — usually just
+    name/price/url/mainImage. Fields we can't get are left None so callers
+    can decide whether to skip or requeue a full /product extract.
+    """
+    if not isinstance(item, dict):
+        return {}
+    price = None
+    try:
+        price = float(item.get("price")) if item.get("price") is not None else None
+    except (TypeError, ValueError):
+        price = None
+
+    images: list[str] = []
+    main = item.get("mainImage")
+    if isinstance(main, dict) and main.get("url"):
+        images.append(main["url"])
+    for img in (item.get("images") or []):
+        if isinstance(img, dict) and img.get("url"):
+            images.append(img["url"])
+        elif isinstance(img, str):
+            images.append(img)
+    images = list(dict.fromkeys([u for u in images if u]))[:8]
+
+    return {
+        "title": (item.get("name") or "").strip()[:200],
+        "description": (item.get("description") or "").strip(),
+        "price": price,
+        "currency": item.get("currency") or "USD",
+        "images": images,
+        "brand": (item.get("brand") or {}).get("name") if isinstance(item.get("brand"), dict) else item.get("brand"),
+        "url": item.get("url") or source_url,
+        "extract_from": "productList",
+    }
+
+
 async def _extract_with_mode(url: str, mode: str, *, geolocation: Optional[str] = None,
                              timeout: float = DEFAULT_TIMEOUT,
                              full_browser: bool = False) -> dict[str, Any]:

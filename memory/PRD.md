@@ -26,6 +26,14 @@ Exact replica of Mercari platform (mercari.com) — same color scheme (`#FF211F`
 
 ## Implemented (with dates)
 
+### Feb 2026 — Import at Scale: Category URL + CSV Paste + One-Click Auto-Publish
+- **Category URL extraction** — `POST /api/scraper/jobs/category` runs a single Zyte `productList` call against an Amazon search / eBay category / Shopify collection / etc. and fans out into N pre-extracted `scraper_jobs` rows (no per-URL Zyte round-trip). Verified: 20 books from books.toscrape.com/mystery_3 in ~10s.
+- **CSV paste** — `POST /api/scraper/jobs/csv` accepts up to **1,000 URLs** per submit, reuses the arq `scrape_url_task` pipeline, and returns `{batch_id, queued_count, queued[], rejected[]}` with dedupe + invalid-URL reasons.
+- **One-click auto-publish** — when `auto_publish=true` + `category_id` is set on any of `/category`, `/csv`, or `/bulk`, the worker calls `_publish_from_result` which creates a real `Listing` (status='active') with correct `seller_name`, `category_name`, `store_id`. `scraper_jobs.publish_status='published'` and `published_listing_id` point to the live listing.
+- **/bulk cap raised** from 20 → 500 URLs, and it now validates `category_id` exists when `auto_publish=true`.
+- **Frontend** — new `CategoryScrapeAtScale` component with 2 tabs (Category URL / CSV paste), category select, Auto-Publish Live switch (default ON), Amazon Full Pull switch, live progress + per-job cards with "live" badges, and a "View your N live listings" link when done. Sits atop the existing single + bulk panels on `/sell → Import from URL`.
+- **Testing** — iteration_31: 19/19 new + 24/24 regression pytest, full frontend Playwright pass.
+
 ### Feb 2026 — Bulk URL Import + Amazon Full Pull toggle
 - **Bulk import backend** — `POST /api/scraper/jobs/bulk` accepts up to 20 URLs with a shared `category_id`, dedupes per-request, rejects invalid URLs with a `reason`, and creates a `scraper_batches` document plus one `scraper_jobs` row per URL. `GET /api/scraper/batches/{id}` returns aggregate `counts` + per-job progress (owner or admin only).
 - **Amazon Full Pull (`high_fidelity`) toggle** — new query flag on both single and bulk endpoints. When true, `services/zyte.py` skips the fast path and requests `browserHtml:true` with the anti-bot proxy pipeline. `extract_from` field on the result records the mode used (`browserHtml_hi` / `browserHtml` / `httpResponseBody`).
