@@ -182,7 +182,7 @@ const Search = () => {
             <div className="space-y-1 max-h-72 overflow-auto">
               <button
                 onClick={() => updateParam("category", "")}
-                className={`block w-full text-left px-2 py-1.5 rounded text-sm ${!category ? "bg-neutral-100 dark:bg-neutral-800 font-medium" : "hover:bg-neutral-50 dark:hover:bg-neutral-900"}`}
+                className={`block w-full text-start px-2 py-1.5 rounded text-sm ${!category ? "bg-neutral-100 dark:bg-neutral-800 font-medium" : "hover:bg-neutral-50 dark:hover:bg-neutral-900"}`}
                 data-testid="filter-category-all"
               >
                 All
@@ -191,7 +191,7 @@ const Search = () => {
                 <button
                   key={c.id}
                   onClick={() => updateParam("category", c.id)}
-                  className={`block w-full text-left px-2 py-1.5 rounded text-sm ${category === c.id ? "bg-neutral-100 dark:bg-neutral-800 font-medium" : "hover:bg-neutral-50 dark:hover:bg-neutral-900"}`}
+                  className={`block w-full text-start px-2 py-1.5 rounded text-sm ${category === c.id ? "bg-neutral-100 dark:bg-neutral-800 font-medium" : "hover:bg-neutral-50 dark:hover:bg-neutral-900"}`}
                   data-testid={`filter-category-${c.slug || c.id}`}
                 >
                   {c.name}
@@ -214,7 +214,7 @@ const Search = () => {
                 <button
                   key={v || "any"}
                   onClick={() => updateParam("condition", v)}
-                  className={`block w-full text-left px-2 py-1.5 rounded text-sm ${condition === v ? "bg-neutral-100 dark:bg-neutral-800 font-medium" : "hover:bg-neutral-50 dark:hover:bg-neutral-900"}`}
+                  className={`block w-full text-start px-2 py-1.5 rounded text-sm ${condition === v ? "bg-neutral-100 dark:bg-neutral-800 font-medium" : "hover:bg-neutral-50 dark:hover:bg-neutral-900"}`}
                 >
                   {label}
                 </button>

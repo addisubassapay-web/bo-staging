@@ -26,6 +26,12 @@ Exact replica of Mercari platform (mercari.com) — same color scheme (`#FF211F`
 
 ## Implemented (with dates)
 
+### Feb 2026 — Geo Currency Prompt + RTL Sweep + i18n Extension
+- **First-visit geo prompt** (`GeoCurrencyPrompt`) — new floating banner mounted globally in `App.js`. Reads `navigator.languages` via `detectRegionAndCurrency()` (extended `geoDetect.js` with a canonical `REGION_NAME` map for 30+ countries) and offers a one-click switch to the local currency. Dismissal + acceptance persist in `localStorage` (`mrc_geo_currency_prompt_dismissed`).
+- **Translation keys** — added `geo.title / geo.body / geo.switch / geo.keep` to the English dictionary; other locales fall back gracefully via the existing `t()` implementation. Existing `checkout.*` keys already covered the full checkout screen.
+- **RTL polish** — swapped `text-left → text-start` on buyer-facing screens: Checkout, Wallet header, Search filters (3 places), PaymentSuccess order card, Sell mode-explainer list, BoostMyStore tier cards. Admin-only pages left as `text-left` because they're internal English-only.
+- **Prompt copy** uses `{country}` and `{ccy}` placeholders so translators can reorder text per language.
+
 ### Feb 2026 — Multi-language + Multi-currency Switchers + Mobile Overflow Fix
 - **`LangCurrencySwitcher`** — new compact component in the header TopStrip with two dropdowns: 10 languages (EN/ES/FR/DE/IT/PT/JA/ZH/AR/HI) and 13 currencies (USD/EUR/GBP/JPY/INR/CAD/AUD/BRL/MXN/CNY/KRW/SGD/AED). Selections persist in `localStorage`; existing `LanguageProvider` + `CurrencyProvider` already covered translations + live rate conversion.
 - **TopStrip mobile fixes** — replaced the horizontally-scrolling right pane with a shrink-friendly flex row: username truncates to 6rem on mobile; "Hi, " prefix hides < sm; "Register" hides < sm; "Help" hides < md. Marketplace / Returns / Deals badges collapse progressively at md/sm breakpoints.

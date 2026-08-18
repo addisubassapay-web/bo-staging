@@ -50,7 +50,7 @@ const SellerGate = ({ status }) => {
       <div className={`h-14 w-14 rounded-full mx-auto grid place-items-center ${c.color}`}><Icon className="h-6 w-6" /></div>
       <h2 className="mt-4 text-xl sm:text-2xl font-bold text-neutral-900 dark:text-neutral-100">{c.title}</h2>
       <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-300 max-w-md mx-auto">{c.body}</p>
-      <ul className="mt-5 grid gap-2 text-sm text-neutral-600 dark:text-neutral-300 max-w-md mx-auto text-left">
+      <ul className="mt-5 grid gap-2 text-sm text-neutral-600 dark:text-neutral-300 max-w-md mx-auto text-start">
         <li className="flex items-start gap-2"><ShieldCheck className="h-4 w-4 mt-0.5 text-emerald-600 shrink-0" /> Publish your own items with instant photos + AI descriptions</li>
         <li className="flex items-start gap-2"><ShieldCheck className="h-4 w-4 mt-0.5 text-emerald-600 shrink-0" /> Resell any catalog product to your storefront with tier-based wholesale discounts</li>
         <li className="flex items-start gap-2"><ShieldCheck className="h-4 w-4 mt-0.5 text-emerald-600 shrink-0" /> Bulk publish up to 20 items at once</li>

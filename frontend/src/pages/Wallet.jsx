@@ -776,7 +776,7 @@ const Wallet = () => {
             {/* Desktop table */}
             <div className="hidden sm:block border border-neutral-200 rounded-lg overflow-hidden">
               <table className="w-full text-sm">
-                <thead className="bg-neutral-50 text-left">
+                <thead className="bg-neutral-50 text-start">
                   <tr>
                     <th className="p-3">Type</th>
                     <th className="p-3">Description</th>

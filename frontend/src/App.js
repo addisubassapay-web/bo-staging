@@ -41,6 +41,7 @@ import StoresMarketplace from "@/pages/StoresMarketplace";
 import AdminCoupons from "@/pages/AdminCoupons";
 import PaymentSuccess from "@/pages/PaymentSuccess";
 import PaymentCancel from "@/pages/PaymentCancel";
+import GeoCurrencyPrompt from "@/components/GeoCurrencyPrompt";
 
 function App() {
   return (
@@ -93,6 +94,7 @@ function App() {
                 </main>
                 <Footer />
                 <Toaster />
+                <GeoCurrencyPrompt />
               </AuthProvider>
             </BrowserRouter>
           </div>

@@ -178,7 +178,7 @@ const Checkout = () => {
         </div>
         <h1 className="text-3xl sm:text-4xl font-extrabold mt-5 tracking-tight text-neutral-900 dark:text-neutral-100">{t("checkout.orderPlaced")}</h1>
         <p className="text-neutral-500 dark:text-neutral-400 mt-2">{t("checkout.notified").replace("{seller}", done.seller_name)}</p>
-        <div className="mt-6 rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4 text-left text-sm space-y-1.5 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+        <div className="mt-6 rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4 text-start text-sm space-y-1.5 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
           <div className="flex justify-between text-neutral-700 dark:text-neutral-300">
             <span>{t("checkout.orderId")}</span>
             <span className="font-mono text-xs">{done.id.slice(0, 8)}</span>

@@ -87,7 +87,7 @@ const PaymentSuccess = () => {
           <p className="text-neutral-500 mt-2">
             Your order is confirmed. Track it any time from your profile.
           </p>
-          <div className="mt-6 rounded-2xl border border-neutral-200 bg-white p-4 text-left text-sm space-y-1.5">
+          <div className="mt-6 rounded-2xl border border-neutral-200 bg-white p-4 text-start text-sm space-y-1.5">
             <div className="flex justify-between text-neutral-700">
               <span>Order ID</span>
               <span className="font-mono text-xs" data-testid="payment-success-order-id">{state.order_id?.slice(0, 8)}</span>

@@ -29,6 +29,35 @@ const SUPPORTED_CURRENCIES = new Set([
 
 const SUPPORTED_LANGS = new Set(Object.keys(LANG_MAP));
 
+// Map region code (uppercase) → country display name (English; the app
+// translates the *label* via i18n but the code stays canonical).
+const REGION_NAME = {
+  US: "the United States", CA: "Canada", GB: "the United Kingdom", IE: "Ireland",
+  DE: "Germany", FR: "France", ES: "Spain", IT: "Italy", NL: "the Netherlands",
+  PT: "Portugal", AT: "Austria", BE: "Belgium", GR: "Greece", FI: "Finland",
+  JP: "Japan", IN: "India", AU: "Australia", NZ: "New Zealand",
+  BR: "Brazil", MX: "Mexico", CN: "China", HK: "Hong Kong", TW: "Taiwan",
+  KR: "South Korea", SG: "Singapore", MY: "Malaysia",
+  AE: "the UAE", SA: "Saudi Arabia", QA: "Qatar", KW: "Kuwait", OM: "Oman", BH: "Bahrain",
+};
+
+export const detectRegionAndCurrency = () => {
+  if (typeof navigator === "undefined") return { region: null, country: null, currency: null };
+  const list = Array.isArray(navigator.languages) && navigator.languages.length
+    ? navigator.languages : [navigator.language || "en-US"];
+  for (const raw of list) {
+    const [, region] = (raw || "").split(/[-_]/);
+    if (region) {
+      const r = region.toUpperCase();
+      const cur = REGION_CURRENCY[r];
+      if (cur && SUPPORTED_CURRENCIES.has(cur)) {
+        return { region: r, country: REGION_NAME[r] || r, currency: cur };
+      }
+    }
+  }
+  return { region: null, country: null, currency: null };
+};
+
 /**
  * Read navigator.language → return { lang, currency } (either may be null).
  */
