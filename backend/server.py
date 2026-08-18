@@ -942,6 +942,7 @@ async def create_listing(payload: ListingCreate, user: dict = Depends(get_curren
     )
     await db.listings.insert_one(listing.model_dump())
     await _notify_store_followers(store_id, listing.title, listing.id)
+    await schedule_sitemap_ping(changed_listing_id=listing.id)
     return listing
 
 @api_router.put("/listings/{listing_id}", response_model=Listing)
@@ -982,6 +983,10 @@ async def update_listing(listing_id: str, payload: ListingUpdate, user: dict = D
                 f"/listing/{listing_id}",
             )
     doc = await db.listings.find_one({"id": listing_id}, {"_id": 0})
+    # Any listing metadata change (price, title, status) can affect search
+    # ranking → nudge Google + Bing to re-crawl.
+    if updates:
+        await schedule_sitemap_ping(changed_listing_id=listing_id)
     return Listing(**doc)
 
 @api_router.delete("/listings/{listing_id}")
@@ -994,6 +999,7 @@ async def delete_listing(listing_id: str, user: dict = Depends(get_current_user)
     await db.listings.delete_one({"id": listing_id})
     await db.favorites.delete_many({"listing_id": listing_id})
     await db.cart_items.delete_many({"listing_id": listing_id})
+    await schedule_sitemap_ping()
     return {"ok": True}
 
 
@@ -6036,6 +6042,215 @@ async def robots_txt(request: Request):
 
 
 app.include_router(api_router)
+
+
+# =========================
+# Sitemap Search Console Ping — auto-ping Google + Bing when the sitemap
+# meaningfully changes (a new/updated/deleted listing) so newly-published
+# products get indexed within minutes instead of days.
+#
+# The ping URLs are the classic public endpoints — they don't require an
+# API key. We hard rate-limit to at most one round-trip per 15 min per
+# origin (persisted in the `settings` doc) so a burst of imports doesn't
+# spam either search engine. Fires in an asyncio task so the caller's HTTP
+# request returns immediately.
+# =========================
+_SITEMAP_PING_MIN_INTERVAL_SEC = int(os.environ.get("SITEMAP_PING_MIN_INTERVAL_SEC", "900"))
+
+
+async def _get_indexnow_key() -> str:
+    """Fetch (or lazily create) the IndexNow verification key. Stored in the
+    settings singleton so it persists across restarts and is served at
+    /api/indexnow-key.txt for the ownership check."""
+    settings = await db.settings.find_one({"_id": "singleton"}, {"_id": 0, "indexnow_key": 1}) or {}
+    key = settings.get("indexnow_key")
+    if key:
+        return key
+    key = uuid.uuid4().hex  # 32 char hex → satisfies IndexNow's 8-128 char rule
+    await db.settings.update_one(
+        {"_id": "singleton"}, {"$set": {"indexnow_key": key}}, upsert=True,
+    )
+    return key
+
+
+@app.get("/api/indexnow-key.txt", include_in_schema=False)
+async def indexnow_key_file():
+    """Ownership verification file for the IndexNow protocol. Bing/Yandex
+    fetch this exact URL and match the body against the `key` in each
+    submission before honoring it."""
+    key = await _get_indexnow_key()
+    return Response(content=key, media_type="text/plain",
+                    headers={"Cache-Control": "public, max-age=86400"})
+
+
+async def _ping_sitemap_now(origin: str, changed_urls: Optional[List[str]] = None) -> Dict[str, Any]:
+    """Notify search engines that the sitemap changed.
+
+    Real-world state (Feb 2026):
+      * Google removed its classic `/ping?sitemap=…` endpoint in June 2023.
+        Modern discovery is via robots.txt (already advertised) + Search
+        Console API (OAuth-gated, not in scope here).
+      * Bing removed the classic ping too, but honors IndexNow POSTs.
+      * IndexNow is a shared protocol — one POST to api.indexnow.org
+        propagates to Bing, Yandex, Seznam, Naver, Yep, and any other
+        participating engine.
+
+    We POST to IndexNow with the sitemap index URL (and any recently-changed
+    listing URLs). Falls back gracefully if the network call fails.
+    """
+    import httpx
+    results: Dict[str, Any] = {"origin": origin, "targets": {}}
+    key = await _get_indexnow_key()
+    urls = [f"{origin}/api/sitemap_index.xml"]
+    if changed_urls:
+        urls.extend([u for u in changed_urls if u.startswith(origin)][:9000])
+    payload = {
+        "host": origin.split("://", 1)[-1],
+        "key": key,
+        "keyLocation": f"{origin}/api/indexnow-key.txt",
+        "urlList": urls,
+    }
+    async with httpx.AsyncClient(timeout=10.0, follow_redirects=True) as client:
+        # Primary IndexNow endpoint (propagates to all participating engines).
+        try:
+            r = await client.post("https://api.indexnow.org/indexnow", json=payload,
+                                  headers={"Content-Type": "application/json; charset=utf-8"})
+            results["targets"]["indexnow"] = {"status": r.status_code, "ok": r.status_code in (200, 202)}
+        except Exception as e:
+            results["targets"]["indexnow"] = {"status": None, "ok": False, "error": str(e)[:200]}
+        # Bing's own endpoint as a belt-and-braces backup (same payload).
+        try:
+            r = await client.post("https://www.bing.com/indexnow", json=payload,
+                                  headers={"Content-Type": "application/json; charset=utf-8"})
+            results["targets"]["bing_indexnow"] = {"status": r.status_code, "ok": r.status_code in (200, 202)}
+        except Exception as e:
+            results["targets"]["bing_indexnow"] = {"status": None, "ok": False, "error": str(e)[:200]}
+    results["urls_submitted"] = len(urls)
+    now = datetime.now(timezone.utc)
+    await db.settings.update_one(
+        {"_id": "singleton"},
+        {"$set": {
+            "sitemap_ping_last_at": now,
+            "sitemap_ping_last_result": results,
+            "sitemap_ping_pending": False,
+        }},
+        upsert=True,
+    )
+    logger.info(f"[sitemap-ping] {origin} → IndexNow: " + ", ".join(
+        f"{k}={v.get('status')}" for k, v in results["targets"].items()
+    ))
+    return results
+
+
+async def schedule_sitemap_ping(origin: Optional[str] = None, changed_listing_id: Optional[str] = None) -> None:
+    """Rate-limited entry point. Call from listing create/update/delete —
+    coalesces bursts into a single ping per interval."""
+    if os.environ.get("SITEMAP_PING_ENABLED", "1") in ("0", "false", "no"):
+        return
+    if not origin:
+        origin = os.environ.get("BACKEND_PUBLIC_URL")
+        if not origin:
+            try:
+                from services.email_templates import FRONTEND as _FE
+                origin = _FE
+            except Exception:
+                return
+    origin = origin.rstrip("/")
+    changed_urls: List[str] = []
+    if changed_listing_id:
+        changed_urls.append(f"{origin}/listing/{changed_listing_id}")
+
+    settings = await db.settings.find_one({"_id": "singleton"}, {"_id": 0, "sitemap_ping_last_at": 1, "sitemap_ping_pending": 1}) or {}
+    last = settings.get("sitemap_ping_last_at")
+    if isinstance(last, datetime):
+        if last.tzinfo is None:
+            last = last.replace(tzinfo=timezone.utc)
+        elapsed = (datetime.now(timezone.utc) - last).total_seconds()
+        if elapsed < _SITEMAP_PING_MIN_INTERVAL_SEC:
+            # Coalesce: mark pending so the periodic sweep picks it up when the
+            # window expires, don't fire right now.
+            update: dict = {"sitemap_ping_pending": True}
+            if changed_urls:
+                # Buffer up to 1000 changed URLs for the next flush so bots
+                # get precise re-crawl targets, not just the index.
+                await db.settings.update_one(
+                    {"_id": "singleton"},
+                    {"$set": update, "$addToSet": {"sitemap_ping_pending_urls": {"$each": changed_urls}}},
+                    upsert=True,
+                )
+            else:
+                await db.settings.update_one({"_id": "singleton"}, {"$set": update}, upsert=True)
+            return
+    # Fire in background so the calling request stays snappy.
+    asyncio.create_task(_ping_sitemap_now(origin, changed_urls or None))
+
+
+async def sitemap_ping_sweeper():
+    """Periodic sweep to fire any coalesced ping that was queued during a
+    rate-limit window. Runs every 5 min — safe overhead."""
+    await asyncio.sleep(120)
+    while True:
+        try:
+            settings = await db.settings.find_one(
+                {"_id": "singleton"},
+                {"_id": 0, "sitemap_ping_pending": 1, "sitemap_ping_last_at": 1,
+                 "sitemap_ping_pending_urls": 1},
+            ) or {}
+            if settings.get("sitemap_ping_pending"):
+                last = settings.get("sitemap_ping_last_at")
+                elapsed = _SITEMAP_PING_MIN_INTERVAL_SEC + 1
+                if isinstance(last, datetime):
+                    if last.tzinfo is None:
+                        last = last.replace(tzinfo=timezone.utc)
+                    elapsed = (datetime.now(timezone.utc) - last).total_seconds()
+                if elapsed >= _SITEMAP_PING_MIN_INTERVAL_SEC:
+                    origin = os.environ.get("BACKEND_PUBLIC_URL")
+                    if not origin:
+                        try:
+                            from services.email_templates import FRONTEND as _FE
+                            origin = _FE
+                        except Exception:
+                            origin = None
+                    if origin:
+                        pending_urls = settings.get("sitemap_ping_pending_urls") or []
+                        await _ping_sitemap_now(origin.rstrip("/"), pending_urls or None)
+                        # Clear the buffer once flushed.
+                        await db.settings.update_one(
+                            {"_id": "singleton"},
+                            {"$unset": {"sitemap_ping_pending_urls": ""}},
+                        )
+        except Exception as e:
+            logger.warning(f"sitemap_ping_sweeper error: {e}")
+        await asyncio.sleep(300)
+
+
+@app.post("/api/admin/sitemap/ping")
+async def admin_sitemap_ping(_admin: dict = Depends(require_admin)):
+    """Force an immediate sitemap ping (bypasses the rate limit) and returns
+    the raw response from Google + Bing for debugging."""
+    origin = os.environ.get("BACKEND_PUBLIC_URL")
+    if not origin:
+        try:
+            from services.email_templates import FRONTEND as _FE
+            origin = _FE
+        except Exception:
+            raise HTTPException(500, "No public origin configured")
+    return await _ping_sitemap_now(origin.rstrip("/"))
+
+
+@app.get("/api/admin/sitemap/ping/status")
+async def admin_sitemap_ping_status(_admin: dict = Depends(require_admin)):
+    """Introspection endpoint — surfaces the last ping timestamp, pending
+    flag, and last per-target status codes so admins can debug indexing."""
+    doc = await db.settings.find_one(
+        {"_id": "singleton"},
+        {"_id": 0, "sitemap_ping_last_at": 1, "sitemap_ping_last_result": 1, "sitemap_ping_pending": 1},
+    ) or {}
+    last = doc.get("sitemap_ping_last_at")
+    if isinstance(last, datetime):
+        doc["sitemap_ping_last_at"] = last.isoformat()
+    doc["min_interval_sec"] = _SITEMAP_PING_MIN_INTERVAL_SEC
+    return doc
 app.include_router(search_router, prefix="/api")
 app.include_router(discovery_router, prefix="/api")
 app.include_router(users_router, prefix="/api")
@@ -6229,6 +6444,7 @@ async def startup():
     asyncio.create_task(escrow_digest_loop())
     asyncio.create_task(auto_confirm_delivery_loop())
     asyncio.create_task(auto_confirm_nudge_loop())
+    asyncio.create_task(sitemap_ping_sweeper())
 
 
 @app.on_event("shutdown")

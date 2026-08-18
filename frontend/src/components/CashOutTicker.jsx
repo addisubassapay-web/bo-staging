@@ -11,12 +11,18 @@ import { Sparkles, TrendingUp } from "lucide-react";
  * only mounts on non-mobile widths to avoid header clutter on small screens.
  */
 const CashOutTicker = () => {
-  const { format } = useCurrency();
+  const { format, currency } = useCurrency();
   const { t } = useLang();
   const [rows, setRows] = useState([]);
   const [paused, setPaused] = useState(false);
   const [dismissed, setDismissed] = useState(() => {
     try { return localStorage.getItem("mercari_ticker_dismissed") === "1"; } catch { return false; }
+  });
+  // Toggle: when true → show amounts in raw USD (source of truth) instead
+  // of the picked currency. Lets an INR-browsing visitor peek at the
+  // original dollar figure with a single click.
+  const [showRaw, setShowRaw] = useState(() => {
+    try { return localStorage.getItem("mercari_ticker_raw_usd") === "1"; } catch { return false; }
   });
   const timerRef = useRef(null);
 
@@ -46,6 +52,17 @@ const CashOutTicker = () => {
     try { localStorage.setItem("mercari_ticker_dismissed", "1"); } catch { /* ignore */ }
   };
 
+  const toggleRaw = () => {
+    const next = !showRaw;
+    setShowRaw(next);
+    try { localStorage.setItem("mercari_ticker_raw_usd", next ? "1" : "0"); } catch { /* ignore */ }
+  };
+
+  const showToggle = currency && currency !== "USD";
+  const fmt = (usd) => (showRaw
+    ? new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(usd)
+    : format(usd));
+
   // Duplicate the row list so the marquee scrolls seamlessly.
   const doubled = [...rows, ...rows];
 
@@ -70,7 +87,7 @@ const CashOutTicker = () => {
               <span key={i} className="flex items-center gap-1.5 text-xs text-neutral-700 dark:text-neutral-300">
                 <Sparkles className="h-3 w-3 text-emerald-500" />
                 <span className="font-semibold text-emerald-700 dark:text-emerald-400 tabular-nums">
-                  +{format(r.amount)}
+                  +{fmt(r.amount)}
                 </span>
                 <span className="text-neutral-500">·</span>
                 <span className="font-medium">{r.seller_masked}</span>
@@ -90,6 +107,19 @@ const CashOutTicker = () => {
             ))}
           </div>
         </div>
+        {showToggle && (
+          <button
+            type="button"
+            onClick={toggleRaw}
+            className="shrink-0 text-[10px] font-semibold rounded-full border border-emerald-200 dark:border-emerald-800 px-2 py-0.5 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition"
+            title={showRaw
+              ? (t("ticker.toggleBack") || `Show in ${currency}`).replace("{ccy}", currency)
+              : (t("ticker.toggleUsd") || "Show original USD")}
+            data-testid="cash-out-ticker-toggle"
+          >
+            {showRaw ? currency : "USD"}
+          </button>
+        )}
         <button
           type="button"
           onClick={dismiss}
