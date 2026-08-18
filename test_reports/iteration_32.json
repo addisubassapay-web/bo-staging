@@ -1,0 +1,34 @@
+{
+  "summary": "Iteration 32 verified: (1) local-disk storage replacing R2 — /api/scraper/status reports provider='local_disk', scraped image URL is under REACT_APP_BACKEND_URL/api/uploads/scraper/... and returns HTTP 200 with a non-zero body. (2) Per-user Zyte quotas — GET /api/scraper/quota shape correct, cap=10000 override honored, remaining=cap-used; setting cap<=used triggers HTTP 429 with 'Zyte quota exceeded' on BOTH /jobs and /jobs/paginated; failed pre-flight does not increment usage. (3) Admin quota endpoints: GET /admin/quota returns {rows, global_cap}; POST /admin/quota/global-cap persists; POST /admin/quota/override sets/clears per-user cap; non-admin gets 403 on all three admin endpoints. (4) Paginated seed scraper: unknown provider→400, auto_publish without category→400, pages>50→422, pages<1→422; happy path returns {super_batch_id, pages_queued:2, child_batch_ids:[...2]} and /super-batches/{id} returns pages_done/pages_failed/pages_total/products_total/products_published. White-box seed templates for amazon_search/mercari_search/amazon_bestsellers match spec exactly. (5) Frontend: on /sell → Import from URL tab the five panels stack in required order (QuotaWidget y=370 → PaginatedSeedScrape y=476 → CategoryScrapeAtScale y=1091 → then ImportFromUrl & BulkImportFromUrls below). All seed testids present (seed-provider/pages/query/category-select/autopublish/hifi/submit). QuotaWidget renders 'Zyte credits — 2026-08' with 9886/10000, 114 used. /admin/quotas page renders with admin-quotas-page, admin-global-cap-input, admin-global-cap-save + per-user override row; sidebar link 'Zyte quotas' present next to 'Zyte scraper'. (6) Regression: fixed one stale assertion in test_scraper.py (storage provider now local_disk); all other iteration 28-31 tests (43 scraper tests) still pass.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_iteration32_quotas_storage_paginated.py",
+    "/app/backend/tests/test_scraper.py",
+    "/app/test_reports/pytest/iter32.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "services/quotas.py: assert_can_spend re-reads used+cap (2 DB round trips) when get_status already computed both; not a bug but 1 fewer trip is possible via a shared cache.",
+    "routers/scraper.py: /jobs/paginated creates N scraper_batches docs first, then calls enqueue_category per child. If enqueue fails midway, some pages will be permanently 'queued' with no worker; consider marking failed ones or wrapping the loop in a transaction.",
+    "routers/scraper.py: assert_can_spend is called BEFORE _valid_url check in /jobs/paginated; a bad provider would still not consume credits (we raise before assert_can_spend), but the ordering is inconsistent with /jobs where we validate URL first.",
+    "PaginatedSeedScrape.jsx: pollRef.current continues 3s polling if the user navigates away without unmount cleanup being reached; the cancelled flag helps but a stronger AbortController would be cleaner.",
+    "PaginatedSeedScrape.jsx: query parameter is URL-encoded only via spaces→'+' — special chars ('&', '#') will break the seed URL when the backend str.format substitutes. Consider urllib.parse.quote on the server side.",
+    "r2_storage.py: rehost_many is sequential (`for u in urls`) not concurrent — a listing with 8 images serially fetches 8 URLs; asyncio.gather would cut latency ~5-8x."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration32_quotas_storage_paginated.py",
+    "/app/backend/tests/test_scraper.py"
+  ],
+  "success_rate": {
+    "backend": "100% (9/9 new + 43/43 regression after 1 stale assertion updated)",
+    "frontend": "100% (all Sell/Import panels + Admin Quotas page + sidebar link verified)"
+  },
+  "test_credentials": "sophia_style@demo.local / demo1234 (approved seller), admin@mercari.local / admin123",
+  "seed_data_creation": "During tests: 1 scrape job on books.toscrape (1 credit), 2 paginated Amazon batches (2 credits each, 4 total), plus previous 108 credits. sophia_style zyte_monthly_cap override left at 10000 after tests — reset via admin UI or DB if you want a clean slate.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Run new file via `pytest /app/backend/tests/test_iteration32_quotas_storage_paginated.py -v -o addopts=' '` (pytest.ini enables xdist; disable to keep fixture ordering deterministic). Login for frontend Playwright: use the API to get token then `localStorage.setItem('mercari_token', token)` + `localStorage.setItem('mercari_username', username)` — the UI form submit is flaky because a splash-screen overlay intercepts pointer events during initial mount. Storage is now local disk at /app/backend/uploads served under /api/uploads/. Sophia's Zyte cap override is 10000 (was set during quota tests).",
+  "rca of the issue": "N/A — no failing feature. Only regression: test_scraper.py::test_status_admin_ok asserted the old cloudflare_r2 provider; updated to local_disk to match the new default backend."
+}

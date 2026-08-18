@@ -1,14 +1,16 @@
-"""Cloudflare R2 storage — env-gated, S3-compatible.
+"""Media storage — local disk by default, Cloudflare R2 if configured.
 
-If any of the R2_* env vars is missing we operate in "passthrough" mode and
-return the supplier URL unchanged. When credentials are supplied we stream
-each remote image into the R2 bucket and return the public URL so the
-marketplace never depends on supplier hotlinks.
+Every scraped image is streamed to a persistent location we own and served
+from `<REACT_APP_BACKEND_URL>/uploads/scraper/…` so listings never depend on
+supplier CDNs. When R2 credentials are present we stream to the bucket
+instead and return the public R2 URL. Otherwise images live on the local
+FastAPI static mount at /uploads.
 """
 from __future__ import annotations
 import hashlib
 import mimetypes
 import os
+from pathlib import Path
 from typing import Optional
 from urllib.parse import urlparse
 
@@ -17,9 +19,13 @@ import httpx
 try:
     import boto3
     from botocore.config import Config as BotoConfig
-except ImportError:  # boto3 is a hard dep, but keep this defensive
+except ImportError:
     boto3 = None  # type: ignore
     BotoConfig = None  # type: ignore
+
+# On-disk root for uploaded media. Backend must mount /uploads → this dir.
+LOCAL_ROOT = Path(os.environ.get("MEDIA_LOCAL_ROOT") or "/app/backend/uploads")
+LOCAL_ROOT.mkdir(parents=True, exist_ok=True)
 
 
 def _env(name: str) -> str:
@@ -33,7 +39,7 @@ def r2_enabled() -> bool:
     ) and boto3 is not None
 
 
-def _client():
+def _r2_client():
     return boto3.client(
         "s3",
         endpoint_url=f"https://{_env('R2_ACCOUNT_ID')}.r2.cloudflarestorage.com",
@@ -44,27 +50,33 @@ def _client():
     )
 
 
-def _public_url(key: str) -> str:
+def _r2_public_url(key: str) -> str:
     base = _env("R2_PUBLIC_URL")
     if base:
         return f"{base.rstrip('/')}/{key}"
-    # Fall back to R2's public bucket URL pattern; requires bucket to have
-    # "Public Access" enabled or a custom domain configured.
     return f"https://pub-{_env('R2_ACCOUNT_ID')}.r2.dev/{_env('R2_BUCKET')}/{key}"
 
 
-async def rehost_image(source_url: str, *, prefix: str = "scraped") -> str:
-    """Stream a remote image into R2 and return the public URL.
+def _local_public_url(key: str) -> str:
+    """Return the fully-qualified URL a browser can fetch. Uploads are
+    served under /api/uploads/ so they flow through the same ingress rule
+    as the FastAPI routes."""
+    base = (
+        _env("BACKEND_PUBLIC_URL")
+        or _env("REACT_APP_BACKEND_URL")
+        or ""
+    ).rstrip("/")
+    return f"{base}/api/uploads/{key}" if base else f"/api/uploads/{key}"
 
-    Falls back to returning the original URL when R2 is not configured or on
-    any transient failure — the pipeline should never crash because storage
-    is unavailable.
+
+async def rehost_image(source_url: str, *, prefix: str = "scraped") -> str:
+    """Stream a remote image into media storage and return the public URL.
+
+    Order of preference: Cloudflare R2 (if configured) → local disk.
+    Falls back to the supplier URL only if BOTH storage backends error.
     """
     if not source_url or not source_url.startswith(("http://", "https://")):
         return source_url
-    if not r2_enabled():
-        return source_url
-
     try:
         async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
             r = await client.get(source_url)
@@ -72,22 +84,29 @@ async def rehost_image(source_url: str, *, prefix: str = "scraped") -> str:
             data = r.content
             content_type = r.headers.get("content-type", "").split(";")[0].strip() or _guess_ct(source_url)
 
-        # Deterministic key so we don't upload the same image twice.
         digest = hashlib.sha256(data).hexdigest()[:24]
         ext = mimetypes.guess_extension(content_type) or ".jpg"
         key = f"{prefix}/{digest[:2]}/{digest}{ext}"
 
-        client = _client()
-        client.put_object(
-            Bucket=_env("R2_BUCKET"),
-            Key=key,
-            Body=data,
-            ContentType=content_type or "application/octet-stream",
-            CacheControl="public, max-age=31536000, immutable",
-        )
-        return _public_url(key)
+        if r2_enabled():
+            try:
+                _r2_client().put_object(
+                    Bucket=_env("R2_BUCKET"),
+                    Key=key,
+                    Body=data,
+                    ContentType=content_type or "application/octet-stream",
+                    CacheControl="public, max-age=31536000, immutable",
+                )
+                return _r2_public_url(key)
+            except Exception:
+                pass  # fall through to local
+
+        dest = LOCAL_ROOT / key
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        if not dest.exists():
+            dest.write_bytes(data)
+        return _local_public_url(key)
     except Exception:
-        # Best-effort — keep the supplier URL if anything goes wrong.
         return source_url
 
 
@@ -104,10 +123,17 @@ async def rehost_many(urls: list[str], *, prefix: str = "scraped") -> list[str]:
 
 
 def storage_status() -> dict:
-    """Small helper for admin UI — reveals whether rehosting is live."""
+    """Small helper for admin UI — reveals which backend is active."""
+    if r2_enabled():
+        return {
+            "provider": "cloudflare_r2",
+            "enabled": True,
+            "bucket": _env("R2_BUCKET"),
+            "public_base": _env("R2_PUBLIC_URL") or f"pub-{_env('R2_ACCOUNT_ID')}.r2.dev",
+        }
     return {
-        "provider": "cloudflare_r2",
-        "enabled": r2_enabled(),
-        "bucket": _env("R2_BUCKET") or None,
-        "public_base": _env("R2_PUBLIC_URL") or None,
+        "provider": "local_disk",
+        "enabled": True,
+        "root": str(LOCAL_ROOT),
+        "public_base": _local_public_url("").rstrip("/"),
     }

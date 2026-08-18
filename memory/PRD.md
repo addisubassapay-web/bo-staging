@@ -26,6 +26,13 @@ Exact replica of Mercari platform (mercari.com) — same color scheme (`#FF211F`
 
 ## Implemented (with dates)
 
+### Feb 2026 — Local Media Storage + Per-User Zyte Quotas + Paginated Amazon/Mercari Seed Scraper
+- **Local media storage** (replaces R2 dependency) — new `/app/backend/uploads/` root, mounted at `/api/uploads/*` so it flows through the same Kubernetes ingress rule as the API. `services/r2_storage.py` now defaults to local disk and falls back to Cloudflare R2 only when `R2_*` env vars are set. Every scraped image gets rehosted to a fully-qualified `{REACT_APP_BACKEND_URL}/api/uploads/scraper/<sha256>[:2]/<sha256>.<ext>` URL — supplier CDN dependencies eliminated with zero external creds.
+- **Per-user Zyte quotas** (`services/quotas.py`) — every Zyte call charges 1 credit against the calling user's monthly budget. Global default cap of 500 credits/user/month, per-user override in `users.zyte_monthly_cap`. Pre-flight `assert_can_spend` blocks over-budget requests with HTTP 429. Failed API calls do NOT debit. New endpoints: `GET /api/scraper/quota`, `GET /api/scraper/admin/quota`, `POST /api/scraper/admin/quota/override`, `POST /api/scraper/admin/quota/global-cap`. Frontend: `QuotaWidget` shows used/cap/remaining with red state when < 10%; `/admin/quotas` page for global cap + per-user overrides.
+- **Paginated seed scraper** — `POST /api/scraper/jobs/paginated` walks N pages (1-50) of an Amazon search / Amazon bestsellers / Mercari search feed. Each page = 1 Zyte productList call ≈ 30-60 products, so 10 pages ≈ 300-600 live listings for 10 credits. `GET /api/scraper/super-batches/{id}` aggregates progress. Frontend `PaginatedSeedScrape` panel with provider select, pages slider, keyword input, category select, auto-publish + high-fidelity switches, and live per-page progress.
+- **Self-healing Redis** — supervised via `scripts/start_redis.sh` which apt-reinstalls the binary on the fly when Emergent's pod restart wipes it. Fixes recurring "redis-server not found" outages.
+- **Testing** — iteration_32: 9/9 new + 43/43 regression pytest, full Playwright pass.
+
 ### Feb 2026 — Import at Scale: Category URL + CSV Paste + One-Click Auto-Publish
 - **Category URL extraction** — `POST /api/scraper/jobs/category` runs a single Zyte `productList` call against an Amazon search / eBay category / Shopify collection / etc. and fans out into N pre-extracted `scraper_jobs` rows (no per-URL Zyte round-trip). Verified: 20 books from books.toscrape.com/mystery_3 in ~10s.
 - **CSV paste** — `POST /api/scraper/jobs/csv` accepts up to **1,000 URLs** per submit, reuses the arq `scrape_url_task` pipeline, and returns `{batch_id, queued_count, queued[], rejected[]}` with dedupe + invalid-URL reasons.

@@ -67,6 +67,13 @@ security = HTTPBearer(auto_error=False)
 app = FastAPI(title="Mercari Clone API")
 api_router = APIRouter(prefix="/api")
 
+# Static mount for scraper/local media uploads — served at /api/uploads/*
+# so it flows through the same Kubernetes ingress rule as the rest of the API.
+from fastapi.staticfiles import StaticFiles
+_UPLOADS_DIR = Path(os.environ.get("MEDIA_LOCAL_ROOT") or "/app/backend/uploads")
+_UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
+app.mount("/api/uploads", StaticFiles(directory=str(_UPLOADS_DIR)), name="uploads")
+
 
 # =========================
 # Models

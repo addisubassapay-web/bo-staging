@@ -24,6 +24,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 
 from services.zyte import extract_product, extract_product_list, normalize_product, normalize_product_list_item, ZyteError
 from services.r2_storage import rehost_many
+from services.quotas import record_spend
 
 logger = logging.getLogger("scraper_queue")
 
@@ -63,6 +64,11 @@ async def scrape_url_task(ctx: dict, job_id: str) -> dict:
             geolocation=job.get("geolocation") or None,
             high_fidelity=bool(job.get("high_fidelity")),
         )
+        # Charge one credit per successful Zyte call.
+        try:
+            await record_spend(db, job["owner_id"], cost=1)
+        except Exception:
+            logger.warning(f"quota record failed for job {job_id}")
         listing = normalize_product(payload)
 
         # Rehost images to R2 (falls back to supplier URL when R2 disabled)
@@ -220,6 +226,10 @@ async def scrape_category_task(ctx: dict, super_batch_id: str) -> dict:
             geolocation=batch.get("geolocation") or None,
             high_fidelity=bool(batch.get("high_fidelity")),
         )
+        try:
+            await record_spend(db, batch["owner_id"], cost=1)
+        except Exception:
+            logger.warning("quota record failed for category batch")
         items = payload.get("productList", {}).get("products") or payload.get("products") or []
     except ZyteError as e:
         await db.scraper_batches.update_one(

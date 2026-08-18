@@ -20,6 +20,7 @@ from pydantic import BaseModel, Field
 from .deps import get_db, get_current_user, require_admin
 from services.queue import enqueue_scrape, enqueue_category
 from services.r2_storage import storage_status
+from services.quotas import get_status as quota_status, admin_all_usage, assert_can_spend, get_user_cap, get_usage
 
 router = APIRouter(prefix="/scraper", tags=["scraper"])
 
@@ -63,8 +64,8 @@ async def create_scrape_job(payload: ScrapeJobCreate, user: dict = Depends(get_c
         raise HTTPException(400, "Enter a valid http(s) URL")
     if not (os.environ.get("ZYTE_API_KEY") or "").strip():
         raise HTTPException(503, "Zyte API key is not configured")
-
     db = get_db()
+    await assert_can_spend(db, user, cost=1)
     job_id = str(uuid.uuid4())
     now = datetime.now(timezone.utc)
     doc = {
@@ -130,6 +131,10 @@ async def create_bulk_scrape(payload: BulkScrapeCreate, user: dict = Depends(get
 
     if not valid:
         raise HTTPException(400, "No valid URLs provided")
+
+    # Pre-flight: refuse if the batch would blow the monthly cap.
+    db_check = get_db()
+    await assert_can_spend(db_check, user, cost=len(valid))
 
     db = get_db()
     batch_id = str(uuid.uuid4())
@@ -198,6 +203,7 @@ async def create_category_scrape(payload: CategoryScrapeCreate, user: dict = Dep
         raise HTTPException(400, "Auto-publish requires a category_id")
 
     db = get_db()
+    await assert_can_spend(db, user, cost=1)
     if payload.category_id:
         cat = await db.categories.find_one({"id": payload.category_id}, {"_id": 0})
         if not cat:
@@ -389,3 +395,186 @@ async def scraper_status(_admin: dict = Depends(require_admin)):
         "queue": {"provider": "arq", "redis_ok": redis_ok, "redis_url": redis_url.split("@")[-1]},
         "storage": storage_status(),
     }
+
+
+# =========================================================================
+# Paginated seed scraper — Amazon + Mercari at scale
+# =========================================================================
+_SEED_TEMPLATES = {
+    "amazon_search":  "https://www.amazon.com/s?k={q}&page={p}",
+    "mercari_search": "https://www.mercari.com/search/?keyword={q}&page={p}",
+    "amazon_bestsellers": "https://www.amazon.com/gp/bestsellers/{q}?pg={p}",
+}
+
+
+class PaginatedSeedCreate(BaseModel):
+    provider: str = Field(..., description="amazon_search | mercari_search | amazon_bestsellers")
+    query: str = Field(..., min_length=1, max_length=200)
+    pages: int = Field(5, ge=1, le=50, description="How many pages to walk")
+    category_id: Optional[str] = None
+    auto_publish: bool = False
+    high_fidelity: bool = False
+
+
+@router.post("/jobs/paginated")
+async def create_paginated_scrape(payload: PaginatedSeedCreate, user: dict = Depends(get_current_user)):
+    """Walk N pages of a supplier search / bestseller listing at once.
+
+    Each page fires one Zyte `productList` call and typically returns
+    30-60 products, so 10 pages ≈ 300-600 live listings for 10 credits.
+    Ideal for burning the $100 Zyte plan into the maximum number of
+    marketplace listings.
+    """
+    if payload.provider not in _SEED_TEMPLATES:
+        raise HTTPException(400, f"Unknown provider — choose one of {list(_SEED_TEMPLATES)}")
+    if payload.auto_publish and not payload.category_id:
+        raise HTTPException(400, "Auto-publish requires a category_id")
+    if not (os.environ.get("ZYTE_API_KEY") or "").strip():
+        raise HTTPException(503, "Zyte API key is not configured")
+
+    db = get_db()
+    # 1 credit per page.
+    await assert_can_spend(db, user, cost=payload.pages)
+    if payload.category_id:
+        cat = await db.categories.find_one({"id": payload.category_id}, {"_id": 0})
+        if not cat:
+            raise HTTPException(400, "Invalid category_id")
+
+    tmpl = _SEED_TEMPLATES[payload.provider]
+    q = payload.query.replace(" ", "+")
+    now = datetime.now(timezone.utc)
+    super_id = str(uuid.uuid4())
+    child_batch_ids: list[str] = []
+
+    for page in range(1, payload.pages + 1):
+        seed_url = tmpl.format(q=q, p=page)
+        child_id = str(uuid.uuid4())
+        await db.scraper_batches.insert_one({
+            "id": child_id,
+            "owner_id": user["id"],
+            "owner_email": user.get("email"),
+            "kind": "category",
+            "super_batch_id": super_id,
+            "source_url": seed_url,
+            "seed_provider": payload.provider,
+            "seed_query": payload.query,
+            "page": page,
+            "category_id": payload.category_id,
+            "high_fidelity": bool(payload.high_fidelity),
+            "auto_publish": bool(payload.auto_publish),
+            "status": "queued",
+            "total": 0,
+            "created_at": now,
+        })
+        try:
+            await enqueue_category(child_id)
+            child_batch_ids.append(child_id)
+        except Exception as e:
+            await db.scraper_batches.update_one(
+                {"id": child_id}, {"$set": {"status": "failed", "error": {"message": str(e)}}},
+            )
+
+    await db.scraper_super_batches.insert_one({
+        "id": super_id,
+        "owner_id": user["id"],
+        "provider": payload.provider,
+        "query": payload.query,
+        "pages": payload.pages,
+        "category_id": payload.category_id,
+        "auto_publish": bool(payload.auto_publish),
+        "child_batch_ids": child_batch_ids,
+        "created_at": now,
+    })
+    return {
+        "super_batch_id": super_id,
+        "provider": payload.provider,
+        "pages_queued": len(child_batch_ids),
+        "child_batch_ids": child_batch_ids,
+    }
+
+
+@router.get("/super-batches/{super_batch_id}")
+async def get_super_batch_status(super_batch_id: str, user: dict = Depends(get_current_user)):
+    db = get_db()
+    sb = await db.scraper_super_batches.find_one({"id": super_batch_id}, {"_id": 0})
+    if not sb:
+        raise HTTPException(404, "Super-batch not found")
+    if sb.get("owner_id") != user["id"] and user.get("role") != "admin":
+        raise HTTPException(403, "Not your batch")
+    children = await db.scraper_batches.find(
+        {"super_batch_id": super_batch_id}, {"_id": 0}
+    ).sort("page", 1).to_list(200)
+    # Aggregate stats across all child jobs.
+    child_ids = [c["id"] for c in children]
+    products_total = 0
+    products_published = 0
+    if child_ids:
+        products_total = await db.scraper_jobs.count_documents({"batch_id": {"$in": child_ids}})
+        products_published = await db.scraper_jobs.count_documents(
+            {"batch_id": {"$in": child_ids}, "publish_status": "published"}
+        )
+    done_pages = sum(1 for c in children if c.get("status") == "done")
+    failed_pages = sum(1 for c in children if c.get("status") == "failed")
+    return {
+        "super_batch": sb,
+        "children": children,
+        "pages_done": done_pages,
+        "pages_failed": failed_pages,
+        "pages_total": len(children),
+        "products_total": products_total,
+        "products_published": products_published,
+    }
+
+
+# =========================================================================
+# Per-user Zyte quotas
+# =========================================================================
+@router.get("/quota")
+async def my_quota(user: dict = Depends(get_current_user)):
+    """Current-month Zyte credit usage for the calling user."""
+    db = get_db()
+    return await quota_status(db, user)
+
+
+@router.get("/admin/quota")
+async def admin_quota_list(_admin: dict = Depends(require_admin), month: Optional[str] = None):
+    """All users' Zyte usage this month + their effective cap."""
+    db = get_db()
+    rows = await admin_all_usage(db, month=month)
+    global_cap = None
+    s = await db.settings.find_one({"id": "global"}, {"_id": 0, "zyte_monthly_cap_per_user": 1})
+    if s and isinstance(s.get("zyte_monthly_cap_per_user"), (int, float)):
+        global_cap = int(s["zyte_monthly_cap_per_user"])
+    return {"rows": rows, "global_cap": global_cap or 500}
+
+
+class QuotaOverrideUpdate(BaseModel):
+    user_id: str
+    cap: Optional[int] = Field(None, ge=0, le=1_000_000, description="0/null = clear override")
+
+
+@router.post("/admin/quota/override")
+async def admin_set_override(payload: QuotaOverrideUpdate, _admin: dict = Depends(require_admin)):
+    """Set a per-user override. Cap=None or 0 clears the override so the
+    user falls back to the global default."""
+    db = get_db()
+    if payload.cap and payload.cap > 0:
+        await db.users.update_one({"id": payload.user_id}, {"$set": {"zyte_monthly_cap": int(payload.cap)}})
+    else:
+        await db.users.update_one({"id": payload.user_id}, {"$unset": {"zyte_monthly_cap": ""}})
+    return {"ok": True, "user_id": payload.user_id, "cap": payload.cap or None}
+
+
+class GlobalCapUpdate(BaseModel):
+    cap: int = Field(..., ge=1, le=1_000_000)
+
+
+@router.post("/admin/quota/global-cap")
+async def admin_set_global_cap(payload: GlobalCapUpdate, _admin: dict = Depends(require_admin)):
+    db = get_db()
+    await db.settings.update_one(
+        {"id": "global"},
+        {"$set": {"zyte_monthly_cap_per_user": int(payload.cap)}},
+        upsert=True,
+    )
+    return {"ok": True, "cap": int(payload.cap)}

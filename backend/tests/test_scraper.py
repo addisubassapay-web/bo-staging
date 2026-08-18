@@ -43,8 +43,8 @@ class TestStatus:
         assert data["queue"]["provider"] == "arq"
         assert data["queue"]["redis_ok"] is True
         assert "redis_url" in data["queue"]
-        assert data["storage"]["provider"] == "cloudflare_r2"
-        assert data["storage"]["enabled"] is False  # R2 passthrough
+        assert data["storage"]["provider"] == "local_disk"
+        assert data["storage"]["enabled"] is True  # Local disk always enabled
 
     def test_status_forbids_non_admin(self, user_token):
         r = requests.get(f"{API}/scraper/status", headers=_hdr(user_token), timeout=15)
