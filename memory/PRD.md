@@ -26,6 +26,12 @@ Exact replica of Mercari platform (mercari.com) — same color scheme (`#FF211F`
 
 ## Implemented (with dates)
 
+### Feb 2026 — Multi-language + Multi-currency Switchers + Mobile Overflow Fix
+- **`LangCurrencySwitcher`** — new compact component in the header TopStrip with two dropdowns: 10 languages (EN/ES/FR/DE/IT/PT/JA/ZH/AR/HI) and 13 currencies (USD/EUR/GBP/JPY/INR/CAD/AUD/BRL/MXN/CNY/KRW/SGD/AED). Selections persist in `localStorage`; existing `LanguageProvider` + `CurrencyProvider` already covered translations + live rate conversion.
+- **TopStrip mobile fixes** — replaced the horizontally-scrolling right pane with a shrink-friendly flex row: username truncates to 6rem on mobile; "Hi, " prefix hides < sm; "Register" hides < sm; "Help" hides < md. Marketplace / Returns / Deals badges collapse progressively at md/sm breakpoints.
+- **CSS overflow safety net** in `index.css` — `main/header/footer/section/article/nav { max-width: 100% }` plus `.overflow-x-auto/.overflow-x-scroll { max-width: 100% }`. Combined with the pre-existing `#root { max-width: 100vw; overflow-x: hidden }` this makes it impossible for any child (including snap-scroll strips) to widen the viewport.
+- **Verified on iPhone SE (375px)**: `scrollWidth == 375`, no positive-x offenders, both switchers reachable (`data-testid=lang-btn` + `currency-btn`).
+
 ### Feb 2026 — Sponsored Store Slots (paid + admin comp)
 - **`store_boosts` router** (5 endpoints) — tiers: bronze (1×, $5/7d), silver (2×, $12/14d), gold (3×, $25/30d). Boosts stored on `store.boosts[]` with `active_boost_score` cached for O(1) sorts.
 - **Paid path** — `POST /api/store-boost/checkout` opens a real Stripe Checkout Session (reuses the marketplace's existing Stripe wrapper). On payment success both the webhook and the poll-status endpoint call `finalize_paid_boost` (idempotent) which grants the boost. New session_id → boost mapping persisted in `store_boost_orders`.

@@ -53,6 +53,18 @@ body {
     overflow-x: hidden;
 }
 
+/* Belt-and-braces safety net: even if a descendant claims 100vw, the app
+   frame stays inside the viewport. Applies only to non-scroll children. */
+main, header, footer, section, article, nav {
+    max-width: 100%;
+}
+
+/* The -mx-4 edge-bleed pattern (e.g. horizontal snap-scroll strips) must
+   never widen its parent. Force those to contain overflow within themselves. */
+.overflow-x-auto, .overflow-x-scroll {
+    max-width: 100%;
+}
+
 /* Prevent any child from causing horizontal overflow on small phones */
 img, video, iframe, canvas, svg {
     max-width: 100%;

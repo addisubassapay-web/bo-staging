@@ -22,28 +22,33 @@ import MiniCart from "@/components/MiniCart";
 import GlobalNavMenu from "@/components/GlobalNavMenu";
 import CommandPalette, { useCommandPaletteShortcut } from "@/components/CommandPalette";
 import BrandMark from "@/components/BrandMark";
+import LangCurrencySwitcher from "@/components/LangCurrencySwitcher";
 
 const TopStrip = ({ user, onLogout }) => {
   const { t } = useLang();
   return (
     <div className="bg-[#0F1113] text-neutral-200 text-xs dark:bg-black dark:text-neutral-300">
-      <div className="max-w-7xl mx-auto px-4 h-8 flex items-center justify-between gap-4">
-        <div className="flex items-center gap-4 overflow-x-auto whitespace-nowrap min-w-0">
-          <span className="flex items-center gap-1.5"><span className="text-cyan-400">◈</span>{t("topstrip.marketplace")}</span>
-          <span className="hidden sm:flex items-center gap-1.5"><span className="text-emerald-400">◆</span>{t("topstrip.returns")}</span>
-          <span className="hidden md:flex items-center gap-1.5"><span className="text-orange-400">◔</span>{t("topstrip.deals")}</span>
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 h-8 flex items-center justify-between gap-2 min-w-0">
+        <div className="flex items-center gap-3 whitespace-nowrap min-w-0 overflow-hidden">
+          <span className="inline-flex items-center gap-1"><span className="text-cyan-400">◈</span><span className="truncate">{t("topstrip.marketplace")}</span></span>
+          <span className="hidden sm:inline-flex items-center gap-1"><span className="text-emerald-400">◆</span>{t("topstrip.returns")}</span>
+          <span className="hidden md:inline-flex items-center gap-1"><span className="text-orange-400">◔</span>{t("topstrip.deals")}</span>
         </div>
         <div className="flex items-center gap-1 shrink-0">
-          <Link to="/disputes" className="hidden sm:inline hover:text-white px-2" data-testid="topstrip-help">{t("nav.help")}</Link>
+          <LangCurrencySwitcher />
+          <span className="mx-1 h-3 w-px bg-neutral-700 hidden sm:inline-block" />
+          <Link to="/disputes" className="hidden md:inline hover:text-white px-2" data-testid="topstrip-help">{t("nav.help")}</Link>
           {!user ? (
             <>
-              <Link to="/login" className="hover:text-white px-2" data-testid="topstrip-login">{t("nav.login")}</Link>
-              <Link to="/register" className="hover:text-white px-2" data-testid="topstrip-register">{t("nav.register")}</Link>
+              <Link to="/login" className="hover:text-white px-1.5 sm:px-2" data-testid="topstrip-login">{t("nav.login")}</Link>
+              <Link to="/register" className="hidden sm:inline hover:text-white px-2" data-testid="topstrip-register">{t("nav.register")}</Link>
             </>
           ) : (
             <>
-              <Link to="/profile" className="hover:text-white px-2">Hi, {user.username}</Link>
-              <button onClick={onLogout} className="hover:text-white px-2" data-testid="topstrip-logout">Logout</button>
+              <Link to="/profile" className="hover:text-white px-1.5 sm:px-2 max-w-[6rem] sm:max-w-none truncate" title={`Hi, ${user.username}`}>
+                <span className="hidden sm:inline">Hi, </span>{user.username}
+              </Link>
+              <button onClick={onLogout} className="hover:text-white px-1.5 sm:px-2" data-testid="topstrip-logout">Logout</button>
             </>
           )}
         </div>
