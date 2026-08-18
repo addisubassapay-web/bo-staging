@@ -65,6 +65,13 @@ async def create_scrape_job(payload: ScrapeJobCreate, user: dict = Depends(get_c
     if not (os.environ.get("ZYTE_API_KEY") or "").strip():
         raise HTTPException(503, "Zyte API key is not configured")
     db = get_db()
+    # Dedupe: don't burn a credit if this seller already imported this URL.
+    dup = await db.listings.find_one(
+        {"seller_id": user["id"], "source_url": payload.url},
+        {"_id": 0, "id": 1},
+    )
+    if dup:
+        raise HTTPException(409, {"detail": "already_imported", "listing_id": dup["id"]})
     await assert_can_spend(db, user, cost=1)
     job_id = str(uuid.uuid4())
     now = datetime.now(timezone.utc)
@@ -131,6 +138,21 @@ async def create_bulk_scrape(payload: BulkScrapeCreate, user: dict = Depends(get
 
     if not valid:
         raise HTTPException(400, "No valid URLs provided")
+
+    # Dedupe against listings the same user has already published from these
+    # supplier URLs — prevents wasted Zyte credits + duplicate storefronts.
+    db_dedupe = get_db()
+    already = await db_dedupe.listings.distinct(
+        "source_url", {"seller_id": user["id"], "source_url": {"$in": valid}}
+    )
+    if already:
+        already_set = set(already)
+        for u in list(valid):
+            if u in already_set:
+                rejected.append({"url": u, "reason": "already_imported"})
+        valid = [u for u in valid if u not in already_set]
+    if not valid:
+        raise HTTPException(400, "All URLs were already imported by you")
 
     # Pre-flight: refuse if the batch would blow the monthly cap.
     db_check = get_db()
@@ -524,6 +546,110 @@ async def get_super_batch_status(super_batch_id: str, user: dict = Depends(get_c
         "products_total": products_total,
         "products_published": products_published,
     }
+
+
+# =========================================================================
+# Saved Seeds — persist favorite keywords + nightly auto-run
+# =========================================================================
+class SavedSeedCreate(BaseModel):
+    provider: str = Field(..., description="amazon_search | mercari_search | amazon_bestsellers")
+    query: str = Field(..., min_length=1, max_length=200)
+    pages: int = Field(20, ge=1, le=50)
+    category_id: str
+    high_fidelity: bool = False
+    enabled: bool = True
+
+
+class SavedSeedUpdate(BaseModel):
+    query: Optional[str] = Field(None, min_length=1, max_length=200)
+    pages: Optional[int] = Field(None, ge=1, le=50)
+    category_id: Optional[str] = None
+    high_fidelity: Optional[bool] = None
+    enabled: Optional[bool] = None
+
+
+@router.post("/saved-seeds")
+async def create_saved_seed(payload: SavedSeedCreate, user: dict = Depends(get_current_user)):
+    if payload.provider not in _SEED_TEMPLATES:
+        raise HTTPException(400, f"Unknown provider — choose one of {list(_SEED_TEMPLATES)}")
+    db = get_db()
+    cat = await db.categories.find_one({"id": payload.category_id}, {"_id": 0})
+    if not cat:
+        raise HTTPException(400, "Invalid category_id")
+    now = datetime.now(timezone.utc)
+    doc = {
+        "id": str(uuid.uuid4()),
+        "owner_id": user["id"],
+        "provider": payload.provider,
+        "query": payload.query,
+        "pages": payload.pages,
+        "category_id": payload.category_id,
+        "high_fidelity": bool(payload.high_fidelity),
+        "enabled": bool(payload.enabled),
+        "created_at": now,
+        "last_run_at": None,
+        "last_super_batch_id": None,
+    }
+    await db.saved_seeds.insert_one(doc)
+    doc.pop("_id", None)
+    return doc
+
+
+@router.get("/saved-seeds")
+async def list_saved_seeds(user: dict = Depends(get_current_user)):
+    db = get_db()
+    rows = await db.saved_seeds.find(
+        {"owner_id": user["id"]}, {"_id": 0}
+    ).sort("created_at", -1).to_list(200)
+    return {"items": rows, "count": len(rows)}
+
+
+@router.patch("/saved-seeds/{seed_id}")
+async def update_saved_seed(seed_id: str, payload: SavedSeedUpdate, user: dict = Depends(get_current_user)):
+    db = get_db()
+    seed = await db.saved_seeds.find_one({"id": seed_id}, {"_id": 0})
+    if not seed:
+        raise HTTPException(404, "Saved seed not found")
+    if seed["owner_id"] != user["id"] and user.get("role") != "admin":
+        raise HTTPException(403, "Not your seed")
+    updates = {k: v for k, v in payload.model_dump(exclude_unset=True).items() if v is not None}
+    if updates.get("category_id"):
+        cat = await db.categories.find_one({"id": updates["category_id"]}, {"_id": 0})
+        if not cat:
+            raise HTTPException(400, "Invalid category_id")
+    if updates:
+        await db.saved_seeds.update_one({"id": seed_id}, {"$set": updates})
+    return await db.saved_seeds.find_one({"id": seed_id}, {"_id": 0})
+
+
+@router.delete("/saved-seeds/{seed_id}")
+async def delete_saved_seed(seed_id: str, user: dict = Depends(get_current_user)):
+    db = get_db()
+    seed = await db.saved_seeds.find_one({"id": seed_id}, {"_id": 0, "owner_id": 1})
+    if not seed:
+        raise HTTPException(404, "Saved seed not found")
+    if seed["owner_id"] != user["id"] and user.get("role") != "admin":
+        raise HTTPException(403, "Not your seed")
+    await db.saved_seeds.delete_one({"id": seed_id})
+    return {"ok": True}
+
+
+@router.post("/saved-seeds/{seed_id}/run")
+async def run_saved_seed_now(seed_id: str, user: dict = Depends(get_current_user)):
+    """Trigger a saved seed manually — same as the nightly cron for one row."""
+    from services.saved_seeds import run_saved_seed as _run
+    db = get_db()
+    seed = await db.saved_seeds.find_one({"id": seed_id}, {"_id": 0})
+    if not seed:
+        raise HTTPException(404, "Saved seed not found")
+    if seed["owner_id"] != user["id"] and user.get("role") != "admin":
+        raise HTTPException(403, "Not your seed")
+    # Enforce quota inline so callers see 429 instead of a silent skip.
+    await assert_can_spend(db, user, cost=int(seed.get("pages") or 20))
+    result = await _run(db, seed)
+    if not result:
+        raise HTTPException(400, "Seed could not run (disabled or invalid).")
+    return result
 
 
 # =========================================================================

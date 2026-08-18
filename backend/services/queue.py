@@ -126,18 +126,33 @@ async def scrape_url_task(ctx: dict, job_id: str) -> dict:
 
 async def _publish_from_result(db, job: dict, listing: dict) -> None:
     """Turn a completed scrape into a live listing under the pre-chosen
-    category. No-op if required fields are missing or category is invalid."""
+    category. No-op if required fields are missing or category is invalid.
+    Dedupes by (seller_id, source_url) so re-running a seed never creates
+    duplicate listings for the same supplier URL."""
     if not job.get("auto_publish") or not job.get("category_id") or not job.get("owner_id"):
         return
     title = (listing.get("title") or "").strip()
     price = listing.get("price")
     if not title or price is None:
-        # Can't publish without a title + price — leave as extracted-only.
         await db.scraper_jobs.update_one(
             {"id": job["id"]},
             {"$set": {"publish_status": "skipped_missing_fields"}},
         )
         return
+
+    source_url = job.get("url") or listing.get("url")
+    if source_url:
+        existing = await db.listings.find_one(
+            {"seller_id": job["owner_id"], "source_url": source_url},
+            {"_id": 0, "id": 1},
+        )
+        if existing:
+            await db.scraper_jobs.update_one(
+                {"id": job["id"]},
+                {"$set": {"publish_status": "skipped_duplicate",
+                          "published_listing_id": existing["id"]}},
+            )
+            return
 
     cat = await db.categories.find_one({"id": job["category_id"]}, {"_id": 0})
     if not cat:
@@ -177,6 +192,7 @@ async def _publish_from_result(db, job: dict, listing: dict) -> None:
         shipping_method="Standard",
         status="active",
         store_id=store_id,
+        source_url=source_url,
     )
     try:
         await db.listings.insert_one(doc.model_dump())
@@ -373,9 +389,23 @@ async def enqueue_category(super_batch_id: str) -> None:
         await pool.close()
 
 
+async def cron_run_saved_seeds(ctx: dict) -> dict:
+    """Daily arq cron entry — walks all enabled saved seeds."""
+    from services.saved_seeds import run_all_enabled
+    db = _db()
+    return await run_all_enabled(db)
+
+
 # --- Worker settings -----------------------------------------------------
+from arq import cron
+
+
 class WorkerSettings:
     functions = [scrape_url_task, scrape_category_task]
+    cron_jobs = [
+        # Daily at 09:00 UTC — hands-off catalog growth for every seller.
+        cron(cron_run_saved_seeds, hour=9, minute=0, run_at_startup=False),
+    ]
     redis_settings = _redis_settings()
     max_jobs = 5
     job_timeout = 180

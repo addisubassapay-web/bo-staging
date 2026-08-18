@@ -26,6 +26,12 @@ Exact replica of Mercari platform (mercari.com) — same color scheme (`#FF211F`
 
 ## Implemented (with dates)
 
+### Feb 2026 — Dedupe On Import + Saved Seeds & Daily Cron
+- **Dedupe on import** — `Listing.source_url` now persisted on every auto-published scrape. Pre-flight check on `/jobs`, `/jobs/bulk`, `/jobs/csv`, `/jobs/paginated` filters out URLs the same seller has already imported (saves Zyte credits). Post-extract `_publish_from_result` also dedupes just before insert — `scraper_jobs.publish_status="skipped_duplicate"` with a back-reference to the existing listing id. Verified: 2nd scrape of same URL returns HTTP 409, bulk rejects dupes with `reason:"already_imported"` while queuing fresh URLs.
+- **Saved seeds CRUD** — new `saved_seeds` collection + endpoints `POST/GET/PATCH/DELETE /api/scraper/saved-seeds` and `POST /api/scraper/saved-seeds/{id}/run` for on-demand replay. Owner-only access.
+- **Daily arq cron** — `WorkerSettings.cron_jobs = [cron(cron_run_saved_seeds, hour=9, minute=0)]` iterates every enabled seed nightly at 09:00 UTC. Respects per-user Zyte quotas (silently skips users at cap). Each run auto-publishes live under the pre-picked category and dedupes against previously imported URLs, so the storefront grows without duplicates.
+- **Frontend `SavedSeeds` component** on `/sell → Import from URL` — add/edit/delete form, per-row enable switch, per-row "Run" button, badges showing provider/pages/hi-fi mode, and "Last ran …" timestamp.
+
 ### Feb 2026 — "Seed 1,000 In One Click" Preset + Completion Email
 - **One-click preset** — new button at the top of `PaginatedSeedScrape` (`seed-preset-1000`) that auto-fills pages=20, Auto-Publish=on, Amazon Full Pull=on (for Amazon providers). Cost ~20 Zyte credits → typically 300-600+ live listings.
 - **Super-batch completion email** — arq worker now detects when every child page of a super-batch has finished (done or failed) and sends a branded "Seed complete" email via Hostinger SMTP with source/keyword/pages/products/credits/duration stats. Compare-and-set flag prevents duplicate sends across concurrent workers. Respects `email_prefs.system=false` opt-outs.

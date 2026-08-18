@@ -15,6 +15,7 @@ import ImportFromUrl from "@/components/ImportFromUrl";
 import BulkImportFromUrls from "@/components/BulkImportFromUrls";
 import CategoryScrapeAtScale from "@/components/CategoryScrapeAtScale";
 import PaginatedSeedScrape from "@/components/PaginatedSeedScrape";
+import SavedSeeds from "@/components/SavedSeeds";
 import QuotaWidget from "@/components/QuotaWidget";
 import { Link } from "react-router-dom";
 
@@ -310,6 +311,7 @@ const Sell = () => {
         <div className="mt-8 space-y-6">
           <QuotaWidget />
           <PaginatedSeedScrape />
+          <SavedSeeds />
           <CategoryScrapeAtScale />
           <ImportFromUrl onImportReady={applyImport} />
           <BulkImportFromUrls onUseListing={applyImport} />

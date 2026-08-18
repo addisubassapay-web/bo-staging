@@ -207,6 +207,8 @@ class Listing(BaseModel):
     # Wishlist / price drop
     price_drop_at: Optional[datetime] = None
     previous_price: Optional[float] = None
+    # Scraper import tracking (Zyte pipeline dedupe key)
+    source_url: Optional[str] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class ListingCreate(BaseModel):
