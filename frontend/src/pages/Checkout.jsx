@@ -26,7 +26,7 @@ const Checkout = () => {
   const [card, setCard] = useState({ number: "4242 4242 4242 4242", exp: "12/28", cvc: "123" });
   const [placing, setPlacing] = useState(false);
   const [done, setDone] = useState(null);
-  const [payMethod, setPayMethod] = useState("card"); // card | wallet | crypto | bank
+  const [payMethod, setPayMethod] = useState("wallet"); // wallet | crypto | bank
   const [wallet, setWallet] = useState(null);
   const [payMethods, setPayMethods] = useState({ crypto_addresses: {}, crypto_assets: [], manual_payment_methods: [] });
   const [assetId, setAssetId] = useState("");
@@ -113,23 +113,8 @@ const Checkout = () => {
       const affiliate_code = sessionStorage.getItem("affiliate_code") || null;
       const share_ref = sessionStorage.getItem("share_ref") || null;
 
-      // Real Stripe Checkout for card payments — everything else stays inline.
-      if (payMethod === "card") {
-        const { data } = await api.post("/checkout/stripe-session", {
-          listing_id: id,
-          quantity,
-          shipping_address: address,
-          origin_url: window.location.origin,
-          affiliate_code,
-          share_ref,
-        });
-        if (data?.checkout_url) {
-          window.location.href = data.checkout_url;
-          return;
-        }
-        throw new Error("Missing checkout URL from server");
-      }
-
+      // Card payment removed — everything routes through the internal
+      // order endpoint (wallet / crypto / bank flows).
       const { data } = await api.post("/orders", { listing_id: id, quantity, shipping_address: address, affiliate_code, share_ref, payment_method: payMethod });
       setDone(data);
       sessionStorage.removeItem("affiliate_code");
@@ -274,9 +259,8 @@ const Checkout = () => {
             </div>
 
             {/* Method selector — 4 vibrant chips */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-5" data-testid="pay-method-selector">
+            <div className="grid grid-cols-3 gap-2 mb-5" data-testid="pay-method-selector">
               {[
-                { id: "card",   icon: CreditCard, label: "Card",   tone: "from-sky-400 to-sky-600" },
                 { id: "wallet", icon: WalletIcon, label: "Wallet", tone: "from-emerald-400 to-emerald-600" },
                 { id: "crypto", icon: Bitcoin,    label: "Crypto", tone: "from-amber-400 to-orange-600" },
                 { id: "bank",   icon: Building2,  label: "Bank",   tone: "from-purple-400 to-fuchsia-600" },
@@ -302,26 +286,9 @@ const Checkout = () => {
               })}
             </div>
 
-            {/* Card — real Stripe Checkout redirect */}
-            {payMethod === "card" && (
-              <div className="space-y-3 animate-in fade-in-50 duration-200" data-testid="pay-card-panel">
-                <div className="rounded-2xl border border-sky-200 bg-gradient-to-br from-sky-50 to-white p-4">
-                  <div className="flex items-start gap-3">
-                    <div className="h-9 w-9 rounded-lg bg-sky-500 text-white grid place-items-center shrink-0">
-                      <Lock className="h-4 w-4" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-semibold text-neutral-900">Secure checkout by Stripe</div>
-                      <p className="text-xs text-neutral-600 mt-1">
-                        You&apos;ll be redirected to Stripe&apos;s hosted payment page to enter your card. We never see or store your card details. On success you&apos;ll return here with an order confirmation.
-                      </p>
-                      <p className="text-[11px] text-neutral-500 mt-2">
-                        Test mode — use card <span className="font-mono">4242 4242 4242 4242</span>, any future expiry, any CVC.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+            {/* Card payment method removed — Stripe integration is offline. */}
+            {false && (
+              <div className="space-y-3" />
             )}
 
             {/* Wallet balance */}

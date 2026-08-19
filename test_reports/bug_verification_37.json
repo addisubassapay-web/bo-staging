@@ -1,0 +1,52 @@
+{
+  "verdict": "fixed",
+  "user_reported_bug": "Remove the Stripe integration and make it ready for deployment",
+  "summary": "No relevant testing skill found. Focused re-verification passed: removed card payment and stripe_connect payout submissions now return exact 422 validation errors, the retired /payment/success page is static with no /api/payments/status polling or 404 console spam, deployment sanity endpoints pass, store-boost checkout is disabled with 503, wallet checkout still creates a paid order, and CI=true yarn build succeeds.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {
+        "endpoint": "code scan",
+        "issue": "Legacy backend test files/comments still reference old Stripe endpoints. Not observed in runtime paths tested, but update/remove them before using a full pytest suite as deployment CI."
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/tests/stripe_removal_reverification_iteration37.py",
+    "/app/tests/payment_success_retired_browser_iteration37.py",
+    "/app/test_reports/stripe_removal_reverification_iteration37.log",
+    "/app/test_reports/payment_success_browser_iteration37.log",
+    "/app/test_reports/frontend_build_iteration37.log"
+  ],
+  "action_items": [
+    "Optional cleanup: update/remove legacy backend tests and comments that still reference removed Stripe endpoints before enabling a full pytest CI gate."
+  ],
+  "critical_code_review_comments": [
+    "OrderCreate.payment_method is now Literal['wallet','crypto','bank']; runtime card submission returned 422 literal_error.",
+    "SellerApplication/SellerApplicationCreate payout_method is now Literal['bank_transfer']; runtime stripe_connect submission returned 422 literal_error.",
+    "PaymentSuccess.jsx is static and the browser test observed zero /api/payments/status/* requests and zero console 404 messages."
+  ],
+  "updated_files": [
+    "/app/tests/stripe_removal_reverification_iteration37.py",
+    "/app/tests/payment_success_retired_browser_iteration37.py",
+    "/app/test_reports/stripe_removal_reverification_iteration37.log",
+    "/app/test_reports/payment_success_browser_iteration37.log",
+    "/app/test_reports/frontend_build_iteration37.log",
+    "/app/test_reports/bug_verification_37.json",
+    "/app/test_reports/iteration_37.json"
+  ],
+  "success_rate": {
+    "backend": "100%",
+    "frontend": "100%"
+  },
+  "seed_data_creation": "Created temporary QA listings and one paid wallet order for demo user sophia_style@demo.local; created one temporary verified user e2e_stripe_removed_*@example.com for the seller-apply negative check. Verification uses dev MOCKED email token and MOCKED phone OTP; Shippo/EasyPost remain MOCKED app services but were not exercised.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Newest focused report is iteration_37. Re-tested the three previously failing leftovers plus deploy sanity only: card order exact 422, stripe_connect seller payout exact 422, static PaymentSuccess no polling/404, /api root/sitemap/robots/wallet-ticker 200, /api/stripe/connect/status 404, /api/store-boost/checkout 503, wallet checkout 200 paid order, and CI=true yarn build pass.",
+  "rca_of_the_issue": "Previous leftovers were backend domain validation still allowing Stripe-era values and a frontend success page still polling a removed payment-status route. Current runtime evidence shows these paths are now retired/rejected while wallet checkout remains functional."
+}

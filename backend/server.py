@@ -36,7 +36,6 @@ from routers.listings import router as listings_router
 from routers.personalized import router as personalized_router
 from routers.checkout import router as checkout_router
 from routers.coupons import router as coupons_router
-from routers.stripe_payments import router as stripe_payments_router
 from routers.scraper import router as scraper_router
 from routers.store_boosts import router as store_boosts_router
 
@@ -310,7 +309,7 @@ class OrderCreate(BaseModel):
     shipping_address: dict = {}
     affiliate_code: Optional[str] = None
     share_ref: Optional[str] = None  # e.g. "push" when the buyer arrived from a Storefront Push share link
-    payment_method: Optional[str] = None  # card | wallet | crypto | bank
+    payment_method: Optional[Literal["wallet", "crypto", "bank"]] = None
     payment_currency: Optional[str] = None  # crypto symbol (ETH/SOL/…) or manual method id
 
 
@@ -616,7 +615,7 @@ class SellerApplication(BaseModel):
     state: str = ""
     postal_code: str = ""
     phone: str = ""
-    payout_method: Literal["stripe_connect", "bank_transfer"] = "stripe_connect"
+    payout_method: Literal["bank_transfer"] = "bank_transfer"
     id_document_note: Optional[str] = ""  # placeholder; real flow would upload
     id_document_file_id: Optional[str] = None  # points to /api/files/{id}
     status: Literal["pending", "approved", "rejected"] = "pending"
@@ -637,7 +636,7 @@ class SellerApplicationCreate(BaseModel):
     state: str = ""
     postal_code: str = ""
     phone: str = ""
-    payout_method: Literal["stripe_connect", "bank_transfer"] = "stripe_connect"
+    payout_method: Literal["bank_transfer"] = "bank_transfer"
     id_document_note: Optional[str] = ""
     id_document_file_id: Optional[str] = None
 
@@ -3714,39 +3713,11 @@ async def my_seller_application(user: dict = Depends(get_current_user)):
     return SellerApplication(**doc) if doc else None
 
 
-# ---------- Mock Stripe Connect ----------
-@api_router.post("/stripe/connect/onboard")
-async def stripe_connect_onboard(user: dict = Depends(get_current_user)):
-    """Mocked Stripe Connect onboarding. Generates a fake acct_ ID and marks pending -> active."""
-    fresh = await db.users.find_one({"id": user["id"]}, {"_id": 0})
-    if fresh.get("stripe_status") == "active":
-        return {
-            "ok": True,
-            "already_active": True,
-            "stripe_account_id": fresh.get("stripe_account_id"),
-        }
-    acct_id = fresh.get("stripe_account_id") or f"acct_mock_{uuid.uuid4().hex[:16]}"
-    # In mock mode, we simulate immediate active status once onboarding is "completed"
-    await db.users.update_one(
-        {"id": user["id"]},
-        {"$set": {"stripe_account_id": acct_id, "stripe_status": "active"}},
-    )
-    logger.info(f"[MOCK] Stripe Connect account created for user {user['id']}: {acct_id}")
-    return {
-        "ok": True,
-        "dev_mock": True,
-        "stripe_account_id": acct_id,
-        "stripe_status": "active",
-        "onboarding_url": f"/mock-stripe/onboard?acct={acct_id}",
-    }
-
-@api_router.get("/stripe/connect/status")
-async def stripe_connect_status(user: dict = Depends(get_current_user)):
-    fresh = await db.users.find_one({"id": user["id"]}, {"_id": 0})
-    return {
-        "stripe_account_id": fresh.get("stripe_account_id"),
-        "stripe_status": fresh.get("stripe_status", "none"),
-    }
+# ---------- Stripe Connect (removed) ----------
+# The Stripe integration was removed to simplify the app for launch.
+# The `stripe_account_id` / `stripe_status` user fields are kept as
+# harmless legacy so any existing DB rows still deserialize cleanly, but
+# no HTTP endpoints reference Stripe any more.
 
 
 # ---------- Admin: Seller Application Queue ----------
@@ -6263,7 +6234,6 @@ app.include_router(listings_router, prefix="/api")
 app.include_router(personalized_router, prefix="/api")
 app.include_router(checkout_router, prefix="/api")
 app.include_router(coupons_router, prefix="/api")
-app.include_router(stripe_payments_router, prefix="/api")
 app.include_router(scraper_router, prefix="/api")
 app.include_router(store_boosts_router, prefix="/api")
 

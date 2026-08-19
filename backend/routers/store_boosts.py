@@ -76,72 +76,12 @@ class BoostCheckoutCreate(BaseModel):
 @router.post("/store-boost/checkout")
 async def create_boost_checkout(payload: BoostCheckoutCreate, request: Request,
                                 user: dict = Depends(get_current_user)):
-    """Create a Stripe Checkout Session for a store-boost purchase.
-    On payment success the /webhook/stripe route grants the boost."""
-    from routers.stripe_payments import _stripe_client
-    from emergentintegrations.payments.stripe.checkout import CheckoutSessionRequest
-
-    tier = TIERS.get(payload.tier)
-    if not tier:
-        raise HTTPException(400, "Unknown tier")
-
-    db = get_db()
-    store = await db.stores.find_one({"id": payload.store_id}, {"_id": 0})
-    if not store:
-        raise HTTPException(404, "Store not found")
-    if store.get("owner_id") != user["id"] and user.get("role") != "admin":
-        raise HTTPException(403, "Not your store")
-    if payload.category_id:
-        cat = await db.categories.find_one({"id": payload.category_id}, {"_id": 0, "id": 1})
-        if not cat:
-            raise HTTPException(400, "Invalid category_id")
-
-    origin = (payload.origin_url or "").rstrip("/")
-    if not origin.startswith("http"):
-        raise HTTPException(400, "Invalid origin_url")
-
-    client = _stripe_client(request)
-    req = CheckoutSessionRequest(
-        amount=float(tier["price"]),
-        currency="usd",
-        success_url=f"{origin}/payment/success?session_id={{CHECKOUT_SESSION_ID}}",
-        cancel_url=f"{origin}/payment/cancel?boost=1",
-        metadata={
-            "kind": "store_boost",
-            "store_id": payload.store_id,
-            "owner_id": user["id"],
-            "tier": payload.tier,
-            "category_id": payload.category_id or "",
-            "days": str(tier["days"]),
-        },
+    """Paid store-boost checkout has been disabled while the Stripe integration
+    is offline. Admins can still grant boosts manually via the admin console."""
+    raise HTTPException(
+        503,
+        "Paid store boosts are temporarily unavailable. Contact an admin to request a manual boost.",
     )
-    session = await client.create_checkout_session(req)
-    now = _now()
-    await db.store_boost_orders.insert_one({
-        "session_id": session.session_id,
-        "store_id": payload.store_id,
-        "owner_id": user["id"],
-        "tier": payload.tier,
-        "category_id": payload.category_id,
-        "days": tier["days"],
-        "price": tier["price"],
-        "status": "pending",
-        "created_at": now,
-    })
-    # Also record in payment_transactions so the shared status poller works.
-    await db.payment_transactions.insert_one({
-        "session_id": session.session_id,
-        "user_id": user["id"],
-        "amount": tier["price"],
-        "currency": "usd",
-        "status": "initiated",
-        "payment_status": "pending",
-        "kind": "store_boost",
-        "store_id": payload.store_id,
-        "created_at": now,
-        "updated_at": now,
-    })
-    return {"checkout_url": session.url, "session_id": session.session_id, "amount": tier["price"]}
 
 
 async def finalize_paid_boost(db, session_id: str) -> Optional[dict]:

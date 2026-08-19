@@ -1,0 +1,83 @@
+{
+  "verdict": "not_fixed",
+  "user_reported_bug": "Remove the Stripe integration and make it ready for deployment",
+  "summary": "No relevant testing skill found. Focused API/UI/deployment checks confirm the main Stripe Connect router/endpoints are gone, store-boost checkout is disabled with 503, core endpoints boot, wallet checkout works, and CI=true yarn build passes. However the removal is incomplete: backend still accepts card orders as paid and still accepts/stores seller applications with payout_method='stripe_connect'; /payment/success also still polls a missing payment-status endpoint and logs 404s.",
+  "backend_issues": {
+    "critical": [
+      {
+        "endpoint": "POST /api/orders",
+        "issue": "After Stripe removal, payment_method='card' still returns 200 and creates a paid order. This leaves a hidden card/Stripe-era payment path and can mark orders paid without a card processor.",
+        "priority": "CRITICAL"
+      },
+      {
+        "endpoint": "POST /api/seller/apply",
+        "issue": "Backend still accepts and persists payout_method='stripe_connect' (runtime negative test returned 200). SellerApplication/SellerApplicationCreate also still default/allow stripe_connect.",
+        "priority": "HIGH"
+      }
+    ],
+    "minor": [
+      {
+        "endpoint": "code scan",
+        "issue": "Old Stripe-related tests/comments and store_boosts session/webhook helper references remain; backend .env contains real-looking third-party credentials/secrets that should not be deploy artifacts and should be rotated if real. Legacy user stripe_* fields were noted as intentional compatibility."
+      },
+      {
+        "endpoint": "backend startup logs",
+        "issue": "Current backend is running and compileall passes, but logs still contain an earlier transient NameError for stripe_payments_router before the final restart/fix."
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {
+        "flow": "/payment/success?session_id=...",
+        "issue": "PaymentSuccess copy is now generic, but the page still polls /api/payments/status/{session_id}; that backend endpoint is absent and browser console records repeated 404s. This appears to be a dangling Stripe/card checkout success flow.",
+        "affected_selectors": ["[data-testid=\"payment-success-page\"]"]
+      }
+    ],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/tests/stripe_removal_verification.py",
+    "/app/tests/seller_apply_stripe_negative.py",
+    "/app/tests/create_ui_checkout_listing.py",
+    "/app/test_reports/stripe_removal_verification.log",
+    "/app/test_reports/seller_apply_stripe_negative.log",
+    "/app/test_reports/frontend_build_stripe_removal.log",
+    "/app/test_reports/backend_compile_stripe_removal.log",
+    "/app/test_reports/browser_stripe_removal_summary.log"
+  ],
+  "action_items": [
+    "Reject/remove payment_method='card' in backend order creation and update API comments/types so only wallet, crypto, and bank remain.",
+    "Change seller application backend model/default/validation to bank_transfer only (or explicitly reject new stripe_connect submissions while tolerating legacy stored documents).",
+    "Remove or repurpose the old PaymentSuccess/PaymentCancel card-session route so it no longer calls missing /api/payments/status and produces 404s.",
+    "Clean remaining Stripe-era comments/tests/helpers and remove/rotate real-looking secrets from deploy artifacts before marking deployment-ready."
+  ],
+  "critical_code_review_comments": [
+    "server.py lines around OrderCreate/create_order still document and allow 'card' as a payment method.",
+    "server.py SellerApplication/SellerApplicationCreate still include Literal['stripe_connect','bank_transfer'] with default 'stripe_connect'.",
+    "PaymentSuccess.jsx still calls api.get(`/payments/status/${sessionId}`), but no backend route exists after Stripe removal.",
+    "Checkout.jsx UI hides card successfully, but unused CreditCard/card state remains and should be cleaned to avoid future reactivation."
+  ],
+  "updated_files": [
+    "/app/tests/stripe_removal_verification.py",
+    "/app/tests/seller_apply_stripe_negative.py",
+    "/app/tests/create_ui_checkout_listing.py",
+    "/app/test_reports/stripe_removal_verification.log",
+    "/app/test_reports/seller_apply_stripe_negative.log",
+    "/app/test_reports/frontend_build_stripe_removal.log",
+    "/app/test_reports/backend_compile_stripe_removal.log",
+    "/app/test_reports/browser_stripe_removal_summary.log",
+    "/app/test_reports/bug_verification_36.json",
+    "/app/test_reports/iteration_36.json"
+  ],
+  "success_rate": {
+    "backend": "83%",
+    "frontend": "80%"
+  },
+  "seed_data_creation": "Created temporary QA listings for wallet/card checkout checks and one temporary verified user e2e_stripe_removed_*@example.com for seller-apply negative validation. No MOCKED Stripe APIs were used; Twilio OTP and shipping remain MOCKED app services.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Retest only the Stripe-removal/deployment readiness flow. Previously passing: /api root/sitemap/robots/wallet-ticker 200, /api/stripe/connect/status and /onboard 404, /store-boost/checkout 503 friendly disabled message, wallet checkout 200 paid order, frontend CI build, Checkout/Verification/SellerApply visible UI checks. Recheck the two failed backend negatives and PaymentSuccess 404 after fixes.",
+  "rca_of_the_issue": "The fix removed the Stripe router and visible frontend card/Connect UI, but did not fully update backend domain validation/defaults and did not retire the old card payment success route. As a result, hidden API paths still preserve Stripe/card semantics even though the user-facing tiles were removed."
+}

@@ -30,9 +30,6 @@ const Verification = () => {
   const [phoneSending, setPhoneSending] = useState(false);
   const [phoneConfirming, setPhoneConfirming] = useState(false);
 
-  const [stripeStatus, setStripeStatus] = useState(null);
-  const [stripeLoading, setStripeLoading] = useState(false);
-
   useEffect(() => {
     // Auto-fill token if magic link is followed: /verify?token=xxx
     const t = params.get("token");
@@ -42,7 +39,6 @@ const Verification = () => {
   useEffect(() => {
     if (!user) return;
     setPhone(user.phone || "");
-    api.get("/stripe/connect/status").then((r) => setStripeStatus(r.data)).catch(() => {});
   }, [user]);
 
   if (authLoading) return <div className="max-w-3xl mx-auto px-4 py-12 text-neutral-500">Loading…</div>;
@@ -138,23 +134,6 @@ const Verification = () => {
     }
   };
 
-  const startStripe = async () => {
-    setStripeLoading(true);
-    try {
-      const { data } = await api.post("/stripe/connect/onboard");
-      setStripeStatus({ stripe_account_id: data.stripe_account_id, stripe_status: data.stripe_status });
-      toast({
-        title: data.already_active ? "Stripe already connected" : "Mock Stripe Connect activated",
-        description: `Account: ${data.stripe_account_id}`,
-      });
-      await refresh();
-    } catch (err) {
-      toast({ title: "Stripe onboarding failed", description: err.response?.data?.detail || "Try again", variant: "destructive" });
-    } finally {
-      setStripeLoading(false);
-    }
-  };
-
   const canApply = user.email_verified && user.phone_verified && user.seller_status !== "approved" && user.seller_status !== "pending";
 
   return (
@@ -234,28 +213,7 @@ const Verification = () => {
         )}
       </section>
 
-      {/* Stripe Connect (mocked) */}
-      <section className="border border-neutral-200 rounded-xl p-6 bg-white" data-testid="stripe-connect-section">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-[#FFF3F2] grid place-items-center">
-              <ExternalLink className="h-5 w-5 text-[#FF211F]" />
-            </div>
-            <div>
-              <h2 className="font-semibold text-lg">Payouts (Stripe Connect)</h2>
-              <p className="text-sm text-neutral-500">
-                {stripeStatus?.stripe_account_id ? <>Account: <span className="font-mono">{stripeStatus.stripe_account_id}</span></> : "Connect your payout method — mocked in dev."}
-              </p>
-            </div>
-          </div>
-          <StatusPill ok={(stripeStatus?.stripe_status || user.stripe_status) === "active"} label={(stripeStatus?.stripe_status || user.stripe_status || "none")} />
-        </div>
-        {(stripeStatus?.stripe_status || user.stripe_status) !== "active" && (
-          <Button className="mt-4 bg-[#FF211F] hover:bg-[#e01d1b]" onClick={startStripe} disabled={stripeLoading} data-testid="stripe-connect-btn">
-            {stripeLoading ? "Connecting…" : "Start onboarding (mocked)"}
-          </Button>
-        )}
-      </section>
+      {/* Stripe Connect section removed while the payout integration is offline. */}
 
       {/* Seller status */}
       <section className="border border-neutral-200 rounded-xl p-6 bg-white" data-testid="seller-status-section">

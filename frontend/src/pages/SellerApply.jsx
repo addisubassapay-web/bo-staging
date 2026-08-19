@@ -23,7 +23,7 @@ const initialForm = {
   state: "",
   postal_code: "",
   phone: "",
-  payout_method: "stripe_connect",
+  payout_method: "bank_transfer",
   id_document_note: "",
   id_document_file_id: null,
 };
@@ -243,8 +243,7 @@ const SellerApply = () => {
             <Select value={form.payout_method} onValueChange={set("payout_method")}>
               <SelectTrigger className="mt-1" data-testid="apply-payout-method"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="stripe_connect">Stripe Connect (recommended)</SelectItem>
-                <SelectItem value="bank_transfer">Bank transfer</SelectItem>
+                <SelectItem value="bank_transfer">Bank transfer (recommended)</SelectItem>
               </SelectContent>
             </Select>
           </div>

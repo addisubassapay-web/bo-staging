@@ -80,7 +80,7 @@ const AdminStoreBoosts = () => {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h2 className="text-2xl font-bold flex items-center gap-2"><Rocket className="h-6 w-6" /> Store boosts</h2>
-          <p className="text-sm text-neutral-500 mt-1">Grant complimentary boosts to VIP sellers or fix goodwill without payment. Paid boosts flow in automatically via Stripe.</p>
+          <p className="text-sm text-neutral-500 mt-1">Grant complimentary boosts to VIP sellers or fix goodwill without payment.</p>
         </div>
         <Button variant="outline" size="sm" onClick={load} disabled={loading} data-testid="admin-boosts-refresh">
           <RefreshCw className={`h-4 w-4 mr-1.5 ${loading ? "animate-spin" : ""}`} /> Refresh
