@@ -247,7 +247,7 @@ const ListingsMgr = () => {
     const params = filter ? { status_filter: filter } : {};
     api.get("/admin/listings", { params }).then((r) => setListings(r.data));
   };
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, [filter]);
+  useEffect(() => { load(); }, [filter]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const toggleFeatured = async (l) => {
     await api.put(`/listings/${l.id}`, { featured: !l.featured });
@@ -926,7 +926,7 @@ const SellerApplicationsMgr = () => {
       setSelected(new Set());
     });
   };
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, [filter]);
+  useEffect(() => { load(); }, [filter]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const review = async (id, status) => {
     const admin_notes = notesById[id] || "";
@@ -1108,7 +1108,7 @@ const DisputesMgr = () => {
     const params = filter === "all" ? {} : { status: filter };
     api.get("/admin/disputes", { params }).then((r) => setDisputes(r.data)).catch(() => {});
   };
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, [filter]);
+  useEffect(() => { load(); }, [filter]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const resolve = async (d, action) => {
     setBusyId(d.id);

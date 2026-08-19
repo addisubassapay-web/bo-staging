@@ -34,6 +34,7 @@ const ShippingTracker = ({ orderId, canPurchase = false, canAdvance = false }) =
     setLoading(false);
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { load(); }, [orderId]);
 
   const buyLabel = async () => {

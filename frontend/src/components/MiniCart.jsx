@@ -28,6 +28,7 @@ const MiniCart = ({ cartCount, onCountChange }) => {
 
   useEffect(() => {
     if (open) load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, user]);
 
   useEffect(() => {

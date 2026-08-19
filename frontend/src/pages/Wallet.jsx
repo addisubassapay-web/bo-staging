@@ -368,6 +368,7 @@ const WithdrawDialog = ({ open, onOpenChange, methods, onSubmitted }) => {
     setWalletAddress("");
     setAmount("");
     setAccountInfo("");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   const submit = async () => {

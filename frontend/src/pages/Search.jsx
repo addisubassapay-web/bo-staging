@@ -69,6 +69,7 @@ const Search = () => {
       next.set("page", "1");
       setParams(next, { replace: true });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [q, category, condition, min, max, sort]);
 
   const totalPages = Math.max(1, Math.ceil(total / size));
