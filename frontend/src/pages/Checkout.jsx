@@ -99,7 +99,7 @@ const Checkout = () => {
       await navigator.clipboard.writeText(text);
       setCopied(key);
       setTimeout(() => setCopied(""), 1500);
-    } catch (e) { /* ignore */ }
+    } catch (e) { console.warn("[checkout] copy failed:", e); }
   };
 
   const place = async (e) => {
@@ -144,12 +144,13 @@ const Checkout = () => {
     const shareText = `I just scored "${done.listing_title}" on Mercari Global! 🎉`;
     const doShare = async () => {
       if (navigator.share) {
-        try { await navigator.share({ title: "Mercari Global", text: shareText, url: shareUrl }); } catch { /* cancelled */ }
+        try { await navigator.share({ title: "Mercari Global", text: shareText, url: shareUrl }); }
+        catch (e) { if (e?.name !== "AbortError") console.warn("[share] failed:", e); }
       } else {
         try {
           await navigator.clipboard.writeText(`${shareText} ${shareUrl}`);
           toast({ title: t("checkout.copied"), description: t("checkout.copiedDesc") });
-        } catch { /* ignore */ }
+        } catch (e) { console.warn("[share] clipboard failed:", e); }
       }
     };
     return (

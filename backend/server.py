@@ -3452,7 +3452,8 @@ def _now_utc() -> datetime:
     return datetime.now(timezone.utc)
 
 def _gen_otp() -> str:
-    return f"{random.randint(0, 999999):06d}"
+    # secrets is cryptographically secure — critical for OTP entropy.
+    return f"{secrets.randbelow(1_000_000):06d}"
 
 def _gen_magic_token() -> str:
     return secrets.token_urlsafe(24)

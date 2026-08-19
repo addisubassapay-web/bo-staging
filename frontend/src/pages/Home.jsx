@@ -307,7 +307,7 @@ const TrustStrip = () => {
         };
         return (
           <div
-            key={i}
+            key={t.title}
             className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_12px_28px_-16px_rgba(255,33,31,0.25)] hover:-translate-y-0.5 hover:border-[#FF7A18]/40 transition-all duration-300"
             data-testid={`trust-${i}`}
           >
@@ -374,7 +374,7 @@ const FeatureCards = () => (
         { icon: Truck, title: "Global Delivery", body: "Shipping to many countries worldwide.", tone: "text-orange-500" },
         { icon: ShieldCheck, title: "Buyer Protection", body: "Secure payments and trusted checkout.", tone: "text-orange-500" },
       ].map((f, i) => (
-        <div key={i} className="bg-white border border-neutral-200 rounded-xl p-6" data-testid={`feature-${i}`}>
+        <div key={f.title} className="bg-white border border-neutral-200 rounded-xl p-6" data-testid={`feature-${i}`}>
           <f.icon className={`h-9 w-9 ${f.tone}`} />
           <div className="mt-3 font-semibold text-lg text-neutral-900">{f.title}</div>
           <div className="text-sm text-neutral-500 mt-1">{f.body}</div>
@@ -494,7 +494,7 @@ const Home = () => {
       if (isFav) { await api.delete(`/favorites/${id}`); }
       else { await api.post(`/favorites/${id}`); }
       setFavIds((prev) => { const s = new Set(prev); isFav ? s.delete(id) : s.add(id); return s; });
-    } catch { /* no-op */ }
+    } catch (e) { console.warn("[favorites] toggle failed:", e); }
   };
 
   const flashItems = useMemo(() => (flash.length ? flash : recent).slice(0, 10), [flash, recent]);

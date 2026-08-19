@@ -121,16 +121,18 @@ const Profile = () => {
       setCopied(true);
       toast({ title: "Referral link copied!", description: "Share it and earn on every sale from your invites." });
       setTimeout(() => setCopied(false), 2000);
-    } catch { /* ignore */ }
+    } catch (e) { console.warn("[referral] copy failed:", e); }
   };
 
   const shareProfile = async () => {
     const url = `${window.location.origin}/store/${user.username}`;
     const text = `Check out ${user.username}'s store on Mercari Global`;
     if (navigator.share) {
-      try { await navigator.share({ title: text, url }); } catch { /* dismissed */ }
+      try { await navigator.share({ title: text, url }); }
+      catch (e) { if (e?.name !== "AbortError") console.warn("[share] failed:", e); }
     } else {
-      try { await navigator.clipboard.writeText(url); toast({ title: "Store link copied" }); } catch { /* ignore */ }
+      try { await navigator.clipboard.writeText(url); toast({ title: "Store link copied" }); }
+      catch (e) { console.warn("[share] clipboard failed:", e); }
     }
   };
 
