@@ -13,7 +13,6 @@ import { useTheme } from "@/context/ThemeContext";
 import { useLang } from "@/context/LanguageContext";
 import api from "@/lib/api";
 import NotificationsBell from "@/components/NotificationsBell";
-import LiveSyncBadge from "@/components/LiveSyncBadge";
 import SearchAutocomplete from "@/components/SearchAutocomplete";
 import CategoryMegaMenu from "@/components/CategoryMegaMenu";
 import CurrencyPicker from "@/components/CurrencyPicker";
@@ -167,8 +166,6 @@ const Header = () => {
           />
 
           <div className="hidden md:flex items-center gap-1.5 shrink-0">
-            {!compact && <LiveSyncBadge />}
-
             <button
               type="button"
               onClick={() => setCpOpen(true)}
