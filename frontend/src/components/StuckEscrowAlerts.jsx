@@ -83,35 +83,35 @@ const StuckEscrowAlerts = () => {
         {visible.map((s) => (
           <div
             key={s.order_id}
-            className="flex items-center gap-3 rounded-xl bg-white border border-amber-100 p-3"
+            className="flex items-center gap-2 sm:gap-3 rounded-xl bg-white border border-amber-100 p-2.5 sm:p-3 min-w-0"
             data-testid={`escrow-alert-${s.order_id}`}
           >
             {s.listing_image ? (
-              <img src={s.listing_image} alt="" className="h-11 w-11 rounded-lg object-cover shrink-0" loading="lazy" />
+              <img src={s.listing_image} alt="" className="h-10 w-10 sm:h-11 sm:w-11 rounded-lg object-cover shrink-0" loading="lazy" />
             ) : (
-              <div className="h-11 w-11 rounded-lg bg-amber-100 grid place-items-center shrink-0">
+              <div className="h-10 w-10 sm:h-11 sm:w-11 rounded-lg bg-amber-100 grid place-items-center shrink-0">
                 <AlertTriangle className="h-4 w-4 text-amber-600" />
               </div>
             )}
             <div className="flex-1 min-w-0">
-              <div className="text-sm font-medium text-neutral-900 line-clamp-1">{s.listing_title}</div>
+              <div className="text-sm font-medium text-neutral-900 line-clamp-1 break-anywhere">{s.listing_title}</div>
               <div className="text-[11px] text-neutral-500 flex items-center gap-1.5 flex-wrap">
-                <span>{t("escrow.buyer") || "Buyer"}: {s.buyer_name || "—"}</span>
+                <span className="truncate max-w-[45vw]">{t("escrow.buyer") || "Buyer"}: {s.buyer_name || "—"}</span>
                 <span>·</span>
-                <span className="text-amber-700 font-semibold">
+                <span className="text-amber-700 font-semibold whitespace-nowrap">
                   {(t("escrow.overdue") || "{n} day(s) overdue").replace("{n}", String(s.overdue_days))}
                 </span>
               </div>
             </div>
-            <div className="text-right shrink-0">
-              <div className="text-sm font-bold tabular-nums text-emerald-600">{format(s.amount)}</div>
+            <div className="text-right shrink-0 max-w-[30%]">
+              <div className="text-sm font-bold tabular-nums text-emerald-600 truncate">{format(s.amount)}</div>
               <Button
                 type="button"
                 size="sm"
                 variant="outline"
                 onClick={() => nudge(s)}
                 disabled={!!nudging[s.order_id]}
-                className="mt-1 h-8 border-amber-300 text-amber-800 hover:bg-amber-100 hover:text-amber-900"
+                className="mt-1 h-8 border-amber-300 text-amber-800 hover:bg-amber-100 hover:text-amber-900 px-2 sm:px-3"
                 data-testid={`nudge-buyer-${s.order_id}`}
               >
                 <Bell className="h-3 w-3 mr-1" />

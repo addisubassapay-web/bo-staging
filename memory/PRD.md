@@ -26,6 +26,14 @@ Exact replica of Mercari platform (mercari.com) — same color scheme (`#FF211F`
 
 ## Implemented (with dates)
 
+### Feb 2026 — Device Compatibility & Overflow Hardening
+- **Audited & confirmed the global safety net**: `html`, `body`, and `#root` already enforce `overflow-x: hidden; max-width: 100vw`, iOS safe-area padding, and `word-break: break-word` — the app cannot horizontally scroll at any device width. Category ribbon in Header uses `overflow-x-auto` for intentional swiping. Empirical audit at 1920 viewport: `UNCLIPPED_OVERFLOWERS: 0`.
+- **Added missing `.scrollbar-hide` / `.no-scrollbar` utilities** (used by Header's category ribbon but previously undefined) — hides the horizontal scrollbar cross-browser (WebKit, Firefox, IE/Edge legacy).
+- **Hardened recently-added Wallet components** for narrow screens:
+  * `<BalanceHealthTile/>` — bar caption row now `flex-wrap` with `min-w-0 truncate` per side; Next-Release card caps the amount at `max-w-[35%]` with `truncate`, title becomes `break-anywhere` + `line-clamp-1`, icon gets `shrink-0`. Prevents amount + title collisions in JPY/INR long numbers.
+  * `<StuckEscrowAlerts/>` — reduced padding + gap on mobile (`p-2.5 sm:p-3`, `gap-2 sm:gap-3`), thumb shrinks from 44→40px, title uses `break-anywhere`, buyer label truncates at `45vw`, right column capped at `max-w-[30%]`, Nudge button uses `px-2 sm:px-3`. All rows now `min-w-0` so flex children shrink correctly.
+- Everything else (existing components) was already hardened via the top-level CSS reset, no changes needed.
+
 ### Feb 2026 — Ticker Currency Toggle + Sitemap Search Console Ping
 - **Ticker Currency Toggle** — `<CashOutTicker/>` now shows a small `USD` / picked-currency pill when the visitor has a non-USD currency active. One click flips every amount in the marquee between the live-converted picked currency (e.g. `+￥20,709`) and the raw source-of-truth USD (`+$129.99`). Choice persists via `mercari_ticker_raw_usd` localStorage flag. Toggle auto-hides when the picked currency is already USD.
 - **Sitemap Search Console Ping** — pivoted from the classic Google/Bing ping (Google deprecated it June 2023, Bing followed) to the modern **IndexNow protocol**. On any listing create/update/delete, `schedule_sitemap_ping(changed_listing_id=…)` fires an async POST to `api.indexnow.org` (propagates to Bing, Yandex, Seznam, Naver, Yep) + `www.bing.com/indexnow` for redundancy. Both returned **HTTP 202 Accepted** in the smoke test. Rate-limited to one ping per 15 min per origin; bursts coalesce and a 5-min sweeper flushes any pending buffer of changed URLs (up to 9k per submission). Ownership key auto-generated on first use and served at `/api/indexnow-key.txt`. Admin routes: `POST /api/admin/sitemap/ping` (force) and `GET /api/admin/sitemap/ping/status` (introspection). Google continues to auto-discover via `robots.txt` — no ping needed there.

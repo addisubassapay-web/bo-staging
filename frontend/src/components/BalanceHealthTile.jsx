@@ -88,9 +88,9 @@ const BalanceHealthTile = ({ health }) => {
               title={t("wallet.frozen") || "Frozen"}
             />
           </div>
-          <div className="mt-2 flex justify-between text-[11px] text-neutral-500">
-            <span className="inline-flex items-center gap-1"><WalletIcon className="h-3 w-3 text-emerald-600" /> {format(available)} · {availablePct.toFixed(0)}%</span>
-            <span className="inline-flex items-center gap-1"><Snowflake className="h-3 w-3 text-amber-600" /> {format(frozen)} · {frozen_pct.toFixed(0)}%</span>
+          <div className="mt-2 flex justify-between text-[11px] text-neutral-500 gap-2 flex-wrap">
+            <span className="inline-flex items-center gap-1 min-w-0 truncate"><WalletIcon className="h-3 w-3 text-emerald-600 shrink-0" /> <span className="truncate">{format(available)} · {availablePct.toFixed(0)}%</span></span>
+            <span className="inline-flex items-center gap-1 min-w-0 truncate"><Snowflake className="h-3 w-3 text-amber-600 shrink-0" /> <span className="truncate">{format(frozen)} · {frozen_pct.toFixed(0)}%</span></span>
           </div>
         </>
       ) : (
@@ -149,17 +149,17 @@ const BalanceHealthTile = ({ health }) => {
           )}
           <div className="flex-1 min-w-0">
             <div className="text-[10px] uppercase tracking-wider text-neutral-500 font-semibold flex items-center gap-1">
-              <Clock className="h-3 w-3" /> {t("wallet.health.nextRelease") || "Next release"}
+              <Clock className="h-3 w-3 shrink-0" /> <span className="truncate">{t("wallet.health.nextRelease") || "Next release"}</span>
             </div>
-            <div className="text-sm font-semibold text-neutral-900 line-clamp-1 mt-0.5">
+            <div className="text-sm font-semibold text-neutral-900 line-clamp-1 mt-0.5 break-anywhere">
               {next_release.listing_title || t("wallet.health.orderFallback") || "Order"}
             </div>
-            <div className={`text-[11px] font-medium mt-0.5 ${next_release.overdue ? "text-amber-700" : "text-emerald-700"}`}>
+            <div className={`text-[11px] font-medium mt-0.5 line-clamp-1 ${next_release.overdue ? "text-amber-700" : "text-emerald-700"}`}>
               {etaLabel}
             </div>
           </div>
-          <div className="text-right shrink-0">
-            <div className="text-lg font-bold tabular-nums text-emerald-600">{format(next_release.amount)}</div>
+          <div className="text-right shrink-0 max-w-[35%]">
+            <div className="text-base sm:text-lg font-bold tabular-nums text-emerald-600 truncate">{format(next_release.amount)}</div>
             <div className="text-[10px] text-neutral-400">{t("wallet.health.willBecome") || "will unlock"}</div>
           </div>
         </Link>

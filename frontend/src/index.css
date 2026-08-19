@@ -76,6 +76,20 @@ h1, h2, h3, h4, h5, h6 {
     letter-spacing: -0.015em;
 }
 
+/* Hide horizontal scrollbars on category-strip / carousel elements that
+   opt in via `overflow-x-auto scrollbar-hide` — visual sugar so mobile
+   swipers don't show a rendered scrollbar underneath. */
+.scrollbar-hide, .no-scrollbar {
+    -ms-overflow-style: none;         /* IE/Edge legacy */
+    scrollbar-width: none;             /* Firefox */
+}
+.scrollbar-hide::-webkit-scrollbar,
+.no-scrollbar::-webkit-scrollbar {
+    display: none;                     /* Chrome/Safari/WebKit */
+    width: 0;
+    height: 0;
+}
+
 /* ---------- Fluid typography (clamp) ----------
    Sizes scale smoothly from the smallest phone (320px) up to a 1440px
    viewport instead of stepping between breakpoints. All existing Tailwind
