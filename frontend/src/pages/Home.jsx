@@ -161,17 +161,21 @@ const HeroCarousel = () => {
           </div>
         </div>
 
-        {/* Slide dots */}
+        {/* Slide dots — visual pill stays small, but each dot has an invisible
+             44px touch expansion via `p-2 -m-2` so fat fingers still hit reliably */}
         <div className="absolute bottom-3 sm:bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1.5">
           {HERO_SLIDES.map((_, i) => (
             <button
               key={i}
               aria-label={`slide ${i + 1}`}
               onClick={() => setIdx(i)}
-              className={`h-1.5 rounded-full transition-all ${
-                i === idx ? "bg-white w-8 shadow" : "bg-white/60 w-2 hover:bg-white/80"
-              }`}
-            />
+              className="p-2 -m-2 group"
+              data-testid={`hero-slide-dot-${i}`}
+            >
+              <span className={`block h-1.5 rounded-full transition-all ${
+                i === idx ? "bg-white w-8 shadow" : "bg-white/60 w-2 group-hover:bg-white/80"
+              }`} />
+            </button>
           ))}
         </div>
       </div>

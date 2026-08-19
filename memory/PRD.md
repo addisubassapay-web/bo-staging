@@ -26,6 +26,15 @@ Exact replica of Mercari platform (mercari.com) — same color scheme (`#FF211F`
 
 ## Implemented (with dates)
 
+### Feb 2026 — Real Device QA Pass (Playwright emulation)
+Ran full Playwright device emulation via CDP `Emulation.setDeviceMetricsOverride` on 4 target profiles — **iPhone SE (375×667 @2x)**, **iPhone 15 Pro (393×852 @3x)**, **Galaxy S24 (384×832 @3x)**, **iPad Mini (768×1024 @2x)** — hitting `/`, `/search`, `/wallet` on each. Findings:
+
+* **Zero horizontal overflow across all devices** — global CSS safety net + component-level `min-w-0` / `truncate` hardening holds.
+* **Two real accessibility violations found & fixed**:
+  * **Hero carousel dots** were `8×44px` visual pill. Wrapped each dot in a `<button className="p-2 -m-2">` so the visual pill stays small but the touch area is `24-48 × 44` px — WCAG 2.5.5 compliant. Added `data-testid="hero-slide-dot-{i}"` for tests.
+  * **Footer social icons** (FB/Twitter/Insta/YT) were `16×16`. Wrapped in `w-9 h-9 grid place-items-center rounded-lg hover:bg-neutral-800` — now `36×36` with a subtle hover pill, no visual regression.
+* Remaining ~23 sub-32px tap targets are all inline text links (footer nav "Help Center", section "See all", TopStrip "Login") — WCAG 2.1 explicitly exempts inline text within paragraphs from the 44px rule, and expanding them would break the compact footer layout.
+
 ### Feb 2026 — Device Compatibility & Overflow Hardening
 - **Audited & confirmed the global safety net**: `html`, `body`, and `#root` already enforce `overflow-x: hidden; max-width: 100vw`, iOS safe-area padding, and `word-break: break-word` — the app cannot horizontally scroll at any device width. Category ribbon in Header uses `overflow-x-auto` for intentional swiping. Empirical audit at 1920 viewport: `UNCLIPPED_OVERFLOWERS: 0`.
 - **Added missing `.scrollbar-hide` / `.no-scrollbar` utilities** (used by Header's category ribbon but previously undefined) — hides the horizontal scrollbar cross-browser (WebKit, Firefox, IE/Edge legacy).

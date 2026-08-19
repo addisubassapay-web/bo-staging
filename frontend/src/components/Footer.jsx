@@ -79,11 +79,11 @@ const Footer = () => (
         <p className="text-sm text-neutral-400 leading-relaxed">
           Your global marketplace for fashion, electronics, home & everyday essentials — millions of items, verified sellers, buyer protection.
         </p>
-        <div className="flex items-center gap-3 mt-4">
-          <a href="#" aria-label="Facebook" className="text-neutral-500 hover:text-white"><Facebook className="h-4 w-4" /></a>
-          <a href="#" aria-label="Twitter" className="text-neutral-500 hover:text-white"><Twitter className="h-4 w-4" /></a>
-          <a href="#" aria-label="Instagram" className="text-neutral-500 hover:text-white"><Instagram className="h-4 w-4" /></a>
-          <a href="#" aria-label="YouTube" className="text-neutral-500 hover:text-white"><Youtube className="h-4 w-4" /></a>
+        <div className="flex items-center gap-1 mt-4">
+          <a href="#" aria-label="Facebook" className="w-9 h-9 grid place-items-center rounded-lg text-neutral-500 hover:text-white hover:bg-neutral-800 transition"><Facebook className="h-4 w-4" /></a>
+          <a href="#" aria-label="Twitter" className="w-9 h-9 grid place-items-center rounded-lg text-neutral-500 hover:text-white hover:bg-neutral-800 transition"><Twitter className="h-4 w-4" /></a>
+          <a href="#" aria-label="Instagram" className="w-9 h-9 grid place-items-center rounded-lg text-neutral-500 hover:text-white hover:bg-neutral-800 transition"><Instagram className="h-4 w-4" /></a>
+          <a href="#" aria-label="YouTube" className="w-9 h-9 grid place-items-center rounded-lg text-neutral-500 hover:text-white hover:bg-neutral-800 transition"><Youtube className="h-4 w-4" /></a>
         </div>
       </div>
       <div>
