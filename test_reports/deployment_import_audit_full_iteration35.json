@@ -1,0 +1,116 @@
+{
+  "backend_file_count_excluding_tests": 33,
+  "local_import_roots": [
+    "__pycache__",
+    "apify_sync",
+    "image_pools",
+    "routers",
+    "scripts",
+    "server",
+    "services",
+    "shipping_providers",
+    "uploads"
+  ],
+  "missing_requirements": [],
+  "ok": true,
+  "parse_errors": [],
+  "requirements_count": 35,
+  "specifically_required_present": {
+    "aiosmtplib": true,
+    "apify-client": true,
+    "arq": true,
+    "botocore": true,
+    "httpx": true,
+    "redis": true,
+    "starlette": true
+  },
+  "third_party_imports": {
+    "aiosmtplib": [
+      "backend/services/mailer.py"
+    ],
+    "apify_client": [
+      "backend/apify_sync.py"
+    ],
+    "arq": [
+      "backend/services/queue.py"
+    ],
+    "boto3": [
+      "backend/services/r2_storage.py"
+    ],
+    "botocore": [
+      "backend/services/r2_storage.py"
+    ],
+    "dotenv": [
+      "backend/scripts/backfill_stores.py",
+      "backend/scripts/cleanup_test_data.py",
+      "backend/server.py",
+      "backend/services/queue.py"
+    ],
+    "emergentintegrations": [
+      "backend/routers/scraper.py",
+      "backend/routers/store_boosts.py",
+      "backend/routers/stripe_payments.py",
+      "backend/server.py"
+    ],
+    "fastapi": [
+      "backend/routers/auth.py",
+      "backend/routers/checkout.py",
+      "backend/routers/coupons.py",
+      "backend/routers/deps.py",
+      "backend/routers/discovery.py",
+      "backend/routers/google_auth.py",
+      "backend/routers/listings.py",
+      "backend/routers/newsletter.py",
+      "backend/routers/personalized.py",
+      "backend/routers/scraper.py",
+      "backend/routers/search.py",
+      "backend/routers/shopping.py",
+      "backend/routers/store_boosts.py",
+      "backend/routers/stores_search.py",
+      "backend/routers/stripe_payments.py",
+      "backend/routers/users.py",
+      "backend/server.py",
+      "backend/services/quotas.py"
+    ],
+    "httpx": [
+      "backend/routers/google_auth.py",
+      "backend/server.py",
+      "backend/services/r2_storage.py",
+      "backend/services/zyte.py"
+    ],
+    "jwt": [
+      "backend/routers/deps.py",
+      "backend/server.py"
+    ],
+    "motor": [
+      "backend/routers/deps.py",
+      "backend/scripts/backfill_stores.py",
+      "backend/scripts/cleanup_test_data.py",
+      "backend/server.py",
+      "backend/services/queue.py"
+    ],
+    "passlib": [
+      "backend/server.py"
+    ],
+    "pydantic": [
+      "backend/routers/checkout.py",
+      "backend/routers/coupons.py",
+      "backend/routers/discovery.py",
+      "backend/routers/google_auth.py",
+      "backend/routers/newsletter.py",
+      "backend/routers/scraper.py",
+      "backend/routers/store_boosts.py",
+      "backend/routers/stripe_payments.py",
+      "backend/server.py"
+    ],
+    "redis": [
+      "backend/routers/scraper.py"
+    ],
+    "requests": [
+      "backend/server.py"
+    ],
+    "starlette": [
+      "backend/server.py"
+    ]
+  }
+}

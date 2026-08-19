@@ -1,0 +1,85 @@
+{
+  "endpoint_check": {
+    "endpoints_ok": true,
+    "ok": true,
+    "results": [
+      {
+        "body_preview": "{\"message\":\"Mercari Clone API\",\"status\":\"ok\"}",
+        "content_type": "application/json",
+        "json": {
+          "message": "Mercari Clone API",
+          "status": "ok"
+        },
+        "kind_ok": true,
+        "name": "root",
+        "path": "/api/",
+        "status_code": 200
+      },
+      {
+        "body_preview": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><sitemapindex xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\"><sitemap><loc>https://mercari-clone-1.preview.emergentagent.com/api/sitemap-core.xml</loc><lastmod>2026-08-19</lastmod></sitemap><sitemap><loc>https://mercari-clone-1.preview.emergentagent.com/api",
+        "content_type": "application/xml",
+        "kind_ok": true,
+        "name": "sitemap",
+        "path": "/api/sitemap_index.xml",
+        "status_code": 200
+      },
+      {
+        "body_preview": "User-agent: *\nDisallow: /admin\nDisallow: /api/\nAllow: /api/sitemap_index.xml\nAllow: /api/sitemap.xml\nAllow: /api/sitemap-\nSitemap: https://mercari-clone-1.preview.emergentagent.com/api/sitemap_index.xml\n",
+        "content_type": "text/plain; charset=utf-8",
+        "kind_ok": true,
+        "name": "robots",
+        "path": "/api/robots.txt",
+        "status_code": 200
+      },
+      {
+        "body_preview": "[]",
+        "content_type": "application/json",
+        "json": [],
+        "kind_ok": true,
+        "name": "wallet_ticker",
+        "path": "/api/wallet/ticker",
+        "status_code": 200
+      },
+      {
+        "body_preview": "1f82d2d233424e9cb51ddd8cccb0a087",
+        "content_type": "text/plain; charset=utf-8",
+        "kind_ok": true,
+        "name": "indexnow_key",
+        "path": "/api/indexnow-key.txt",
+        "status_code": 200
+      }
+    ],
+    "root_ok": true
+  },
+  "requirements_check": {
+    "missing_requirements": [],
+    "ok": true,
+    "recent_packages_present": {
+      "aiosmtplib": true,
+      "apify-client": true,
+      "arq": true,
+      "httpx": true,
+      "redis": true
+    },
+    "requirements_count": 35,
+    "runtime_file_count": 31,
+    "third_party_imports": [
+      "aiosmtplib",
+      "apify_client",
+      "arq",
+      "boto3",
+      "botocore",
+      "dotenv",
+      "emergentintegrations",
+      "fastapi",
+      "httpx",
+      "jwt",
+      "motor",
+      "passlib",
+      "pydantic",
+      "redis",
+      "requests",
+      "starlette"
+    ]
+  }
+}
