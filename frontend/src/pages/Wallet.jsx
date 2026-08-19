@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -78,7 +78,7 @@ const CopyBtn = ({ text, testid }) => {
   );
 };
 
-const DepositDialog = ({ open, onOpenChange, onSubmitted }) => {
+const DepositDialog = ({ open, onOpenChange, onSubmitted, suggestedAmount = "" }) => {
   const { toast } = useToast();
   // Unified deposit methods — same admin-managed source used by the Checkout Payment page.
   // Endpoint shape: { crypto: [{id, currency, network, address, label}], manual: [{id, name, instructions, kind}] }
@@ -108,11 +108,11 @@ const DepositDialog = ({ open, onOpenChange, onSubmitted }) => {
       setCryptoIdx(0);
       setManualId(m[0]?.id || "");
     }).catch(() => setMethods({ crypto: [], manual: [] }));
-    setAmount("");
+    setAmount(suggestedAmount || "");
     setReference("");
     setNote("");
     setScreenshotUrl("");
-  }, [open]);
+  }, [open, suggestedAmount]);
 
   const activeCrypto = cryptoList[cryptoIdx] || null;
   const selectedManual = manualList.find((m) => m.id === manualId);
@@ -368,8 +368,7 @@ const WithdrawDialog = ({ open, onOpenChange, methods, onSubmitted }) => {
     setWalletAddress("");
     setAmount("");
     setAccountInfo("");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const submit = async () => {
     const amt = parseFloat(amount);
@@ -628,15 +627,27 @@ const Wallet = () => {
     Object.entries(typeMetaKeys).map(([k, v]) => [k, { label: t(v.key) || k, color: v.color }]),
   );
   const navigate = useNavigate();
+  const location = useLocation();
   const [data, setData] = useState(null);
   const [methods, setMethods] = useState({ crypto_addresses: {}, manual_payment_methods: [] });
   const [deposits, setDeposits] = useState([]);
   const [dpOpen, setDpOpen] = useState(false);
+  const [suggestedAmount, setSuggestedAmount] = useState("");
   const [wdOpen, setWdOpen] = useState(false);
   const [rfOpen, setRfOpen] = useState(false);
   const [riOpen, setRiOpen] = useState(false);
   const [expandedTx, setExpandedTx] = useState(null);
   const [balanceVisible, toggleBalance] = useBalanceVisibility();
+
+  // Deep-link support: /wallet?open=deposit&suggested=42.00 (used by the
+  // Checkout page's "Top up wallet" CTA when the buyer's balance is short).
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get("open") === "deposit") {
+      setSuggestedAmount(params.get("suggested") || "");
+      setDpOpen(true);
+    }
+  }, [location.search]);
 
   const load = async () => {
     const [w, m, d] = await Promise.allSettled([
@@ -956,7 +967,7 @@ const Wallet = () => {
         )}
       </div>
 
-      <DepositDialog open={dpOpen} onOpenChange={setDpOpen} onSubmitted={afterMutation} />
+      <DepositDialog open={dpOpen} onOpenChange={setDpOpen} onSubmitted={afterMutation} suggestedAmount={suggestedAmount} />
       <WithdrawDialog open={wdOpen} onOpenChange={setWdOpen} methods={methods} onSubmitted={afterMutation} />
       <RefundsDialog open={rfOpen} onOpenChange={setRfOpen} transactions={data.transactions} />
       <ReinvestDialog open={riOpen} onOpenChange={setRiOpen} frozenBalance={data.frozen_balance || 0} onSubmitted={afterMutation} />

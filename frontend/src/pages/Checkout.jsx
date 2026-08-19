@@ -8,7 +8,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useCurrency } from "@/context/CurrencyContext";
 import { useLang } from "@/context/LanguageContext";
 import { useToast } from "@/hooks/use-toast";
-import { CheckCircle2, Lock, Share2, CreditCard, Wallet as WalletIcon, Bitcoin, Building2, Copy, Check } from "lucide-react";
+import { CheckCircle2, Lock, Share2, CreditCard, Wallet as WalletIcon, Bitcoin, Building2, Copy, Check, Plus } from "lucide-react";
 import confetti from "canvas-confetti";
 
 const qrUrl = (data) => `https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=0&data=${encodeURIComponent(data || "")}`;
@@ -305,8 +305,21 @@ const Checkout = () => {
                   <WalletIcon className="h-10 w-10 text-emerald-500/60" />
                 </div>
                 {wallet && (wallet.balance ?? 0) < total ? (
-                  <div className="mt-3 text-xs text-red-600 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 rounded-lg px-3 py-2">
-                    Insufficient balance. Please deposit or choose another method.
+                  <div className="mt-3">
+                    <div className="text-xs text-red-600 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 rounded-lg px-3 py-2 mb-2">
+                      Insufficient balance. Short by <b>{format(total - (wallet.balance ?? 0))}</b>.
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => navigate("/wallet?open=deposit&suggested=" + encodeURIComponent(Math.max(10, total - (wallet.balance ?? 0)).toFixed(2)))}
+                      className="w-full min-h-[44px] rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-semibold text-sm inline-flex items-center justify-center gap-2 shadow hover:brightness-110 transition"
+                      data-testid="checkout-topup-wallet-btn"
+                    >
+                      <Plus className="h-4 w-4" /> Top up wallet
+                    </button>
+                    <p className="mt-1.5 text-[11px] text-neutral-500">
+                      Or pick Crypto / Bank above to pay this order directly.
+                    </p>
                   </div>
                 ) : (
                   <p className="mt-3 text-[11px] text-emerald-700 dark:text-emerald-300">Order confirmation happens instantly with wallet payment.</p>
