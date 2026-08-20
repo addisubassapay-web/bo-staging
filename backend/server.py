@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, Query, status, UploadFile, File, Header, Response, Request, Body
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, Query, status, UploadFile, File, Form, Header, Response, Request, Body
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
@@ -327,6 +327,9 @@ class Store(BaseModel):
     bio: Optional[str] = ""
     logo: Optional[str] = None
     banner: Optional[str] = None
+    country: Optional[str] = None  # ISO 3166-1 alpha-2 (e.g. "US", "NG", "GB")
+    contact_email: Optional[str] = None
+    website: Optional[str] = None
     verified_tier: Literal["none", "bronze", "silver", "gold"] = "none"
     followers_count: int = 0
     total_sales: int = 0
@@ -342,6 +345,9 @@ class StoreCreate(BaseModel):
     bio: Optional[str] = ""
     logo: Optional[str] = None
     banner: Optional[str] = None
+    country: Optional[str] = None
+    contact_email: Optional[str] = None
+    website: Optional[str] = None
     category_ids: Optional[List[str]] = None
 
 class StoreUpdate(BaseModel):
@@ -350,6 +356,9 @@ class StoreUpdate(BaseModel):
     bio: Optional[str] = None
     logo: Optional[str] = None
     banner: Optional[str] = None
+    country: Optional[str] = None
+    contact_email: Optional[str] = None
+    website: Optional[str] = None
     category_ids: Optional[List[str]] = None
 
 class AffiliateLink(BaseModel):
@@ -1426,6 +1435,75 @@ async def admin_update_user(user_id: str, updates: dict, _admin: dict = Depends(
     doc = await db.users.find_one({"id": user_id}, {"_id": 0, "password_hash": 0})
     return UserPublic(**doc) if doc else {"ok": True}
 
+
+@api_router.post("/admin/users/{user_id}/wallet-adjust")
+async def admin_wallet_adjust(user_id: str, payload: dict = Body(...), _admin: dict = Depends(require_admin)):
+    """Admin-driven wallet balance adjustment.
+
+    Body: {"delta": float, "description": str, "bucket"?: "available"|"frozen"}
+    Posts a signed ledger entry (`tx_type='adjustment'`) that atomically
+    credits (delta > 0) or debits (delta < 0) the user's wallet. Debits
+    from the available bucket are guarded so we never overdraw. Every
+    adjustment produces a `wallet_txs` row + a wallet notification to the
+    user for transparency.
+    """
+    from services import ledger as _ledger
+    try:
+        delta = float(payload.get("delta", 0))
+    except (TypeError, ValueError):
+        raise HTTPException(400, "delta must be a number")
+    if delta == 0:
+        raise HTTPException(400, "delta must be non-zero")
+    description = (payload.get("description") or "").strip() or "Admin adjustment"
+    if len(description) > 300:
+        raise HTTPException(400, "description too long (max 300 chars)")
+    bucket = (payload.get("bucket") or "available").strip().lower()
+    if bucket not in ("available", "frozen"):
+        raise HTTPException(400, "bucket must be 'available' or 'frozen'")
+
+    target = await db.users.find_one({"id": user_id}, {"_id": 0, "id": 1, "username": 1, "wallet_balance": 1, "wallet_frozen_balance": 1})
+    if not target:
+        raise HTTPException(404, "User not found")
+
+    try:
+        tx = await _ledger.apply_entry(
+            db,
+            user_id=user_id,
+            delta=delta,
+            tx_type="adjustment",
+            description=f"[admin:{_admin.get('username') or _admin['id']}] {description}",
+            frozen=(bucket == "frozen"),
+            require_available=(delta < 0 and bucket == "available"),
+        )
+    except _ledger.InsufficientFunds:
+        raise HTTPException(400, "Insufficient available balance for debit")
+    # Strip Mongo _id if the insert mutated the dict — it's not JSON-serializable.
+    if isinstance(tx, dict):
+        tx.pop("_id", None)
+
+    fresh = await db.users.find_one({"id": user_id}, {"_id": 0, "wallet_balance": 1, "wallet_frozen_balance": 1}) or {}
+    # Notify the user so they see the change in real time
+    sign = "+" if delta > 0 else "−"
+    amt_str = f"${abs(delta):.2f}"
+    try:
+        await notify(
+            user_id,
+            "wallet",
+            f"Wallet adjusted by admin: {sign}{amt_str}",
+            f"{description}. New available balance: ${float(fresh.get('wallet_balance', 0.0) or 0.0):.2f}.",
+            "/wallet",
+        )
+    except Exception:
+        pass
+
+    return {
+        "ok": True,
+        "tx": tx,
+        "wallet_balance": round(float(fresh.get("wallet_balance", 0.0) or 0.0), 2),
+        "wallet_frozen_balance": round(float(fresh.get("wallet_frozen_balance", 0.0) or 0.0), 2),
+    }
+
+
 @api_router.put("/me/email-prefs")
 async def update_email_prefs(payload: dict = Body(...), user: dict = Depends(get_current_user)):
     """Update the current user's per-kind email opt-in map."""
@@ -1704,6 +1782,24 @@ async def update_store(store_id: str, payload: StoreUpdate, user: dict = Depends
     if payload.category_ids is not None and len(payload.category_ids) > 3:
         raise HTTPException(400, "Pick at most 3 categories for your store")
     updates = {k: v for k, v in payload.model_dump().items() if v is not None}
+    # Normalize country to ISO-3166-1 alpha-2 upper-case (empty string clears it).
+    if "country" in updates:
+        c = (updates["country"] or "").strip().upper()
+        if c and (len(c) != 2 or not c.isalpha()):
+            raise HTTPException(400, "country must be a 2-letter ISO code (e.g. US, NG, GB)")
+        updates["country"] = c or None
+    if "website" in updates and updates["website"]:
+        w = updates["website"].strip()
+        if w and not w.startswith(("http://", "https://")):
+            w = f"https://{w}"
+        if len(w) > 300:
+            raise HTTPException(400, "website URL too long")
+        updates["website"] = w
+    if "contact_email" in updates and updates["contact_email"]:
+        e = updates["contact_email"].strip().lower()
+        if "@" not in e or len(e) > 200:
+            raise HTTPException(400, "contact_email must be a valid email address")
+        updates["contact_email"] = e
     if updates:
         await db.stores.update_one({"id": store_id}, {"$set": updates})
     doc = await db.stores.find_one({"id": store_id}, {"_id": 0})
@@ -3847,6 +3943,59 @@ def get_object(path: str):
 
 ALLOWED_EXT = {"jpg", "jpeg", "png", "webp", "gif", "pdf"}
 MAX_UPLOAD_BYTES = 12 * 1024 * 1024  # 12 MB
+PUBLIC_IMAGE_EXT = {"jpg", "jpeg", "png", "webp", "gif"}
+
+
+@api_router.post("/upload/public-image")
+async def upload_public_image(
+    file: UploadFile = File(...),
+    kind: str = Form("misc"),
+    user: dict = Depends(get_current_user),
+):
+    """Upload a publicly-viewable image (avatar / store logo / store banner).
+
+    Unlike /upload which returns a `/api/files/{id}` URL that requires auth,
+    this endpoint writes the bytes to the local media root that FastAPI
+    serves at `/api/uploads/…`. The returned URL is fully-qualified and can
+    be embedded directly in `<img>` tags by any visitor.
+    """
+    from services.r2_storage import LOCAL_ROOT, _local_public_url, r2_enabled, _r2_client, _env, _r2_public_url  # noqa: WPS437
+    filename = file.filename or "image"
+    ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+    if ext not in PUBLIC_IMAGE_EXT:
+        raise HTTPException(400, f"Unsupported image type .{ext} — use jpg, png, webp or gif")
+    data = await file.read()
+    if len(data) > MAX_UPLOAD_BYTES:
+        raise HTTPException(400, f"File too large (max {MAX_UPLOAD_BYTES // (1024*1024)}MB)")
+    if not data:
+        raise HTTPException(400, "Empty file")
+
+    kind_slug = "".join(c for c in kind if c.isalnum() or c in ("-", "_")).lower()[:32] or "misc"
+    import hashlib as _hl
+    digest = _hl.sha256(data).hexdigest()[:24]
+    key = f"public/{kind_slug}/{user['id'][:8]}/{digest}.{ext}"
+
+    content_type = file.content_type or f"image/{ext}"
+
+    # Prefer R2 if configured (already public), otherwise write to local disk.
+    if r2_enabled():
+        try:
+            _r2_client().put_object(
+                Bucket=_env("R2_BUCKET"),
+                Key=key,
+                Body=data,
+                ContentType=content_type,
+                CacheControl="public, max-age=31536000, immutable",
+            )
+            return {"url": _r2_public_url(key), "kind": kind_slug, "size": len(data)}
+        except Exception as e:
+            logger.error(f"R2 upload failed, falling back to local: {e}")
+
+    dest = LOCAL_ROOT / key
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    if not dest.exists():
+        dest.write_bytes(data)
+    return {"url": _local_public_url(key), "kind": kind_slug, "size": len(data)}
 
 
 @api_router.post("/upload")

@@ -66,9 +66,136 @@ const Dashboard = () => {
   );
 };
 
+const WalletAdjustDialog = ({ user, onClose, onDone }) => {
+  const { toast } = useToast();
+  const [amount, setAmount] = useState("");
+  const [direction, setDirection] = useState("credit"); // credit | debit
+  const [bucket, setBucket] = useState("available"); // available | frozen
+  const [description, setDescription] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const submit = async () => {
+    const raw = parseFloat(amount);
+    if (!Number.isFinite(raw) || raw <= 0) {
+      toast({ title: "Enter a valid amount", variant: "destructive" }); return;
+    }
+    if (!description.trim()) {
+      toast({ title: "Add a reason for the audit log", variant: "destructive" }); return;
+    }
+    const delta = direction === "debit" ? -raw : raw;
+    setBusy(true);
+    try {
+      const { data } = await api.post(`/admin/users/${user.id}/wallet-adjust`, {
+        delta,
+        description: description.trim(),
+        bucket,
+      });
+      toast({
+        title: `Wallet ${direction === "debit" ? "debited" : "credited"} ${raw.toFixed(2)}`,
+        description: `New ${bucket} balance: $${(bucket === "frozen" ? data.wallet_frozen_balance : data.wallet_balance).toFixed(2)}`,
+      });
+      onDone?.(data);
+      onClose();
+    } catch (e) {
+      toast({
+        title: "Adjustment failed",
+        description: e?.response?.data?.detail || "Try again",
+        variant: "destructive",
+      });
+    } finally { setBusy(false); }
+  };
+
+  return (
+    <Dialog open onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-md" data-testid="wallet-adjust-dialog">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Wallet className="h-5 w-5 text-[#FF211F]" /> Adjust wallet — {user.username}
+          </DialogTitle>
+        </DialogHeader>
+        <div className="grid grid-cols-2 gap-3 text-sm">
+          <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-3">
+            <div className="text-xs text-neutral-500">Available</div>
+            <div className="text-lg font-bold tabular-nums">${Number(user.wallet_balance || 0).toFixed(2)}</div>
+          </div>
+          <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-3">
+            <div className="text-xs text-neutral-500">Frozen</div>
+            <div className="text-lg font-bold tabular-nums">${Number(user.wallet_frozen_balance || 0).toFixed(2)}</div>
+          </div>
+        </div>
+        <div className="space-y-3">
+          <div>
+            <Label>Direction</Label>
+            <div className="flex gap-2 mt-1">
+              <button
+                type="button"
+                onClick={() => setDirection("credit")}
+                className={`flex-1 min-h-[44px] rounded-lg border text-sm font-semibold transition ${direction === "credit" ? "bg-emerald-600 text-white border-transparent" : "bg-white text-neutral-700 border-neutral-200 hover:border-emerald-400"}`}
+                data-testid="wallet-adjust-credit-btn"
+              >+ Credit</button>
+              <button
+                type="button"
+                onClick={() => setDirection("debit")}
+                className={`flex-1 min-h-[44px] rounded-lg border text-sm font-semibold transition ${direction === "debit" ? "bg-red-600 text-white border-transparent" : "bg-white text-neutral-700 border-neutral-200 hover:border-red-400"}`}
+                data-testid="wallet-adjust-debit-btn"
+              >− Debit</button>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label>Amount (USD)</Label>
+              <Input
+                type="number" min="0.01" step="0.01"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                placeholder="0.00"
+                className="mt-1"
+                data-testid="wallet-adjust-amount"
+              />
+            </div>
+            <div>
+              <Label>Bucket</Label>
+              <Select value={bucket} onValueChange={setBucket}>
+                <SelectTrigger className="mt-1" data-testid="wallet-adjust-bucket"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="available">Available</SelectItem>
+                  <SelectItem value="frozen">Frozen (escrow)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div>
+            <Label>Reason (required — appears on the user&apos;s ledger)</Label>
+            <Input
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="e.g. Manual top-up for support ticket #123"
+              className="mt-1"
+              maxLength={300}
+              data-testid="wallet-adjust-reason"
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button
+            onClick={submit}
+            disabled={busy}
+            className={direction === "debit" ? "bg-red-600 hover:bg-red-700 text-white" : "bg-emerald-600 hover:bg-emerald-700 text-white"}
+            data-testid="wallet-adjust-submit"
+          >
+            {busy ? "Posting…" : (direction === "debit" ? "Debit wallet" : "Credit wallet")}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 const UsersMgr = () => {
   const [users, setUsers] = useState([]);
   const [lockedOnly, setLockedOnly] = useState(false);
+  const [walletTarget, setWalletTarget] = useState(null);
   const { toast } = useToast();
   const load = () => api.get("/admin/users").then((r) => setUsers(r.data));
   useEffect(() => { load(); }, []);
@@ -145,6 +272,7 @@ const UsersMgr = () => {
               <th className="p-3">Role</th>
               <th className="p-3">Sales</th>
               <th className="p-3" title="Personal markup cap that overrides the badge tier">Resell cap %</th>
+              <th className="p-3">Wallet</th>
               <th className="p-3">Status</th>
               <th className="p-3">Login lock</th>
               <th className="p-3"></th>
@@ -189,6 +317,27 @@ const UsersMgr = () => {
                       data-testid={`resell-cap-input-${u.id}`}
                     />
                     <span className="text-xs text-neutral-400">%</span>
+                  </div>
+                </td>
+                <td className="p-3">
+                  <div className="flex flex-col gap-1">
+                    <div className="text-sm font-semibold tabular-nums" data-testid={`user-wallet-available-${u.id}`}>
+                      ${Number(u.wallet_balance || 0).toFixed(2)}
+                    </div>
+                    {Number(u.wallet_frozen_balance || 0) > 0 && (
+                      <div className="text-[11px] text-amber-700 tabular-nums" data-testid={`user-wallet-frozen-${u.id}`}>
+                        + ${Number(u.wallet_frozen_balance || 0).toFixed(2)} frozen
+                      </div>
+                    )}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setWalletTarget(u)}
+                      className="h-7 px-2 text-xs border-emerald-300 text-emerald-700 hover:bg-emerald-50 mt-0.5 w-fit"
+                      data-testid={`user-wallet-adjust-${u.id}`}
+                    >
+                      <Wallet className="h-3 w-3 mr-1" /> Adjust
+                    </Button>
                   </div>
                 </td>
                 <td className="p-3">
@@ -238,6 +387,13 @@ const UsersMgr = () => {
       <p className="text-xs text-neutral-500 mt-2">
         Leave the resell cap empty to use the seller&apos;s badge tier. Enter a number (0–500) to hard-cap that user&apos;s maximum markup %.
       </p>
+      {walletTarget && (
+        <WalletAdjustDialog
+          user={walletTarget}
+          onClose={() => setWalletTarget(null)}
+          onDone={() => load()}
+        />
+      )}
     </div>
   );
 };

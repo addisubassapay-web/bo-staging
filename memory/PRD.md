@@ -25,7 +25,16 @@ Full-stack ecommerce marketplace **Merchari-global** — same color scheme (`#FF
 ---
 
 ## Implemented (with dates)
-### Feb 2026 — Full Rebrand to Merchari-global
+### Feb 2026 — Admin wallet direct control + Store owner profile expansion
+- **Admin wallet adjust** (`POST /api/admin/users/{user_id}/wallet-adjust`) — atomically credits/debits any user's wallet with a mandatory audit reason. Routes through `services/ledger.apply_entry` (`tx_type='adjustment'`), stamps the admin username on the ledger row, guards against overdraft when debiting the available bucket, supports crediting/debiting the frozen (escrow) bucket, and fires a live `wallet` notification to the user. Frontend: new "Wallet" column in `/admin/users` shows available + frozen balances plus an "Adjust" button opening a dialog with direction (credit/debit), amount, bucket (available/frozen) and required reason.
+- **Store owner profile expansion** (`Store` model gained `country`, `contact_email`, `website`):
+  * **Cover image + profile picture uploaders** — new `POST /api/upload/public-image` endpoint writes to the local media root (or R2 when configured) and returns a fully-qualified public URL that any visitor can render. `StoreManage.jsx` rewritten with drag-and-drop uploader tiles (aspect-4:1 cover + square logo) plus URL fallback inputs; hover shows replace/remove overlays.
+  * **Country picker with live flag** — new `/frontend/src/constants/countries.js` maps 57 ISO 3166-1 alpha-2 codes to name + flag emoji (via regional-indicator unicode). `StoreManage` renders a searchable Select with `🇺🇸 United States` etc.; `StorePage` shows a country pill next to the store name with the flag glyph and full country name.
+  * **Contact email + website** — new inputs on `StoreManage`; server normalizes email (lowercase + basic validation) and website (auto-prepends `https://`). Rendered as clickable icons under the tagline on the public store page.
+  * **Edit store shortcut** — owner-only "Edit store" button now sits in the storefront's owner control panel (next to "Publish" and "Dashboard") so profile edits are one click away.
+- **Backend .env alignment** — corrected stale `BACKEND_PUBLIC_URL`/`FRONTEND_ORIGIN` (pointed at the old preview host) so uploaded images resolve on the current preview.
+
+
 - Global find/replace across backend routers, services, frontend components/pages/contexts, PWA manifest, service worker, index.html `<title>`, meta description, sitemap, mailer templates, and PRD.
 - Header wordmark updated: **Merchari-global** with `-global` in the brand orange accent.
 - 79 files rebranded in a single pass. Backend + frontend restart validated; homepage renders new brand.

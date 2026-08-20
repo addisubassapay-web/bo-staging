@@ -1,13 +1,15 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { Store as StoreIcon, ExternalLink, Save, Tag } from "lucide-react";
+import { Store as StoreIcon, ExternalLink, Save, Tag, Upload, Loader2, Image as ImageIcon, Globe, Mail, MapPin, Trash2 } from "lucide-react";
+import { COUNTRIES, flagEmoji, countryName } from "@/constants/countries";
 
 const MAX_STORE_CATEGORIES = 3;
 
@@ -17,9 +19,16 @@ const StoreManage = () => {
   const { toast } = useToast();
   const [existing, setExisting] = useState(null);
   const [pageLoading, setPageLoading] = useState(true);
-  const [form, setForm] = useState({ name: "", slug: "", tagline: "", bio: "", logo: "", banner: "", category_ids: [] });
+  const [form, setForm] = useState({
+    name: "", slug: "", tagline: "", bio: "", logo: "", banner: "",
+    country: "", contact_email: "", website: "",
+    category_ids: [],
+  });
   const [saving, setSaving] = useState(false);
   const [categories, setCategories] = useState([]);
+  const [uploading, setUploading] = useState({ logo: false, banner: false });
+  const logoInputRef = useRef(null);
+  const bannerInputRef = useRef(null);
 
   useEffect(() => {
     api.get("/categories").then((r) => setCategories(r.data || [])).catch(() => {});
@@ -38,6 +47,9 @@ const StoreManage = () => {
           bio: r.data.bio || "",
           logo: r.data.logo || "",
           banner: r.data.banner || "",
+          country: r.data.country || "",
+          contact_email: r.data.contact_email || "",
+          website: r.data.website || "",
           category_ids: r.data.category_ids || [],
         });
       }
@@ -60,20 +72,54 @@ const StoreManage = () => {
     });
   };
 
+  const uploadImage = async (file, kind) => {
+    if (!file) return;
+    if (!/^image\//.test(file.type || "")) {
+      toast({ title: "Choose an image file", variant: "destructive" });
+      return;
+    }
+    if (file.size > 12 * 1024 * 1024) {
+      toast({ title: "Image too large", description: "Max 12 MB", variant: "destructive" });
+      return;
+    }
+    setUploading((u) => ({ ...u, [kind]: true }));
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("kind", kind === "logo" ? "store-logo" : "store-banner");
+      const { data } = await api.post("/upload/public-image", fd, { headers: { "Content-Type": "multipart/form-data" } });
+      if (!data?.url) throw new Error("No URL returned");
+      set(kind, data.url);
+      toast({ title: `${kind === "logo" ? "Logo" : "Cover"} uploaded` });
+    } catch (e) {
+      toast({ title: "Upload failed", description: e?.response?.data?.detail || "Try again", variant: "destructive" });
+    } finally {
+      setUploading((u) => ({ ...u, [kind]: false }));
+    }
+  };
+
   const submit = async (e) => {
     e.preventDefault();
     if (!form.name || !form.slug) { toast({ title: "Name and slug are required", variant: "destructive" }); return; }
     setSaving(true);
     try {
+      const payload = {
+        name: form.name,
+        tagline: form.tagline,
+        bio: form.bio,
+        logo: form.logo || null,
+        banner: form.banner || null,
+        country: form.country || null,
+        contact_email: form.contact_email || null,
+        website: form.website || null,
+        category_ids: form.category_ids,
+      };
       if (existing) {
-        const { data } = await api.put(`/stores/${existing.id}`, {
-          name: form.name, tagline: form.tagline, bio: form.bio, logo: form.logo || null, banner: form.banner || null,
-          category_ids: form.category_ids,
-        });
+        const { data } = await api.put(`/stores/${existing.id}`, payload);
         setExisting(data);
         toast({ title: "Store updated" });
       } else {
-        const { data } = await api.post("/stores", form);
+        const { data } = await api.post("/stores", { ...payload, slug: form.slug });
         setExisting(data);
         await refresh();
         toast({ title: "Store created!", description: "Your store is live." });
@@ -96,34 +142,148 @@ const StoreManage = () => {
         </div>
         {existing && (
           <Link to={`/store/${existing.slug}`}>
-            <Button variant="outline" size="sm"><ExternalLink className="h-4 w-4 mr-1" /> View public page</Button>
+            <Button variant="outline" size="sm" data-testid="store-view-public-btn"><ExternalLink className="h-4 w-4 mr-1" /> View public page</Button>
           </Link>
         )}
       </div>
-      <p className="text-neutral-600 mb-6">Your storefront is your brand. Give it a memorable name and a public URL.</p>
+      <p className="text-neutral-600 mb-6">Your storefront is your brand. Add a cover image, logo, and country so shoppers know exactly who they&apos;re buying from.</p>
 
-      <form onSubmit={submit} className="space-y-5">
-        <div className="grid sm:grid-cols-2 gap-4">
-          <div>
-            <Label>Store name</Label>
-            <Input value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="e.g. Sophia&apos;s Style" className="mt-1" required />
-          </div>
-          <div>
-            <Label>URL slug</Label>
-            <div className="mt-1 flex items-center gap-1">
-              <span className="text-sm text-neutral-500">/store/</span>
-              <Input value={form.slug} onChange={(e) => handleSlug(e.target.value)} placeholder="sophias-style" required disabled={!!existing} />
-            </div>
-            {existing && <div className="text-xs text-neutral-400 mt-1">Slug can&apos;t be changed after creation.</div>}
-          </div>
-        </div>
+      <form onSubmit={submit} className="space-y-6">
+        {/* Cover / Banner uploader */}
         <div>
-          <Label>Tagline</Label>
-          <Input value={form.tagline} onChange={(e) => set("tagline", e.target.value)} placeholder="e.g. Curated fashion at a fair price" className="mt-1" maxLength={100} />
+          <Label className="flex items-center gap-1.5"><ImageIcon className="h-4 w-4 text-[#FF7A18]" /> Cover image</Label>
+          <p className="text-xs text-neutral-500 mt-0.5 mb-2">Wide banner shown at the top of your storefront (recommended 1600×400).</p>
+          <div className="relative rounded-xl border-2 border-dashed border-neutral-300 dark:border-neutral-700 overflow-hidden bg-neutral-50 dark:bg-neutral-900 aspect-[4/1] group" data-testid="store-banner-uploader">
+            {form.banner ? (
+              <>
+                <img src={form.banner} alt="cover" className="absolute inset-0 h-full w-full object-cover" />
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity grid place-items-center gap-2">
+                  <Button type="button" variant="secondary" size="sm" onClick={() => bannerInputRef.current?.click()} data-testid="store-banner-replace">
+                    <Upload className="h-4 w-4 mr-1" /> Replace
+                  </Button>
+                  <Button type="button" variant="destructive" size="sm" onClick={() => set("banner", "")} data-testid="store-banner-remove">
+                    <Trash2 className="h-4 w-4 mr-1" /> Remove
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <button
+                type="button"
+                onClick={() => bannerInputRef.current?.click()}
+                className="absolute inset-0 grid place-items-center text-neutral-500 hover:text-[#FF211F] hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+                data-testid="store-banner-upload"
+              >
+                {uploading.banner ? <Loader2 className="h-8 w-8 animate-spin" /> : (
+                  <div className="text-center">
+                    <Upload className="h-8 w-8 mx-auto mb-1" />
+                    <div className="text-sm font-medium">Upload cover image</div>
+                    <div className="text-xs text-neutral-400">PNG · JPG · WEBP up to 12 MB</div>
+                  </div>
+                )}
+              </button>
+            )}
+            <input ref={bannerInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => uploadImage(e.target.files?.[0], "banner")} />
+          </div>
+          <Input value={form.banner} onChange={(e) => set("banner", e.target.value)} placeholder="or paste banner URL" className="mt-2 text-xs" data-testid="store-banner-url" />
         </div>
+
+        {/* Logo uploader + basics */}
+        <div className="grid sm:grid-cols-[160px_1fr] gap-5 items-start">
+          <div>
+            <Label className="flex items-center gap-1.5"><ImageIcon className="h-4 w-4 text-[#7C3AED]" /> Profile picture</Label>
+            <p className="text-xs text-neutral-500 mt-0.5 mb-2">Square logo.</p>
+            <div className="relative rounded-2xl border-2 border-dashed border-neutral-300 dark:border-neutral-700 overflow-hidden bg-white dark:bg-neutral-900 aspect-square group" data-testid="store-logo-uploader">
+              {form.logo ? (
+                <>
+                  <img src={form.logo} alt="logo" className="absolute inset-0 h-full w-full object-cover" />
+                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity grid place-items-center gap-1.5">
+                    <Button type="button" variant="secondary" size="sm" onClick={() => logoInputRef.current?.click()} data-testid="store-logo-replace">
+                      <Upload className="h-3.5 w-3.5 mr-1" /> Replace
+                    </Button>
+                    <Button type="button" variant="destructive" size="sm" onClick={() => set("logo", "")} data-testid="store-logo-remove">
+                      <Trash2 className="h-3.5 w-3.5 mr-1" /> Remove
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => logoInputRef.current?.click()}
+                  className="absolute inset-0 grid place-items-center text-neutral-500 hover:text-[#FF211F] hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+                  data-testid="store-logo-upload"
+                >
+                  {uploading.logo ? <Loader2 className="h-7 w-7 animate-spin" /> : (
+                    <div className="text-center px-1">
+                      <Upload className="h-6 w-6 mx-auto mb-0.5" />
+                      <div className="text-[11px] font-medium leading-tight">Upload<br />photo</div>
+                    </div>
+                  )}
+                </button>
+              )}
+              <input ref={logoInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => uploadImage(e.target.files?.[0], "logo")} />
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <Label>Store name</Label>
+              <Input value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="e.g. Sophia&apos;s Style" className="mt-1" required data-testid="store-name-input" />
+            </div>
+            <div>
+              <Label>URL slug</Label>
+              <div className="mt-1 flex items-center gap-1">
+                <span className="text-sm text-neutral-500">/store/</span>
+                <Input value={form.slug} onChange={(e) => handleSlug(e.target.value)} placeholder="sophias-style" required disabled={!!existing} data-testid="store-slug-input" />
+              </div>
+              {existing && <div className="text-xs text-neutral-400 mt-1">Slug can&apos;t be changed after creation.</div>}
+            </div>
+            <div>
+              <Label>Tagline</Label>
+              <Input value={form.tagline} onChange={(e) => set("tagline", e.target.value)} placeholder="e.g. Curated fashion at a fair price" className="mt-1" maxLength={100} data-testid="store-tagline-input" />
+            </div>
+          </div>
+        </div>
+
         <div>
           <Label>About your store</Label>
-          <Textarea rows={4} value={form.bio} onChange={(e) => set("bio", e.target.value)} placeholder="Tell shoppers what makes your store special…" className="mt-1" />
+          <Textarea rows={4} value={form.bio} onChange={(e) => set("bio", e.target.value)} placeholder="Tell shoppers what makes your store special…" className="mt-1" data-testid="store-bio-input" />
+        </div>
+
+        {/* Country picker w/ live flag */}
+        <div className="grid sm:grid-cols-2 gap-4">
+          <div>
+            <Label className="flex items-center gap-1.5"><MapPin className="h-4 w-4 text-[#059669]" /> Country / region</Label>
+            <p className="text-xs text-neutral-500 mt-0.5 mb-2">Shown as a flag pill on your storefront.</p>
+            <Select value={form.country || "none"} onValueChange={(v) => set("country", v === "none" ? "" : v)}>
+              <SelectTrigger data-testid="store-country-select">
+                <SelectValue placeholder="Choose a country">
+                  {form.country ? (
+                    <span className="inline-flex items-center gap-2"><span className="text-lg leading-none" data-testid="store-country-flag-preview">{flagEmoji(form.country)}</span> {countryName(form.country)}</span>
+                  ) : (
+                    <span className="text-neutral-500">Choose a country</span>
+                  )}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent className="max-h-80">
+                <SelectItem value="none">— No country —</SelectItem>
+                {COUNTRIES.map((c) => (
+                  <SelectItem key={c.code} value={c.code} data-testid={`store-country-opt-${c.code}`}>
+                    <span className="inline-flex items-center gap-2"><span className="text-lg leading-none">{flagEmoji(c.code)}</span> {c.name}</span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="flex items-center gap-1.5"><Mail className="h-4 w-4 text-[#2563EB]" /> Contact email</Label>
+            <p className="text-xs text-neutral-500 mt-0.5 mb-2">Optional — shown to buyers on your storefront.</p>
+            <Input type="email" value={form.contact_email} onChange={(e) => set("contact_email", e.target.value)} placeholder="hello@yourbrand.com" data-testid="store-contact-email" />
+          </div>
+        </div>
+
+        <div>
+          <Label className="flex items-center gap-1.5"><Globe className="h-4 w-4 text-[#0EA5E9]" /> Website</Label>
+          <Input value={form.website} onChange={(e) => set("website", e.target.value)} placeholder="https://yourbrand.com" className="mt-1" data-testid="store-website" />
         </div>
 
         <div>
@@ -161,20 +321,10 @@ const StoreManage = () => {
             })}
           </div>
         </div>
-        <div className="grid sm:grid-cols-2 gap-4">
-          <div>
-            <Label>Logo URL</Label>
-            <Input value={form.logo} onChange={(e) => set("logo", e.target.value)} placeholder="https://… (optional)" className="mt-1" />
-          </div>
-          <div>
-            <Label>Banner URL</Label>
-            <Input value={form.banner} onChange={(e) => set("banner", e.target.value)} placeholder="https://… (optional)" className="mt-1" />
-          </div>
-        </div>
 
         <div className="flex justify-end gap-2 pt-4 border-t">
           <Button type="button" variant="outline" onClick={() => navigate(-1)}>Cancel</Button>
-          <Button type="submit" disabled={saving} className="bg-[#FF211F] hover:bg-[#e01d1b]">
+          <Button type="submit" disabled={saving} className="bg-[#FF211F] hover:bg-[#e01d1b]" data-testid="store-save-btn">
             <Save className="h-4 w-4 mr-1" /> {saving ? "Saving…" : (existing ? "Save changes" : "Create store")}
           </Button>
         </div>

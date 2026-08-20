@@ -7,11 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Store as StoreIcon, Award, ShieldCheck, Users, Package, Calendar, Star,
-  Heart, HeartOff, Share2, TrendingUp, Sparkles, Zap, Flame, PackagePlus,
+  Heart, HeartOff, Share2, TrendingUp, Sparkles, Zap, Flame, PackagePlus, Globe, Mail,
 } from "lucide-react";
 import { VerificationBadges } from "@/components/VerificationBadges";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { flagEmoji, countryName } from "@/constants/countries";
 
 const tierMeta = {
   none: null,
@@ -186,6 +187,16 @@ const StorePage = () => {
                 <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100" data-testid="store-name">
                   {store.name}
                 </h1>
+                {store.country && (
+                  <span
+                    className="inline-flex items-center gap-1.5 rounded-full bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 px-2.5 py-0.5 text-xs font-semibold text-neutral-700 dark:text-neutral-200"
+                    title={countryName(store.country)}
+                    data-testid="store-country-pill"
+                  >
+                    <span className="text-base leading-none" aria-hidden="true">{flagEmoji(store.country)}</span>
+                    <span>{countryName(store.country)}</span>
+                  </span>
+                )}
                 {tier && (
                   <Badge className={`gap-1 border ${tier.cls}`} data-testid="store-tier-badge">
                     <Award className="h-3 w-3" /> {tier.label}
@@ -195,6 +206,20 @@ const StorePage = () => {
               </div>
               {store.tagline && <p className="text-neutral-600 dark:text-neutral-300 text-sm mt-1">{store.tagline}</p>}
               {store.bio && <p className="text-neutral-700 dark:text-neutral-300 text-sm mt-2 line-clamp-2 max-w-2xl">{store.bio}</p>}
+              {(store.website || store.contact_email) && (
+                <div className="mt-2 flex items-center gap-3 text-xs text-neutral-600 dark:text-neutral-400 flex-wrap">
+                  {store.website && (
+                    <a href={store.website} target="_blank" rel="noopener noreferrer nofollow" className="inline-flex items-center gap-1 hover:text-[#FF211F]" data-testid="store-website-link">
+                      <Globe className="h-3.5 w-3.5" /> <span className="truncate max-w-[220px]">{store.website.replace(/^https?:\/\//, "")}</span>
+                    </a>
+                  )}
+                  {store.contact_email && (
+                    <a href={`mailto:${store.contact_email}`} className="inline-flex items-center gap-1 hover:text-[#FF211F]" data-testid="store-email-link">
+                      <Mail className="h-3.5 w-3.5" /> <span className="truncate max-w-[220px]">{store.contact_email}</span>
+                    </a>
+                  )}
+                </div>
+              )}
             </div>
             <div className="flex flex-col sm:flex-row gap-2 shrink-0">
               {!isOwn && (
@@ -254,6 +279,15 @@ const StorePage = () => {
                     data-testid="store-publish-cta"
                   >
                     <PackagePlus className="h-5 w-5" /> Publish / List Products
+                  </Button>
+                </Link>
+                <Link to="/my/store">
+                  <Button
+                    variant="outline"
+                    className="min-h-[48px] rounded-full gap-1.5 border-neutral-300 hover:border-[#FF211F] hover:text-[#FF211F]"
+                    data-testid="store-edit-profile-btn"
+                  >
+                    <StoreIcon className="h-4 w-4" /> Edit store
                   </Button>
                 </Link>
                 <Link to="/store/analytics">
