@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import ApifyRunConsole from "@/components/ApifyRunConsole";
 import {
   Database, RefreshCw, Zap, CheckCircle2, Package, Clock,
   Shirt, User, Baby, Smartphone, Home as HomeIcon, Sparkles, Dumbbell,
@@ -282,6 +283,8 @@ const ApifySync = () => {
       </div>
 
       <CategoryBreakdownCard perCategory={status.per_category} running={status.sync_running} />
+
+      <ApifyRunConsole />
 
       <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-900">
         <strong>How it works:</strong> The <em>junglee/amazon-crawler</em> Apify actor scrapes Amazon.com bestseller pages across 11 department categories (Women, Men, Kids, Electronics, Home, Beauty, Sports, Toys, Books, Handmade, Other). Product data — including real photos, prices, ratings, and descriptions — is imported into MongoDB. A live-simulation loop rotates featured items every 60 seconds; a full re-scrape runs automatically once a month.
