@@ -146,6 +146,8 @@ def _build_listing(
     item: Dict,
     cat: Dict,
     seller: Dict,
+    secondary_slugs: Optional[List[str]] = None,
+    cats_by_slug: Optional[Dict[str, Dict]] = None,
 ) -> Optional[Dict]:
     price = _first_price(item)
     if price is None or price < 0.99:
@@ -155,6 +157,13 @@ def _build_listing(
         return None
     item_id = str(uuid.uuid4())
     now = datetime.now(timezone.utc)
+    # Resolve secondary category IDs (dedup, exclude primary)
+    secondary_ids: List[str] = []
+    if secondary_slugs and cats_by_slug:
+        for s in secondary_slugs:
+            c = cats_by_slug.get(s)
+            if c and c["id"] != cat["id"] and c["id"] not in secondary_ids:
+                secondary_ids.append(c["id"])
     return {
         "id": item_id,
         "seller_id": seller["id"],
@@ -165,6 +174,7 @@ def _build_listing(
         "original_price": _list_price(item),
         "category_id": cat["id"],
         "category_name": cat["name"],
+        "secondary_categories": secondary_ids,
         "condition": _condition_guess(item),
         "brand": (item.get("brand") or "")[:80],
         "size": "",
@@ -300,32 +310,32 @@ async def import_from_apify(
         await db.favorites.delete_many({})
         await db.cart_items.delete_many({})
 
-    # Distribute items across categories — the actor may return them in category order,
-    # but we don't have guaranteed per-item category, so we round-robin over slugs
+    # Distribute items across categories using the keyword classifier + a fair
+    # round-robin over UNIQUE catalog slugs when the classifier finds nothing.
+    from services.category_classifier import classify as _classify
     to_insert: List[Dict] = []
     per_cat: Dict[str, int] = {}
     idx = 0
     total_raw = len(items)
+    unique_slugs = list(dict.fromkeys(slugs))  # preserve order, drop dups
+    # Never fallback to "other" alone — spread fallbacks across every real category
+    fallback_pool = [s for s in unique_slugs if s != "other"] or unique_slugs
     for it in items:
-        # try to detect category from the actor's breadCrumbs, else round-robin
-        slug_hit = None
-        crumbs = it.get("breadCrumbs")
-        if isinstance(crumbs, str):
-            low = crumbs.lower()
-            for slug in slugs:
-                if slug in low:
-                    slug_hit = slug
-                    break
-        if not slug_hit:
-            slug_hit = slugs[idx % len(slugs)]
-        cat = cats.get(slug_hit) or cats.get("other")
+        matched = _classify(it, unique_slugs)  # ordered list of slug tags
+        if matched:
+            primary_slug = matched[0]
+            secondary_slugs = matched[1:]
+        else:
+            primary_slug = fallback_pool[idx % len(fallback_pool)]
+            secondary_slugs = []
+        cat = cats.get(primary_slug) or cats.get("other")
         if not cat:
             continue
         seller = sellers[idx % len(sellers)]
-        listing = _build_listing(it, cat, seller)
+        listing = _build_listing(it, cat, seller, secondary_slugs=secondary_slugs, cats_by_slug=cats)
         if listing:
             to_insert.append(listing)
-            per_cat[slug_hit] = per_cat.get(slug_hit, 0) + 1
+            per_cat[primary_slug] = per_cat.get(primary_slug, 0) + 1
             idx += 1
             # Persist per-category counts every 200 imports so mid-run status is live
             if idx % 200 == 0:

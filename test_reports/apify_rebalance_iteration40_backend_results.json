@@ -1,0 +1,568 @@
+{
+  "admin_listings_after_len": 1256,
+  "admin_listings_before_len": 1256,
+  "admin_user": {
+    "email": "admin@mercari.local",
+    "role": "admin"
+  },
+  "base": "https://apify-catalog.preview.emergentagent.com/api",
+  "categories": [
+    {
+      "id": "82a68761-a263-4f63-837f-5dd1362c2cd9",
+      "name": "Women",
+      "slug": "women"
+    },
+    {
+      "id": "f34099af-f793-45b6-836f-ae2153539e30",
+      "name": "Men",
+      "slug": "men"
+    },
+    {
+      "id": "692caf9f-11c7-4a89-84fd-8d1663f0ec2b",
+      "name": "Jewelry",
+      "slug": "Jewelry"
+    },
+    {
+      "id": "8ca3f81e-1f45-42a3-8af8-68f67ba23e41",
+      "name": "Kids",
+      "slug": "kids"
+    },
+    {
+      "id": "1c35f64b-00ad-4a23-b116-31ac529d418c",
+      "name": "Electronics",
+      "slug": "electronics"
+    },
+    {
+      "id": "445c3f22-d134-47ec-9e19-db0750af706f",
+      "name": "Home",
+      "slug": "home"
+    },
+    {
+      "id": "ef817e0f-4f3b-49a7-815b-cc28c8611970",
+      "name": "Beauty",
+      "slug": "beauty"
+    },
+    {
+      "id": "c193a1b1-666e-42f4-94c8-f29c74ebd1af",
+      "name": "Sports",
+      "slug": "sports"
+    },
+    {
+      "id": "44c6859a-b03c-4401-bd28-12633a2f1b0d",
+      "name": "Toys",
+      "slug": "toys"
+    },
+    {
+      "id": "4d719ec7-78cd-4cf4-89ca-2f789417717f",
+      "name": "Books",
+      "slug": "books"
+    },
+    {
+      "id": "90a1878d-a5b5-4a62-a3a1-8dd1dba3df34",
+      "name": "Handmade",
+      "slug": "handmade"
+    },
+    {
+      "id": "02c59e78-5738-49ec-9ca7-a6c91b79af13",
+      "name": "Vintage",
+      "slug": "vintage"
+    },
+    {
+      "id": "1392acf0-0c22-4e2a-87c7-9f1e1e8aee87",
+      "name": "Other",
+      "slug": "other"
+    },
+    {
+      "id": "5c022afe-5d18-41ea-9bde-9ffd2713b9d5",
+      "name": "Shoes",
+      "slug": "shoes"
+    },
+    {
+      "id": "0ad21232-c612-45e5-9201-c37ea82de101",
+      "name": "Bags & Accessories",
+      "slug": "bags-accessories"
+    },
+    {
+      "id": "b11fd949-3172-4ab9-bb30-3773104eccf5",
+      "name": "Jewelry & Watches",
+      "slug": "jewelry-watches"
+    },
+    {
+      "id": "72008f36-2e41-49ba-8398-ba8e437d6c55",
+      "name": "Pet Supplies",
+      "slug": "pet-supplies"
+    },
+    {
+      "id": "febc538c-1f5d-4cca-8a07-99ba414080fb",
+      "name": "Automotive",
+      "slug": "automotive"
+    },
+    {
+      "id": "7a09dd3e-0b67-486e-b69d-e3525fce3289",
+      "name": "Garden & Outdoor",
+      "slug": "garden-outdoor"
+    },
+    {
+      "id": "2cb9e1e3-6c4b-45ea-8091-c79afbf42e3c",
+      "name": "Musical Instruments",
+      "slug": "musical-instruments"
+    },
+    {
+      "id": "e7761bb7-f433-4094-837c-3bc8ab728512",
+      "name": "Office & Craft",
+      "slug": "office-craft"
+    },
+    {
+      "id": "6d6bf636-9842-4ed7-b314-5488117323c4",
+      "name": "Collectibles",
+      "slug": "collectibles"
+    }
+  ],
+  "category_samples": [
+    {
+      "id": "82a68761-a263-4f63-837f-5dd1362c2cd9",
+      "returned": 96,
+      "slug": "women",
+      "status": 200
+    },
+    {
+      "id": "f34099af-f793-45b6-836f-ae2153539e30",
+      "returned": 96,
+      "slug": "men",
+      "status": 200
+    },
+    {
+      "id": "692caf9f-11c7-4a89-84fd-8d1663f0ec2b",
+      "returned": 20,
+      "slug": "Jewelry",
+      "status": 200
+    },
+    {
+      "id": "8ca3f81e-1f45-42a3-8af8-68f67ba23e41",
+      "returned": 96,
+      "slug": "kids",
+      "status": 200
+    },
+    {
+      "id": "1c35f64b-00ad-4a23-b116-31ac529d418c",
+      "returned": 96,
+      "slug": "electronics",
+      "status": 200
+    },
+    {
+      "id": "445c3f22-d134-47ec-9e19-db0750af706f",
+      "returned": 96,
+      "slug": "home",
+      "status": 200
+    },
+    {
+      "id": "ef817e0f-4f3b-49a7-815b-cc28c8611970",
+      "returned": 96,
+      "slug": "beauty",
+      "status": 200
+    },
+    {
+      "id": "c193a1b1-666e-42f4-94c8-f29c74ebd1af",
+      "returned": 96,
+      "slug": "sports",
+      "status": 200
+    },
+    {
+      "id": "44c6859a-b03c-4401-bd28-12633a2f1b0d",
+      "returned": 64,
+      "slug": "toys",
+      "status": 200
+    },
+    {
+      "id": "4d719ec7-78cd-4cf4-89ca-2f789417717f",
+      "returned": 61,
+      "slug": "books",
+      "status": 200
+    }
+  ],
+  "checks": {
+    "all_counts_after_at_least_20": {
+      "below_20": {},
+      "counts_after": {
+        "Jewelry": 20,
+        "automotive": 20,
+        "bags-accessories": 20,
+        "beauty": 115,
+        "books": 61,
+        "collectibles": 21,
+        "electronics": 524,
+        "garden-outdoor": 21,
+        "handmade": 53,
+        "home": 523,
+        "jewelry-watches": 21,
+        "kids": 216,
+        "men": 158,
+        "musical-instruments": 21,
+        "office-craft": 21,
+        "other": 20,
+        "pet-supplies": 21,
+        "shoes": 21,
+        "sports": 175,
+        "toys": 64,
+        "vintage": 20,
+        "women": 106
+      },
+      "pass": true
+    },
+    "auth": {
+      "pass": true,
+      "regular_user_body": {
+        "detail": "Admin access required"
+      },
+      "regular_user_status": 403,
+      "unauthenticated_body": {
+        "detail": "Not authenticated"
+      },
+      "unauthenticated_status": 401
+    },
+    "no_new_rows_admin_listings_length": {
+      "after": 1256,
+      "before": 1256,
+      "pass": true
+    },
+    "public_visitor_listings_across_categories": {
+      "distribution": {
+        "counts_by_primary_category_id": {
+          "1c35f64b-00ad-4a23-b116-31ac529d418c": 34,
+          "445c3f22-d134-47ec-9e19-db0750af706f": 12,
+          "44c6859a-b03c-4401-bd28-12633a2f1b0d": 4,
+          "4d719ec7-78cd-4cf4-89ca-2f789417717f": 4,
+          "8ca3f81e-1f45-42a3-8af8-68f67ba23e41": 4,
+          "90a1878d-a5b5-4a62-a3a1-8dd1dba3df34": 4,
+          "c193a1b1-666e-42f4-94c8-f29c74ebd1af": 15,
+          "ef817e0f-4f3b-49a7-815b-cc28c8611970": 9,
+          "f34099af-f793-45b6-836f-ae2153539e30": 10
+        },
+        "returned": 96,
+        "status": 200,
+        "top_primary_count": 34,
+        "top_primary_fraction": 0.354,
+        "unique_primary_categories": 9
+      },
+      "pass": true
+    },
+    "secondary_category_filtering": {
+      "pass": true
+    },
+    "sync_running_false": {
+      "immediate": {
+        "body": {
+          "active_listings": 1253,
+          "auto_schedule_enabled": true,
+          "imported_count": 2611,
+          "last_live_tick": "2026-08-20T15:22:46.904000",
+          "last_sync_at": null,
+          "live_sync_enabled": true,
+          "message": "Running actor for 28 categories, up to 178 each",
+          "next_scheduled_at": "2026-09-19T15:23:00.597000",
+          "per_category": {
+            "beauty": 208,
+            "books": 47,
+            "electronics": 211,
+            "home": 85,
+            "kids": 429,
+            "men": 544,
+            "other": 360,
+            "sports": 14,
+            "toys": 149,
+            "women": 564
+          },
+          "raw_items": 2694,
+          "schedule_interval_days": 30,
+          "sold_listings": 3,
+          "source": "junglee/amazon-crawler",
+          "started_at": "2026-08-20T15:23:00.736000",
+          "sync_running": true,
+          "target_count": 5000,
+          "total_listings": 1256
+        },
+        "status": 200
+      },
+      "pass": true,
+      "settled": {
+        "body": {
+          "active_listings": 1253,
+          "auto_schedule_enabled": true,
+          "imported_count": 2611,
+          "last_live_tick": "2026-08-20T15:22:46.904000",
+          "last_sync_at": null,
+          "live_sync_enabled": true,
+          "message": "Actor error: Monthly usage hard limit exceeded",
+          "next_scheduled_at": "2026-09-19T15:23:12.281000",
+          "per_category": {
+            "beauty": 208,
+            "books": 47,
+            "electronics": 211,
+            "home": 85,
+            "kids": 429,
+            "men": 544,
+            "other": 360,
+            "sports": 14,
+            "toys": 149,
+            "women": 564
+          },
+          "raw_items": 2694,
+          "schedule_interval_days": 30,
+          "sold_listings": 3,
+          "source": "junglee/amazon-crawler",
+          "started_at": "2026-08-20T15:23:12.037000",
+          "sync_running": false,
+          "target_count": 5000,
+          "total_listings": 1256
+        },
+        "status": 200
+      }
+    },
+    "ten_public_category_pages_have_20": {
+      "failures": [],
+      "pass": true
+    },
+    "text_and_category_are_anded": {
+      "failures": [],
+      "pass": true
+    },
+    "three_run_idempotency": {
+      "counts_after_identical": true,
+      "pass": true,
+      "run2_listings_tagged": 0,
+      "run2_reclassified": 0,
+      "run3_listings_tagged": 0,
+      "run3_reclassified": 0
+    }
+  },
+  "failures": [],
+  "overall_pass": true,
+  "public_distribution": {
+    "counts_by_primary_category_id": {
+      "1c35f64b-00ad-4a23-b116-31ac529d418c": 34,
+      "445c3f22-d134-47ec-9e19-db0750af706f": 12,
+      "44c6859a-b03c-4401-bd28-12633a2f1b0d": 4,
+      "4d719ec7-78cd-4cf4-89ca-2f789417717f": 4,
+      "8ca3f81e-1f45-42a3-8af8-68f67ba23e41": 4,
+      "90a1878d-a5b5-4a62-a3a1-8dd1dba3df34": 4,
+      "c193a1b1-666e-42f4-94c8-f29c74ebd1af": 15,
+      "ef817e0f-4f3b-49a7-815b-cc28c8611970": 9,
+      "f34099af-f793-45b6-836f-ae2153539e30": 10
+    },
+    "returned": 96,
+    "status": 200,
+    "top_primary_count": 34,
+    "top_primary_fraction": 0.354,
+    "unique_primary_categories": 9
+  },
+  "rebalance_runs": [
+    {
+      "body": {
+        "counts_after": {
+          "Jewelry": 20,
+          "automotive": 20,
+          "bags-accessories": 20,
+          "beauty": 115,
+          "books": 61,
+          "collectibles": 21,
+          "electronics": 524,
+          "garden-outdoor": 21,
+          "handmade": 53,
+          "home": 523,
+          "jewelry-watches": 21,
+          "kids": 216,
+          "men": 158,
+          "musical-instruments": 21,
+          "office-craft": 21,
+          "other": 20,
+          "pet-supplies": 21,
+          "shoes": 21,
+          "sports": 175,
+          "toys": 64,
+          "vintage": 20,
+          "women": 106
+        },
+        "duplicates_created": 0,
+        "listings_scanned": 1253,
+        "listings_tagged": 0,
+        "ok": true,
+        "primary_distribution": {
+          "Jewelry": 1,
+          "automotive": 1,
+          "bags-accessories": 1,
+          "beauty": 115,
+          "books": 53,
+          "collectibles": 1,
+          "electronics": 524,
+          "handmade": 44,
+          "home": 165,
+          "jewelry-watches": 1,
+          "kids": 81,
+          "men": 79,
+          "musical-instruments": 1,
+          "office-craft": 1,
+          "pet-supplies": 1,
+          "shoes": 1,
+          "sports": 113,
+          "toys": 56,
+          "vintage": 1,
+          "women": 13
+        },
+        "reclassified": 0,
+        "sync_flag_cleared": true
+      },
+      "elapsed_sec": 1.8,
+      "run": 1,
+      "status": 200
+    },
+    {
+      "body": {
+        "counts_after": {
+          "Jewelry": 20,
+          "automotive": 20,
+          "bags-accessories": 20,
+          "beauty": 115,
+          "books": 61,
+          "collectibles": 21,
+          "electronics": 524,
+          "garden-outdoor": 21,
+          "handmade": 53,
+          "home": 523,
+          "jewelry-watches": 21,
+          "kids": 216,
+          "men": 158,
+          "musical-instruments": 21,
+          "office-craft": 21,
+          "other": 20,
+          "pet-supplies": 21,
+          "shoes": 21,
+          "sports": 175,
+          "toys": 64,
+          "vintage": 20,
+          "women": 106
+        },
+        "duplicates_created": 0,
+        "listings_scanned": 1253,
+        "listings_tagged": 0,
+        "ok": true,
+        "primary_distribution": {
+          "Jewelry": 1,
+          "automotive": 1,
+          "bags-accessories": 1,
+          "beauty": 115,
+          "books": 53,
+          "collectibles": 1,
+          "electronics": 524,
+          "handmade": 44,
+          "home": 165,
+          "jewelry-watches": 1,
+          "kids": 81,
+          "men": 79,
+          "musical-instruments": 1,
+          "office-craft": 1,
+          "pet-supplies": 1,
+          "shoes": 1,
+          "sports": 113,
+          "toys": 56,
+          "vintage": 1,
+          "women": 13
+        },
+        "reclassified": 0,
+        "sync_flag_cleared": true
+      },
+      "elapsed_sec": 1.81,
+      "run": 2,
+      "status": 200
+    },
+    {
+      "body": {
+        "counts_after": {
+          "Jewelry": 20,
+          "automotive": 20,
+          "bags-accessories": 20,
+          "beauty": 115,
+          "books": 61,
+          "collectibles": 21,
+          "electronics": 524,
+          "garden-outdoor": 21,
+          "handmade": 53,
+          "home": 523,
+          "jewelry-watches": 21,
+          "kids": 216,
+          "men": 158,
+          "musical-instruments": 21,
+          "office-craft": 21,
+          "other": 20,
+          "pet-supplies": 21,
+          "shoes": 21,
+          "sports": 175,
+          "toys": 64,
+          "vintage": 20,
+          "women": 106
+        },
+        "duplicates_created": 0,
+        "listings_scanned": 1253,
+        "listings_tagged": 0,
+        "ok": true,
+        "primary_distribution": {
+          "Jewelry": 1,
+          "automotive": 1,
+          "bags-accessories": 1,
+          "beauty": 115,
+          "books": 53,
+          "collectibles": 1,
+          "electronics": 524,
+          "handmade": 44,
+          "home": 165,
+          "jewelry-watches": 1,
+          "kids": 81,
+          "men": 79,
+          "musical-instruments": 1,
+          "office-craft": 1,
+          "pet-supplies": 1,
+          "shoes": 1,
+          "sports": 113,
+          "toys": 56,
+          "vintage": 1,
+          "women": 13
+        },
+        "reclassified": 0,
+        "sync_flag_cleared": true
+      },
+      "elapsed_sec": 1.87,
+      "run": 3,
+      "status": 200
+    }
+  ],
+  "regular_user": {
+    "email": "sophia_style@demo.local",
+    "role": "user"
+  },
+  "secondary_filter_proof": {
+    "category_id": "445c3f22-d134-47ec-9e19-db0750af706f",
+    "category_slug": "home",
+    "returned_listing_id": "c2e2bd3d-02c7-47d7-bc13-c2fc919334fe",
+    "returned_listing_primary_category_id": "ef817e0f-4f3b-49a7-815b-cc28c8611970",
+    "returned_listing_secondary_categories": [
+      "445c3f22-d134-47ec-9e19-db0750af706f",
+      "8ca3f81e-1f45-42a3-8af8-68f67ba23e41",
+      "82a68761-a263-4f63-837f-5dd1362c2cd9"
+    ],
+    "returned_listing_title": "BIODANCE Collagen Peptides Jelly Serum Mist, Hydrating Face Mist, Plumping, Anti-Aging Face Spray, Sprayable Hydrogel, Travel Essentials & Self Care Gifts for Women, Korean Skin Ca",
+    "secondary_count_in_admin_listing_snapshot": 359
+  },
+  "text_category_sample": {
+    "and_failures": [],
+    "category_id": "1c35f64b-00ad-4a23-b116-31ac529d418c",
+    "category_slug": "electronics",
+    "returned": 92,
+    "sample_titles": [
+      "Nulaxy Ergonomic Adjustable Laptop Stand for Desk, Dual Foldable Computer Riser with Advanced Heat-Vent, Heavy-Duty Portable Notebook Holder for Posture Correction, Compatible with Mac 10-16\" Laptops",
+      "OMOTON Heavy Laptop Stand for Desk, 360\u00b0 Rotating Aluminum Gaming Riser | 33 lbs Support, Ergonomic Height & Angle, Ventilated Design, for 11-17\" Gaming Laptop, Thick Dual Arms",
+      "OMOTON Heavy Laptop Stand for Desk, 360\u00b0 Rotating Aluminum Gaming Riser | 33 lbs Support, Ergonomic Height & Angle, Ventilated Design, for 11-17\" Gaming Laptop, Thick Dual Arms",
+      "Wireless Bluetooth Headphones Over Ear V6.0 HiFi Stereo with Mic | 65H Playtime 6EQ Modes Foldable Bluetooth Headset with Microphone for Travel Smartphone Computer Laptop Rose Gold",
+      "LOXP Adjustable Laptop Stand for Desk, Portable Airflow Laptop Riser Holder | Metal, Foldable, Ergonomic, Computer Notebook Stand Perfect for Home Desk, Office, Projector Mount, Travel, 10-15.6\" Lapto"
+    ],
+    "status": 200
+  }
+}

@@ -1,0 +1,151 @@
+{
+  "base_url": "https://apify-catalog.preview.emergentagent.com",
+  "checked_at": "2026-08-20T14:13:09Z",
+  "sync_running": false,
+  "sync_status": {
+    "source": "junglee/amazon-crawler",
+    "last_sync_at": null,
+    "started_at": "2026-08-20T14:07:05.314000",
+    "last_live_tick": "2026-08-20T14:12:46.871000",
+    "imported_count": 2611,
+    "raw_items": 2694,
+    "active_listings": 1253,
+    "sold_listings": 3,
+    "total_listings": 1256,
+    "target_count": 5000,
+    "live_sync_enabled": true,
+    "sync_running": false,
+    "message": "Cleared by admin rebalance",
+    "per_category": {
+      "kids": 429,
+      "women": 564,
+      "men": 544,
+      "electronics": 211,
+      "other": 360,
+      "home": 85,
+      "toys": 149,
+      "books": 47,
+      "sports": 14,
+      "beauty": 208
+    },
+    "next_scheduled_at": "2026-09-19T14:04:00.656000",
+    "schedule_interval_days": 30,
+    "auto_schedule_enabled": true
+  },
+  "category_counts_limit96": {
+    "women": 96,
+    "men": 96,
+    "Jewelry": 20,
+    "kids": 96,
+    "electronics": 96,
+    "home": 96,
+    "beauty": 87,
+    "sports": 96,
+    "toys": 48,
+    "books": 46,
+    "handmade": 37,
+    "vintage": 20,
+    "other": 20,
+    "shoes": 20,
+    "bags-accessories": 20,
+    "jewelry-watches": 20,
+    "pet-supplies": 20,
+    "automotive": 20,
+    "garden-outdoor": 20,
+    "musical-instruments": 20,
+    "office-craft": 20,
+    "collectibles": 20
+  },
+  "all_categories_at_least_20": true,
+  "empty_categories": [],
+  "samples": {
+    "women": [
+      "BIODANCE Collagen Peptides Jelly Serum Mist, Hydrating Face Mist, Plumping, Anti-Aging Face Spray, Sprayable Hydrogel, Travel Essentials & Self Care Gifts for Women, Korean Skin Ca",
+      "shevalues Quick Drying Shower Shoes for Women Men with Arch Support | Lightweight Pool Slides with Drain Holes Comfortable Beach Slipper Sandals for Gym College Dorms"
+    ],
+    "men": [
+      "3-Pack Breathable Mesh Skull Cap Sweat Control Helmet Liner | Lightweight Quick Dry Cooling Sports Cycling Motorcycle Hard Hat Liner for Men Women",
+      "Cliganic Premium Cotton Rounds for Face (300 Count) - Makeup Remover Pads, Hypoallergenic, Lint-Free | 100% Pure Cotton"
+    ],
+    "Jewelry": [
+      "BIODANCE Collagen Peptides Jelly Serum Mist, Hydrating Face Mist, Plumping, Anti-Aging Face Spray, Sprayable Hydrogel, Travel Essentials & Self Care Gifts for Women, Korean Skin Ca",
+      "Crocs Unisex-Child Classic Watercolor Marbled Clog"
+    ],
+    "kids": [
+      "BIODANCE Collagen Peptides Jelly Serum Mist, Hydrating Face Mist, Plumping, Anti-Aging Face Spray, Sprayable Hydrogel, Travel Essentials & Self Care Gifts for Women, Korean Skin Ca",
+      "Crocs Unisex-Child Classic Watercolor Marbled Clog"
+    ],
+    "electronics": [
+      "Beats Solo Buds - Wireless Bluetooth Earbuds | 18 Hours of Battery Life | Apple & Android Compatibility | Built-in Microphone - Matte Black",
+      "Tonmom Laptop Stand for Desk, Aluminum Laptop Riser Holder | Removable Metal Notebook Stand Ventilated Cooling Computer Riser Compatible with 10-15.6\u201d Laptops"
+    ],
+    "home": [
+      "BIODANCE Collagen Peptides Jelly Serum Mist, Hydrating Face Mist, Plumping, Anti-Aging Face Spray, Sprayable Hydrogel, Travel Essentials & Self Care Gifts for Women, Korean Skin Ca",
+      "Infinno Wrist Rattles and Foot Finder Socks Set, Baby Toys for 0-12 Months | Soft crinkle textures, encourages reaching and kicking, garden bug characters, newborn shower gift, boy"
+    ],
+    "beauty": [
+      "NYX PROFESSIONAL MAKEUP The Brow Glue, Extreme Hold Eyebrow Gel - Clear",
+      "Vanicream Daily Facial Moisturizer, Face Cream with 5 Key Cermides & Hyaluronic Acid, 3 Fl Oz, Formulated Without Common Irritants for Sensitive Skin, Lightweight, Non-Greasy Hydra"
+    ],
+    "sports": [
+      "kurdene Wireless Earbuds Bluetooth 5.3 Light Weight in Ear Headphones | Premium Sound Bass Ear buds with Charging Case,Smart Touch Control,Built in Mics Headset,Clear Calls for Sports Workout",
+      "Wireless Headphones Sports Bluetooth 6.1 Earbuds 90H Playtime Ear Buds with Hooks, Noise Canceling LED Power Display with Charging Case IPX7 Waterproof Earphones for Workout Running"
+    ],
+    "toys": [
+      "ELECTRI Desk Lamp for Home Office, 5 Color & Stepless Dimming, Eye-Caring | 360\u00b0 Rotatable, Touch Control, with USB-C Output Port, for Study, Reading, Work, Nail Art, Craft, Puzzle, with Adapter",
+      "Wood Designs WD13803 See-All Storage with (12) Assorted Color Trays, 21 x 33 x 14\" (H x W x D)"
+    ],
+    "books": [
+      "Taygeer Travel Backpack for Women, TSA Carry On Backpack Flight Approved | 15.6inch Laptop Mochila with Water Bottle Pocket & Shoe Pouch, Nurse Bag Casual Daypack for Weekender Bus",
+      "A Murder in Time"
+    ],
+    "handmade": [
+      "Govee RGBIC Smart Table Lamp 2, Touch Bedside Small Table Lamp (Corded) | LED Desk Lamp Compatible with SmartThings, Matter, Alexa, Nightstand Lamp for Bedroom Living Room Night Light, 64 Scene Modes",
+      "Govee RGBIC Smart Table Lamp 2, Touch Bedside Small Table Lamp (Corded) | LED Desk Lamp Compatible with SmartThings, Matter, Alexa, Nightstand Lamp for Bedroom Living Room Night Light, 64 Scene Modes"
+    ],
+    "vintage": [
+      "BS-VOG Clear Purse for Stadium Events, Clear Crossbody Bag for Women | Right-Sized for Phone, Wallet & Essentials, Thick Water-Resistant PVC, Lightweight, for Concerts, Stadium Eve",
+      "kurdene Wireless Earbuds Bluetooth 5.3 Light Weight in Ear Headphones | Premium Sound Bass Ear buds with Charging Case,Smart Touch Control,Built in Mics Headset,Clear Calls for Sports Workout"
+    ],
+    "other": [
+      "PoKat 20.75\" Small Modern Ceramic Table Lamps Set of 2 for Bedroom, White | Bedside Lamps for Nightstands, Farmhouse Home Decor, End Table & Desk Light, Ideal Housewarming New Home Gift for Women Mom",
+      "Taygeer Travel Backpack for Women, TSA Carry On Backpack Flight Approved | 15.6inch Laptop Mochila with Water Bottle Pocket & Shoe Pouch, Nurse Bag Casual Daypack for Weekender Bus"
+    ],
+    "shoes": [
+      "KIIU Mens Thong Sandals Indoor and Outdoor Beach Flip Flop",
+      "Auto Trim Removal Tool Kit - 5 Piece set for Dash, Door Panel, Clip Remover - Scratch-Resist Nylon Pry Tools for Interior Car Trims Work - Panel Prying Tools Included - Blue"
+    ],
+    "bags-accessories": [
+      "What Happened on Beale ...",
+      "Wireless Bluetooth Headphones Over Ear V6.0 HiFi Stereo with Mic | 65H Playtime 6EQ Modes Foldable Bluetooth Headset with Microphone for Travel Smartphone Computer Laptop Rose Gold"
+    ],
+    "jewelry-watches": [
+      "CHARMING TAILOR Clutch Evening Bag Elegant Pleated Satin Formal Handbag Simple Classy Purse for Women",
+      "WEILAILUX Outdoor Table Lamp, Shower Lamp Waterproof (Wood Grain H9.6in) | Original Design, Cordless Rechargeable, Touch Dimming, 4000mAh Battery 8-72 Hours, 180 Lumen, 2700K, IP44, Indoor & Outdoor"
+    ],
+    "pet-supplies": [
+      "Govee Smart Cordless Table Lamp Classic (No Adapter), RGBIC Desk Lamp | Rechargeable Table Lamp for Living Room, Portable Lamp Works with Matter, Bedside Lamp for Nightlight, 72 Scenes Modes, 500lm",
+      "Sophie Cunningham Pointing Shirt - Spicy Sophie Cunningham Shirt"
+    ],
+    "automotive": [
+      "KIIU Mens Thong Sandals Indoor and Outdoor Beach Flip Flop",
+      "That Darkness (Gardiner and ..."
+    ],
+    "garden-outdoor": [
+      "Modern Cordless Table Lamp Set of 2, Black Portable LED Desk Lamps | 5000mAh, Rechargeable, Battery Operated Lighting for Bedroom, Dining Room, Restaurant, Coffee Shop, Camping, Night Light",
+      "Bedside Table Lamp for Bedroom,Small Lamps for Night stands with Pull Chain | 3-Color Bedroom Table Lamps Desk Reading Light AC Outlet Nightstand Lamp for Living Room Decor/Dorm/Office Bulb Included"
+    ],
+    "musical-instruments": [
+      "Bulova Men's Series X High Precision Quartz Chronograph Watch, Sapphire Crystal, Continous Sweeping Secondhand",
+      "Fossil Men's Watch, Neutra Quartz Stainless Steel Chronograph Watch for Men"
+    ],
+    "office-craft": [
+      "BS-VOG Clear Purse for Stadium Events, Clear Crossbody Bag for Women | Right-Sized for Phone, Wallet & Essentials, Thick Water-Resistant PVC, Lightweight, for Concerts, Stadium Eve",
+      "15W LED Desk Lamp with USB Charging Ports \u2013 Dimmable Table Lamp with 3 Color Temps, 5 Brightness, 4 Timers, Flexible Gooseneck Light with Base, Eye-Caring Reading Light for Home Office, Bedroom, Study"
+    ],
+    "collectibles": [
+      "White crown LED Desk Lamp Dimmable Table Lamp Reading Lamp with USB Charging Port, 5 Lighting Modes, Sensitive Control, 30/60 Minutes Timer (White, First-Generation)",
+      "Most Wanted"
+    ]
+  }
+}

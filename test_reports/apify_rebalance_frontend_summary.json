@@ -1,0 +1,13 @@
+{
+  "base_url": "https://apify-catalog.preview.emergentagent.com",
+  "browser_flow": "admin login -> /admin -> ApifySyncTicker rebalance button -> confirm -> result card -> public /products",
+  "result": "passed",
+  "evidence": {
+    "admin_login": "admin@mercari.local login succeeded and redirected to home",
+    "rebalance_button": "data-testid=apify-ticker-rebalance-btn visible on /admin",
+    "rebalance_result": "data-testid=apify-ticker-rebalance-result visible after accepting confirm",
+    "rebalance_result_text": "Rebalance complete — 645 reclassified, 185 created to fill empty categories. Counts included women 108, men 145, kids 193, electronics 444, home 498, beauty 87, sports 160, toys 47, books 46, handmade 36, and all sparse categories at 20.",
+    "public_products": "/products rendered 2 product cards with visible electronics and home categories"
+  },
+  "console_log_path": "/root/.emergent/automation_output/20260820_141207/console_20260820_141207.log"
+}

@@ -1,0 +1,68 @@
+{
+  "verdict": "not_fixed",
+  "user_reported_bug": "All the listed products for Aptify are not appearing on the platform find and fix the problem and enable all the scraped products to appear disapplied distributed over all the categories accordingly .",
+  "summary": "No relevant testing skill found. Focused retest verified the Apify category distribution endpoint still exposes products across all 22 categories and no new active listing rows are cloned, but the idempotency fix is NOT working: the second identical min_per_category=20 rebalance returned reclassified=81 and listings_tagged=18, with changed counts_after. Frontend admin button flow completed but also showed non-idempotent output: 24 reclassified and 28 listings cross-tagged instead of 0/small. No mocked APIs were used for this test.",
+  "backend_issues": {
+    "critical": [
+      {
+        "endpoint": "POST /api/admin/listings/rebalance",
+        "issue": "Endpoint is still not idempotent. Two consecutive calls with {min_per_category:20, clear_sync_flag:true} returned first: reclassified=267/listings_tagged=187, second: reclassified=81/listings_tagged=18; counts_after also changed between calls.",
+        "priority": "CRITICAL"
+      }
+    ],
+    "minor": [
+      {
+        "endpoint": "POST /api/admin/listings/rebalance",
+        "issue": "Lower-threshold calls completed, but they still reclassified records repeatedly (min=10 reclassified=55; min=15 immediately after reclassified=36), indicating state remains unstable even when no top-up rows are cloned."
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "ApifySyncTicker",
+        "issue": "Admin rebalance result card appeared but showed '24 reclassified, 28 listings cross-tagged', failing the expected idempotent 0/small cross-tag count after prior rebalance runs.",
+        "selector": "[data-testid=\"apify-ticker-rebalance-result\"]",
+        "priority": "HIGH"
+      }
+    ],
+    "integration_issues": [
+      {
+        "flow": "Admin dashboard -> Rebalance categories",
+        "issue": "Frontend correctly calls the backend and displays listings_tagged, but backend instability surfaces in the UI as repeated non-zero cross-tagging.",
+        "affected_selectors": ["[data-testid=\"apify-ticker-rebalance-btn\"]", "[data-testid=\"apify-ticker-rebalance-result\"]"]
+      }
+    ],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/test_reports/test_apify_rebalance_idempotency.py",
+    "/app/test_reports/apify_rebalance_idempotency_results.json",
+    "/app/test_reports/frontend_apify_rebalance_smoke.py",
+    "/root/.emergent/automation_output/20260820_143356/console_20260820_143356.log"
+  ],
+  "action_items": [
+    "Make /api/admin/listings/rebalance deterministic and truly no-op on repeated identical inputs; second min=20 call must return reclassified=0 and listings_tagged=0 or <5 with identical counts_after.",
+    "Stabilize fallback classification for unmatched listings, likely by sorting listing scans by stable id and/or preserving existing primary category when classifier has no keyword match instead of recomputing by mutable scan order.",
+    "Re-run the backend idempotency script and admin UI smoke after the fix."
+  ],
+  "critical_code_review_comments": [
+    "server.py rebalance reads active listings without a deterministic sort and assigns fallback categories by an incrementing index. Repeated updates can change natural DB scan order, causing different primary assignments and new deficits/top-up tags on each run."
+  ],
+  "updated_files": [
+    "/app/test_reports/test_apify_rebalance_idempotency.py",
+    "/app/test_reports/apify_rebalance_idempotency_results.json",
+    "/app/test_reports/frontend_apify_rebalance_smoke.py",
+    "/app/test_reports/bug_verification_39.json",
+    "/app/test_reports/iteration_39.json"
+  ],
+  "success_rate": {
+    "backend": "~80% (category visibility/auth/no-cloning passed; critical idempotency failed)",
+    "frontend": "50% (admin flow completed and result displayed; idempotent result expectation failed)"
+  },
+  "seed_data_creation": "No seed data created. Tests used existing scraped/listing data and invoked the rebalance endpoint only; Apify scraper was not manually run.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Primary failure to retest: consecutive POST /api/admin/listings/rebalance calls with {min_per_category:20, clear_sync_flag:true} must stabilize. In this run second call still returned reclassified=81 and listings_tagged=18. Frontend button later returned 24 reclassified and 28 listings cross-tagged. Positive checks: no active listing row count increase (1253 before/after), all 22 category filters had >=20 visible listings after min=20, secondary category filtering worked, sync_running remained false, unauth returned 401 and non-admin returned 403.",
+  "rca_of_the_issue": "The endpoint appears to remain state-unstable: repeated reclassification changes primary/secondary assignments and creates new category deficits even though top-up no longer clones listing rows. Code review points to nondeterministic fallback assignment for unmatched listings because active listings are fetched without a stable sort and fallback categories are assigned by scan index; preserving prior categories or sorting by stable id should prevent drift."
+}

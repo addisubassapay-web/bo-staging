@@ -1,0 +1,30 @@
+{
+  "frontend_url": "https://apify-catalog.preview.emergentagent.com",
+  "admin_login": "admin@mercari.local",
+  "rebalance_button_selector": "[data-testid=apify-ticker-rebalance-btn]",
+  "rebalance_result_selector": "[data-testid=apify-ticker-rebalance-result]",
+  "final_frontend_run": {
+    "ticker_state_before_click": "Running",
+    "result_text_prefix": "Rebalance complete — 0 reclassified, 0 listings cross-tagged to fill sparse categories.",
+    "parsed_reclassified": 0,
+    "parsed_listings_cross_tagged": 0,
+    "pass": true
+  },
+  "visitor_category_page": {
+    "url_shape": "/search?category=<home-id>&size=96",
+    "summary": "Showing 1–96 of 522 items",
+    "visible_product_cards": 96,
+    "primary_categories_in_backing_api_first_page": 6,
+    "secondary_category_matches_in_backing_api_first_page": 58,
+    "pass": true
+  },
+  "public_visitor_api_distribution": {
+    "returned": 96,
+    "primary_categories_in_first_page": 9,
+    "pass": true
+  },
+  "notes": [
+    "An earlier UI click during active background sync returned 0 reclassified, 2 cross-tagged; the allowed edge case was caused by catalog state changing while live sync was running. Immediate subsequent frontend run returned 0/0.",
+    "No browser error selectors were found during the final frontend run."
+  ]
+}

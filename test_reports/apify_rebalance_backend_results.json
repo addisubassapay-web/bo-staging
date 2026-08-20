@@ -1,0 +1,417 @@
+{
+  "base_url": "https://apify-catalog.preview.emergentagent.com",
+  "started_at": "2026-08-20T14:10:42Z",
+  "admin_login": "ok",
+  "seller_login": "ok",
+  "unauth_rebalance_status": 401,
+  "non_admin_rebalance_status": 403,
+  "status_before": {
+    "source": "junglee/amazon-crawler",
+    "last_sync_at": null,
+    "started_at": "2026-08-20T14:07:05.314000",
+    "last_live_tick": "2026-08-20T14:10:43.630000",
+    "imported_count": 2611,
+    "raw_items": 2694,
+    "active_listings": 950,
+    "sold_listings": 3,
+    "total_listings": 953,
+    "target_count": 5000,
+    "live_sync_enabled": true,
+    "sync_running": true,
+    "message": "Running actor for 28 categories, up to 178 each",
+    "per_category": {
+      "kids": 429,
+      "women": 564,
+      "men": 544,
+      "electronics": 211,
+      "other": 360,
+      "home": 85,
+      "toys": 149,
+      "books": 47,
+      "sports": 14,
+      "beauty": 208
+    },
+    "next_scheduled_at": "2026-09-19T14:04:00.656000",
+    "schedule_interval_days": 30,
+    "auto_schedule_enabled": true
+  },
+  "categories": [
+    {
+      "slug": "women",
+      "id": "82a68761-a263-4f63-837f-5dd1362c2cd9"
+    },
+    {
+      "slug": "men",
+      "id": "f34099af-f793-45b6-836f-ae2153539e30"
+    },
+    {
+      "slug": "Jewelry",
+      "id": "692caf9f-11c7-4a89-84fd-8d1663f0ec2b"
+    },
+    {
+      "slug": "kids",
+      "id": "8ca3f81e-1f45-42a3-8af8-68f67ba23e41"
+    },
+    {
+      "slug": "electronics",
+      "id": "1c35f64b-00ad-4a23-b116-31ac529d418c"
+    },
+    {
+      "slug": "home",
+      "id": "445c3f22-d134-47ec-9e19-db0750af706f"
+    },
+    {
+      "slug": "beauty",
+      "id": "ef817e0f-4f3b-49a7-815b-cc28c8611970"
+    },
+    {
+      "slug": "sports",
+      "id": "c193a1b1-666e-42f4-94c8-f29c74ebd1af"
+    },
+    {
+      "slug": "toys",
+      "id": "44c6859a-b03c-4401-bd28-12633a2f1b0d"
+    },
+    {
+      "slug": "books",
+      "id": "4d719ec7-78cd-4cf4-89ca-2f789417717f"
+    },
+    {
+      "slug": "handmade",
+      "id": "90a1878d-a5b5-4a62-a3a1-8dd1dba3df34"
+    },
+    {
+      "slug": "vintage",
+      "id": "02c59e78-5738-49ec-9ca7-a6c91b79af13"
+    },
+    {
+      "slug": "other",
+      "id": "1392acf0-0c22-4e2a-87c7-9f1e1e8aee87"
+    },
+    {
+      "slug": "shoes",
+      "id": "5c022afe-5d18-41ea-9bde-9ffd2713b9d5"
+    },
+    {
+      "slug": "bags-accessories",
+      "id": "0ad21232-c612-45e5-9201-c37ea82de101"
+    },
+    {
+      "slug": "jewelry-watches",
+      "id": "b11fd949-3172-4ab9-bb30-3773104eccf5"
+    },
+    {
+      "slug": "pet-supplies",
+      "id": "72008f36-2e41-49ba-8398-ba8e437d6c55"
+    },
+    {
+      "slug": "automotive",
+      "id": "febc538c-1f5d-4cca-8a07-99ba414080fb"
+    },
+    {
+      "slug": "garden-outdoor",
+      "id": "7a09dd3e-0b67-486e-b69d-e3525fce3289"
+    },
+    {
+      "slug": "musical-instruments",
+      "id": "2cb9e1e3-6c4b-45ea-8091-c79afbf42e3c"
+    },
+    {
+      "slug": "office-craft",
+      "id": "e7761bb7-f433-4094-837c-3bc8ab728512"
+    },
+    {
+      "slug": "collectibles",
+      "id": "6d6bf636-9842-4ed7-b314-5488117323c4"
+    }
+  ],
+  "category_counts_limit96": {
+    "women": 70,
+    "men": 94,
+    "Jewelry": 30,
+    "kids": 96,
+    "electronics": 96,
+    "home": 96,
+    "beauty": 49,
+    "sports": 87,
+    "toys": 35,
+    "books": 31,
+    "handmade": 30,
+    "vintage": 30,
+    "other": 29,
+    "shoes": 30,
+    "bags-accessories": 30,
+    "jewelry-watches": 30,
+    "pet-supplies": 30,
+    "automotive": 30,
+    "garden-outdoor": 30,
+    "musical-instruments": 30,
+    "office-craft": 30,
+    "collectibles": 30
+  },
+  "category_samples": {
+    "women": [
+      "PoKat 20.75\" Small Modern Ceramic Table Lamps Set of 2 for Bedroom, White | Bedside Lamps for Nightstands, Farmhouse Home Decor, End Table & Desk Light, Ideal Housewarming New Home Gift for Women Mom",
+      "Fibrdoo Clear Bag for Stadium Events Transparent Crossbody Purse | Stadium Approved Clear Bag Tote Handbag with Adjustable Straps for Women Men for Concerts Sports Game Days Festiv",
+      "BIODANCE Collagen Peptides Jelly Serum Mist, Hydrating Face Mist, Plumping, Anti-Aging Face Spray, Sprayable Hydrogel, Travel Essentials & Self Care Gifts for Women, Korean Skin Ca"
+    ],
+    "men": [
+      "Merrell Men's Moab 3 Hiking Shoe",
+      "Merrell Men's Moab 3 Hiking Shoe",
+      "KIIU Mens Thong Sandals Indoor and Outdoor Beach Flip Flop"
+    ],
+    "Jewelry": [
+      "Globe Electric 56963 31.5\" Multi-Joint Desk Lamp with Metal Clamp, Black, On/Off Rotary Switch on Shade, Partially Adjustable Swing Arm, Home Essentials, Reading Light, Office D\u00e9cor",
+      "Shroommate Dorm Room Essential Clip On Bed Light for Dorm Room - White | Headboard and Bedside Table Lamp, Flexible Reading Lamp, Night Light Kids Nursery, MultiColor LEDs, Adapter Included",
+      "GAEFURY LED Desk Lamp for Home Office, 24W Bright Desk Lamp with Phone Holder Base - 25 Lighting Modes Eye-Caring Desk Light Adjustable Gooseneck Lamp for Workbench Drafting Reading Study"
+    ],
+    "kids": [
+      "Shroommate Dorm Room Essential Clip On Bed Light for Dorm Room - White | Headboard and Bedside Table Lamp, Flexible Reading Lamp, Night Light Kids Nursery, MultiColor LEDs, Adapter Included",
+      "BIODANCE Collagen Peptides Jelly Serum Mist, Hydrating Face Mist, Plumping, Anti-Aging Face Spray, Sprayable Hydrogel, Travel Essentials & Self Care Gifts for Women, Korean Skin Ca",
+      "Shroommate Dorm Room Essential Clip On Bed Light for Dorm Room - White | Headboard and Bedside Table Lamp, Flexible Reading Lamp, Night Light Kids Nursery, MultiColor LEDs, Adapter Included"
+    ],
+    "electronics": [
+      "LED Desk Lamp for Home Office with Base, 28.2\" Adjustable Gooseneck Swing Arm Ultra Bright Desk Light, Dimmable Architect Table lamp for Desktop Computer Light, Reading, Study, Workbench",
+      "Honeywell LED Desk Lamp for Home Office Eye-Caring Dimmable Reading Light | CRI94,4 Color Modes,Touch Control,USB-A And USB-C Ports,Adjustable Head,Timer,Desk Light for Bedroom Bedside College Dorm",
+      "BOHON LED Desk Lamp with USB Charging Port, 3 Color Modes Dimmable, White | Reading Lamp, Auto Dimming Task Lamp, Flexible Neck Table Light for Dorm Bedside, Adapter Include"
+    ],
+    "home": [
+      "GAEFURY LED Desk Lamp for Home Office, 24W Bright Desk Lamp with Phone Holder Base - 25 Lighting Modes Eye-Caring Desk Light Adjustable Gooseneck Lamp for Workbench Drafting Reading Study",
+      "LED Desk Lamp with 10W Wireless Charging & Pen Holder, Black | CRI 95, 800LM, Stepless Dimming, 3 Modes, 360\u00b0Flexible Arm, Touch, Study Table Lamp for Home Office, Dorm Room, with Adapter",
+      "Led Desk Lamp with Atmosphere Lighting, Smart RGB LED Desk Lamp | Music Sync and 16 Million DIY Colors, Foldable Lamp with Dimmable and Timer, Modern LED Lights for Desk, and Gaming Rooms"
+    ],
+    "beauty": [
+      "A Study in Scarlet ...",
+      "Tastes Like Fear (DI ...",
+      "The Last Mile (Amos ..."
+    ],
+    "sports": [
+      "Wireless Headphones Sports Bluetooth 6.1 Earbuds 90H Playtime Ear Buds with Hooks, Noise Canceling LED Power Display with Charging Case IPX7 Waterproof Earphones for Workout Running",
+      "Projector Stand Tripod Laptop Stands Height Adjustable | from 23.5\" to 46.5\" with Gooseneck Phone Holder, Floor for Office, Home, Stage, Studio, Outdoor, DJ Racks Holder Mount",
+      "kurdene Wireless Earbuds Bluetooth 5.3 Light Weight in Ear Headphones | Premium Sound Bass Ear buds with Charging Case,Smart Touch Control,Built in Mics Headset,Clear Calls for Sports Workout"
+    ],
+    "toys": [
+      "Assassin's Creed Black Flag Resynced - PlayStation 5",
+      "Assassin's Creed Black Flag Resynced - PlayStation 5",
+      "Assassin's Creed Black Flag Resynced - PlayStation 5"
+    ],
+    "books": [
+      "BESIGN LS10 Laptop Stand for Desk, Ergonomic Adjustable Notebook Tablet Stand, Foldable Laptop Riser, Portable Desktop Book Stands, Computer Holder Compatible with 10-14\" Laptops, Black",
+      "CHARYJOD LED Desk Lamp for Office Home, Height Adjustable Architect Desk Light with USB Adapter, Stepless Dimming Desk Lamp Light for Reading, Study, Workbench",
+      "Car Charger USB C, 3 Port 67W Dual USB-C & USB-A Car Phone Charger Adapter | Fast Charging Cigarette Lighter Accessories, for iPhone 17/16/15/14/13/12/11 Pro Max,iPad, Galaxy S26/S"
+    ],
+    "handmade": [
+      "Citizen Quartz Mens Watch, Stainless Steel, Classic, Gold-Tone",
+      "Assassin's Creed Black Flag Resynced - PlayStation 5",
+      "What Happened on Beale ..."
+    ],
+    "vintage": [
+      "KIDMI Genuine Suede Clogs for Women Men Cork Footbed Mules Potato Shoes | Arch Support, Comfortable, Leather Slip On, Fall, Casual, Indoor Outdoor, Non-slip Rubber Sole, Adjustable",
+      "KDG 2 Pack Cordless Black Table Lamps, Rechargeable Portable LED Desk Lamps | 5000mAh Battery Operated 3 Color Stepless Dimming Up for Restaurant, Bedroom, Outdoor Party, Camping, Coffee Shop, Nightli",
+      "Farm and Posh Personalized NIV Personal Bible | Large Print (Brown)"
+    ],
+    "other": [
+      "Most Wanted",
+      "Q-tips Cotton Swabs, Original, For Home, First Aid and Beauty, 100% Cotton, 500 Count",
+      "Toddler Little Girls Boys No Show Socks Cotton Low Cut Socks With Grips | Anti Slip"
+    ],
+    "shoes": [
+      "FROGG TOGGS Ultra-lite2 Waterproof, Breathable Reusable Rain Poncho | Lightweight, packable design, adjustable hood, quick-dry material",
+      "Sharp Objects",
+      "The Bachelor Girl's Guide ..."
+    ],
+    "bags-accessories": [
+      "A Light in the Attic",
+      "MRS. MEYER'S CLEAN DAY Hand Soap, Rain Water Scent, 12.5 Fl Oz Bottle - 3 Pack | Moisturizing Liquid Hand Soap, Softens and Cleans Hands, Cruelty Free, Made with Essential Oils, Ol",
+      "AXX Pink Desk Lamp for Teen Girls, College Dorm Room Cute Table Light | Home Office Bedroom Essentials, Kawaii, Dimmable LED, Flexible Gooseneck, Pen Holder, Touch Control, for Kids Adults"
+    ],
+    "jewelry-watches": [
+      "KIIU Mens Thong Sandals Indoor and Outdoor Beach Flip Flop",
+      "Murdoku: 80 Murder Mystery Logic Puzzles",
+      "Wireless Bluetooth Headphones Over Ear V6.0 HiFi Stereo with Mic | 65H Playtime 6EQ Modes Foldable Bluetooth Headset with Microphone for Travel Smartphone Computer Laptop Rose Gold"
+    ],
+    "pet-supplies": [
+      "A Light in the Attic",
+      "KDG 2 Pack Cordless Black Table Lamps, Rechargeable Portable LED Desk Lamps | 5000mAh Battery Operated 3 Color Stepless Dimming Up for Restaurant, Bedroom, Outdoor Party, Camping, Coffee Shop, Nightli",
+      "Affresh Washing Machine Cleaner, Helps Power Away Odor Causing Bacteria & Grime Deep Inside Pump, Valve & Hoses, 6 Time Release Tablets, 6 Month Supply"
+    ],
+    "automotive": [
+      "COTTON DAY Unisex School Kids Boys Girls Soft Combed Cotton Athletic Socks",
+      "Delivering the Truth (Quaker ...",
+      "A Time of Torment ..."
+    ],
+    "garden-outdoor": [
+      "Wireless Bluetooth Headphones Over Ear V6.0 HiFi Stereo with Mic | 65H Playtime 6EQ Modes Foldable Bluetooth Headset with Microphone for Travel Smartphone Computer Laptop Rose Gold",
+      "Merrell Men's Moab 3 Hiking Shoe",
+      "iPhone Charger Fast Charging,2Pack 20W Type C Fast Charger Block with [10FT&6FT] USB C to Lightning Cable Compatible for iPhone 14/13/12/11 Pro Max/Xs Max/XR/X,iPad"
+    ],
+    "musical-instruments": [
+      "What Happened on Beale ...",
+      "BESIGN LS03 Aluminum Laptop Stand, Ergonomic Detachable Computer Stand, Notebook Riser, Laptop Mount Compatible with Air, Pro, Dell, HP, Lenovo More 10-15.6\" Laptops, Black",
+      "HUANUO Laptop Lap Desk with Cushion, Fit up to 15.6\" Laptops, Woodgrain | Portable Lap Desk with Pillow Cushion, Anti-Slip Strip & Storage Function for Home Office Students as Computer Laptop Stand"
+    ],
+    "office-craft": [
+      "Gain The Edge Soccer Grip Socks - Set - White",
+      "Wireless Headphones Sports Bluetooth 6.1 Earbuds 90H Playtime Ear Buds with Hooks, Noise Canceling LED Power Display with Charging Case IPX7 Waterproof Earphones for Workout Running",
+      "Orionstar Ergonomic Laptop Stand, Premium 5mm Aluminum Riser for 10-15.6 Inch Notebook Computer, Tool-Free Detachable Elevator Holder for Desk Office, Sturdy Riser for Eye-Level Neck Relief (Gold)"
+    ],
+    "collectibles": [
+      "Dell 27 Plus QHD Monitor - S2725DSM - 27-inch QHD (2560x1440) 144Hz 1ms Display, 2 x 3W Speakers, HDMI/DisplayPort 1.4 Connectivity, Height/Tilt/Pivot/Swivel Adjustability, AMD Fre",
+      "Merrell Men's Moab 3 Hiking Shoe",
+      "OYEARS 22.2\" Modern Desk Lamp, Metal Table Lamp with LED Bulb, Adjustable Reading Lamps for Living Room, Mid Century Nightstand Lamp for Home Office, Industrial Bedside Lamps, Cream and Gold"
+    ]
+  },
+  "rebalance_status_code": 200,
+  "rebalance_response": {
+    "ok": true,
+    "listings_scanned": 950,
+    "reclassified": 673,
+    "duplicates_created": 118,
+    "sync_flag_cleared": true,
+    "counts_after": {
+      "women": 88,
+      "men": 127,
+      "kids": 163,
+      "electronics": 395,
+      "home": 434,
+      "beauty": 73,
+      "sports": 151,
+      "toys": 42,
+      "books": 42,
+      "handmade": 40,
+      "vintage": 15,
+      "other": 15,
+      "shoes": 15,
+      "bags-accessories": 15,
+      "jewelry-watches": 15,
+      "pet-supplies": 15,
+      "automotive": 15,
+      "garden-outdoor": 15,
+      "musical-instruments": 15,
+      "office-craft": 15,
+      "collectibles": 15,
+      "Jewelry": 15
+    },
+    "primary_distribution": {
+      "kids": 48,
+      "women": 13,
+      "books": 33,
+      "sports": 94,
+      "home": 118,
+      "men": 60,
+      "electronics": 395,
+      "toys": 32,
+      "beauty": 73,
+      "handmade": 22,
+      "vintage": 6,
+      "shoes": 6,
+      "bags-accessories": 6,
+      "jewelry-watches": 6,
+      "pet-supplies": 6,
+      "automotive": 6,
+      "garden-outdoor": 6,
+      "musical-instruments": 5,
+      "office-craft": 5,
+      "collectibles": 5,
+      "Jewelry": 5
+    }
+  },
+  "status_after": {
+    "source": "junglee/amazon-crawler",
+    "last_sync_at": null,
+    "started_at": "2026-08-20T14:07:05.314000",
+    "last_live_tick": "2026-08-20T14:10:43.630000",
+    "imported_count": 2611,
+    "raw_items": 2694,
+    "active_listings": 1068,
+    "sold_listings": 3,
+    "total_listings": 1071,
+    "target_count": 5000,
+    "live_sync_enabled": true,
+    "sync_running": false,
+    "message": "Cleared by admin rebalance",
+    "per_category": {
+      "kids": 429,
+      "women": 564,
+      "men": 544,
+      "electronics": 211,
+      "other": 360,
+      "home": 85,
+      "toys": 149,
+      "books": 47,
+      "sports": 14,
+      "beauty": 208
+    },
+    "next_scheduled_at": "2026-09-19T14:04:00.656000",
+    "schedule_interval_days": 30,
+    "auto_schedule_enabled": true
+  },
+  "listings_scanned_for_secondary": 1068,
+  "secondary_case": {
+    "listing_id": "6ae3f25a-c7db-488a-8017-864fa7b137de",
+    "primary": "692caf9f-11c7-4a89-84fd-8d1663f0ec2b",
+    "secondary": "82a68761-a263-4f63-837f-5dd1362c2cd9",
+    "title": "REEF Neptune Women's Shoe, Lightweight & Breathable Stretch Knit Upper, Soft Cushion Footbed | Lightweight Sneaker, Breathable Knit, Soft Cushion Footbed, Crush-Back Heel"
+  },
+  "secondary_filter_items_scanned": 88,
+  "electronics_plain_count_limit96": 96,
+  "laptop_any_count_limit96": 79,
+  "laptop_electronics_count_limit96": 71,
+  "laptop_electronics_titles": [
+    "Nulaxy Full Aluminum Laptop Stand, Stable Support to 22 lbs, Open Cooling | Detachable for Portable Storage, Easy Setup, Saves Desk Space, Compatible with 10-16 Inch Laptops, Office Desk Accessories",
+    "HUANUO Laptop Lap Desk with Cushion, Fit up to 15.6\" Laptops, Woodgrain | Portable Lap Desk with Pillow Cushion, Anti-Slip Strip & Storage Function for Home Office Students as Computer Laptop Stand",
+    "USB C Cable 5 Pack 6FT, USB A to Type C Fast Charger Cord | 3A braided USB A to C charging cords for iPhone 17 16 15, Samsung Galaxy, LG; 5 pack for home, office, car and travel.(G",
+    "Tonmom Laptop Stand for Desk, Aluminum Laptop Riser Holder | Removable Metal Notebook Stand Ventilated Cooling Computer Riser Compatible with 10-15.6\u201d Laptops",
+    "Wireless Earbuds, 2026 Bluetooth 5.4 Headphones Bass Stereo Ear Buds with Noise Cancelling Mic, LED Display in Ear Earphones 50H Playtime Ear Buds, IP7 Waterproof for Laptop Pad Phones Soft Black",
+    "Orionstar Ergonomic Laptop Stand, Premium 5mm Aluminum Riser for 10-15.6 Inch Notebook Computer, Tool-Free Detachable Elevator Holder for Desk Office, Sturdy Riser for Eye-Level Neck Relief (Gold)",
+    "Projector Stand Tripod Laptop Stands Height Adjustable | from 23.5\" to 46.5\" with Gooseneck Phone Holder, Floor for Office, Home, Stage, Studio, Outdoor, DJ Racks Holder Mount",
+    "BESIGN LS03 Aluminum Laptop Stand, Ergonomic Detachable Computer Stand, Notebook Riser, Laptop Mount Compatible with Air, Pro, Dell, HP, Lenovo More 10-15.6\" Laptops, Black",
+    "HUANUO Laptop Lap Desk with Cushion, Fit up to 15.6\" Laptops, Woodgrain | Portable Lap Desk with Pillow Cushion, Anti-Slip Strip & Storage Function for Home Office Students as Computer Laptop Stand",
+    "OMOTON Heavy Laptop Stand for Desk, 360\u00b0 Rotating Aluminum Gaming Riser | 33 lbs Support, Ergonomic Height & Angle, Ventilated Design, for 11-17\" Gaming Laptop, Thick Dual Arms"
+  ],
+  "products_status_code": 200,
+  "products_total": 2,
+  "products_categories_seen_page1": [
+    "electronics",
+    "home"
+  ],
+  "failures": [
+    {
+      "check": "admin sync status is not stuck running before rebalance",
+      "details": {
+        "source": "junglee/amazon-crawler",
+        "last_sync_at": null,
+        "started_at": "2026-08-20T14:07:05.314000",
+        "last_live_tick": "2026-08-20T14:10:43.630000",
+        "imported_count": 2611,
+        "raw_items": 2694,
+        "active_listings": 950,
+        "sold_listings": 3,
+        "total_listings": 953,
+        "target_count": 5000,
+        "live_sync_enabled": true,
+        "sync_running": true,
+        "message": "Running actor for 28 categories, up to 178 each",
+        "per_category": {
+          "kids": 429,
+          "women": 564,
+          "men": 544,
+          "electronics": 211,
+          "other": 360,
+          "home": 85,
+          "toys": 149,
+          "books": 47,
+          "sports": 14,
+          "beauty": 208
+        },
+        "next_scheduled_at": "2026-09-19T14:04:00.656000",
+        "schedule_interval_days": 30,
+        "auto_schedule_enabled": true
+      }
+    },
+    {
+      "check": "idempotent rebalance did not create extra duplicates at min_per_category=15",
+      "details": 118
+    }
+  ]
+}

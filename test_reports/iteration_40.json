@@ -1,0 +1,44 @@
+{
+  "verdict": "fixed",
+  "user_reported_bug": "All the listed products for Aptify are not appearing on the platform find and fix the problem and enable all the scraped products to appear disapplied distributed over all the categories accordingly .",
+  "summary": "No relevant testing skill found. Focused backend and frontend verification shows the existing Apify/Aptify catalog is now distributed across categories, category filtering includes secondary categories, rebalance is idempotent on repeated runs, and no listing rows are cloned.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {
+        "endpoint": "GET /api/admin/sync/status",
+        "issue": "Apify live sync status intermittently starts a background actor and then reports 'Actor error: Monthly usage hard limit exceeded'. Rebalance clears/stabilizes sync_running=false, but the external Apify sync itself is quota-limited in this preview environment. Existing scraped listing distribution still works."
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/test_reports/test_apify_rebalance_iteration40.py",
+    "/app/test_reports/apify_rebalance_iteration40_backend_results.json",
+    "/app/test_reports/apify_rebalance_iteration40_frontend_summary.json"
+  ],
+  "action_items": [
+    "Optional: monitor or resolve the Apify actor monthly usage limit if live scraping must continue in this preview environment."
+  ],
+  "critical_code_review_comments": [],
+  "updated_files": [
+    "/app/test_reports/test_apify_rebalance_iteration40.py",
+    "/app/test_reports/apify_rebalance_iteration40_backend_results.json",
+    "/app/test_reports/apify_rebalance_iteration40_frontend_summary.json",
+    "/app/test_reports/bug_verification_40.json",
+    "/app/test_reports/iteration_40.json"
+  ],
+  "success_rate": {
+    "backend": "100% for rebalance/category distribution; Apify live sync quota warning noted separately",
+    "frontend": "100%"
+  },
+  "seed_data_creation": "No seed data created. Tests used existing 1256 admin listings / 1253 active listings.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Backend final run: GET /admin/listings stayed 1256 before/after; three POST /admin/listings/rebalance calls returned run1/run2/run3 reclassified=0 and listings_tagged=0, with identical run2/run3 counts. All 22 category counts_after values were >=20; 10 sampled public category endpoints returned >=20 items. Secondary category proof: home category response included listing c2e2bd3d-02c7-47d7-bc13-c2fc919334fe whose primary category was beauty and secondary_categories included home. q=laptop + electronics returned 92 items and all matched BOTH text and category. Frontend final run: admin button result showed '0 reclassified, 0 listings cross-tagged'; public /search?category=home&size=96 showed 96 cards, backed by API items from 6 primary categories and 58 secondary matches. Public /api/listings?limit=96 returned items across 9 primary categories.",
+  "rca_of_the_issue": "The tested fix adds deterministic primary classification and stable secondary-category top-up instead of cloning rows. Repeated rebalance calls no longer drift: second and third runs returned zero reclassifications and zero cross-tags with identical counts_after. One transient UI run during live sync returned 0/2 cross-tags; a subsequent run returned 0/0, consistent with state changing while live sync was active."
+}

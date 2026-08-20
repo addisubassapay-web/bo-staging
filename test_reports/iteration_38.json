@@ -1,0 +1,65 @@
+{
+  "verdict": "not_fixed",
+  "user_reported_bug": "All the listed products for Aptify are not appearing on the platform find and fix the problem and enable all the scraped products to appear disapplied distributed over all the categories accordingly .",
+  "summary": "No relevant testing skill found. Focused API + UI verification showed the core category visibility can be restored: after the admin UI rebalance, sync_running=false and all 22 categories returned at least 20 active listings. However the rebalance flow is not safely fixed/idempotent: an admin rerun with min_per_category=15 reclassified 673/950 listings and created 118 extra duplicates despite categories already having >=20, and the frontend min=20 click then created another 185 duplicates. This repeated duplicate growth is a remaining backend defect in the affected admin rebalance flow.",
+  "backend_issues": {
+    "critical": [
+      {
+        "endpoint": "POST /api/admin/listings/rebalance",
+        "issue": "Rebalance is not idempotent. A moderate rerun with {min_per_category:15, clear_sync_flag:true} returned ok:true but reclassified 673 listings and duplicates_created=118 even though pre-check category filters already showed >=20 listings for every category. The subsequent frontend button run with min_per_category=20 created another 185 duplicate/top-up listings. Repeated admin use can inflate/duplicate the catalog.",
+        "priority": "HIGH"
+      }
+    ],
+    "minor": [
+      {
+        "endpoint": "GET /api/admin/sync/status",
+        "issue": "Initial status contradicted the expected post-fix state: sync_running=true with message 'Running actor for 28 categories...' before manual rebalance. After rebalance it correctly returned sync_running=false."
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {
+        "flow": "Admin /admin ApifySyncTicker Rebalance categories",
+        "issue": "The UI button is visible and shows the emerald result card, but each tested click invoked a backend rebalance that created large numbers of additional duplicate/top-up listings rather than behaving idempotently.",
+        "affected_selectors": ["apify-ticker-rebalance-btn", "apify-ticker-rebalance-result"]
+      }
+    ],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/test_reports/test_apify_rebalance_backend.py",
+    "/app/test_reports/apify_rebalance_backend_results.json",
+    "/app/test_reports/check_apify_current_state.py",
+    "/app/test_reports/apify_current_state_after_ui.json",
+    "/app/test_reports/apify_rebalance_frontend_summary.json"
+  ],
+  "action_items": [
+    "Make POST /api/admin/listings/rebalance idempotent: repeated runs at the same/lower threshold should not keep reclassifying the same listings or creating new duplicate/top-up listings when category counts already satisfy the threshold.",
+    "Persist enough metadata on top-up duplicates (or use secondary_categories instead of cloning) so sparse categories do not lose their filled items on the next classifier pass.",
+    "Recheck Apify sync scheduler/state so preview does not show sync_running=true unexpectedly after the claimed stuck flag clear."
+  ],
+  "critical_code_review_comments": [
+    "/app/backend/server.py:1553-1588 projects no existing secondary_categories and compares set(secondary_ids) to set([]), so any listing with computed secondary categories is counted/updated as reclassified on every run instead of comparing against current stored secondary_categories.",
+    "/app/backend/server.py:1617-1634 samples random donors for sparse categories and overwrites category_id; cloned/top-up listings can be reclassified away from the sparse category on the next rebalance, causing repeated duplicate creation. The variable orig_pri is assigned after category_id is overwritten and is not used to preserve the donor's original category."
+  ],
+  "updated_files": [
+    "/app/test_reports/test_apify_rebalance_backend.py",
+    "/app/test_reports/apify_rebalance_backend_results.json",
+    "/app/test_reports/check_apify_current_state.py",
+    "/app/test_reports/apify_current_state_after_ui.json",
+    "/app/test_reports/apify_rebalance_frontend_summary.json",
+    "/app/test_reports/bug_verification_38.json",
+    "/app/test_reports/iteration_38.json"
+  ],
+  "success_rate": {
+    "backend": "82%",
+    "frontend": "100%"
+  },
+  "seed_data_creation": "No seed data was created. Testing invoked the real admin rebalance endpoint twice, which created 303 duplicate/top-up listings total (118 from API min_per_category=15, 185 from the frontend min_per_category=20 button). Current post-test state has sync_running=false and every category has >=20 visible active listings.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Current preview state after testing: /api/admin/sync/status sync_running=false; /api/listings?category_id=<id>&limit=96 returns >=20 for all 22 categories. Rebalance endpoint remains the concern: do not repeatedly click it unless testing idempotency, because it created many duplicates during this run.",
+  "rca_of_the_issue": "Runtime evidence and code review indicate the rebalance pass is not comparing against existing secondary_categories and top-up clones are treated as normal listings by future classifier passes. When rebalanced again, many clones/listings move back to classifier-preferred categories, sparse categories fall below the requested threshold, and new duplicates are created to refill them. Reproduction: authenticate as admin, verify all categories have >=20, then POST /api/admin/listings/rebalance with a lower threshold such as 15; observe hundreds reclassified and duplicates_created >0."
+}

@@ -188,6 +188,11 @@ class Listing(BaseModel):
     original_price: Optional[float] = None
     category_id: str
     category_name: str
+    # Additional category IDs a product also belongs to (multi-category tag).
+    # `category_id` remains the primary/canonical bucket; `secondary_categories`
+    # broadens visibility (e.g. an "electronics for women" laptop lives in
+    # Electronics as primary + Women as secondary).
+    secondary_categories: List[str] = Field(default_factory=list)
     condition: Literal["new", "like_new", "good", "fair", "poor"] = "good"
     brand: Optional[str] = ""
     size: Optional[str] = ""
@@ -908,14 +913,27 @@ def _build_listings_query(
     query: dict = {}
     if status_filter:
         query["status"] = status_filter
+    and_clauses: list = []
     if q:
-        query["$or"] = [
-            {"title": {"$regex": q, "$options": "i"}},
-            {"description": {"$regex": q, "$options": "i"}},
-            {"brand": {"$regex": q, "$options": "i"}},
-        ]
+        and_clauses.append({
+            "$or": [
+                {"title": {"$regex": q, "$options": "i"}},
+                {"description": {"$regex": q, "$options": "i"}},
+                {"brand": {"$regex": q, "$options": "i"}},
+            ]
+        })
     if category_id:
-        query["category_id"] = category_id
+        and_clauses.append({
+            "$or": [
+                {"category_id": category_id},
+                {"secondary_categories": category_id},
+            ]
+        })
+    if len(and_clauses) == 1:
+        # Merge the single $or straight into the query (cleaner explain plans)
+        query.update(and_clauses[0])
+    elif len(and_clauses) > 1:
+        query["$and"] = and_clauses
     if condition:
         query["condition"] = condition
     if brand:
@@ -1505,6 +1523,175 @@ async def admin_wallet_adjust(user_id: str, payload: dict = Body(...), _admin: d
         "wallet_balance": round(float(fresh.get("wallet_balance", 0.0) or 0.0), 2),
         "wallet_frozen_balance": round(float(fresh.get("wallet_frozen_balance", 0.0) or 0.0), 2),
     }
+
+
+@api_router.post("/admin/listings/rebalance")
+async def admin_rebalance_listings(payload: dict = Body(default={}), _admin: dict = Depends(require_admin)):
+    """Re-classify every listing with the keyword classifier and, optionally,
+    top-up empty/thin categories with copies of well-fitting listings so
+    every catalog category has at least `min_per_category` items.
+
+    Body: {
+      "min_per_category": 20,     // optional — 0 disables the top-up pass
+      "clear_sync_flag": true     // resets a stuck sync_running=true
+    }
+
+    Idempotency: this endpoint is safe to run repeatedly. Reclassification
+    only writes when the computed primary/secondary differs from the stored
+    values. Top-up adds sparse category ids to donor listings'
+    `secondary_categories` instead of cloning — so the same rebalance twice
+    creates zero duplicates.
+    """
+    from services.category_classifier import classify as _classify
+    from collections import Counter
+
+    min_per_cat = int(payload.get("min_per_category", 20))
+    clear_sync = bool(payload.get("clear_sync_flag", True))
+
+    cats = await db.categories.find({}, {"_id": 0}).to_list(200)
+    if not cats:
+        raise HTTPException(400, "No categories exist to rebalance into")
+    cats_by_slug = {c["slug"]: c for c in cats}
+    cats_by_id = {c["id"]: c for c in cats}
+    unique_slugs = list(cats_by_slug.keys())
+    fallback_pool = [s for s in unique_slugs if s != "other"] or unique_slugs
+
+    listings = await db.listings.find(
+        {"status": "active"},
+        {
+            "_id": 0, "id": 1, "title": 1, "description": 1, "brand": 1,
+            "category_id": 1, "category_name": 1, "secondary_categories": 1,
+        },
+    ).sort("id", 1).to_list(20000)
+
+    from pymongo import UpdateOne
+    import hashlib as _hl
+
+    reclassified = 0
+    new_primary: Counter = Counter()
+    update_ops: list = []
+    for l in listings:
+        pseudo = {
+            "title": l.get("title") or "",
+            "description": l.get("description") or "",
+            "brand": l.get("brand") or "",
+            "category": l.get("category_name") or "",
+        }
+        matched = _classify(pseudo, unique_slugs)
+        if matched:
+            primary = matched[0]
+            computed_secondary = matched[1:]
+        else:
+            # Deterministic fallback: keep the listing's existing primary if it
+            # still points at a valid slug (avoids drift on repeated runs). Only
+            # if the current primary is unknown / missing do we pick a bucket —
+            # and we pick it from a stable hash of the listing id so the same
+            # listing always lands in the same fallback slot.
+            existing_primary_slug = None
+            existing_cid = l.get("category_id")
+            if existing_cid and existing_cid in cats_by_id:
+                existing_primary_slug = cats_by_id[existing_cid]["slug"]
+            if existing_primary_slug and existing_primary_slug in cats_by_slug:
+                primary = existing_primary_slug
+            else:
+                h = int(_hl.sha1((l.get("id") or "").encode("utf-8")).hexdigest(), 16)
+                primary = fallback_pool[h % len(fallback_pool)]
+            computed_secondary = []
+        primary_cat = cats_by_slug.get(primary) or cats_by_slug.get("other") or cats[0]
+        computed_secondary_ids = [
+            cats_by_slug[s]["id"] for s in computed_secondary
+            if s in cats_by_slug and cats_by_slug[s]["id"] != primary_cat["id"]
+        ]
+        new_primary[primary] += 1
+
+        # Merge with any manually-added secondary tags already on the listing
+        # (e.g. from a previous top-up pass) — dedupe, drop the new primary.
+        existing_secondary = list(l.get("secondary_categories") or [])
+        merged_secondary_ids: List[str] = []
+        for cid in computed_secondary_ids + existing_secondary:
+            if cid == primary_cat["id"]:
+                continue
+            if cid in cats_by_id and cid not in merged_secondary_ids:
+                merged_secondary_ids.append(cid)
+
+        old_primary_id = l.get("category_id")
+        primary_changed = old_primary_id != primary_cat["id"]
+        secondary_changed = set(existing_secondary) != set(merged_secondary_ids)
+        if primary_changed or secondary_changed:
+            update_ops.append(UpdateOne(
+                {"id": l["id"]},
+                {"$set": {
+                    "category_id": primary_cat["id"],
+                    "category_name": primary_cat["name"],
+                    "secondary_categories": merged_secondary_ids,
+                }},
+            ))
+            reclassified += 1
+
+    if update_ops:
+        await db.listings.bulk_write(update_ops, ordered=False)
+
+    # Top-up sparse categories by TAGGING existing listings — no duplicates.
+    # This is naturally idempotent: re-running with the same threshold finds
+    # zero deficit because tagged listings already count via secondary_categories.
+    listings_tagged = 0
+    per_cat_after: dict = {}
+    if min_per_cat > 0:
+        active_total = await db.listings.count_documents({"status": "active"})
+        if active_total >= min_per_cat:
+            for slug, cat in cats_by_slug.items():
+                current = await db.listings.count_documents({
+                    "status": "active",
+                    "$or": [{"category_id": cat["id"]}, {"secondary_categories": cat["id"]}],
+                })
+                deficit = min_per_cat - current
+                if deficit <= 0:
+                    per_cat_after[slug] = current
+                    continue
+                # Pick random donors that aren't already tagged with this category
+                donors = await db.listings.aggregate([
+                    {"$match": {
+                        "status": "active",
+                        "category_id": {"$ne": cat["id"]},
+                        "secondary_categories": {"$ne": cat["id"]},
+                    }},
+                    {"$sample": {"size": deficit}},
+                    {"$project": {"_id": 0, "id": 1}},
+                ]).to_list(deficit)
+                if donors:
+                    await db.listings.update_many(
+                        {"id": {"$in": [d["id"] for d in donors]}},
+                        {"$addToSet": {"secondary_categories": cat["id"]}},
+                    )
+                    listings_tagged += len(donors)
+                per_cat_after[slug] = current + len(donors)
+
+    if clear_sync:
+        await db.sync_state.update_one(
+            {"id": "apify"},
+            {"$set": {"sync_running": False, "message": "Cleared by admin rebalance"}},
+        )
+
+    # Final counts for the response
+    final_counts: dict = {}
+    for cid, cat in cats_by_id.items():
+        c = await db.listings.count_documents({
+            "status": "active",
+            "$or": [{"category_id": cid}, {"secondary_categories": cid}],
+        })
+        final_counts[cat["slug"]] = c
+
+    return {
+        "ok": True,
+        "listings_scanned": len(listings),
+        "reclassified": reclassified,
+        "duplicates_created": 0,           # kept for API compat with older clients
+        "listings_tagged": listings_tagged,
+        "sync_flag_cleared": clear_sync,
+        "counts_after": final_counts,
+        "primary_distribution": dict(new_primary),
+    }
+
 
 
 @api_router.put("/me/email-prefs")

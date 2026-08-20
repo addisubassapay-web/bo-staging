@@ -25,7 +25,22 @@ Full-stack ecommerce marketplace **Merchari-global** — same color scheme (`#FF
 ---
 
 ## Implemented (with dates)
-### Feb 2026 — Login/Register modernization + Invite-only signup toggle
+### Feb 2026 — Apify products category distribution + idempotent rebalance
+- **Bug fix**: 62% of scraped Apify listings were stuck in "Women" while 11 catalog categories were empty. Root causes: fragile breadcrumb `in`-substring matching + biased round-robin over a raw slug list where "women" appeared 3× first.
+- **New `services/category_classifier.py`** — keyword-based classifier returning an ordered list of category slugs so one product can belong to multiple categories (e.g. "Women's laptop" → primary Electronics, secondary Women). Product-type keywords (electronics/beauty/home/toys/sports/books/handmade) win over gender tags (women/men/kids) so a laptop never falls into "Women" just because the title mentions women.
+- **`Listing.secondary_categories: List[str]`** — new field. `_build_listings_query` now filters by `category_id` OR `secondary_categories` (proper `$and` when combined with text search).
+- **`apify_sync.py` rewrite** — uses the classifier + a fair round-robin over UNIQUE catalog slugs (no more Women bias).
+- **New endpoint `POST /api/admin/listings/rebalance`** — idempotent one-click fix:
+  * Reclassifies every listing using the classifier. Deterministic scan order (`sort id ASC`). Fallback for keyword-less items keeps the existing primary or uses SHA1(listing_id) for stable bucket selection.
+  * Tops-up sparse categories by `$addToSet`-ing the sparse category id to donor listings' `secondary_categories` (no cloning).
+  * Uses `pymongo.UpdateOne` + `bulk_write` so 1200+ listings process in <10s.
+  * Clears stuck `sync_running` flag when `clear_sync_flag: true`.
+  * Body: `{min_per_category: int (default 20), clear_sync_flag: bool (default true)}`
+  * Response: `{ok, reclassified, listings_tagged, counts_after, primary_distribution, sync_flag_cleared}`
+- **New admin UI**: "Rebalance categories" button on the ApifySyncTicker (`/admin`) with a confirmation dialog + inline emerald result card showing per-slug counts.
+- **Verified idempotent** by bug testing agent: Run 1 stabilizes state, Runs 2 & 3 return `reclassified=0, listings_tagged=0`. Row count identical across runs. Every one of 22 categories now has ≥20 listings.
+
+
 - **Confirm password** on Register — new field with live matched/mismatched border colouring, inline "Passwords don't match" error, green check icon when matching, submit button disabled until match.
 - **Invite-only signup** (new `Settings.invite_only_signup` boolean, admin-tunable) — backend `POST /auth/register` now enforces:
   * If `invite_only_signup=true` and no `referral_code` provided → HTTP 403 "Registration is invite-only…"

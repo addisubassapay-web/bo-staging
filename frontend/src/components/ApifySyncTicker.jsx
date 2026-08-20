@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
 import api from "@/lib/api";
-import { Database, RefreshCw, CheckCircle2, ArrowRight } from "lucide-react";
+import { Database, RefreshCw, CheckCircle2, ArrowRight, LayoutGrid, Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 /**
  * Compact live "importing X of Y" ticker for the Admin dashboard.
@@ -19,6 +20,9 @@ const formatDuration = (s) => {
 const ApifySyncTicker = () => {
   const [status, setStatus] = useState(null);
   const [now, setNow] = useState(Date.now());
+  const [rebalancing, setRebalancing] = useState(false);
+  const [rebalanceResult, setRebalanceResult] = useState(null);
+  const { toast } = useToast();
 
   const load = useCallback(async () => {
     try {
@@ -28,6 +32,30 @@ const ApifySyncTicker = () => {
       // Silent — dashboard should degrade gracefully
     }
   }, []);
+
+  const rebalance = useCallback(async () => {
+    if (rebalancing) return;
+    if (!window.confirm("Reclassify every listing with the smart keyword classifier and top-up empty categories to at least 20 items each?\n\nThis takes ~30s and clears any stuck sync flag.")) return;
+    setRebalancing(true);
+    setRebalanceResult(null);
+    try {
+      const { data } = await api.post("/admin/listings/rebalance", { min_per_category: 20, clear_sync_flag: true });
+      setRebalanceResult(data);
+      toast({
+        title: "Rebalance complete",
+        description: `Reclassified ${data.reclassified} listings · filled ${data.duplicates_created} category slots`,
+      });
+      await load();
+    } catch (e) {
+      toast({
+        title: "Rebalance failed",
+        description: e?.response?.data?.detail || "Try again",
+        variant: "destructive",
+      });
+    } finally {
+      setRebalancing(false);
+    }
+  }, [rebalancing, load, toast]);
 
   useEffect(() => {
     load();
@@ -101,14 +129,44 @@ const ApifySyncTicker = () => {
             </div>
           </div>
         </div>
-        <Link
-          to="/admin/apify-sync"
-          className="inline-flex items-center gap-1 text-sm text-[#FF211F] hover:underline"
-          data-testid="apify-ticker-open-link"
-        >
-          Open <ArrowRight className="h-3.5 w-3.5" />
-        </Link>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={rebalance}
+            disabled={rebalancing}
+            className="inline-flex items-center gap-1.5 text-sm text-neutral-700 dark:text-neutral-300 border border-neutral-200 dark:border-neutral-700 rounded-full px-3 py-1 hover:border-[#FF211F] hover:text-[#FF211F] transition-colors disabled:opacity-60"
+            data-testid="apify-ticker-rebalance-btn"
+          >
+            {rebalancing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <LayoutGrid className="h-3.5 w-3.5" />}
+            <span className="text-xs font-semibold">Rebalance categories</span>
+          </button>
+          <Link
+            to="/admin/apify-sync"
+            className="inline-flex items-center gap-1 text-sm text-[#FF211F] hover:underline"
+            data-testid="apify-ticker-open-link"
+          >
+            Open <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
+        </div>
       </div>
+
+      {rebalanceResult && (
+        <div className="mt-4 rounded-lg border border-emerald-200 dark:border-emerald-900 bg-emerald-50 dark:bg-emerald-950/40 p-3 text-xs" data-testid="apify-ticker-rebalance-result">
+          <div className="font-semibold text-emerald-800 dark:text-emerald-200 mb-1">
+            Rebalance complete — {rebalanceResult.reclassified} reclassified, {rebalanceResult.listings_tagged ?? rebalanceResult.duplicates_created ?? 0} listings cross-tagged to fill sparse categories.
+          </div>
+          <div className="flex flex-wrap gap-1.5 mt-2">
+            {Object.entries(rebalanceResult.counts_after || {}).map(([slug, count]) => (
+              <span
+                key={slug}
+                className="inline-flex items-center gap-1 rounded-full bg-white dark:bg-neutral-900 border border-emerald-200 dark:border-emerald-900 px-2 py-0.5 text-[11px] font-medium text-neutral-700 dark:text-neutral-200"
+              >
+                {slug} <span className="text-emerald-700 dark:text-emerald-300 tabular-nums">· {count}</span>
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
 
       {running ? (
         <>
