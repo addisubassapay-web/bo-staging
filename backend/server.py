@@ -40,6 +40,7 @@ from routers.scraper import router as scraper_router
 from routers.store_boosts import router as store_boosts_router
 from routers.products import router as products_router
 from routers.apify_runs import router as apify_runs_router
+from routers.support import router as support_router
 
 
 ROOT_DIR = Path(__file__).parent
@@ -6583,6 +6584,7 @@ app.include_router(scraper_router, prefix="/api")
 app.include_router(store_boosts_router, prefix="/api")
 app.include_router(products_router, prefix="/api")
 app.include_router(apify_runs_router, prefix="/api")
+app.include_router(support_router, prefix="/api")
 
 app.add_middleware(
     CORSMiddleware,

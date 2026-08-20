@@ -46,6 +46,7 @@ import PaymentCancel from "@/pages/PaymentCancel";
 import GeoCurrencyPrompt from "@/components/GeoCurrencyPrompt";
 import GlobalWalletToaster from "@/components/GlobalWalletToaster";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
+import SupportWidget from "@/components/SupportWidget";
 
 function App() {
   return (
@@ -103,6 +104,7 @@ function App() {
                 <GeoCurrencyPrompt />
                 <GlobalWalletToaster />
                 <PWAInstallPrompt />
+                <SupportWidget />
               </AuthProvider>
             </BrowserRouter>
           </div>

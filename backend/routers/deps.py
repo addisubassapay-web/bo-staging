@@ -53,6 +53,20 @@ async def require_admin(user: dict = Depends(get_current_user)):
         raise HTTPException(403, "Admin only")
     return user
 
+
+async def get_current_user_optional(credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)):
+    """Return the current user if a valid bearer is supplied, else None.
+    Never raises — used by endpoints that accept both authenticated and guest callers."""
+    if not credentials:
+        return None
+    try:
+        payload = jwt.decode(credentials.credentials, _jwt_secret(), algorithms=[JWT_ALG])
+    except jwt.PyJWTError:
+        return None
+    db = get_db()
+    user = await db.users.find_one({"id": payload.get("sub")}, {"_id": 0})
+    return user or None
+
 def now_utc() -> datetime:
     return datetime.now(timezone.utc)
 

@@ -25,7 +25,24 @@ Full-stack ecommerce marketplace **Merchari-global** — same color scheme (`#FF
 ---
 
 ## Implemented (with dates)
-### Feb 2026 — Apify products category distribution + idempotent rebalance
+### Feb 2026 — Customer Support Widget (chat + email)
+- **Global floating FAB** — Bottom-right on every page (`/app/frontend/src/components/SupportWidget.jsx` mounted in `App.js`). Orange→red gradient circle with pulse ring + emerald unread badge when the admin has replied to any of the user's tickets.
+- **Two channels from one home screen**:
+  * **Chat with us** — logged-in users only. Threaded in-app messages with the admin team. Polls the ticket every 15s so admin replies land live. Send with Enter (Shift+Enter for newline).
+  * **Email support** — accepts guests (email + optional name) or auth users. Message is stored in the ticket AND emailed to `SUPPORT_EMAIL` (Hostinger SMTP verified — real send).
+- **New backend router** `/app/backend/routers/support.py` with endpoints:
+  * `POST /api/support/tickets` (auth or guest for email channel) — creates ticket + fires email if channel=email
+  * `GET /api/support/tickets/my` — user's tickets, newest first
+  * `GET /api/support/tickets/{id}` — single ticket, marks read on view
+  * `POST /api/support/tickets/{id}/messages` — user or admin adds reply; user posts fire an in-app notification to the admin (and vice versa)
+  * `POST /api/support/tickets/{id}/close`
+  * `GET /api/support/unread-count` (user) & `GET /api/admin/support/unread-count` (admin) power the badges
+  * `GET /api/admin/support/tickets` (admin) — list with `status`/`channel` filters
+- **Added `get_current_user_optional`** to `routers/deps.py` so the same POST endpoint accepts both authenticated and guest email requests.
+- **New env `SUPPORT_EMAIL`** added to `backend/.env`; falls back to `SMTP_USER` when unset.
+- **Verified end-to-end via curl**: guest email ticket → `email_sent: true`; guest chat blocked (`Log in to start a chat`); auth chat + follow-up + admin reply all round-trip cleanly; admin list returns unread counter. Frontend smoke: FAB visible, panel opens, email view renders with guest-mode fields.
+
+
 - **Bug fix**: 62% of scraped Apify listings were stuck in "Women" while 11 catalog categories were empty. Root causes: fragile breadcrumb `in`-substring matching + biased round-robin over a raw slug list where "women" appeared 3× first.
 - **New `services/category_classifier.py`** — keyword-based classifier returning an ordered list of category slugs so one product can belong to multiple categories (e.g. "Women's laptop" → primary Electronics, secondary Women). Product-type keywords (electronics/beauty/home/toys/sports/books/handmade) win over gender tags (women/men/kids) so a laptop never falls into "Women" just because the title mentions women.
 - **`Listing.secondary_categories: List[str]`** — new field. `_build_listings_query` now filters by `category_id` OR `secondary_categories` (proper `$and` when combined with text search).
