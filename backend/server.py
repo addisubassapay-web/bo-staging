@@ -6391,7 +6391,7 @@ async def startup():
                 state = await db.sync_state.find_one({"id": "apify"}, {"_id": 0}) or {}
                 if not state.get("sync_running"):
                     logger.info(f"Starting scheduled Apify auto-sync (every {INTERVAL_DAYS} days)")
-                    await import_from_apify(db, target_count=5000, replace_existing=True)
+                    await import_from_apify(db, target_count=5000, replace_existing=False)
             except Exception as e:
                 logger.error(f"apify auto-sync loop failed: {e}")
                 # Back off a day before retrying on hard error
