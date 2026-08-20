@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
   ShoppingCart, User, LogOut, Package, Settings, Store, Wallet, Link as LinkIcon,
   Users, MessageSquare, BarChart3, ShieldCheck, Heart, Sun, Moon, AlertCircle, Command, ShoppingBag,
+  Sparkles, Shirt, Baby, Cpu, Home as HomeIcon, Palette, Dumbbell, Puzzle, BookOpen, HandHeart,
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
@@ -18,6 +19,36 @@ import CategoryMegaMenu from "@/components/CategoryMegaMenu";
 import CurrencyPicker from "@/components/CurrencyPicker";
 import LanguagePicker from "@/components/LanguagePicker";
 import MiniCart from "@/components/MiniCart";
+
+// Icon + accent color mapping for the 10 Apify-native categories shown in
+// the top nav strip. Falls back to Sparkles for any future category the DB
+// serves that isn't in this map — keeps the shopfront feeling curated.
+const CATEGORY_ICONS = {
+  women: Shirt,
+  men: Shirt,
+  kids: Baby,
+  electronics: Cpu,
+  home: HomeIcon,
+  beauty: Palette,
+  sports: Dumbbell,
+  toys: Puzzle,
+  books: BookOpen,
+  handmade: HandHeart,
+  default: Sparkles,
+};
+const CATEGORY_ACCENTS = {
+  women: "text-pink-500",
+  men: "text-slate-600",
+  kids: "text-amber-500",
+  electronics: "text-blue-500",
+  home: "text-emerald-600",
+  beauty: "text-rose-500",
+  sports: "text-orange-500",
+  toys: "text-purple-500",
+  books: "text-indigo-500",
+  handmade: "text-teal-500",
+  default: "text-neutral-500",
+};
 import GlobalNavMenu from "@/components/GlobalNavMenu";
 import CommandPalette, { useCommandPaletteShortcut } from "@/components/CommandPalette";
 import BrandMark from "@/components/BrandMark";
@@ -280,7 +311,7 @@ const Header = () => {
                         <div className="space-y-1">
                           {recentNotifs.length === 0 ? (
                             <div className="px-2 py-3 text-center" data-testid="avatar-notifs-empty">
-                              <div className="text-xs font-medium text-emerald-600 dark:text-emerald-400">You're all caught up ✓</div>
+                              <div className="text-xs font-medium text-emerald-600 dark:text-emerald-400">You&apos;re all caught up ✓</div>
                               <div className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5">No new notifications right now</div>
                             </div>
                           ) : recentNotifs.slice(0, 3).map((n) => (
@@ -348,13 +379,18 @@ const Header = () => {
               <Store className="h-3.5 w-3.5" /> Stores
             </button>
           </Link>
-          {categories.map((c) => (
-            <Link key={c.id} to={`/search?category=${c.id}`} data-testid={`cat-pill-${c.slug}`}>
-              <button className="whitespace-nowrap px-3 sm:px-4 h-8 sm:h-9 rounded-full bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200 font-medium text-xs sm:text-sm shrink-0 transition">
-                {c.name}
-              </button>
-            </Link>
-          ))}
+          {categories.map((c) => {
+            const Icon = CATEGORY_ICONS[c.slug] || CATEGORY_ICONS.default;
+            const accent = CATEGORY_ACCENTS[c.slug] || CATEGORY_ACCENTS.default;
+            return (
+              <Link key={c.id} to={`/search?category=${c.id}`} data-testid={`cat-pill-${c.slug}`}>
+                <button className={`whitespace-nowrap px-3 sm:px-4 h-8 sm:h-9 rounded-full bg-neutral-100 hover:bg-white dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200 font-medium text-xs sm:text-sm shrink-0 transition-all border border-transparent hover:border-neutral-200 dark:hover:border-neutral-600 hover:shadow-sm flex items-center gap-1.5 group`}>
+                  <Icon className={`h-3.5 w-3.5 ${accent} transition-transform group-hover:scale-110`} strokeWidth={2.25} />
+                  {c.name}
+                </button>
+              </Link>
+            );
+          })}
         </div>
       </div>
 

@@ -3761,7 +3761,7 @@ async def store_category_discoveries(days: int = 7, user: dict = Depends(get_cur
 async def admin_sync_apify(payload: dict, _admin: dict = Depends(require_admin)):
     """Trigger Apify Amazon scrape + import. Runs in background."""
     target = int(payload.get("target_count", 20000))
-    replace = bool(payload.get("replace_existing", True))
+    replace = bool(payload.get("replace_existing", False))
     if target < 100 or target > 20000:
         raise HTTPException(400, "target_count must be between 100 and 20000")
 

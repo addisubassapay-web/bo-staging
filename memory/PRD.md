@@ -25,7 +25,17 @@ Full-stack ecommerce marketplace **Merchari-global** — same color scheme (`#FF
 ---
 
 ## Implemented (with dates)
-### Feb 2026 — Restore Apify-only catalog (drop rebalance padding + empty categories)
+### Feb 2026 — Category Icons + Incremental Apify sync
+- **Category icons** — top-nav category pills now display a custom colored lucide icon per slug: Women (pink Shirt), Men (slate Shirt), Kids (amber Baby), Electronics (blue Cpu), Home (emerald Home), Beauty (rose Palette), Sports (orange Dumbbell), Toys (purple Puzzle), Books (indigo BookOpen), Handmade (teal HandHeart). Icons scale on hover. Fallback for any future slug = Sparkles / neutral.
+- **Incremental Apify sync** — `import_from_apify` default changed to **append + dedup** mode:
+  * `replace_existing` default **True → False** — never wipes existing content by default
+  * New `existing_asins` set is loaded from DB before ingest; any incoming item whose `asin` already exists is skipped (`skipped_dupes` counter surfaced in sync_state + response payload)
+  * Products found across future syncs slot into their categories via the existing keyword classifier — no duplicates, catalog only grows
+  * `per_url` floor raised **200 → 500** so each category URL yields up to 500 items per run (10 categories × 500 = ~5000 potential new items per sync)
+  * Admin trigger `POST /api/admin/sync/apify` now defaults `replace_existing: false` — override with `{"replace_existing": true}` for a rare clean reseed
+- Both changes lint clean; frontend smoke-test confirms all 10 icons render inside their pills.
+
+
 - **Bug fix**: user asked to revert the rebalance's cross-tag padding and keep only the 10 categories Apify actually extracted (women, men, kids, electronics, home, beauty, sports, toys, books, handmade). Remove every category that ended up empty or was artificially padded.
 - **New endpoint `POST /api/admin/catalog/restore-apify-only`** — repeatable, idempotent, admin-only. Body accepts `protect_seller_listings` (default true) + `apify_original_slugs` (default canonical 10). Actions in order:
   1. Clears `secondary_categories: []` on every listing (undoes cross-tag padding).

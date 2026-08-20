@@ -234,15 +234,22 @@ def _run_actor_sync(client: ApifyClient, urls: List[Dict], max_per_url: int) -> 
 async def import_from_apify(
     db,
     target_count: int = 20000,
-    replace_existing: bool = True,
+    replace_existing: bool = False,
 ) -> Dict:
-    """Scrape Amazon via Apify and import as listings."""
+    """Scrape Amazon via Apify and import as listings.
+
+    Defaults to APPEND mode: new products join the catalog without wiping the
+    existing content. Dedup is performed via `apify_asin` — items whose ASIN
+    already lives in the DB are skipped (or updated if `refresh_existing`).
+    Pass `replace_existing=True` to nuke the entire listings collection first
+    (rare — usually only for a clean initial seed).
+    """
     cats = await _get_categories_by_slug(db)
     sellers = await _get_sellers(db)
     if not cats or len(sellers) < 3:
         return {"ok": False, "error": "Need categories + at least 3 seller users seeded"}
 
-    per_url = max(200, target_count // len(CATEGORY_URLS))
+    per_url = max(500, target_count // len(CATEGORY_URLS))
     urls = [{"url": url} for (_slug, url) in CATEGORY_URLS if _slug in cats]
     slugs = [slug for (slug, url) in CATEGORY_URLS if slug in cats]
 
@@ -309,6 +316,17 @@ async def import_from_apify(
         await db.listings.delete_many({})
         await db.favorites.delete_many({})
         await db.cart_items.delete_many({})
+        existing_asins: set = set()
+    else:
+        # Append mode — dedup by apify_asin so re-runs never duplicate a product.
+        existing_asins = {
+            d.get("apify_asin")
+            for d in await db.listings.find(
+                {"apify_asin": {"$ne": None, "$exists": True}},
+                {"_id": 0, "apify_asin": 1},
+            ).to_list(50000)
+            if d.get("apify_asin")
+        }
 
     # Distribute items across categories using the keyword classifier + a fair
     # round-robin over UNIQUE catalog slugs when the classifier finds nothing.
@@ -316,11 +334,16 @@ async def import_from_apify(
     to_insert: List[Dict] = []
     per_cat: Dict[str, int] = {}
     idx = 0
+    skipped_dupes = 0
     total_raw = len(items)
     unique_slugs = list(dict.fromkeys(slugs))  # preserve order, drop dups
     # Never fallback to "other" alone — spread fallbacks across every real category
     fallback_pool = [s for s in unique_slugs if s != "other"] or unique_slugs
     for it in items:
+        asin = it.get("asin")
+        if asin and asin in existing_asins:
+            skipped_dupes += 1
+            continue
         matched = _classify(it, unique_slugs)  # ordered list of slug tags
         if matched:
             primary_slug = matched[0]
@@ -335,6 +358,8 @@ async def import_from_apify(
         listing = _build_listing(it, cat, seller, secondary_slugs=secondary_slugs, cats_by_slug=cats)
         if listing:
             to_insert.append(listing)
+            if asin:
+                existing_asins.add(asin)
             per_cat[primary_slug] = per_cat.get(primary_slug, 0) + 1
             idx += 1
             # Persist per-category counts every 200 imports so mid-run status is live
@@ -362,9 +387,10 @@ async def import_from_apify(
             "last_sync_at": completed_at,
             "imported_count": len(to_insert),
             "raw_items": len(items),
+            "skipped_dupes": skipped_dupes,
             "per_category": per_cat,
             "dataset_id": dataset_id,
-            "message": f"Imported {len(to_insert)} of {len(items)} raw items",
+            "message": f"Imported {len(to_insert)} new · skipped {skipped_dupes} duplicates · of {len(items)} raw items",
         }},
     )
 
