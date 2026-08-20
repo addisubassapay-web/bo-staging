@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -29,6 +30,9 @@ import {
   Pencil,
   Trash2,
   ExternalLink,
+  CheckCircle2,
+  EyeOff,
+  X,
 } from "lucide-react";
 
 const PAGE_SIZE = 25;
@@ -212,6 +216,8 @@ const AdminProducts = () => {
   const [status, setStatus] = useState("all");
   const [editing, setEditing] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [selectedIds, setSelectedIds] = useState(new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -234,6 +240,69 @@ const AdminProducts = () => {
   useEffect(() => {
     load();
   }, [load]);
+
+  // Clear selection whenever the underlying list changes
+  useEffect(() => {
+    setSelectedIds(new Set());
+  }, [page, q, status]);
+
+  const currentIds = data?.items.map((p) => p.id) || [];
+  const allSelected = currentIds.length > 0 && currentIds.every((id) => selectedIds.has(id));
+  const someSelected = currentIds.some((id) => selectedIds.has(id));
+
+  const toggleOne = (id, checked) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (checked) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+  };
+
+  const togglePage = (checked) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      currentIds.forEach((id) => {
+        if (checked) next.add(id);
+        else next.delete(id);
+      });
+      return next;
+    });
+  };
+
+  const runBulk = async (action) => {
+    const ids = Array.from(selectedIds);
+    if (!ids.length) return;
+    if (action === "delete") {
+      if (
+        !window.confirm(
+          `Permanently delete ${ids.length} product${ids.length > 1 ? "s" : ""}? This cannot be undone.`
+        )
+      )
+        return;
+    }
+    setBulkBusy(true);
+    try {
+      const { data: res } = await api.post("/admin/products/bulk", { ids, action });
+      const label =
+        action === "delete"
+          ? `Deleted ${res.affected}`
+          : action === "activate"
+          ? `Activated ${res.affected}`
+          : `Hidden ${res.affected}`;
+      toast({ title: label, description: `${ids.length} selected` });
+      setSelectedIds(new Set());
+      await load();
+    } catch (err) {
+      toast({
+        title: "Bulk action failed",
+        description: err.response?.data?.detail || "Try again",
+        variant: "destructive",
+      });
+    } finally {
+      setBulkBusy(false);
+    }
+  };
 
   const totalPages = data ? Math.max(1, Math.ceil(data.total / PAGE_SIZE)) : 1;
 
@@ -347,10 +416,77 @@ const AdminProducts = () => {
       </div>
 
       <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl overflow-hidden">
+        {selectedIds.size > 0 && (
+          <div
+            className="flex items-center justify-between gap-3 px-4 py-2.5 bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-950/30 dark:to-red-950/30 border-b border-orange-200 dark:border-orange-900/40"
+            data-testid="admin-products-bulk-bar"
+          >
+            <div className="flex items-center gap-2 text-sm">
+              <span
+                className="font-semibold text-[#FF211F]"
+                data-testid="admin-products-bulk-count"
+              >
+                {selectedIds.size}
+              </span>
+              <span className="text-neutral-700 dark:text-neutral-200">
+                selected
+              </span>
+              <button
+                type="button"
+                onClick={() => setSelectedIds(new Set())}
+                className="ml-2 text-xs text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200 inline-flex items-center gap-0.5"
+                data-testid="admin-products-bulk-clear"
+              >
+                <X className="h-3 w-3" /> clear
+              </button>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => runBulk("activate")}
+                disabled={bulkBusy}
+                data-testid="admin-products-bulk-activate"
+              >
+                <CheckCircle2 className="h-4 w-4 mr-1 text-emerald-600" />
+                Activate
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => runBulk("deactivate")}
+                disabled={bulkBusy}
+                data-testid="admin-products-bulk-deactivate"
+              >
+                <EyeOff className="h-4 w-4 mr-1 text-neutral-600" />
+                Hide
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => runBulk("delete")}
+                disabled={bulkBusy}
+                className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30"
+                data-testid="admin-products-bulk-delete"
+              >
+                <Trash2 className="h-4 w-4 mr-1" />
+                Delete
+              </Button>
+            </div>
+          </div>
+        )}
         <div className="overflow-x-auto">
           <table className="w-full text-sm" data-testid="admin-products-table">
             <thead className="bg-neutral-50 dark:bg-neutral-800/60 text-left text-neutral-500 text-xs uppercase tracking-wide">
               <tr>
+                <th className="p-3 w-10">
+                  <Checkbox
+                    checked={allSelected ? true : someSelected ? "indeterminate" : false}
+                    onCheckedChange={(v) => togglePage(!!v)}
+                    aria-label="Select all on this page"
+                    data-testid="admin-products-select-all"
+                  />
+                </th>
                 <th className="p-3 w-14"> </th>
                 <th className="p-3">Title</th>
                 <th className="p-3">Category</th>
@@ -363,7 +499,7 @@ const AdminProducts = () => {
             <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
               {loading && !data ? (
                 <tr>
-                  <td colSpan={7} className="p-8 text-center text-neutral-500">
+                  <td colSpan={8} className="p-8 text-center text-neutral-500">
                     Loading…
                   </td>
                 </tr>
@@ -371,9 +507,19 @@ const AdminProducts = () => {
                 data.items.map((p) => (
                   <tr
                     key={p.id}
-                    className="hover:bg-neutral-50 dark:hover:bg-neutral-800/40"
+                    className={`hover:bg-neutral-50 dark:hover:bg-neutral-800/40 ${
+                      selectedIds.has(p.id) ? "bg-orange-50/60 dark:bg-orange-950/20" : ""
+                    }`}
                     data-testid={`admin-product-row-${p.id}`}
                   >
+                    <td className="p-3">
+                      <Checkbox
+                        checked={selectedIds.has(p.id)}
+                        onCheckedChange={(v) => toggleOne(p.id, !!v)}
+                        aria-label={`Select ${p.title}`}
+                        data-testid={`admin-product-select-${p.id}`}
+                      />
+                    </td>
                     <td className="p-3">
                       <div className="h-10 w-10 rounded-lg bg-neutral-100 dark:bg-neutral-800 overflow-hidden grid place-items-center">
                         {p.images?.[0] ? (
@@ -443,7 +589,7 @@ const AdminProducts = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={7} className="p-8 text-center">
+                  <td colSpan={8} className="p-8 text-center">
                     <Package className="h-8 w-8 text-neutral-300 mx-auto mb-2" />
                     <p className="text-neutral-500">No products match your filters</p>
                   </td>

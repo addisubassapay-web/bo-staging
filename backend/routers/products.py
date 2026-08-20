@@ -440,3 +440,39 @@ async def admin_delete_product(
     if result.deleted_count == 0:
         raise HTTPException(404, "Product not found")
     return {"ok": True, "deleted": product_id}
+
+
+class BulkAction(BaseModel):
+    ids: List[str]
+    action: str  # "activate" | "deactivate" | "delete"
+
+
+@router.post("/admin/products/bulk")
+async def admin_bulk_products(
+    payload: BulkAction,
+    _admin: dict = Depends(require_admin),
+):
+    """Apply an action to multiple products in one shot."""
+    if not payload.ids:
+        raise HTTPException(400, "No product ids provided")
+    if len(payload.ids) > 500:
+        raise HTTPException(400, "Bulk action limited to 500 items")
+    if payload.action not in ("activate", "deactivate", "delete"):
+        raise HTTPException(400, "Unknown action")
+
+    db = get_db()
+    if payload.action == "delete":
+        result = await db.products.delete_many({"id": {"$in": payload.ids}})
+        return {"ok": True, "action": "delete", "affected": result.deleted_count}
+
+    is_active = payload.action == "activate"
+    result = await db.products.update_many(
+        {"id": {"$in": payload.ids}},
+        {"$set": {"is_active": is_active, "updated_at": datetime.now(timezone.utc)}},
+    )
+    return {
+        "ok": True,
+        "action": payload.action,
+        "affected": result.modified_count,
+        "matched": result.matched_count,
+    }
