@@ -14,6 +14,7 @@ import { LayoutDashboard, Users, Package, ShoppingBag, FolderTree, Trash2, Star,
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import AdminShelves from "@/pages/AdminShelves";
 import ApifySync from "@/pages/AdminApifySync";
+import ApifySyncTicker from "@/components/ApifySyncTicker";
 import AdminPaymentMethods from "@/pages/AdminPaymentMethods";
 import AdminLedgerAudit from "@/pages/AdminLedgerAudit";
 import AdminEmailLog from "@/pages/AdminEmailLog";
@@ -48,6 +49,7 @@ const Dashboard = () => {
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold">Dashboard</h2>
+      <ApifySyncTicker />
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <StatCard label="Users" value={stats.users} />
         <StatCard label="Stores" value={stats.stores} />
