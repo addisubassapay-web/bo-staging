@@ -63,10 +63,22 @@ CATEGORY_URLS = [
 ]
 
 
-def _get_client() -> ApifyClient:
-    token = os.environ.get("APIFY_TOKEN")
-    if not token:
+def _get_tokens() -> List[str]:
+    tokens: List[str] = []
+    primary = os.environ.get("APIFY_TOKEN")
+    fallback = os.environ.get("APIFY_TOKEN_FALLBACK")
+    if primary:
+        tokens.append(primary)
+    if fallback and fallback != primary:
+        tokens.append(fallback)
+    if not tokens:
         raise RuntimeError("APIFY_TOKEN missing from environment")
+    return tokens
+
+
+def _get_client(token: Optional[str] = None) -> ApifyClient:
+    if token is None:
+        token = _get_tokens()[0]
     return ApifyClient(token)
 
 
@@ -225,6 +237,7 @@ async def import_from_apify(
     slugs = [slug for (slug, url) in CATEGORY_URLS if slug in cats]
 
     client = _get_client()
+    tokens = _get_tokens()
 
     # Record start state
     now = datetime.now(timezone.utc)
@@ -243,21 +256,32 @@ async def import_from_apify(
 
     # The actor call blocks — run in a thread so we don't block the event loop
     loop = asyncio.get_event_loop()
-    try:
-        dataset_id = await loop.run_in_executor(None, _run_actor_sync, client, urls, per_url)
-    except Exception as e:
-        logger.exception("Apify actor failed")
-        await db.sync_state.update_one(
-            {"id": "apify"},
-            {"$set": {"sync_running": False, "message": f"Actor error: {e}"}},
-        )
-        return {"ok": False, "error": str(e)}
+    dataset_id = None
+    last_error: Optional[str] = None
+    for idx, token in enumerate(tokens):
+        attempt_client = _get_client(token)
+        try:
+            dataset_id = await loop.run_in_executor(
+                None, _run_actor_sync, attempt_client, urls, per_url
+            )
+            if dataset_id:
+                client = attempt_client  # use the working client for dataset fetch
+                if idx > 0:
+                    logger.info(f"Apify primary token failed; used fallback token #{idx}")
+                break
+        except Exception as e:
+            last_error = str(e)
+            logger.warning(f"Apify token #{idx} failed: {e}")
+            continue
 
     if not dataset_id:
+        err_msg = last_error or "No dataset returned"
+        logger.exception(f"Apify actor failed on all tokens: {err_msg}")
         await db.sync_state.update_one(
-            {"id": "apify"}, {"$set": {"sync_running": False, "message": "No dataset returned"}}
+            {"id": "apify"},
+            {"$set": {"sync_running": False, "message": f"Actor error: {err_msg}"}},
         )
-        return {"ok": False, "error": "No dataset returned"}
+        return {"ok": False, "error": err_msg}
 
     # Fetch items from Apify dataset (also blocking → thread)
     def _fetch_items():
