@@ -25,7 +25,18 @@ Full-stack ecommerce marketplace **Merchari-global** — same color scheme (`#FF
 ---
 
 ## Implemented (with dates)
-### Feb 2026 — Admin Support Inbox
+### Feb 2026 — Restore Apify-only catalog (drop rebalance padding + empty categories)
+- **Bug fix**: user asked to revert the rebalance's cross-tag padding and keep only the 10 categories Apify actually extracted (women, men, kids, electronics, home, beauty, sports, toys, books, handmade). Remove every category that ended up empty or was artificially padded.
+- **New endpoint `POST /api/admin/catalog/restore-apify-only`** — repeatable, idempotent, admin-only. Body accepts `protect_seller_listings` (default true) + `apify_original_slugs` (default canonical 10). Actions in order:
+  1. Clears `secondary_categories: []` on every listing (undoes cross-tag padding).
+  2. Deletes "orphan" listings that have neither `apify_asin` nor `store_id` (rebalance clones).
+  3. Drops any category whose slug isn't in `apify_original_slugs` and deletes their listings.
+  4. Defensively removes any remaining empty category.
+  Returns full `final_counts` per slug + `total_active_listings`. Second run → all zeros.
+- **DB migration applied once**: 63 orphan clones purged, 10 exotic categories dropped (vintage, shoes, bags-accessories, jewelry-watches, pet-supplies, automotive, musical-instruments, office-craft, collectibles, Jewelry) + 2 empty (other, garden-outdoor) → catalog now shows exactly 10 categories totalling 1,179 active listings, matching Apify's original extraction.
+- **Verified by bug testing agent (verdict: fixed, 100% backend)**: `/api/categories` returns exactly the 10 canonical slugs, every category has ≥1 listing, secondary_categories arrays are all empty, two back-to-back restore calls return zero deltas, non-admin blocked with 403, default marketplace feed still full.
+
+
 - **New page** `/admin/support-tickets` (`/app/frontend/src/pages/AdminSupport.jsx`) — two-column inbox: left rail lists all tickets with status pill (open/pending/closed), channel badge (chat/email), buyer name+email, relative timestamp, and an emerald unread dot for admin-side new messages. Right pane loads the full transcript with distinct bubbles (blue-gradient for admin replies, white for buyer messages).
 - **Filters + search**: status Select, channel Select, and free-text search across subject/name/email.
 - **Reply flow**: multiline textarea + Send button; Cmd/Ctrl+Enter shortcut sends. New admin messages appear within 3s via automatic re-fetch. 20s background poll refreshes the open ticket so live buyer typing surfaces.

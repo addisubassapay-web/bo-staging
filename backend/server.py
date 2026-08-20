@@ -1534,6 +1534,77 @@ async def admin_wallet_adjust(user_id: str, payload: dict = Body(...), _admin: d
     }
 
 
+@api_router.post("/admin/catalog/restore-apify-only")
+async def admin_restore_apify_only(payload: dict = Body(default={}), _admin: dict = Depends(require_admin)):
+    """Restore the catalog to its Apify-extracted state.
+
+    Body: {
+      "protect_seller_listings": true,  // if false, also deletes seller-created rows
+      "apify_original_slugs": [...],    // categories Apify extracts into. Defaults to the 10 canonical slugs.
+    }
+
+    Actions (in order):
+      1. Clear `secondary_categories` on every listing (undo any cross-tag padding).
+      2. Delete "orphan" listings — no `apify_asin` AND no `store_id` — since those
+         were rebalance clones, not real Apify content.
+      3. Delete listings whose primary `category_id` points at a category not in
+         `apify_original_slugs`, and drop those categories from the catalog too.
+      4. Delete any remaining category that has zero active listings.
+    Idempotent: re-running produces zero further changes once catalog is clean.
+    """
+    protect_seller = bool(payload.get("protect_seller_listings", True))
+    default_slugs = ["women", "men", "kids", "electronics", "home", "beauty",
+                     "sports", "toys", "books", "handmade"]
+    apify_slugs = set(payload.get("apify_original_slugs") or default_slugs)
+
+    # 1) Clear secondary_categories on all
+    upd = await db.listings.update_many({}, {"$set": {"secondary_categories": []}})
+
+    # 2) Delete orphan rebalance clones
+    orphan_query = {"$and": [
+        {"$or": [{"apify_asin": None}, {"apify_asin": {"$exists": False}}]},
+    ]}
+    if protect_seller:
+        orphan_query["$and"].append(
+            {"$or": [{"store_id": None}, {"store_id": {"$exists": False}}]}
+        )
+    orphans_deleted = (await db.listings.delete_many(orphan_query)).deleted_count
+
+    # 3) Drop non-Apify-original categories (and their listings)
+    cats = await db.categories.find({}, {"_id": 0}).to_list(200)
+    dropped_cats: list = []
+    exotic_listings_deleted = 0
+    for c in cats:
+        if c.get("slug") not in apify_slugs:
+            r = await db.listings.delete_many({"category_id": c["id"]})
+            exotic_listings_deleted += r.deleted_count
+            await db.categories.delete_one({"id": c["id"]})
+            dropped_cats.append(c.get("slug"))
+
+    # 4) Remove any category still empty (defensive — should be none after step 3)
+    remaining_cats = await db.categories.find({}, {"_id": 0}).to_list(200)
+    empty_removed: list = []
+    kept_counts: dict = {}
+    for c in remaining_cats:
+        n = await db.listings.count_documents({"status": "active", "category_id": c["id"]})
+        if n == 0:
+            await db.categories.delete_one({"id": c["id"]})
+            empty_removed.append(c.get("slug"))
+        else:
+            kept_counts[c.get("slug")] = n
+
+    return {
+        "ok": True,
+        "secondary_categories_cleared": upd.modified_count,
+        "orphan_listings_deleted": orphans_deleted,
+        "exotic_categories_dropped": dropped_cats,
+        "exotic_listings_deleted": exotic_listings_deleted,
+        "empty_categories_removed": empty_removed,
+        "final_counts": kept_counts,
+        "total_active_listings": sum(kept_counts.values()),
+    }
+
+
 @api_router.post("/admin/listings/rebalance")
 async def admin_rebalance_listings(payload: dict = Body(default={}), _admin: dict = Depends(require_admin)):
     """Re-classify every listing with the keyword classifier and, optionally,

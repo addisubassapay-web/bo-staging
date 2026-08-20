@@ -1,0 +1,38 @@
+{
+  "verdict": "fixed",
+  "user_reported_bug": "Keep the existing categories and their content like before, like the way they were when they are extracted by Apify and remove those empty categories",
+  "summary": "No relevant testing skill found. Focused backend verification passed on the Apify-only catalog restore flow: /api/categories returned exactly the 10 canonical Apify slugs with no exotic/empty categories, every canonical category browsed with listings and matching primary category fields, secondary_categories were cleared in sampled listings, admin restore was auth-guarded and idempotent over two calls, admin sync status returned sync_running:false, and the default marketplace feed remained populated.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/test_reports/bug_verification_45_backend.py",
+    "/app/test_reports/bug_verification_45_runtime_results.json"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Inspected /app/backend/server.py around POST /api/admin/catalog/restore-apify-only and require_admin; the endpoint clears secondary_categories, removes orphan/exotic/empty categories, returns final_counts, and is protected by admin auth.",
+    "Runtime evidence after two restore calls showed both calls returned 200; the second call returned secondary_categories_cleared=0, orphan_listings_deleted=0, exotic_categories_dropped=[], exotic_listings_deleted=0, empty_categories_removed=[], and identical total_active_listings=1179."
+  ],
+  "updated_files": [
+    "/app/test_reports/bug_verification_45_backend.py",
+    "/app/test_reports/bug_verification_45_runtime_results.json",
+    "/app/test_reports/bug_verification_45.json",
+    "/app/test_reports/iteration_45.json"
+  ],
+  "success_rate": {
+    "backend": "100%",
+    "frontend": "n/a"
+  },
+  "seed_data_creation": "None. Used existing preview catalog data and required admin/regular credentials only.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Do not invoke POST /api/admin/listings/rebalance while validating this bug; it can re-add cross-category padding. Current verified final_counts from restore endpoint: women 13, men 69, kids 78, electronics 515, home 155, beauty 108, sports 97, toys 51, books 52, handmade 41; total_active_listings 1179.",
+  "rca_of_the_issue": "Verification focused on the reported Apify catalog restoration bug. Reproduction checks confirmed no exotic category slugs remain in /api/categories, no sampled listing has secondary_categories, all canonical categories still contain listings, and repeated restore calls are no-ops once clean."
+}

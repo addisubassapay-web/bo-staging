@@ -1,0 +1,450 @@
+{
+  "base_url": "https://apify-catalog.preview.emergentagent.com",
+  "initial_categories_ok": true,
+  "final_categories_ok": true,
+  "results": [
+    {
+      "name": "Initial state: exactly 10 Apify canonical categories and no exotic slugs",
+      "passed": true,
+      "details": {
+        "status": 200,
+        "count": 10,
+        "slugs": [
+          "women",
+          "men",
+          "kids",
+          "electronics",
+          "home",
+          "beauty",
+          "sports",
+          "toys",
+          "books",
+          "handmade"
+        ],
+        "unexpected": []
+      }
+    },
+    {
+      "name": "Initial state: every canonical category browses with >=1 listing and matching primary category",
+      "passed": true,
+      "details": {
+        "women": {
+          "status": 200,
+          "returned_count_limited_to_500": 13,
+          "sample_size": 5,
+          "sample_mismatches": []
+        },
+        "men": {
+          "status": 200,
+          "returned_count_limited_to_500": 69,
+          "sample_size": 5,
+          "sample_mismatches": []
+        },
+        "kids": {
+          "status": 200,
+          "returned_count_limited_to_500": 78,
+          "sample_size": 5,
+          "sample_mismatches": []
+        },
+        "electronics": {
+          "status": 200,
+          "returned_count_limited_to_500": 500,
+          "sample_size": 5,
+          "sample_mismatches": []
+        },
+        "home": {
+          "status": 200,
+          "returned_count_limited_to_500": 155,
+          "sample_size": 5,
+          "sample_mismatches": []
+        },
+        "beauty": {
+          "status": 200,
+          "returned_count_limited_to_500": 108,
+          "sample_size": 5,
+          "sample_mismatches": []
+        },
+        "sports": {
+          "status": 200,
+          "returned_count_limited_to_500": 97,
+          "sample_size": 5,
+          "sample_mismatches": []
+        },
+        "toys": {
+          "status": 200,
+          "returned_count_limited_to_500": 51,
+          "sample_size": 5,
+          "sample_mismatches": []
+        },
+        "books": {
+          "status": 200,
+          "returned_count_limited_to_500": 52,
+          "sample_size": 5,
+          "sample_mismatches": []
+        },
+        "handmade": {
+          "status": 200,
+          "returned_count_limited_to_500": 41,
+          "sample_size": 5,
+          "sample_mismatches": []
+        }
+      }
+    },
+    {
+      "name": "Default feed remains populated (>=60 listings)",
+      "passed": true,
+      "details": {
+        "status": 200,
+        "count": 60
+      }
+    },
+    {
+      "name": "Secondary categories cleared in first 20 listings from /api/listings?limit=100",
+      "passed": true,
+      "details": {
+        "status": 200,
+        "sample_size": 20,
+        "bad_secondary": []
+      }
+    },
+    {
+      "name": "Admin credentials can login for restore/sync endpoints",
+      "passed": true,
+      "details": {
+        "status": 200,
+        "user": {
+          "id": "d87fe065-3e34-480d-b070-fe6a40b8f29a",
+          "email": "admin@mercari.local",
+          "username": "admin",
+          "role": "admin",
+          "avatar": null,
+          "bio": "Platform administrator",
+          "rating": 5.0,
+          "sales_count": 26,
+          "is_active": true,
+          "referral_code": "BB9A64D2",
+          "referred_by": null,
+          "wallet_balance": 52.5,
+          "wallet_frozen_balance": 105.0,
+          "store_id": "a52b08a3-a45d-4cea-8b11-709c5801c399",
+          "email_verified": true,
+          "resell_markup_override": null,
+          "created_at": "2026-07-06T23:54:35.333000",
+          "failed_login_attempts": 0,
+          "locked_until": null,
+          "email_verified_at": "2026-08-09T20:10:18.374000",
+          "phone": null,
+          "phone_verified": false,
+          "phone_verified_at": null,
+          "seller_status": "approved",
+          "stripe_account_id": null,
+          "stripe_status": "none",
+          "weekly_earnings_goal": 500.0,
+          "email_prefs": null
+        },
+        "payload_type": "dict"
+      }
+    },
+    {
+      "name": "Regular user credentials can login for non-admin guard check",
+      "passed": true,
+      "details": {
+        "status": 200,
+        "user": {
+          "id": "66c1ce5e-8cfe-452e-8e59-2635e6a45223",
+          "email": "sophia_style@demo.local",
+          "username": "sophia_style",
+          "role": "user",
+          "avatar": null,
+          "bio": "Passionate reseller \u2014 Sophia Style",
+          "rating": 5.0,
+          "sales_count": 51,
+          "is_active": true,
+          "referral_code": "C400186F",
+          "referred_by": null,
+          "wallet_balance": 1600.71,
+          "wallet_frozen_balance": 254.2,
+          "store_id": "f4a139bf-daaf-4ea9-9029-4ef5c70e1867",
+          "email_verified": true,
+          "resell_markup_override": null,
+          "created_at": "2026-07-06T23:54:35.592000",
+          "failed_login_attempts": 0,
+          "locked_until": null,
+          "email_verified_at": "2026-08-09T20:11:46.589000",
+          "phone": "+15551234567",
+          "phone_verified": true,
+          "phone_verified_at": "2026-08-09T20:11:46.951000",
+          "seller_status": "approved",
+          "stripe_account_id": "acct_mock_a49da04af5c44ee0",
+          "stripe_status": "active",
+          "weekly_earnings_goal": 250.0,
+          "email_prefs": {
+            "order": true
+          }
+        },
+        "payload_type": "dict"
+      }
+    },
+    {
+      "name": "Restore endpoint rejects missing bearer token with 401/403",
+      "passed": true,
+      "details": {
+        "status": 401,
+        "payload": {
+          "detail": "Not authenticated"
+        }
+      }
+    },
+    {
+      "name": "Restore endpoint rejects non-admin bearer token with 403",
+      "passed": true,
+      "details": {
+        "status": 403,
+        "payload": {
+          "detail": "Admin access required"
+        }
+      }
+    },
+    {
+      "name": "Restore endpoint idempotency: two admin calls succeed and second call is no-op with identical counts",
+      "passed": true,
+      "details": {
+        "first_status": 200,
+        "second_status": 200,
+        "first_payload": {
+          "ok": true,
+          "secondary_categories_cleared": 0,
+          "orphan_listings_deleted": 0,
+          "exotic_categories_dropped": [],
+          "exotic_listings_deleted": 0,
+          "empty_categories_removed": [],
+          "final_counts": {
+            "women": 13,
+            "men": 69,
+            "kids": 78,
+            "electronics": 515,
+            "home": 155,
+            "beauty": 108,
+            "sports": 97,
+            "toys": 51,
+            "books": 52,
+            "handmade": 41
+          },
+          "total_active_listings": 1179
+        },
+        "second_payload": {
+          "ok": true,
+          "secondary_categories_cleared": 0,
+          "orphan_listings_deleted": 0,
+          "exotic_categories_dropped": [],
+          "exotic_listings_deleted": 0,
+          "empty_categories_removed": [],
+          "final_counts": {
+            "women": 13,
+            "men": 69,
+            "kids": 78,
+            "electronics": 515,
+            "home": 155,
+            "beauty": 108,
+            "sports": 97,
+            "toys": 51,
+            "books": 52,
+            "handmade": 41
+          },
+          "total_active_listings": 1179
+        },
+        "first_counts": {
+          "beauty": 108,
+          "books": 52,
+          "electronics": 515,
+          "handmade": 41,
+          "home": 155,
+          "kids": 78,
+          "men": 69,
+          "sports": 97,
+          "toys": 51,
+          "women": 13
+        },
+        "second_counts": {
+          "beauty": 108,
+          "books": 52,
+          "electronics": 515,
+          "handmade": 41,
+          "home": 155,
+          "kids": 78,
+          "men": 69,
+          "sports": 97,
+          "toys": 51,
+          "women": 13
+        }
+      }
+    },
+    {
+      "name": "Admin sync status succeeds and reports sync_running:false",
+      "passed": true,
+      "details": {
+        "status": 200,
+        "payload": {
+          "source": "junglee/amazon-crawler",
+          "last_sync_at": null,
+          "started_at": null,
+          "last_live_tick": "2026-08-20T17:31:34.586000",
+          "imported_count": 2611,
+          "raw_items": 2694,
+          "active_listings": 1179,
+          "sold_listings": 3,
+          "total_listings": 1182,
+          "target_count": 20000,
+          "live_sync_enabled": true,
+          "sync_running": false,
+          "message": "Force-cleared post-migration",
+          "per_category": {
+            "kids": 429,
+            "women": 564,
+            "men": 544,
+            "electronics": 211,
+            "other": 360,
+            "home": 85,
+            "toys": 149,
+            "books": 47,
+            "sports": 14,
+            "beauty": 208
+          },
+          "next_scheduled_at": "2026-09-19T16:00:49.705000",
+          "schedule_interval_days": 30,
+          "auto_schedule_enabled": true
+        }
+      }
+    },
+    {
+      "name": "Final state after restore re-runs: exactly 10 Apify canonical categories and no exotic slugs",
+      "passed": true,
+      "details": {
+        "status": 200,
+        "count": 10,
+        "slugs": [
+          "women",
+          "men",
+          "kids",
+          "electronics",
+          "home",
+          "beauty",
+          "sports",
+          "toys",
+          "books",
+          "handmade"
+        ],
+        "unexpected": []
+      }
+    },
+    {
+      "name": "Final state after restore re-runs: every canonical category browses with >=1 listing and matching primary category",
+      "passed": true,
+      "details": {
+        "women": {
+          "status": 200,
+          "returned_count_limited_to_500": 13,
+          "sample_size": 5,
+          "sample_mismatches": []
+        },
+        "men": {
+          "status": 200,
+          "returned_count_limited_to_500": 69,
+          "sample_size": 5,
+          "sample_mismatches": []
+        },
+        "kids": {
+          "status": 200,
+          "returned_count_limited_to_500": 78,
+          "sample_size": 5,
+          "sample_mismatches": []
+        },
+        "electronics": {
+          "status": 200,
+          "returned_count_limited_to_500": 500,
+          "sample_size": 5,
+          "sample_mismatches": []
+        },
+        "home": {
+          "status": 200,
+          "returned_count_limited_to_500": 155,
+          "sample_size": 5,
+          "sample_mismatches": []
+        },
+        "beauty": {
+          "status": 200,
+          "returned_count_limited_to_500": 108,
+          "sample_size": 5,
+          "sample_mismatches": []
+        },
+        "sports": {
+          "status": 200,
+          "returned_count_limited_to_500": 97,
+          "sample_size": 5,
+          "sample_mismatches": []
+        },
+        "toys": {
+          "status": 200,
+          "returned_count_limited_to_500": 51,
+          "sample_size": 5,
+          "sample_mismatches": []
+        },
+        "books": {
+          "status": 200,
+          "returned_count_limited_to_500": 52,
+          "sample_size": 5,
+          "sample_mismatches": []
+        },
+        "handmade": {
+          "status": 200,
+          "returned_count_limited_to_500": 41,
+          "sample_size": 5,
+          "sample_mismatches": []
+        }
+      }
+    }
+  ],
+  "failed": [],
+  "first_restore_payload": {
+    "ok": true,
+    "secondary_categories_cleared": 0,
+    "orphan_listings_deleted": 0,
+    "exotic_categories_dropped": [],
+    "exotic_listings_deleted": 0,
+    "empty_categories_removed": [],
+    "final_counts": {
+      "women": 13,
+      "men": 69,
+      "kids": 78,
+      "electronics": 515,
+      "home": 155,
+      "beauty": 108,
+      "sports": 97,
+      "toys": 51,
+      "books": 52,
+      "handmade": 41
+    },
+    "total_active_listings": 1179
+  },
+  "second_restore_payload": {
+    "ok": true,
+    "secondary_categories_cleared": 0,
+    "orphan_listings_deleted": 0,
+    "exotic_categories_dropped": [],
+    "exotic_listings_deleted": 0,
+    "empty_categories_removed": [],
+    "final_counts": {
+      "women": 13,
+      "men": 69,
+      "kids": 78,
+      "electronics": 515,
+      "home": 155,
+      "beauty": 108,
+      "sports": 97,
+      "toys": 51,
+      "books": 52,
+      "handmade": 41
+    },
+    "total_active_listings": 1179
+  }
+}
