@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,7 @@ import api from "@/lib/api";
 import BrandMark from "@/components/BrandMark";
 import GoogleLoginButton from "@/components/GoogleLoginButton";
 import PasswordInput from "@/components/PasswordInput";
-import { ShieldCheck, Mail, User, Lock, Gift, ArrowRight, Check } from "lucide-react";
+import { ShieldCheck, Mail, User, Lock, Gift, ArrowRight, Check, Sparkles, Lock as LockIcon, AlertCircle } from "lucide-react";
 
 const strengthOf = (pw) => {
   let s = 0;
@@ -21,28 +21,58 @@ const strengthOf = (pw) => {
 };
 
 const Register = () => {
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
-  const [form, setForm] = useState({ email: "", username: "", password: "", referral_code: "", accept: false });
+  const [form, setForm] = useState({
+    email: "",
+    username: "",
+    password: "",
+    confirm_password: "",
+    referral_code: "",
+    accept: false,
+  });
   const [loading, setLoading] = useState(false);
+  const [inviteOnly, setInviteOnly] = useState(false);
+  const [inviteLoading, setInviteLoading] = useState(true);
 
   useEffect(() => {
     const ref = searchParams.get("ref");
     if (ref) {
       setForm((f) => ({ ...f, referral_code: ref.toUpperCase() }));
       try { localStorage.setItem("merchari-global_pending_referral", ref.toUpperCase()); } catch { /* ignore */ }
+    } else {
+      try {
+        const pending = localStorage.getItem("merchari-global_pending_referral");
+        if (pending) setForm((f) => ({ ...f, referral_code: pending }));
+      } catch { /* ignore */ }
     }
   }, [searchParams]);
+
+  useEffect(() => {
+    api.get("/settings/public")
+      .then((r) => setInviteOnly(!!r.data?.invite_only_signup))
+      .catch(() => {})
+      .finally(() => setInviteLoading(false));
+  }, []);
 
   const strength = strengthOf(form.password);
   const strengthLabel = ["Too short", "Weak", "Fair", "Good", "Strong"][strength];
   const strengthColor = ["bg-red-400", "bg-red-400", "bg-amber-400", "bg-emerald-400", "bg-emerald-600"][strength];
+  const passwordsMatch = form.password && form.confirm_password && form.password === form.confirm_password;
+  const passwordsMismatch = form.confirm_password && form.password !== form.confirm_password;
 
   const submit = async (e) => {
     e.preventDefault();
     if (form.password.length < 6) {
       toast({ title: "Password too short", description: "At least 6 characters.", variant: "destructive" });
+      return;
+    }
+    if (form.password !== form.confirm_password) {
+      toast({ title: "Passwords don't match", description: "Please retype your password.", variant: "destructive" });
+      return;
+    }
+    if (inviteOnly && !form.referral_code.trim()) {
+      toast({ title: "Invitation code required", description: "Signup is currently invite-only.", variant: "destructive" });
       return;
     }
     if (!form.accept) {
@@ -58,6 +88,7 @@ const Register = () => {
         referral_code: form.referral_code || null,
       });
       localStorage.setItem("merchari-global_token", data.token);
+      try { localStorage.removeItem("merchari-global_pending_referral"); } catch { /* ignore */ }
       toast({ title: `Welcome, ${data.user.username}!`, description: "Your account is ready." });
       window.location.href = "/";
     } catch (err) {
@@ -82,7 +113,7 @@ const Register = () => {
               "radial-gradient(circle at 25% 25%, rgba(255,122,24,0.55) 0%, transparent 45%), radial-gradient(circle at 80% 75%, rgba(125,211,252,0.6) 0%, transparent 45%), linear-gradient(160deg, #0F172A 0%, #1E293B 100%)",
           }}
         >
-          <div className="pointer-events-none absolute -top-24 -right-24 h-96 w-96 rounded-full bg-[#2563EB] opacity-20 blur-3xl" />
+          <div className="pointer-events-none absolute -top-24 -right-24 h-96 w-96 rounded-full bg-[#2563EB] opacity-20 blur-3xl animate-pulse" />
           <div className="pointer-events-none absolute -bottom-24 -left-24 h-96 w-96 rounded-full bg-[#FF7A18] opacity-20 blur-3xl" />
 
           <BrandMark size={64} showWordmark animated wordmarkClassName="text-white" />
@@ -114,11 +145,25 @@ const Register = () => {
             </div>
 
             <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-6 sm:p-8 shadow-xl shadow-neutral-200/50 dark:shadow-black/40">
-              <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-800 dark:text-emerald-300">
-                <ShieldCheck className="h-3 w-3" /> Secure registration
+              <div className="flex items-center gap-2 flex-wrap">
+                <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-800 dark:text-emerald-300">
+                  <ShieldCheck className="h-3 w-3" /> Secure registration
+                </div>
+                {inviteOnly && (
+                  <div
+                    className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 px-2.5 py-0.5 text-[11px] font-semibold text-amber-800 dark:text-amber-300"
+                    data-testid="register-invite-badge"
+                  >
+                    <LockIcon className="h-3 w-3" /> Invite only
+                  </div>
+                )}
               </div>
               <h1 className="mt-3 text-2xl sm:text-3xl font-extrabold text-neutral-900 dark:text-neutral-100">Create your account</h1>
-              <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">Join Merchari-global and get your storefront in seconds.</p>
+              <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
+                {inviteOnly
+                  ? "Enter the invitation code shared by an existing member to join."
+                  : "Join Merchari-global and get your storefront in seconds."}
+              </p>
 
               <form onSubmit={submit} className="mt-6 space-y-4" data-testid="register-form">
                 <div>
@@ -176,7 +221,7 @@ const Register = () => {
                     <div className="mt-2" data-testid="password-strength">
                       <div className="grid grid-cols-4 gap-1">
                         {[1,2,3,4].map((b) => (
-                          <div key={b} className={`h-1 rounded-full ${b <= strength ? strengthColor : "bg-neutral-100 dark:bg-neutral-800"}`} />
+                          <div key={b} className={`h-1 rounded-full transition-colors ${b <= strength ? strengthColor : "bg-neutral-100 dark:bg-neutral-800"}`} />
                         ))}
                       </div>
                       <div className="mt-1 text-[11px] text-neutral-500 dark:text-neutral-400">{strengthLabel}</div>
@@ -185,19 +230,61 @@ const Register = () => {
                 </div>
 
                 <div>
-                  <Label htmlFor="reg-ref" className="text-xs uppercase tracking-wider text-neutral-500 dark:text-neutral-400">Referral code <span className="text-neutral-400">(optional)</span></Label>
+                  <Label htmlFor="reg-confirm" className="text-xs uppercase tracking-wider text-neutral-500 dark:text-neutral-400">Confirm password</Label>
                   <div className="relative mt-1.5">
-                    <Gift className="h-4 w-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <Lock className="h-4 w-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2 z-10" />
+                    <PasswordInput
+                      id="reg-confirm"
+                      autoComplete="new-password"
+                      value={form.confirm_password}
+                      onChange={(e) => setForm({ ...form, confirm_password: e.target.value })}
+                      required
+                      minLength={6}
+                      className={`pl-9 h-11 focus-visible:ring-2 ${
+                        passwordsMismatch
+                          ? "border-red-400 focus-visible:ring-red-400/30 focus-visible:border-red-500"
+                          : passwordsMatch
+                            ? "border-emerald-400 focus-visible:ring-emerald-400/30 focus-visible:border-emerald-500"
+                            : "focus-visible:ring-[#2563EB]/30 focus-visible:border-[#2563EB]"
+                      }`}
+                      testIdSuffix="register-confirm"
+                      data-testid="register-confirm-password"
+                    />
+                    {passwordsMatch && (
+                      <Check className="h-4 w-4 text-emerald-500 absolute right-11 top-1/2 -translate-y-1/2 z-10" data-testid="password-match-check" />
+                    )}
+                  </div>
+                  {passwordsMismatch && (
+                    <div className="mt-1 text-[11px] text-red-600 flex items-center gap-1" data-testid="password-mismatch-error">
+                      <AlertCircle className="h-3 w-3" /> Passwords don&apos;t match
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <Label htmlFor="reg-ref" className="text-xs uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+                    Invitation code {inviteOnly ? <span className="text-amber-600 dark:text-amber-400 font-semibold">(required)</span> : <span className="text-neutral-400">(optional)</span>}
+                  </Label>
+                  <div className="relative mt-1.5">
+                    <Gift className={`h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 ${inviteOnly ? "text-amber-500" : "text-neutral-400"}`} />
                     <Input
                       id="reg-ref"
                       value={form.referral_code}
                       onChange={(e) => setForm({ ...form, referral_code: e.target.value.toUpperCase() })}
-                      placeholder="Have a friend's code?"
-                      className="pl-9 h-11 font-mono uppercase focus-visible:ring-2 focus-visible:ring-[#2563EB]/30 focus-visible:border-[#2563EB]"
+                      placeholder={inviteOnly ? "Enter code from your inviter" : "Have a friend's code?"}
+                      required={inviteOnly}
+                      className={`pl-9 h-11 font-mono uppercase focus-visible:ring-2 focus-visible:ring-[#2563EB]/30 focus-visible:border-[#2563EB] ${
+                        inviteOnly ? "bg-amber-50/50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900" : ""
+                      }`}
                       maxLength={12}
                       data-testid="register-referral"
                     />
                   </div>
+                  {inviteOnly && !inviteLoading && (
+                    <p className="mt-1 text-[11px] text-neutral-500 dark:text-neutral-400 inline-flex items-center gap-1">
+                      <Sparkles className="h-3 w-3 text-amber-500" /> New signups need a valid invitation from a Merchari-global member.
+                    </p>
+                  )}
                 </div>
 
                 <label className="flex items-start gap-2 text-xs text-neutral-600 dark:text-neutral-400 select-none cursor-pointer">
@@ -217,8 +304,8 @@ const Register = () => {
 
                 <Button
                   type="submit"
-                  disabled={loading}
-                  className="w-full bg-gradient-to-r from-[#7DD3FC] to-[#2563EB] hover:brightness-110 text-white h-11 shadow-sm hover:shadow-md transition-all font-semibold"
+                  disabled={loading || passwordsMismatch}
+                  className="w-full bg-gradient-to-r from-[#7DD3FC] to-[#2563EB] hover:brightness-110 text-white h-11 shadow-sm hover:shadow-md transition-all font-semibold disabled:opacity-60"
                   data-testid="register-submit"
                 >
                   {loading ? "Creating your account…" : <>Create account <ArrowRight className="h-4 w-4 ml-1" /></>}

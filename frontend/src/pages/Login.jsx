@@ -1,14 +1,15 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import api from "@/lib/api";
 import BrandMark from "@/components/BrandMark";
 import GoogleLoginButton from "@/components/GoogleLoginButton";
 import PasswordInput from "@/components/PasswordInput";
-import { ShieldCheck, Mail, Lock, ArrowRight } from "lucide-react";
+import { ShieldCheck, Mail, Lock, ArrowRight, Lock as LockIcon } from "lucide-react";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -20,6 +21,13 @@ const Login = () => {
   const [remember, setRemember] = useState(true);
   const [loading, setLoading] = useState(false);
   const [lockedUntil, setLockedUntil] = useState(null);
+  const [inviteOnly, setInviteOnly] = useState(false);
+
+  useEffect(() => {
+    api.get("/settings/public")
+      .then((r) => setInviteOnly(!!r.data?.invite_only_signup))
+      .catch(() => {});
+  }, []);
 
   const submit = async (e) => {
     e.preventDefault();
@@ -165,7 +173,20 @@ const Login = () => {
               <GoogleLoginButton label="Continue with Google" testId="login-google-btn" />
 
               <p className="mt-6 text-sm text-center text-neutral-600 dark:text-neutral-400">
-                New to Merchari-global? <Link to="/register" className="text-[#2563EB] dark:text-[#7DD3FC] font-semibold hover:underline" data-testid="login-to-register">Create your account</Link>
+                {inviteOnly ? (
+                  <>
+                    <span className="inline-flex items-center gap-1 text-amber-700 dark:text-amber-300 font-medium">
+                      <LockIcon className="h-3 w-3" /> Invite only.
+                    </span>{" "}
+                    <Link to="/register" className="text-[#2563EB] dark:text-[#7DD3FC] font-semibold hover:underline" data-testid="login-to-register">
+                      Have a code? Sign up
+                    </Link>
+                  </>
+                ) : (
+                  <>
+                    New to Merchari-global? <Link to="/register" className="text-[#2563EB] dark:text-[#7DD3FC] font-semibold hover:underline" data-testid="login-to-register">Create your account</Link>
+                  </>
+                )}
               </p>
             </div>
 

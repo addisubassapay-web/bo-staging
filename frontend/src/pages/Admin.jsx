@@ -724,6 +724,39 @@ const SettingsMgr = () => {
           </div>
         </section>
 
+        <section className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg p-5" data-testid="settings-invite-section">
+          <h3 className="font-semibold mb-1 flex items-center gap-2">
+            <Users className="h-4 w-4 text-amber-500" /> Signup access control
+          </h3>
+          <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-4">
+            When enabled, new accounts can only register with a valid invitation code (an existing member&apos;s referral code). This turns Merchari-global into a closed, invite-only community until you flip it back off.
+          </p>
+          <div className="flex items-center justify-between gap-4 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-950 p-4">
+            <div className="flex-1 min-w-0">
+              <div className="font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+                Invite-only registration
+                <span className={`text-[10px] font-bold uppercase tracking-wider rounded-full px-2 py-0.5 ${
+                  settings.invite_only_signup
+                    ? "bg-amber-100 text-amber-800 border border-amber-200 dark:bg-amber-950 dark:text-amber-200 dark:border-amber-800"
+                    : "bg-emerald-100 text-emerald-800 border border-emerald-200 dark:bg-emerald-950 dark:text-emerald-200 dark:border-emerald-800"
+                }`}>
+                  {settings.invite_only_signup ? "Closed" : "Open"}
+                </span>
+              </div>
+              <div className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                {settings.invite_only_signup
+                  ? "New signups must provide a valid invitation code. Registration without a code is blocked."
+                  : "Anyone can register with or without an invitation code. Referral rewards still apply when a code is used."}
+              </div>
+            </div>
+            <Switch
+              checked={!!settings.invite_only_signup}
+              onCheckedChange={(v) => set("invite_only_signup", v)}
+              data-testid="invite-only-toggle"
+            />
+          </div>
+        </section>
+
         <section className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg p-5" data-testid="settings-disputes-section">
           <h3 className="font-semibold mb-1 flex items-center gap-2">
             <AlertCircle className="h-4 w-4 text-[#FF211F]" /> Disputes automation

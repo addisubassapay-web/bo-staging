@@ -25,7 +25,18 @@ Full-stack ecommerce marketplace **Merchari-global** — same color scheme (`#FF
 ---
 
 ## Implemented (with dates)
-### Feb 2026 — Admin wallet direct control + Store owner profile expansion
+### Feb 2026 — Login/Register modernization + Invite-only signup toggle
+- **Confirm password** on Register — new field with live matched/mismatched border colouring, inline "Passwords don't match" error, green check icon when matching, submit button disabled until match.
+- **Invite-only signup** (new `Settings.invite_only_signup` boolean, admin-tunable) — backend `POST /auth/register` now enforces:
+  * If `invite_only_signup=true` and no `referral_code` provided → HTTP 403 "Registration is invite-only…"
+  * If `invite_only_signup=true` and code doesn't match any existing user's `referral_code` → HTTP 403 "Invitation code is invalid or expired"
+  * When disabled, behaviour is unchanged (code optional, silently ignored if bad).
+  Reuses the existing `referral_code`/`referred_by` MLM plumbing so referral rewards still apply.
+- **Public settings** — `GET /api/settings/public` now exposes `invite_only_signup` so the Register page can render an "Invite only" amber badge, mark the invitation-code field required (amber-tinted with sparkles hint), and update the Login page's "Create your account" link into "Have a code? Sign up".
+- **Admin toggle** — new "Signup access control" section on `/admin/settings` with a Switch that flips the state Open ↔ Closed and shows a live badge indicating the current mode.
+- **Verified end-to-end via curl**: default settings return `invite_only_signup=false`; enabling then attempting registration without / with bad / with valid code returns 403 / 403 / 200 respectively; disabling reverts to open signup.
+
+
 - **Admin wallet adjust** (`POST /api/admin/users/{user_id}/wallet-adjust`) — atomically credits/debits any user's wallet with a mandatory audit reason. Routes through `services/ledger.apply_entry` (`tx_type='adjustment'`), stamps the admin username on the ledger row, guards against overdraft when debiting the available bucket, supports crediting/debiting the frozen (escrow) bucket, and fires a live `wallet` notification to the user. Frontend: new "Wallet" column in `/admin/users` shows available + frozen balances plus an "Adjust" button opening a dialog with direction (credit/debit), amount, bucket (available/frozen) and required reason.
 - **Store owner profile expansion** (`Store` model gained `country`, `contact_email`, `website`):
   * **Cover image + profile picture uploaders** — new `POST /api/upload/public-image` endpoint writes to the local media root (or R2 when configured) and returns a fully-qualified public URL that any visitor can render. `StoreManage.jsx` rewritten with drag-and-drop uploader tiles (aspect-4:1 cover + square logo) plus URL fallback inputs; hover shows replace/remove overlays.

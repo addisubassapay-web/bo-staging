@@ -467,6 +467,9 @@ class Settings(BaseModel):
     # Admin-managed manual payment methods (bank transfer, mobile money, PayPal link, etc.)
     # Each item: {id, name, instructions, icon, active}
     manual_payment_methods: List[dict] = Field(default_factory=list)
+    # Invite-only signup — when True, /auth/register requires a valid invitation
+    # (referral) code that matches an existing user's `referral_code`.
+    invite_only_signup: bool = False
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
@@ -3091,6 +3094,7 @@ async def public_settings():
             {"min_qty": 5, "discount_pct": 5.0},
             {"min_qty": 10, "discount_pct": 10.0},
         ],
+        "invite_only_signup": bool(s.get("invite_only_signup", False)),
     }
 
 
@@ -3109,9 +3113,11 @@ async def admin_update_settings(updates: dict, _admin: dict = Depends(require_ad
         "dispute_auto_refund_excluded_reasons",
         "delivery_days_estimate", "delivery_auto_release_days",
         "resell_markup_caps", "resell_wholesale_discounts", "push_reward_amount",
-        "bulk_discount_tiers",
+        "bulk_discount_tiers", "invite_only_signup",
     }
     filtered = {k: v for k, v in updates.items() if k in allowed}
+    if "invite_only_signup" in filtered:
+        filtered["invite_only_signup"] = bool(filtered["invite_only_signup"])
     # Sanitize the exclusion list — only accept known dispute reasons
     if "dispute_auto_refund_excluded_reasons" in filtered:
         raw = filtered["dispute_auto_refund_excluded_reasons"]

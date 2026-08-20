@@ -80,17 +80,27 @@ async def register(payload: dict):
     if existing:
         raise HTTPException(status_code=400, detail="Email or username already exists")
     referred_by = None
-    if body.referral_code:
+    settings = await get_settings()
+    invite_only = bool(settings.get("invite_only_signup", False))
+    code = (body.referral_code or "").strip().upper()
+    if code:
         ref = await db.users.find_one(
-            {"referral_code": body.referral_code.upper()}, {"_id": 0, "id": 1}
+            {"referral_code": code}, {"_id": 0, "id": 1}
         )
-        if ref:
+        if not ref:
+            # In invite-only mode a bad code must block. Outside invite-only
+            # we silently ignore a bad code (legacy behaviour) so a typo doesn't
+            # break a happy-path signup.
+            if invite_only:
+                raise HTTPException(status_code=403, detail="Invitation code is invalid or expired")
+        else:
             referred_by = ref["id"]
+    elif invite_only:
+        raise HTTPException(status_code=403, detail="Registration is invite-only. Please enter a valid invitation code from a member.")
     user = User(email=body.email, username=body.username, referred_by=referred_by)
     doc = user.model_dump()
     doc["password_hash"] = hash_password(body.password)
     await db.users.insert_one(doc)
-    settings = await get_settings()
     if settings.get("signup_bonus", 0) > 0:
         await credit_wallet(user.id, settings["signup_bonus"], "bonus", "Signup bonus")
     token = create_token(user.id, user.role)
