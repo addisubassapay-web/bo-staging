@@ -9,7 +9,7 @@ import requests
 BASE = os.environ["REACT_APP_BACKEND_URL"].rstrip("/")
 API = f"{BASE}/api"
 
-ADMIN = {"email": "admin@mercuri-global.local", "password": "admin123"}
+ADMIN = {"email": "admin@merchari-global.local", "password": "admin123"}
 USER = {"email": "sophia_style@demo.local", "password": "demo1234"}
 
 
@@ -102,7 +102,7 @@ def test_withdraw_insufficient_returns_400(user_headers):
     assert "insufficient" in body or "balance" in body, r.text[:200]
 
 
-# --- Currency rates endpoint (frontend caches to localStorage.mercuri-global_rates) ---
+# --- Currency rates endpoint (frontend caches to localStorage.merchari-global_rates) ---
 def test_currency_rates_endpoint():
     r = requests.get(f"{API}/currency/rates", timeout=15)
     assert r.status_code == 200

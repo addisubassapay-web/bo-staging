@@ -21,7 +21,7 @@ load_dotenv(Path(__file__).resolve().parents[2] / "frontend" / ".env")
 BASE_URL = os.environ["REACT_APP_BACKEND_URL"].rstrip("/")
 API = f"{BASE_URL}/api"
 
-ADMIN_EMAIL = "admin@mercuri-global.local"
+ADMIN_EMAIL = "admin@merchari-global.local"
 ADMIN_PASSWORD = "admin123"
 
 

@@ -126,7 +126,7 @@ const Profile = () => {
 
   const shareProfile = async () => {
     const url = `${window.location.origin}/store/${user.username}`;
-    const text = `Check out ${user.username}'s store on Mercuri-global`;
+    const text = `Check out ${user.username}'s store on Merchari-global`;
     if (navigator.share) {
       try { await navigator.share({ title: text, url }); }
       catch (e) { if (e?.name !== "AbortError") console.warn("[share] failed:", e); }

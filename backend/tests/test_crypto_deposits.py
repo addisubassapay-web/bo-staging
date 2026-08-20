@@ -13,7 +13,7 @@ if not BASE_URL:
                 BASE_URL = line.split("=", 1)[1].strip().rstrip("/")
                 break
 
-ADMIN = {"email": "admin@mercuri-global.local", "password": "admin123"}
+ADMIN = {"email": "admin@merchari-global.local", "password": "admin123"}
 USER = {"email": "sophia_style@demo.local", "password": "demo1234"}
 
 

@@ -8,10 +8,10 @@ import BrandMark from "@/components/BrandMark";
 const SplashScreen = () => {
   const [visible, setVisible] = useState(() => {
     if (typeof window === "undefined") return false;
-    if (sessionStorage.getItem("mercuri-global_splash_seen")) return false;
+    if (sessionStorage.getItem("merchari-global_splash_seen")) return false;
     // Respect prefers-reduced-motion — skip splash entirely for a11y
     if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      try { sessionStorage.setItem("mercuri-global_splash_seen", "1"); } catch { /* ignore */ }
+      try { sessionStorage.setItem("merchari-global_splash_seen", "1"); } catch { /* ignore */ }
       return false;
     }
     return true;
@@ -21,9 +21,9 @@ const SplashScreen = () => {
   // Personalized headline — computed once at render time.
   const { headline, sub, isReturning } = useMemo(() => {
     if (typeof window === "undefined") return { headline: "", sub: "", isReturning: false };
-    const token = localStorage.getItem("mercuri-global_token");
-    const name = (localStorage.getItem("mercuri-global_username") || "").trim();
-    const hasVisited = localStorage.getItem("mercuri-global_visited_before") === "1";
+    const token = localStorage.getItem("merchari-global_token");
+    const name = (localStorage.getItem("merchari-global_username") || "").trim();
+    const hasVisited = localStorage.getItem("merchari-global_visited_before") === "1";
     if (token && name) {
       const first = name.charAt(0).toUpperCase() + name.slice(1);
       return {
@@ -40,7 +40,7 @@ const SplashScreen = () => {
       };
     }
     return {
-      headline: "Welcome to mercuri-global",
+      headline: "Welcome to merchari-global",
       sub: "Millions of items · Verified sellers · Buyer protection",
       isReturning: false,
     };
@@ -49,11 +49,11 @@ const SplashScreen = () => {
   useEffect(() => {
     if (!visible) return;
     // Mark that this browser has seen the splash at least once.
-    try { localStorage.setItem("mercuri-global_visited_before", "1"); } catch { /* ignore */ }
+    try { localStorage.setItem("merchari-global_visited_before", "1"); } catch { /* ignore */ }
     const fadeTimer = setTimeout(() => setFadeOut(true), 1500);
     const hideTimer = setTimeout(() => {
       setVisible(false);
-      try { sessionStorage.setItem("mercuri-global_splash_seen", "1"); } catch { /* ignore */ }
+      try { sessionStorage.setItem("merchari-global_splash_seen", "1"); } catch { /* ignore */ }
     }, 2000);
     return () => { clearTimeout(fadeTimer); clearTimeout(hideTimer); };
   }, [visible]);
@@ -64,7 +64,7 @@ const SplashScreen = () => {
     setFadeOut(true);
     setTimeout(() => {
       setVisible(false);
-      try { sessionStorage.setItem("mercuri-global_splash_seen", "1"); } catch { /* ignore */ }
+      try { sessionStorage.setItem("merchari-global_splash_seen", "1"); } catch { /* ignore */ }
     }, 350);
   };
 

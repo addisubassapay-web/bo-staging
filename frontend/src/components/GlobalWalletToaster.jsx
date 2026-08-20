@@ -14,7 +14,7 @@ import { useNotificationStream } from "@/hooks/useNotificationStream";
  * ledger view), but this global broadcaster dedupes against a shared
  * localStorage cursor so users don't see the same toast twice.
  */
-const GLOBAL_CURSOR_KEY = "mercuri-global_wallet_stream_cursor";
+const GLOBAL_CURSOR_KEY = "merchari-global_wallet_stream_cursor";
 
 const GlobalWalletToaster = () => {
   const { user } = useAuth();

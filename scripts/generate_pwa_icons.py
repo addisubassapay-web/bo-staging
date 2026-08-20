@@ -1,4 +1,4 @@
-"""Generate PWA icons for Mercuri-global (192x192 and 512x512).
+"""Generate PWA icons for Merchari-global (192x192 and 512x512).
 
 The design mirrors the header logo: gradient background (#FF7A18 -> #FF211F) with a rounded
 mask, subtle inner highlight, and a bold "M" mark centered.

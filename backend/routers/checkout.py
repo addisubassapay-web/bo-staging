@@ -18,7 +18,7 @@ router = APIRouter()
 COUPONS = {
     "WELCOME10": {"percent": 0.10, "max_off": 15.0, "min_subtotal": 10.0, "description": "10% off — first order"},
     "FLASH20":   {"percent": 0.20, "max_off": 30.0, "min_subtotal": 20.0, "description": "20% off — flash sale"},
-    "MERCURI-GLOBAL5": {"percent": 0.05, "max_off": 8.0,  "min_subtotal": 0.0,  "description": "5% off — everyone"},
+    "MERCHARI-GLOBAL5": {"percent": 0.05, "max_off": 8.0,  "min_subtotal": 0.0,  "description": "5% off — everyone"},
     "GULF15":    {"percent": 0.15, "max_off": 25.0, "min_subtotal": 30.0, "description": "15% off — Gulf shoppers"},
     "BULK":      {"tier": True,    "description": "Auto wholesale tier — 5+ items 5%, 10+ items 10%"},
 }

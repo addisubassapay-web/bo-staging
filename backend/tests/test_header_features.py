@@ -7,7 +7,7 @@ import io
 import pytest
 import requests
 
-BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "").rstrip("/") or "https://mercuri-global-clone-1.preview.emergentagent.com"
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "").rstrip("/") or "https://merchari-global-clone-1.preview.emergentagent.com"
 
 
 @pytest.fixture(scope="module")

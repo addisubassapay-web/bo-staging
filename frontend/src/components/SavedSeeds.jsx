@@ -12,7 +12,7 @@ import { Bookmark, Plus, Play, Trash2, Loader2, Sparkles, Clock, Lightbulb, BarC
 const PROVIDERS = [
   { id: "amazon_search", label: "Amazon — search" },
   { id: "amazon_bestsellers", label: "Amazon — bestsellers" },
-  { id: "mercuri-global_search", label: "Mercuri-global — search" },
+  { id: "merchari-global_search", label: "Merchari-global — search" },
 ];
 
 const SavedSeeds = () => {

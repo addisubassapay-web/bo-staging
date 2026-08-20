@@ -19,7 +19,7 @@ if not BASE_URL:
 BASE_URL = BASE_URL.rstrip("/")
 API = f"{BASE_URL}/api"
 
-ADMIN = {"email": "admin@mercuri-global.local", "password": "admin123"}
+ADMIN = {"email": "admin@merchari-global.local", "password": "admin123"}
 SELLER = {"email": "urban_finds@demo.local", "password": "demo1234"}
 SELLER2 = {"email": "vintage_maven@demo.local", "password": "demo1234"}
 
@@ -48,7 +48,7 @@ def seller2_token():
 @pytest.fixture(scope="session")
 def small_product_image_b64():
     """Fetch a small ~picsum image (JPEG) and return its base64."""
-    r = requests.get("https://picsum.photos/seed/mercuri-global-product/400/400.jpg", timeout=30)
+    r = requests.get("https://picsum.photos/seed/merchari-global-product/400/400.jpg", timeout=30)
     r.raise_for_status()
     return base64.b64encode(r.content).decode("utf-8"), r.content
 

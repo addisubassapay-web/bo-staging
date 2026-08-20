@@ -180,7 +180,7 @@ async def forgot_password(payload: dict):
     if user:
         token = secrets.token_urlsafe(32)
         import os, logging
-        reset_url = f"{os.environ.get('FRONTEND_ORIGIN', 'https://mercuri-global-clone-1.preview.emergentagent.com')}/reset-password?token={token}"
+        reset_url = f"{os.environ.get('FRONTEND_ORIGIN', 'https://merchari-global-clone-1.preview.emergentagent.com')}/reset-password?token={token}"
         await db.password_resets.insert_one({
             "token": token,
             "user_id": user["id"],

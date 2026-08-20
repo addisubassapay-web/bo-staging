@@ -16,7 +16,7 @@ if not BASE_URL:
 BASE_URL = BASE_URL.rstrip("/")
 API = f"{BASE_URL}/api"
 
-ADMIN = {"email": "admin@mercuri-global.local", "password": "admin123"}
+ADMIN = {"email": "admin@merchari-global.local", "password": "admin123"}
 SELLER = {"email": "urban_finds@demo.local", "password": "demo1234"}
 
 
@@ -244,7 +244,7 @@ class TestRegressionLite:
         assert r.json().get("ok") is True
 
     def test_ai_listing_suggest(self, seller_token):
-        img = requests.get("https://picsum.photos/seed/mercuri-global-p5/320/320.jpg", timeout=30).content
+        img = requests.get("https://picsum.photos/seed/merchari-global-p5/320/320.jpg", timeout=30).content
         b64 = base64.b64encode(img).decode()
         r = requests.post(
             f"{API}/ai/listing-suggest",
@@ -255,7 +255,7 @@ class TestRegressionLite:
         assert r.status_code == 200, r.text[:300]
 
     def test_ai_photo_enhance_small(self, seller_token):
-        img = requests.get("https://picsum.photos/seed/mercuri-global-p5b/300/300.jpg", timeout=30).content
+        img = requests.get("https://picsum.photos/seed/merchari-global-p5b/300/300.jpg", timeout=30).content
         b64 = base64.b64encode(img).decode()
         r = requests.post(
             f"{API}/ai/photo-enhance",
