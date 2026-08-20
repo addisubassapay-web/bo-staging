@@ -21,10 +21,10 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, Header, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
 from pydantic import BaseModel, Field
 
-from routers.deps import get_db
+from routers.deps import get_db, require_admin
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["products"])
@@ -349,3 +349,94 @@ async def get_product(product_id: str):
     if not doc:
         raise HTTPException(404, "Product not found")
     return doc
+
+
+# ---------------------------------------------------------------------------
+# Admin management endpoints (auth-gated by require_admin)
+# ---------------------------------------------------------------------------
+class ProductUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    price: Optional[float] = None
+    currency: Optional[str] = None
+    category: Optional[str] = None
+    sku: Optional[str] = None
+    source_url: Optional[str] = None
+    images: Optional[List[str]] = None
+    is_active: Optional[bool] = None
+
+
+@router.get("/admin/products", response_model=ProductListResponse)
+async def admin_list_products(
+    _admin: dict = Depends(require_admin),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(25, ge=1, le=100),
+    q: Optional[str] = Query(default=None),
+    category: Optional[str] = Query(default=None),
+    status: str = Query(default="all", regex="^(all|active|inactive)$"),
+):
+    """Admin listing — includes inactive products and full search."""
+    db = get_db()
+    filt: Dict[str, Any] = {}
+    if status == "active":
+        filt["is_active"] = True
+    elif status == "inactive":
+        filt["is_active"] = False
+    if category:
+        filt["category"] = category
+    if q:
+        # Search title or SKU
+        filt["$or"] = [
+            {"title": {"$regex": q, "$options": "i"}},
+            {"sku": {"$regex": q, "$options": "i"}},
+        ]
+
+    total = await db.products.count_documents(filt)
+    cursor = (
+        db.products.find(filt, {"_id": 0})
+        .sort("created_at", -1)
+        .skip((page - 1) * page_size)
+        .limit(page_size)
+    )
+    docs = await cursor.to_list(length=page_size)
+    return {"items": docs, "total": total, "page": page, "page_size": page_size}
+
+
+@router.patch("/admin/products/{product_id}", response_model=ProductOut)
+async def admin_update_product(
+    product_id: str,
+    payload: ProductUpdate,
+    _admin: dict = Depends(require_admin),
+):
+    """Update any editable field on a product. Only provided fields are changed."""
+    db = get_db()
+    updates = {k: v for k, v in payload.model_dump(exclude_unset=True).items() if v is not None or k == "is_active"}
+    if not updates:
+        raise HTTPException(400, "No fields to update")
+
+    # Guard: if changing sku or source_url, keep them non-empty strings if provided
+    if "sku" in updates and updates["sku"] is not None:
+        updates["sku"] = str(updates["sku"]).strip() or None
+    if "source_url" in updates and updates["source_url"] is not None:
+        updates["source_url"] = str(updates["source_url"]).strip() or None
+
+    updates["updated_at"] = datetime.now(timezone.utc)
+    result = await db.products.update_one({"id": product_id}, {"$set": updates})
+    if result.matched_count == 0:
+        raise HTTPException(404, "Product not found")
+
+    doc = await db.products.find_one({"id": product_id}, {"_id": 0})
+    return doc
+
+
+@router.delete("/admin/products/{product_id}")
+async def admin_delete_product(
+    product_id: str,
+    _admin: dict = Depends(require_admin),
+):
+    """Hard-delete a product (permanent). Use `is_active=false` for soft-hide instead."""
+    db = get_db()
+    result = await db.products.delete_one({"id": product_id})
+    if result.deleted_count == 0:
+        raise HTTPException(404, "Product not found")
+    return {"ok": True, "deleted": product_id}
