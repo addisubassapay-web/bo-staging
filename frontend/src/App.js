@@ -11,6 +11,8 @@ import Footer from "@/components/Footer";
 import Home from "@/pages/Home";
 import Search from "@/pages/Search";
 import ListingDetail from "@/pages/ListingDetail";
+import Products from "@/pages/Products";
+import ProductDetail from "@/pages/ProductDetail";
 import Sell from "@/pages/Sell";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
@@ -63,6 +65,8 @@ function App() {
                     <Route path="/marketplace" element={<Search />} />
                     <Route path="/marketplace/stores" element={<StoresMarketplace />} />
                     <Route path="/listing/:id" element={<ListingDetail />} />
+                    <Route path="/products" element={<Products />} />
+                    <Route path="/products/:id" element={<ProductDetail />} />
                     <Route path="/sell" element={<Sell />} />
                     <Route path="/dashboard/list-product" element={<Sell />} />
                     <Route path="/login" element={<Login />} />

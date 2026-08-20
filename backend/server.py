@@ -38,6 +38,7 @@ from routers.checkout import router as checkout_router
 from routers.coupons import router as coupons_router
 from routers.scraper import router as scraper_router
 from routers.store_boosts import router as store_boosts_router
+from routers.products import router as products_router
 
 
 ROOT_DIR = Path(__file__).parent
@@ -6237,6 +6238,7 @@ app.include_router(checkout_router, prefix="/api")
 app.include_router(coupons_router, prefix="/api")
 app.include_router(scraper_router, prefix="/api")
 app.include_router(store_boosts_router, prefix="/api")
+app.include_router(products_router, prefix="/api")
 
 app.add_middleware(
     CORSMiddleware,
@@ -6275,6 +6277,12 @@ async def startup():
     await db.recently_viewed.create_index([("user_id", 1), ("viewed_at", -1)])
     await db.recently_viewed.create_index([("user_id", 1), ("listing_id", 1)], unique=True)
     await db.notifications.create_index([("user_id", 1), ("created_at", -1)])
+    # Permanent products catalog (webhook-ingested; no TTL by design)
+    await db.products.create_index("id", unique=True)
+    await db.products.create_index("sku", sparse=True)
+    await db.products.create_index("source_url", sparse=True)
+    await db.products.create_index([("is_active", 1), ("created_at", -1)])
+    await db.products.create_index("category")
 
     # Migrate existing users: add referral_code, wallet_balance if missing
     async for u in db.users.find({"referral_code": {"$exists": False}}, {"_id": 0, "id": 1}):
