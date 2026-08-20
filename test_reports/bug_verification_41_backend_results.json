@@ -1,0 +1,107 @@
+{
+  "api_base": "https://apify-catalog.preview.emergentagent.com/api",
+  "results": [
+    {
+      "name": "scraper_GET_/scraper/anything",
+      "ok": true,
+      "detail": "status=410, body={\"detail\": \"Zyte scraper endpoints have been removed. Merchari-global now imports products only via the Apify Amazon crawler \\u2014 see /api/admin/sync/apify.\"}"
+    },
+    {
+      "name": "scraper_GET_/scraper/anything/",
+      "ok": true,
+      "detail": "status=410, body={\"detail\": \"Zyte scraper endpoints have been removed. Merchari-global now imports products only via the Apify Amazon crawler \\u2014 see /api/admin/sync/apify.\"}"
+    },
+    {
+      "name": "scraper_GET_/scraper/",
+      "ok": true,
+      "detail": "status=410, body={\"detail\": \"Zyte scraper endpoints have been removed. Merchari-global now imports products only via the Apify Amazon crawler \\u2014 see /api/admin/sync/apify.\"}"
+    },
+    {
+      "name": "scraper_GET_/scraper",
+      "ok": false,
+      "detail": "status=307, body="
+    },
+    {
+      "name": "scraper_POST_/scraper/anything",
+      "ok": true,
+      "detail": "status=410, body={\"detail\": \"Zyte scraper endpoints have been removed. Merchari-global now imports products only via the Apify Amazon crawler \\u2014 see /api/admin/sync/apify.\"}"
+    },
+    {
+      "name": "scraper_PUT_/scraper/anything",
+      "ok": true,
+      "detail": "status=410, body={\"detail\": \"Zyte scraper endpoints have been removed. Merchari-global now imports products only via the Apify Amazon crawler \\u2014 see /api/admin/sync/apify.\"}"
+    },
+    {
+      "name": "scraper_DELETE_/scraper/anything",
+      "ok": true,
+      "detail": "status=410, body={\"detail\": \"Zyte scraper endpoints have been removed. Merchari-global now imports products only via the Apify Amazon crawler \\u2014 see /api/admin/sync/apify.\"}"
+    },
+    {
+      "name": "listings_limit_10",
+      "ok": true,
+      "detail": "status=200, count=10, expected=10"
+    },
+    {
+      "name": "listings_limit_300",
+      "ok": true,
+      "detail": "status=200, count=300, expected=300"
+    },
+    {
+      "name": "listings_limit_500",
+      "ok": true,
+      "detail": "status=200, count=500, expected=500"
+    },
+    {
+      "name": "listings_limit_600",
+      "ok": true,
+      "detail": "status=200, count=500, expected=500"
+    },
+    {
+      "name": "listings_default_60",
+      "ok": true,
+      "detail": "status=200, count=60"
+    },
+    {
+      "name": "category_filter_women",
+      "ok": true,
+      "detail": "status=200, count=105, category_id=82a68761-a263-4f63-837f-5dd1362c2cd9"
+    },
+    {
+      "name": "category_filter_men",
+      "ok": true,
+      "detail": "status=200, count=158, category_id=f34099af-f793-45b6-836f-ae2153539e30"
+    },
+    {
+      "name": "category_filter_Jewelry",
+      "ok": true,
+      "detail": "status=200, count=20, category_id=692caf9f-11c7-4a89-84fd-8d1663f0ec2b"
+    },
+    {
+      "name": "category_filter_three_categories_found",
+      "ok": true,
+      "detail": "checked=3"
+    },
+    {
+      "name": "admin_login",
+      "ok": true,
+      "detail": "status=200"
+    },
+    {
+      "name": "admin_sync_status",
+      "ok": false,
+      "detail": "status=200, data={\"source\": \"junglee/amazon-crawler\", \"last_sync_at\": null, \"started_at\": \"2026-08-20T15:39:42.180000\", \"last_live_tick\": \"2026-08-20T15:48:13.343000\", \"imported_count\": 2611, \"raw_items\": 2694, \"active_listings\": 1253, \"sold_listings\": 3, \"total_listings\": 1256, \"target_count\": 5000, \"live_sync_enabled\": true, \"sync_running\": true, \"message\": \"Running actor for 28 categories, up to 178 each\", \"per_category\": {\"kids\": 429, \"women\": 564, \"men\": 544, \"electronics\": 211, \"other\": 360, \"home\": 85, \"toys\": 149, \"books\": 47, \"sports\": 14, \"beauty\": 208}, \"next_scheduled_at\": \"2026-09-19T15:48:52.379000\", \"schedule_interval_days\": 30, \"auto_schedule_enabled\": true}"
+    },
+    {
+      "name": "db_active_listings_apify_only",
+      "ok": false,
+      "detail": "active_total=1253, active_apify=160, active_legacy_source_without_apify=1"
+    },
+    {
+      "name": "legacy_source_listing_not_searchable",
+      "ok": false,
+      "detail": "legacy_id=e6a4380d-c7a4-4123-8101-dcc74cf983b4, title='Soumission', api_search_count=1, found_in_api=True"
+    }
+  ],
+  "passed": 16,
+  "failed": 4
+}

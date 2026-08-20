@@ -36,7 +36,7 @@ from routers.listings import router as listings_router
 from routers.personalized import router as personalized_router
 from routers.checkout import router as checkout_router
 from routers.coupons import router as coupons_router
-from routers.scraper import router as scraper_router
+from routers.scraper_stub import router as scraper_router
 from routers.store_boosts import router as store_boosts_router
 from routers.products import router as products_router
 from routers.apify_runs import router as apify_runs_router
@@ -891,7 +891,7 @@ async def list_listings(
         "popular": [("likes_count", -1), ("views_count", -1)],
         "trending": [("views_count", -1), ("likes_count", -1), ("created_at", -1)],
     }
-    limit = max(1, min(int(limit), 96))
+    limit = max(1, min(int(limit), 500))
     skip = max(0, int(skip))
     cursor = db.listings.find(query, {"_id": 0}).sort(sort_map.get(sort, sort_map["newest"])).skip(skip).limit(limit)
     docs = await cursor.to_list(limit)
@@ -914,6 +914,14 @@ def _build_listings_query(
     query: dict = {}
     if status_filter:
         query["status"] = status_filter
+    # ZYTE REMOVAL — exclude any listing whose source_url was ingested by the
+    # legacy Zyte scraper (books.toscrape.com, generic ebay/shopify sources, etc.).
+    # Only Amazon-derived (or source-less demo) listings surface on the marketplace.
+    query["$nor"] = [
+        {"source_url": {"$regex": r"toscrape\.com", "$options": "i"}},
+        {"source_url": {"$regex": r"scrape\.me", "$options": "i"}},
+        {"source_url": {"$regex": r"quotes\.toscrape", "$options": "i"}},
+    ]
     and_clauses: list = []
     if q:
         and_clauses.append({
@@ -3681,7 +3689,7 @@ async def store_category_discoveries(days: int = 7, user: dict = Depends(get_cur
 @api_router.post("/admin/sync/apify")
 async def admin_sync_apify(payload: dict, _admin: dict = Depends(require_admin)):
     """Trigger Apify Amazon scrape + import. Runs in background."""
-    target = int(payload.get("target_count", 5000))
+    target = int(payload.get("target_count", 20000))
     replace = bool(payload.get("replace_existing", True))
     if target < 100 or target > 20000:
         raise HTTPException(400, "target_count must be between 100 and 20000")
@@ -6702,13 +6710,17 @@ async def startup():
                     await asyncio.sleep(60 * 60 * 24)
                     continue
 
-                # Auto-recover a stuck sync_running lock (e.g. after a crash)
+                # Auto-recover a stuck sync_running lock (e.g. after a crash /
+                # a container restart in the middle of an Apify actor call).
+                # Cleared after 30 minutes with no progress so the front-end
+                # status endpoint doesn't misleadingly say "Sync in progress"
+                # for hours after a real orphan.
                 if state.get("sync_running"):
                     started = state.get("started_at")
                     if started and started.tzinfo is None:
                         started = started.replace(tzinfo=timezone.utc)
-                    if not started or (datetime.now(timezone.utc) - started).total_seconds() > 60 * 60 * 6:
-                        logger.warning("Clearing stuck Apify sync_running lock (>6h old)")
+                    if not started or (datetime.now(timezone.utc) - started).total_seconds() > 60 * 30:
+                        logger.warning("Clearing stuck Apify sync_running lock (>30m old)")
                         await db.sync_state.update_one(
                             {"id": "apify"},
                             {"$set": {"sync_running": False, "message": "Auto-cleared stuck lock"}},
@@ -6716,8 +6728,25 @@ async def startup():
                         state["sync_running"] = False
 
                 last = state.get("last_sync_at")
+                last_attempt = state.get("last_attempt_at")
                 now = datetime.now(timezone.utc)
-                if last:
+                # Honor a persisted next_scheduled_at from the previous
+                # (possibly-failed) attempt — prevents tight retry loops when
+                # Apify credits are exhausted / actor errors keep firing.
+                next_scheduled = state.get("next_scheduled_at")
+                if next_scheduled:
+                    if hasattr(next_scheduled, "tzinfo") and next_scheduled.tzinfo is None:
+                        next_scheduled = next_scheduled.replace(tzinfo=timezone.utc)
+                    if next_scheduled > now:
+                        wait = (next_scheduled - now).total_seconds()
+                    elif last:
+                        if last.tzinfo is None:
+                            last = last.replace(tzinfo=timezone.utc)
+                        elapsed = (now - last).total_seconds()
+                        wait = max(0, INTERVAL_SECONDS - elapsed)
+                    else:
+                        wait = 0
+                elif last:
                     # Handle both naive and aware
                     if last.tzinfo is None:
                         last = last.replace(tzinfo=timezone.utc)
@@ -6726,6 +6755,15 @@ async def startup():
                 else:
                     # Never synced — run right away
                     wait = 0
+
+                # Additional guard: if the last actor attempt failed within the
+                # last hour, back off 6h to avoid spamming a quota-exhausted API
+                if last_attempt and not last:
+                    if hasattr(last_attempt, "tzinfo") and last_attempt.tzinfo is None:
+                        last_attempt = last_attempt.replace(tzinfo=timezone.utc)
+                    since_attempt = (now - last_attempt).total_seconds()
+                    if since_attempt < 6 * 3600:
+                        wait = max(wait, 6 * 3600 - since_attempt)
 
                 if wait > 0:
                     next_scheduled_at = now + timedelta(seconds=wait)
@@ -6745,7 +6783,26 @@ async def startup():
                 state = await db.sync_state.find_one({"id": "apify"}, {"_id": 0}) or {}
                 if not state.get("sync_running"):
                     logger.info(f"Starting scheduled Apify auto-sync (every {INTERVAL_DAYS} days)")
-                    await import_from_apify(db, target_count=5000, replace_existing=False)
+                    # Stamp the attempt BEFORE calling so a hard failure still
+                    # advances the cooldown clock even if the actor throws.
+                    await db.sync_state.update_one(
+                        {"id": "apify"},
+                        {"$set": {
+                            "last_attempt_at": datetime.now(timezone.utc),
+                            "next_scheduled_at": datetime.now(timezone.utc) + timedelta(hours=6),
+                        }},
+                        upsert=True,
+                    )
+                    result = await import_from_apify(db, target_count=20000, replace_existing=False)
+                    if isinstance(result, dict) and not result.get("ok", True):
+                        # Actor failed (quota exhausted, etc.) — persist 6h cooldown
+                        logger.warning(f"Scheduled Apify auto-sync failed: {result.get('error') or result}")
+                        await db.sync_state.update_one(
+                            {"id": "apify"},
+                            {"$set": {"next_scheduled_at": datetime.now(timezone.utc) + timedelta(hours=6)}},
+                        )
+                        await asyncio.sleep(6 * 3600)
+                        continue
             except Exception as e:
                 logger.error(f"apify auto-sync loop failed: {e}")
                 # Back off a day before retrying on hard error

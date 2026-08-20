@@ -11,14 +11,7 @@ import { Camera, X, Upload, DollarSign, Sparkles, Wand2, PackagePlus, PenLine, L
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import ResellFromCatalog from "@/components/ResellFromCatalog";
-import ImportFromUrl from "@/components/ImportFromUrl";
-import BulkImportFromUrls from "@/components/BulkImportFromUrls";
-import CategoryScrapeAtScale from "@/components/CategoryScrapeAtScale";
-import PaginatedSeedScrape from "@/components/PaginatedSeedScrape";
-import SavedSeeds from "@/components/SavedSeeds";
-import BestSellersRotation from "@/components/BestSellersRotation";
 import BoostMyStore from "@/components/BoostMyStore";
-import QuotaWidget from "@/components/QuotaWidget";
 import { Link } from "react-router-dom";
 
 const PLACEHOLDER_SEEDS = ["seed1", "seed2", "seed3", "seed4", "seed5", "seed6", "seed7", "seed8"];
@@ -311,14 +304,21 @@ const Sell = () => {
         <ResellFromCatalog />
       ) : mode === "import" ? (
         <div className="mt-8 space-y-6">
-          <QuotaWidget />
           <BoostMyStore />
-          <PaginatedSeedScrape />
-          <SavedSeeds />
-          <BestSellersRotation />
-          <CategoryScrapeAtScale />
-          <ImportFromUrl onImportReady={applyImport} />
-          <BulkImportFromUrls onUseListing={applyImport} />
+          <div className="rounded-2xl border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/40 p-6 text-center" data-testid="import-deprecated-notice">
+            <div className="text-2xl font-extrabold text-amber-900 dark:text-amber-100">Direct URL imports have moved</div>
+            <p className="mt-2 text-sm text-amber-800 dark:text-amber-200 max-w-md mx-auto">
+              Merchari-global now sources every catalog listing from the curated Apify Amazon feed. Use the <b>Resell from catalog</b> tab to publish inventory to your storefront — new items refresh automatically as the platform-wide sync runs.
+            </p>
+            <button
+              type="button"
+              onClick={() => setMode("resell")}
+              className="mt-4 min-h-[44px] px-5 rounded-full bg-gradient-to-r from-[#FF7A18] to-[#FF211F] text-white font-semibold hover:brightness-110"
+              data-testid="import-deprecated-cta"
+            >
+              Browse the catalog
+            </button>
+          </div>
         </div>
       ) : (
       <form onSubmit={submit} className="mt-8 space-y-8">

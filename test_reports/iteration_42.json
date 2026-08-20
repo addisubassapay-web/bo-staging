@@ -1,0 +1,55 @@
+{
+  "verdict": "not_fixed",
+  "user_reported_bug": "Remove the listing logic coming from zyme API and only list the products coming from Apify and list the largest possible number of products",
+  "summary": "No relevant testing skill found. Focused backend re-test against the preview API verified scraper stubs, legacy listing filtering/purge, and increased listing limits all pass, but the sync status regression remains: /api/admin/sync/status intermittently returns sync_running:true because the scheduled Apify loop is repeatedly starting/failing actor runs without a stable backoff.",
+  "backend_issues": {
+    "critical": [
+      {
+        "endpoint": "GET /api/admin/sync/status",
+        "issue": "Expected sync_running:false, but 6/10 poll samples returned sync_running:true with message 'Running actor for 28 categories, up to 714 each'. Backend logs show repeated 'Starting scheduled Apify auto-sync' followed by Apify 'Monthly usage hard limit exceeded' errors. This means the status flag is not reliably false and Apify sync is being retried continuously even though no test triggered a sync.",
+        "priority": "HIGH"
+      }
+    ],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/test_reports/bug_verification_42_backend.py",
+    "/app/test_reports/bug_verification_42_backend_results.json",
+    "/app/test_reports/bug_verification_42_db_inspect.py",
+    "/app/test_reports/bug_verification_42_db_inspect_results.json",
+    "/app/test_reports/bug_verification_42.json",
+    "/app/test_reports/iteration_42.json"
+  ],
+  "action_items": [
+    "Fix apify_auto_sync_loop so a failed/absent last_sync_at state does not immediately restart the actor in a tight loop; set a durable last attempt/backoff or respect next_scheduled_at after failure.",
+    "Ensure GET /api/admin/sync/status remains sync_running:false unless a real admin-triggered or scheduled sync is actually in progress.",
+    "Re-test status polling plus backend logs after the fix; do not manually trigger a new Apify sync during verification."
+  ],
+  "critical_code_review_comments": [
+    "server.py:6695-6756 bases the scheduled wait only on last_sync_at; when last_sync_at is null and import_from_apify returns ok:false, the while loop immediately starts another sync despite next_scheduled_at being written later.",
+    "apify_sync.py:254-294 sets sync_running:true before actor call and false on actor failure, but does not set last_sync_at or a failure cooldown, creating repeated true/false status oscillation when Apify credits are exhausted.",
+    "Positive code review: scraper_stub.py defines exact '' and '/' api_route handlers, so /api/scraper no longer redirects; server.py _build_listings_query includes the legacy source_url $nor filter; admin/apify defaults now use 20000."
+  ],
+  "updated_files": [
+    "/app/test_reports/bug_verification_42_backend.py",
+    "/app/test_reports/bug_verification_42_backend_results.json",
+    "/app/test_reports/bug_verification_42_db_inspect.py",
+    "/app/test_reports/bug_verification_42_db_inspect_results.json",
+    "/app/test_reports/bug_verification_42.json",
+    "/app/test_reports/iteration_42.json"
+  ],
+  "success_rate": {
+    "backend": "90% (9/10 scripted backend checks passed)",
+    "frontend": "N/A - backend-only retest requested; previous UI pass was not repeated"
+  },
+  "seed_data_creation": "None. Read-only API and DB verification only; no Apify sync was triggered by the test.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Focused plan used: verify exact Zyte scraper 410 behavior, API listings legacy purge/filter and limit behavior, and admin sync status false. Passing evidence: all /api/scraper paths/methods tested returned 410/no Location redirect; /api/listings?q=Soumission and q=toscrape returned 0; first 20 listings had no toscrape/scrape.me source_url; default returned 60, limit=300 returned 300, limit=500/600 returned 500. Failing evidence: status polling at /api/admin/sync/status returned sync_running:true repeatedly. DB inspect also showed raw Soumission count 0, raw legacy source_url count 0, active listing count 1252.",
+  "rca_of_the_issue": "The remaining regression appears caused by the automatic Apify scheduler, not the manual admin sync endpoint. With sync_state.last_sync_at null, apify_auto_sync_loop calculates wait=0 every iteration. import_from_apify sets sync_running:true, the actor fails due Apify monthly usage hard limit exceeded, then sets sync_running:false and returns ok:false. Because no last_sync_at/failure backoff is persisted, the loop immediately starts again, so users/admins intermittently see sync_running:true and logs are spammed with failed Apify actor attempts. No APIs are mocked in this flow."
+}

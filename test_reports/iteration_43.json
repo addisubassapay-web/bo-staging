@@ -1,0 +1,39 @@
+{
+  "verdict": "fixed",
+  "user_reported_bug": "Remove the listing logic coming from zyme API and only list the products coming from Apify and list the largest possible number of products",
+  "summary": "Focused backend verification passed for Apify-only marketplace behavior. No relevant testing skill found. Authenticated as admin and polled /api/admin/sync/status 10 times over 24.23 seconds; sync_running stayed false every time. Verified legacy /api/scraper routes return 410 removal responses, legacy toscrape/Soumission listing searches return zero, default feed remains full at 60 items, limit=500 and limit=600 both return 500 items, and the first 3 categories each return at least 20 items.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/test_reports/bug_verification_43_backend.py",
+    "/app/test_reports/bug_verification_43_backend_results.json",
+    "/app/test_reports/bug_verification_43.json",
+    "/app/test_reports/iteration_43.json"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Code review confirmed server.py mounts routers.scraper_stub for /api/scraper and list_listings caps limit at 500 with a $nor filter for legacy toscrape/scrape.me source_url patterns. Dead Zyte implementation files still exist in the repo but were not reachable through the tested /api/scraper API routes."
+  ],
+  "updated_files": [
+    "/app/test_reports/bug_verification_43_backend.py",
+    "/app/test_reports/bug_verification_43_backend_results.json",
+    "/app/test_reports/bug_verification_43.json",
+    "/app/test_reports/iteration_43.json"
+  ],
+  "success_rate": {
+    "backend": "100%",
+    "frontend": "not tested - backend only request"
+  },
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Backend-only iteration 43 verification used preview URL https://apify-catalog.preview.emergentagent.com and did not trigger any manual Apify sync. Admin credentials worked. Primary regression was stable: all 10 sync status polls returned sync_running:false with next_scheduled_at 2026-09-19T16:00:49.705000.",
+  "rca_of_the_issue": "Previous regression was sync_running toggling true because the Apify auto-sync loop retried tightly after actor/quota failures. Runtime evidence now shows persisted next_scheduled_at is honored and sync_running remains false during a 20+ second poll window. Listing API evidence confirms legacy Zyte/toscrape data is filtered and marketplace/category feeds still expose a large Apify-backed catalog. No APIs were mocked in this verification."
+}

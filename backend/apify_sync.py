@@ -233,7 +233,7 @@ def _run_actor_sync(client: ApifyClient, urls: List[Dict], max_per_url: int) -> 
 
 async def import_from_apify(
     db,
-    target_count: int = 5000,
+    target_count: int = 20000,
     replace_existing: bool = True,
 ) -> Dict:
     """Scrape Amazon via Apify and import as listings."""
@@ -242,7 +242,7 @@ async def import_from_apify(
     if not cats or len(sellers) < 3:
         return {"ok": False, "error": "Need categories + at least 3 seller users seeded"}
 
-    per_url = max(50, target_count // len(CATEGORY_URLS))
+    per_url = max(200, target_count // len(CATEGORY_URLS))
     urls = [{"url": url} for (_slug, url) in CATEGORY_URLS if _slug in cats]
     slugs = [slug for (slug, url) in CATEGORY_URLS if slug in cats]
 

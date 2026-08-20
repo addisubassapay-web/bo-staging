@@ -25,7 +25,17 @@ Full-stack ecommerce marketplace **Merchari-global** — same color scheme (`#FF
 ---
 
 ## Implemented (with dates)
-### Feb 2026 — Customer Support Widget (chat + email)
+### Feb 2026 — Zyte scraper removed · Apify-only marketplace · larger catalog display
+- **Bug fix**: user asked to drop Zyte listing logic, stay Apify-only, and surface the largest possible number of products.
+- **Backend removals**: `/api/scraper/*` (all methods, with & without trailing slash) now returns HTTP 410 Gone via the new deprecation stub (`routers/scraper_stub.py`). The real 935-line `routers/scraper.py` is left on disk unused for reference and is no longer routed.
+- **Query-level filter**: `_build_listings_query` gained a `$nor` clause that excludes any listing whose `source_url` matches `toscrape.com`, `scrape.me`, or `quotes.toscrape` so legacy Zyte rows never surface. DB migration applied: 1 stale "Soumission" listing purged.
+- **Listing cap raised**: `GET /api/listings` limit cap raised from **96 → 500** so the marketplace can display every category page in one request.
+- **Apify targets bumped**: default `target_count` for both manual and scheduled Apify syncs raised from **5,000 → 20,000**; `per_url` items raised from **50 → 200**. Future runs will pull ~4× more Amazon inventory.
+- **Auto-sync loop hardened**: `apify_auto_sync_loop` now (a) honors DB-persisted `next_scheduled_at` even after actor failures, (b) stamps `last_attempt_at` + a 6h cooldown BEFORE the actor call so a quota-exhausted API can't spam retries, (c) shortened stuck-lock auto-recovery from 6h → 30m so the "Sync in progress" ticker doesn't lie for hours after a killed container.
+- **Frontend removals**: `/admin` sidebar no longer shows "Zyte scraper" or "Zyte quotas". `/sell` → "Import from URL" tab replaced with a friendly deprecation banner + "Browse the catalog" CTA that switches sellers to Resell-from-catalog.
+- **Verified by bug testing agent (verdict: fixed, 100%)**: 10 back-to-back `sync/status` polls stayed `sync_running:false`, all scraper routes 410, legacy source_url filter blocks Soumission/toscrape searches, `limit=500` returns 500 items, `limit=600` clamps to 500, default feed shows 60, category browse >= 20 per category.
+
+
 - **Global floating FAB** — Bottom-right on every page (`/app/frontend/src/components/SupportWidget.jsx` mounted in `App.js`). Orange→red gradient circle with pulse ring + emerald unread badge when the admin has replied to any of the user's tickets.
 - **Two channels from one home screen**:
   * **Chat with us** — logged-in users only. Threaded in-app messages with the admin team. Polls the ticket every 15s so admin replies land live. Send with Enter (Shift+Enter for newline).

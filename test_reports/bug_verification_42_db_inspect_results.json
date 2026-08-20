@@ -1,0 +1,38 @@
+{
+  "checked_at": "2026-08-20T15:56:45.358005+00:00",
+  "db_name": "merchari_global",
+  "soumission_title_raw_count": 0,
+  "legacy_source_active_raw_count": 0,
+  "legacy_source_any_raw_count": 0,
+  "active_listing_raw_count": 1252,
+  "sync_state": {
+    "id": "apify",
+    "active_listings": 1255,
+    "last_live_tick": "2026-08-20 15:56:07.044000",
+    "message": "Actor error: Monthly usage hard limit exceeded",
+    "source": "junglee/amazon-crawler",
+    "started_at": "2026-08-20 15:56:45.059000",
+    "sync_running": false,
+    "target_count": 20000,
+    "dataset_id": "dMidnRWNS2CI2sdbC",
+    "imported_count": 2611,
+    "last_sync_at": null,
+    "per_category": {
+      "kids": 429,
+      "women": 564,
+      "men": 544,
+      "electronics": 211,
+      "other": 360,
+      "home": 85,
+      "toys": 149,
+      "books": 47,
+      "sports": 14,
+      "beauty": 208
+    },
+    "raw_items": 2694,
+    "auto_schedule_enabled": true,
+    "next_scheduled_at": "2026-09-19 15:56:44.916000",
+    "schedule_interval_days": 30
+  },
+  "legacy_sample": []
+}

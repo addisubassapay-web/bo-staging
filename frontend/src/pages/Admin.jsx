@@ -18,8 +18,6 @@ import ApifySyncTicker from "@/components/ApifySyncTicker";
 import AdminPaymentMethods from "@/pages/AdminPaymentMethods";
 import AdminLedgerAudit from "@/pages/AdminLedgerAudit";
 import AdminEmailLog from "@/pages/AdminEmailLog";
-import AdminScraper from "@/pages/AdminScraper";
-import AdminQuotas from "@/pages/AdminQuotas";
 import AdminStoreBoosts from "@/pages/AdminStoreBoosts";
 import AdminProducts from "@/pages/AdminProducts";
 
@@ -1595,8 +1593,6 @@ const Admin = () => {
         <SidebarLink to="/admin/seller-applications" icon={IdCard}>Seller applications</SidebarLink>
         <SidebarLink to="/admin/shelves" icon={LayoutGrid}>Homepage shelves</SidebarLink>
         <SidebarLink to="/admin/apify-sync" icon={Database}>Apify sync</SidebarLink>
-        <SidebarLink to="/admin/scraper" icon={Zap}>Zyte scraper</SidebarLink>
-        <SidebarLink to="/admin/quotas" icon={Zap}>Zyte quotas</SidebarLink>
         <SidebarLink to="/admin/store-boosts" icon={StoreIcon}>Store boosts</SidebarLink>
         <SidebarLink to="/admin/email-log" icon={Mail}>Email log</SidebarLink>
         <SidebarLink to="/admin/settings" icon={SettingsIcon}>Settings</SidebarLink>
@@ -1617,8 +1613,6 @@ const Admin = () => {
           <Route path="seller-applications" element={<SellerApplicationsMgr />} />
           <Route path="shelves" element={<AdminShelves />} />
           <Route path="apify-sync" element={<ApifySync />} />
-          <Route path="scraper" element={<AdminScraper />} />
-          <Route path="quotas" element={<AdminQuotas />} />
           <Route path="store-boosts" element={<AdminStoreBoosts />} />
           <Route path="email-log" element={<AdminEmailLog />} />
           <Route path="settings" element={<SettingsMgr />} />

@@ -1,0 +1,64 @@
+{
+  "verdict": "not_fixed",
+  "user_reported_bug": "Remove the listing logic coming from zyme API and only list the products coming from Apify and list the largest possible number of products",
+  "summary": "No relevant testing skill found. Focused API/UI verification shows the higher public listing limits and UI Zyte-removal surfaces work, but the bug is not fully fixed: /api/scraper without trailing slash returns 307 instead of the required 410, a legacy non-Apify source_url listing is still searchable through /api/listings, and Apify sync status is currently running with target_count 5000 instead of the intended completed 20000-cap state.",
+  "backend_issues": {
+    "critical": [
+      {
+        "endpoint": "GET /api/listings?q=Soumission&limit=10",
+        "issue": "Legacy source_url listing remains active/searchable: id e6a4380d-c7a4-4123-8101-dcc74cf983b4, source_url=https://books.toscrape.com/catalogue/soumission_998/index.html. This violates the Apify-only listing requirement.",
+        "priority": "CRITICAL"
+      },
+      {
+        "endpoint": "GET /api/admin/sync/status",
+        "issue": "Status returned sync_running:true, last_sync_at:null, target_count:5000, message 'Running actor for 28 categories, up to 178 each'. The request expected sync_running:false and the implementation still uses 5000 in admin/auto-sync paths.",
+        "priority": "HIGH"
+      }
+    ],
+    "minor": [
+      {
+        "endpoint": "GET /api/scraper",
+        "issue": "Returns HTTP 307 redirect when redirects are disabled, not the required HTTP 410 JSON deprecation body. /api/scraper/ and /api/scraper/* do return 410."
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/test_reports/bug_verification_41_backend.py",
+    "/app/test_reports/bug_verification_41_backend_results.json",
+    "/app/test_reports/bug_verification_41_db_inspect.py",
+    "/app/test_reports/bug_verification_41_db_inspect_results.json",
+    "/app/test_reports/bug_verification_41_browser_script.py"
+  ],
+  "action_items": [
+    "Add an exact /api/scraper route that returns 410 (not 307) for all required methods in addition to /api/scraper/*.",
+    "Remove, mark inactive, or filter out legacy Zyte/source_url listings from public listing results; verified failing example: title 'Soumission', id e6a4380d-c7a4-4123-8101-dcc74cf983b4.",
+    "Update all Apify trigger paths to use target_count 20000 (server admin endpoint default and scheduled auto-sync still use 5000), restart/reload backend, and ensure status settles to sync_running:false after completion."
+  ],
+  "critical_code_review_comments": [
+    "/app/backend/server.py still defaults admin_sync_apify target_count to 5000 and apify_auto_sync_loop calls import_from_apify(db, target_count=5000, replace_existing=False), despite /app/backend/apify_sync.py default being 20000.",
+    "/app/backend/routers/scraper_stub.py only defines /{path:path}; runtime GET /api/scraper redirects to /api/scraper/ instead of returning 410 directly."
+  ],
+  "updated_files": [
+    "/app/test_reports/bug_verification_41_backend.py",
+    "/app/test_reports/bug_verification_41_backend_results.json",
+    "/app/test_reports/bug_verification_41_db_inspect.py",
+    "/app/test_reports/bug_verification_41_db_inspect_results.json",
+    "/app/test_reports/bug_verification_41_browser_script.py",
+    "/app/test_reports/bug_verification_41.json",
+    "/app/test_reports/iteration_41.json"
+  ],
+  "success_rate": {
+    "backend": "80%",
+    "frontend": "100%"
+  },
+  "seed_data_creation": "No seed data created. Tests used existing preview database rows only and did not trigger an Apify sync.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Skill lookup was performed with query 'Zyte scraper Apify listings import catalog'; no relevant testing skill found. Backend checks: listings limits 10/300/500/600 pass; category filter counts passed for women=105, men=158, Jewelry=20; default /api/listings returned 60. UI checks passed: admin sidebar has Apify sync and no Zyte links; /admin/scraper and /admin/quotas do not render old Zyte pages; seller Import from URL mode shows deprecation notice and CTA returns to catalog mode; public home displayed 60 product cards.",
+  "rca_of_the_issue": "The visible marketplace capacity work mostly landed, but legacy inventory cleanup/filtering is incomplete and some Apify defaults remain at 5000 in server.py. The scraper stub lacks an exact no-slash route, causing Starlette/FastAPI slash redirect behavior instead of direct 410."
+}

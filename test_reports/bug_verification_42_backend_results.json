@@ -1,0 +1,306 @@
+{
+  "started_at": "2026-08-20T15:58:21.191286+00:00",
+  "base_url": "https://apify-catalog.preview.emergentagent.com",
+  "checks": [
+    {
+      "name": "scraper_stub_all_paths_methods_410_no_redirect",
+      "ok": true,
+      "details": {
+        "failures": [],
+        "sample": [
+          {
+            "method": "GET",
+            "path": "/api/scraper",
+            "status": 410,
+            "location": null,
+            "body": {
+              "detail": "Zyte scraper endpoints have been removed. Merchari-global now imports products only via the Apify Amazon crawler \u2014 see /api/admin/sync/apify."
+            },
+            "attempt": 1
+          },
+          {
+            "method": "POST",
+            "path": "/api/scraper",
+            "status": 410,
+            "location": null,
+            "body": {
+              "detail": "Zyte scraper endpoints have been removed. Merchari-global now imports products only via the Apify Amazon crawler \u2014 see /api/admin/sync/apify."
+            },
+            "attempt": 1
+          },
+          {
+            "method": "PUT",
+            "path": "/api/scraper",
+            "status": 410,
+            "location": null,
+            "body": {
+              "detail": "Zyte scraper endpoints have been removed. Merchari-global now imports products only via the Apify Amazon crawler \u2014 see /api/admin/sync/apify."
+            },
+            "attempt": 1
+          },
+          {
+            "method": "DELETE",
+            "path": "/api/scraper",
+            "status": 410,
+            "location": null,
+            "body": {
+              "detail": "Zyte scraper endpoints have been removed. Merchari-global now imports products only via the Apify Amazon crawler \u2014 see /api/admin/sync/apify."
+            },
+            "attempt": 1
+          },
+          {
+            "method": "PATCH",
+            "path": "/api/scraper",
+            "status": 410,
+            "location": null,
+            "body": {
+              "detail": "Zyte scraper endpoints have been removed. Merchari-global now imports products only via the Apify Amazon crawler \u2014 see /api/admin/sync/apify."
+            },
+            "attempt": 1
+          },
+          {
+            "method": "GET",
+            "path": "/api/scraper/",
+            "status": 410,
+            "location": null,
+            "body": {
+              "detail": "Zyte scraper endpoints have been removed. Merchari-global now imports products only via the Apify Amazon crawler \u2014 see /api/admin/sync/apify."
+            },
+            "attempt": 1
+          },
+          {
+            "method": "POST",
+            "path": "/api/scraper/",
+            "status": 410,
+            "location": null,
+            "body": {
+              "detail": "Zyte scraper endpoints have been removed. Merchari-global now imports products only via the Apify Amazon crawler \u2014 see /api/admin/sync/apify."
+            },
+            "attempt": 1
+          },
+          {
+            "method": "PUT",
+            "path": "/api/scraper/",
+            "status": 410,
+            "location": null,
+            "body": {
+              "detail": "Zyte scraper endpoints have been removed. Merchari-global now imports products only via the Apify Amazon crawler \u2014 see /api/admin/sync/apify."
+            },
+            "attempt": 1
+          }
+        ]
+      }
+    },
+    {
+      "name": "legacy_query_Soumission_zero_results",
+      "ok": true,
+      "details": {
+        "status": 200,
+        "count": 0,
+        "sample_titles": [],
+        "body_if_error": null,
+        "attempt": 1
+      }
+    },
+    {
+      "name": "legacy_query_toscrape_zero_results",
+      "ok": true,
+      "details": {
+        "status": 200,
+        "count": 0,
+        "sample_titles": [],
+        "body_if_error": null,
+        "attempt": 1
+      }
+    },
+    {
+      "name": "source_url_sample_first_20_has_no_toscrape_or_scrape_me",
+      "ok": true,
+      "details": {
+        "status": 200,
+        "count": 20,
+        "bad_rows": [],
+        "source_url_sample": [
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "attempt": 1
+      }
+    },
+    {
+      "name": "default_limit_60_returns_at_least_60",
+      "ok": true,
+      "details": {
+        "status": 200,
+        "count": 60,
+        "first_ids": [
+          "c2e2bd3d-02c7-47d7-bc13-c2fc919334fe",
+          "54796afc-7df5-4f1d-b788-9a62becfe77a",
+          "e0d8c725-2349-4826-b111-14fd24ba6d58"
+        ],
+        "body_if_error": null,
+        "attempt": 1
+      }
+    },
+    {
+      "name": "limit_300_returns_300",
+      "ok": true,
+      "details": {
+        "status": 200,
+        "count": 300,
+        "first_ids": [
+          "c2e2bd3d-02c7-47d7-bc13-c2fc919334fe",
+          "54796afc-7df5-4f1d-b788-9a62becfe77a",
+          "e0d8c725-2349-4826-b111-14fd24ba6d58"
+        ],
+        "body_if_error": null,
+        "attempt": 1
+      }
+    },
+    {
+      "name": "limit_500_returns_500",
+      "ok": true,
+      "details": {
+        "status": 200,
+        "count": 500,
+        "first_ids": [
+          "c2e2bd3d-02c7-47d7-bc13-c2fc919334fe",
+          "54796afc-7df5-4f1d-b788-9a62becfe77a",
+          "e0d8c725-2349-4826-b111-14fd24ba6d58"
+        ],
+        "body_if_error": null,
+        "attempt": 1
+      }
+    },
+    {
+      "name": "limit_600_clamps_to_500",
+      "ok": true,
+      "details": {
+        "status": 200,
+        "count": 500,
+        "first_ids": [
+          "c2e2bd3d-02c7-47d7-bc13-c2fc919334fe",
+          "54796afc-7df5-4f1d-b788-9a62becfe77a",
+          "e0d8c725-2349-4826-b111-14fd24ba6d58"
+        ],
+        "body_if_error": null,
+        "attempt": 1
+      }
+    },
+    {
+      "name": "admin_login_for_sync_status",
+      "ok": true,
+      "details": {
+        "status": 200,
+        "has_token": true,
+        "user_role": "admin",
+        "body_if_error": null,
+        "attempt": 1
+      }
+    },
+    {
+      "name": "admin_sync_status_sync_running_stably_false",
+      "ok": false,
+      "details": {
+        "samples": [
+          {
+            "index": 0,
+            "status": 200,
+            "sync_running": false,
+            "target_count": 20000,
+            "message": "Actor error: Monthly usage hard limit exceeded",
+            "started_at": "2026-08-20T15:58:27.985000",
+            "attempt": 1
+          },
+          {
+            "index": 1,
+            "status": 200,
+            "sync_running": false,
+            "target_count": 20000,
+            "message": "Actor error: Monthly usage hard limit exceeded",
+            "started_at": "2026-08-20T15:58:29.421000",
+            "attempt": 1
+          },
+          {
+            "index": 2,
+            "status": 200,
+            "sync_running": true,
+            "target_count": 20000,
+            "message": "Running actor for 28 categories, up to 714 each",
+            "started_at": "2026-08-20T15:58:30.570000",
+            "attempt": 1
+          },
+          {
+            "index": 3,
+            "status": 200,
+            "sync_running": false,
+            "target_count": 20000,
+            "message": "Actor error: Monthly usage hard limit exceeded",
+            "started_at": "2026-08-20T15:58:31.496000",
+            "attempt": 1
+          },
+          {
+            "index": 4,
+            "status": 200,
+            "sync_running": true,
+            "target_count": 20000,
+            "message": "Running actor for 28 categories, up to 714 each",
+            "started_at": "2026-08-20T15:58:32.906000",
+            "attempt": 1
+          },
+          {
+            "index": 5,
+            "status": 200,
+            "sync_running": true,
+            "target_count": 20000,
+            "message": "Running actor for 28 categories, up to 714 each",
+            "started_at": "2026-08-20T15:58:34.100000",
+            "attempt": 1
+          },
+          {
+            "index": 6,
+            "status": 200,
+            "sync_running": false,
+            "target_count": 20000,
+            "message": "Actor error: Monthly usage hard limit exceeded",
+            "started_at": "2026-08-20T15:58:34.926000",
+            "attempt": 1
+          },
+          {
+            "index": 7,
+            "status": 200,
+            "sync_running": true,
+            "target_count": 20000,
+            "message": "Running actor for 28 categories, up to 714 each",
+            "started_at": "2026-08-20T15:58:36.220000",
+            "attempt": 1
+          },
+          {
+            "index": 8,
+            "status": 200,
+            "sync_running": true,
+            "target_count": 20000,
+            "message": "Running actor for 28 categories, up to 714 each",
+            "started_at": "2026-08-20T15:58:37.424000",
+            "attempt": 1
+          },
+          {
+            "index": 9,
+            "status": 200,
+            "sync_running": true,
+            "target_count": 20000,
+            "message": "Running actor for 28 categories, up to 714 each",
+            "started_at": "2026-08-20T15:58:38.627000",
+            "attempt": 1
+          }
+        ]
+      }
+    }
+  ],
+  "finished_at": "2026-08-20T15:58:39.607612+00:00",
+  "passed": 9,
+  "failed": 1
+}

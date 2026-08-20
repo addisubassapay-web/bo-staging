@@ -1,0 +1,252 @@
+{
+  "base_url": "https://apify-catalog.preview.emergentagent.com",
+  "started_at": "2026-08-20T16:06:00.449168+00:00",
+  "finished_at": "2026-08-20T16:06:29.769981+00:00",
+  "overall_passed": true,
+  "checks": [
+    {
+      "name": "admin login for sync status",
+      "passed": true,
+      "details": {
+        "status": 200,
+        "has_token": true,
+        "body_keys": [
+          "token",
+          "user"
+        ],
+        "text": "{\"token\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkODdmZTA2NS0zZTM0LTQ4MGQtYjA3MC1mZTZhNDBiOGYyOWEiLCJyb2xlIjoiYWRtaW4iLCJleHAiOjE3ODc4NDY3NjF9.Xs_tMakWMEkKv04eNiJ6uo4LYjqmol6w7qcJfyEb7n4\",\"user\":{\"id\":\"d87fe065-3e34-480d-b070-fe6a40b8f29a\",\"email\":\"admin@mercari.local\",\"username\":\"admin\",\"r"
+      }
+    },
+    {
+      "name": "SYNC_RUNNING STABLE: 10 admin status polls over >=20s all false",
+      "passed": true,
+      "details": {
+        "elapsed_seconds": 24.23,
+        "polls": [
+          {
+            "poll": 1,
+            "status": 200,
+            "sync_running": false,
+            "message": "Force-cleared post-migration",
+            "next_scheduled_at": "2026-09-19T16:00:49.705000",
+            "last_attempt_at": null,
+            "body_type": "dict",
+            "text": null
+          },
+          {
+            "poll": 2,
+            "status": 200,
+            "sync_running": false,
+            "message": "Force-cleared post-migration",
+            "next_scheduled_at": "2026-09-19T16:00:49.705000",
+            "last_attempt_at": null,
+            "body_type": "dict",
+            "text": null
+          },
+          {
+            "poll": 3,
+            "status": 200,
+            "sync_running": false,
+            "message": "Force-cleared post-migration",
+            "next_scheduled_at": "2026-09-19T16:00:49.705000",
+            "last_attempt_at": null,
+            "body_type": "dict",
+            "text": null
+          },
+          {
+            "poll": 4,
+            "status": 200,
+            "sync_running": false,
+            "message": "Force-cleared post-migration",
+            "next_scheduled_at": "2026-09-19T16:00:49.705000",
+            "last_attempt_at": null,
+            "body_type": "dict",
+            "text": null
+          },
+          {
+            "poll": 5,
+            "status": 200,
+            "sync_running": false,
+            "message": "Force-cleared post-migration",
+            "next_scheduled_at": "2026-09-19T16:00:49.705000",
+            "last_attempt_at": null,
+            "body_type": "dict",
+            "text": null
+          },
+          {
+            "poll": 6,
+            "status": 200,
+            "sync_running": false,
+            "message": "Force-cleared post-migration",
+            "next_scheduled_at": "2026-09-19T16:00:49.705000",
+            "last_attempt_at": null,
+            "body_type": "dict",
+            "text": null
+          },
+          {
+            "poll": 7,
+            "status": 200,
+            "sync_running": false,
+            "message": "Force-cleared post-migration",
+            "next_scheduled_at": "2026-09-19T16:00:49.705000",
+            "last_attempt_at": null,
+            "body_type": "dict",
+            "text": null
+          },
+          {
+            "poll": 8,
+            "status": 200,
+            "sync_running": false,
+            "message": "Force-cleared post-migration",
+            "next_scheduled_at": "2026-09-19T16:00:49.705000",
+            "last_attempt_at": null,
+            "body_type": "dict",
+            "text": null
+          },
+          {
+            "poll": 9,
+            "status": 200,
+            "sync_running": false,
+            "message": "Force-cleared post-migration",
+            "next_scheduled_at": "2026-09-19T16:00:49.705000",
+            "last_attempt_at": null,
+            "body_type": "dict",
+            "text": null
+          },
+          {
+            "poll": 10,
+            "status": 200,
+            "sync_running": false,
+            "message": "Force-cleared post-migration",
+            "next_scheduled_at": "2026-09-19T16:00:49.705000",
+            "last_attempt_at": null,
+            "body_type": "dict",
+            "text": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "SCRAPER STUB: all legacy scraper endpoints return HTTP 410 JSON removal message",
+      "passed": true,
+      "details": {
+        "results": [
+          {
+            "method": "GET",
+            "path": "/api/scraper",
+            "status": 410,
+            "detail": "Zyte scraper endpoints have been removed. Merchari-global now imports products only via the Apify Amazon crawler \u2014 see /api/admin/sync/apify."
+          },
+          {
+            "method": "GET",
+            "path": "/api/scraper/",
+            "status": 410,
+            "detail": "Zyte scraper endpoints have been removed. Merchari-global now imports products only via the Apify Amazon crawler \u2014 see /api/admin/sync/apify."
+          },
+          {
+            "method": "GET",
+            "path": "/api/scraper/foo",
+            "status": 410,
+            "detail": "Zyte scraper endpoints have been removed. Merchari-global now imports products only via the Apify Amazon crawler \u2014 see /api/admin/sync/apify."
+          },
+          {
+            "method": "POST",
+            "path": "/api/scraper/import",
+            "status": 410,
+            "detail": "Zyte scraper endpoints have been removed. Merchari-global now imports products only via the Apify Amazon crawler \u2014 see /api/admin/sync/apify."
+          }
+        ]
+      }
+    },
+    {
+      "name": "LEGACY LISTING FILTER: Soumission and toscrape searches return 0 items",
+      "passed": true,
+      "details": {
+        "results": [
+          {
+            "q": "Soumission",
+            "status": 200,
+            "count": 0,
+            "text": null
+          },
+          {
+            "q": "toscrape",
+            "status": 200,
+            "count": 0,
+            "text": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "LEGACY LISTING FILTER: first 20 default listings have no toscrape source_url",
+      "passed": true,
+      "details": {
+        "status": 200,
+        "default_count": 60,
+        "bad_sample": [],
+        "sampled": 20,
+        "text": null
+      }
+    },
+    {
+      "name": "DEFAULT MARKETPLACE FULL: /api/listings returns >=60 items",
+      "passed": true,
+      "details": {
+        "status": 200,
+        "count": 60
+      }
+    },
+    {
+      "name": "MAX LIMIT: limit=500 works and limit=600 clamps to <=500 with no error",
+      "passed": true,
+      "details": {
+        "results": [
+          {
+            "limit": 500,
+            "status": 200,
+            "count": 500,
+            "text": null
+          },
+          {
+            "limit": 600,
+            "status": 200,
+            "count": 500,
+            "text": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "CATEGORY BROWSE: first 3 categories each return >=20 items with limit=200",
+      "passed": true,
+      "details": {
+        "categories_status": 200,
+        "results": [
+          {
+            "id": "82a68761-a263-4f63-837f-5dd1362c2cd9",
+            "name": "Women",
+            "status": 200,
+            "count": 106,
+            "text": null
+          },
+          {
+            "id": "f34099af-f793-45b6-836f-ae2153539e30",
+            "name": "Men",
+            "status": 200,
+            "count": 157,
+            "text": null
+          },
+          {
+            "id": "692caf9f-11c7-4a89-84fd-8d1663f0ec2b",
+            "name": "Jewelry",
+            "status": 200,
+            "count": 20,
+            "text": null
+          }
+        ],
+        "categories_text": null
+      }
+    }
+  ]
+}

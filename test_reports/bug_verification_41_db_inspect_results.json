@@ -1,0 +1,141 @@
+{
+  "counts": {
+    "active_total": 1253,
+    "active_apify_asin_exists": 160,
+    "active_apify_url_exists": 325,
+    "active_source_url_exists": 1,
+    "active_imported_from_id_exists": 257
+  },
+  "seller_counts": {
+    "sophia_style": 794,
+    "Elona": 146,
+    "Eddy Boss": 98,
+    "urban_finds": 60,
+    "vintage_maven": 56,
+    "cozy_home": 49,
+    "tech_haven": 39,
+    "admin": 11
+  },
+  "newest_samples": [
+    {
+      "id": "c2e2bd3d-02c7-47d7-bc13-c2fc919334fe",
+      "seller_name": "Eddy Boss",
+      "title": "BIODANCE Collagen Peptides Jelly Serum Mist, Hydrating Face Mist, Plumping, Anti-Aging Face Spray, Sprayable Hydrogel, Travel Essentials & Self Care Gifts for Women, Korean Skin Ca",
+      "imported_from_id": "b3a58914-ca56-4b99-a1f9-1c10186876f6",
+      "created_at": "2026-08-20 14:12:43.460000",
+      "apify_asin": null,
+      "source_url": null
+    },
+    {
+      "id": "54796afc-7df5-4f1d-b788-9a62becfe77a",
+      "seller_name": "Elona",
+      "title": "Crocs Unisex-Child Classic Watercolor Marbled Clog",
+      "imported_from_id": "9bedd7aa-a7cb-42e2-bcdd-0894f96533cb",
+      "created_at": "2026-08-20 14:12:43.431000",
+      "apify_asin": null,
+      "source_url": null
+    },
+    {
+      "id": "e0d8c725-2349-4826-b111-14fd24ba6d58",
+      "seller_name": "Eddy Boss",
+      "title": "Assassin's Creed Black Flag Resynced - PlayStation 5",
+      "imported_from_id": null,
+      "created_at": "2026-08-20 14:12:43.401000",
+      "apify_asin": null,
+      "apify_url": "https://www.amazon.com/dp/B0GY5YZC4P",
+      "source_url": null
+    },
+    {
+      "id": "687edca1-6ed3-4eed-b49c-5393ce2060d2",
+      "seller_name": "sophia_style",
+      "title": "A Study in Scarlet ...",
+      "imported_from_id": null,
+      "created_at": "2026-08-20 14:12:43.372000",
+      "apify_asin": null,
+      "source_url": null
+    },
+    {
+      "id": "81c0cd8c-0e7c-487b-bc1e-4a7b2edbb00f",
+      "seller_name": "vintage_maven",
+      "title": "Infinno Wrist Rattles and Foot Finder Socks Set, Baby Toys for 0-12 Months | Soft crinkle textures, encourages reaching and kicking, garden bug characters, newborn shower gift, boy",
+      "imported_from_id": null,
+      "created_at": "2026-08-20 14:12:43.342000",
+      "apify_asin": null,
+      "apify_url": "https://www.amazon.com/dp/B0B21ZM7LJ",
+      "source_url": null
+    },
+    {
+      "id": "a1a93bb5-2681-4cd3-99b2-b43227d7f813",
+      "seller_name": "sophia_style",
+      "title": "Pzloz Led Desk Lamps for Home Office - Eye Caring Architect Lamp with Clamp, Double Head Computer Monitor Work Desk Light with Remote Control: 24W Flexible Dimmable Desktop Table Lamp Pzloz Led Desk L",
+      "imported_from_id": null,
+      "created_at": "2026-08-20 14:12:43.308000",
+      "apify_asin": null,
+      "source_url": null
+    },
+    {
+      "id": "d0d2c996-cb36-4550-9083-6f3e87d0e739",
+      "seller_name": "sophia_style",
+      "title": "Nulaxy Ergonomic Adjustable Laptop Stand for Desk, Dual Foldable Computer Riser with Advanced Heat-Vent, Heavy-Duty Portable Notebook Holder for Posture Correction, Compatible with Mac 10-16\" Laptops",
+      "imported_from_id": null,
+      "created_at": "2026-08-20 14:12:43.273000",
+      "apify_asin": null,
+      "source_url": null
+    },
+    {
+      "id": "b27e6608-466a-4997-878d-cdb7f8de04ed",
+      "seller_name": "sophia_style",
+      "title": "Govee RGBIC Smart Table Lamp 2, Touch Bedside Small Table Lamp (Corded) | LED Desk Lamp Compatible with SmartThings, Matter, Alexa, Nightstand Lamp for Bedroom Living Room Night Light, 64 Scene Modes",
+      "imported_from_id": null,
+      "created_at": "2026-08-20 14:12:43.239000",
+      "apify_asin": null,
+      "source_url": null
+    },
+    {
+      "id": "c1453c66-1b78-4eb4-af87-0812a66a884f",
+      "seller_name": "cozy_home",
+      "title": "Hanes Boys' Socks Pack, Double Tough Moisture Wicking Ankle, Crew, No Show Socks, 12 & 14 Pair Packs",
+      "imported_from_id": null,
+      "created_at": "2026-08-20 14:12:43.205000",
+      "apify_asin": null,
+      "apify_url": "https://www.amazon.com/dp/B0G2T1CHBP",
+      "source_url": null
+    },
+    {
+      "id": "28b25cbf-c188-46af-82b2-a53cbf2ea70d",
+      "seller_name": "Eddy Boss",
+      "title": "shevalues Quick Drying Shower Shoes for Women Men with Arch Support | Lightweight Pool Slides with Drain Holes Comfortable Beach Slipper Sandals for Gym College Dorms",
+      "imported_from_id": "d3a77774-a9e5-49c1-85a3-e7b88af070fb",
+      "created_at": "2026-08-20 14:12:43.171000",
+      "apify_asin": null,
+      "source_url": null
+    },
+    {
+      "id": "ab663b2b-e10d-499d-a989-54593a2023af",
+      "seller_name": "sophia_style",
+      "title": "OMOTON Heavy Laptop Stand for Desk, 360\u00b0 Rotating Aluminum Gaming Riser | 33 lbs Support, Ergonomic Height & Angle, Ventilated Design, for 11-17\" Gaming Laptop, Thick Dual Arms",
+      "imported_from_id": null,
+      "created_at": "2026-08-20 14:12:43.137000",
+      "apify_asin": null,
+      "source_url": null
+    },
+    {
+      "id": "b3a401e9-2e5a-47f4-a2f6-b912d077f645",
+      "seller_name": "sophia_style",
+      "title": "Delivering the Truth (Quaker ...",
+      "imported_from_id": null,
+      "created_at": "2026-08-20 14:12:43.102000",
+      "apify_asin": null,
+      "source_url": null
+    }
+  ],
+  "legacy_source_url_samples": [
+    {
+      "id": "e6a4380d-c7a4-4123-8101-dcc74cf983b4",
+      "seller_name": "sophia_style",
+      "title": "Soumission",
+      "source_url": "https://books.toscrape.com/catalogue/soumission_998/index.html",
+      "created_at": "2026-08-18 12:39:10.981000"
+    }
+  ]
+}
