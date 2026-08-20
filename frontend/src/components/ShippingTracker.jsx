@@ -100,7 +100,7 @@ const ShippingTracker = ({ orderId, canPurchase = false, canAdvance = false }) =
             size="sm"
             variant="outline"
             onClick={() => {
-              const t = localStorage.getItem("mercari_token") || "";
+              const t = localStorage.getItem("mercuri-global_token") || "";
               window.open(
                 `${process.env.REACT_APP_BACKEND_URL}/api/orders/${orderId}/label.svg?auth=${encodeURIComponent(t)}`,
                 "_blank",

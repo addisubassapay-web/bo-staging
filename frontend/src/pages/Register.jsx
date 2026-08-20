@@ -31,7 +31,7 @@ const Register = () => {
     const ref = searchParams.get("ref");
     if (ref) {
       setForm((f) => ({ ...f, referral_code: ref.toUpperCase() }));
-      try { localStorage.setItem("mercari_pending_referral", ref.toUpperCase()); } catch { /* ignore */ }
+      try { localStorage.setItem("mercuri-global_pending_referral", ref.toUpperCase()); } catch { /* ignore */ }
     }
   }, [searchParams]);
 
@@ -57,7 +57,7 @@ const Register = () => {
         password: form.password,
         referral_code: form.referral_code || null,
       });
-      localStorage.setItem("mercari_token", data.token);
+      localStorage.setItem("mercuri-global_token", data.token);
       toast({ title: `Welcome, ${data.user.username}!`, description: "Your account is ready." });
       window.location.href = "/";
     } catch (err) {
@@ -100,7 +100,7 @@ const Register = () => {
             </ul>
           </div>
 
-          <div className="text-xs text-white/60">© {new Date().getFullYear()} Mercari Global · All rights reserved.</div>
+          <div className="text-xs text-white/60">© {new Date().getFullYear()} Mercuri-global · All rights reserved.</div>
         </div>
 
         {/* Right — form pane */}
@@ -118,7 +118,7 @@ const Register = () => {
                 <ShieldCheck className="h-3 w-3" /> Secure registration
               </div>
               <h1 className="mt-3 text-2xl sm:text-3xl font-extrabold text-neutral-900 dark:text-neutral-100">Create your account</h1>
-              <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">Join Mercari and get your storefront in seconds.</p>
+              <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">Join Mercuri-global and get your storefront in seconds.</p>
 
               <form onSubmit={submit} className="mt-6 space-y-4" data-testid="register-form">
                 <div>
@@ -209,7 +209,7 @@ const Register = () => {
                     data-testid="register-accept"
                   />
                   <span>
-                    I agree to Mercari&apos;s{" "}
+                    I agree to Mercuri-global&apos;s{" "}
                     <a href="/terms" className="text-[#2563EB] dark:text-[#7DD3FC] hover:underline">Terms</a> and{" "}
                     <a href="/privacy" className="text-[#2563EB] dark:text-[#7DD3FC] hover:underline">Privacy Policy</a>.
                   </span>

@@ -16,7 +16,7 @@ import requests
 BASE = os.environ.get("REACT_APP_BACKEND_URL", "").rstrip("/") or "http://localhost:8001"
 API = f"{BASE}/api"
 
-ADMIN = {"email": "admin@mercari.local", "password": "admin123"}
+ADMIN = {"email": "admin@mercuri-global.local", "password": "admin123"}
 DEMO = {"email": "sophia_style@demo.local", "password": "demo1234"}
 
 

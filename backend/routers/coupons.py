@@ -53,7 +53,7 @@ async def _ensure_seed(db):
     defaults = [
         Coupon(code="WELCOME10", percent=0.10, max_off=15, min_subtotal=10, description="10% off — first order"),
         Coupon(code="FLASH20",   percent=0.20, max_off=30, min_subtotal=20, description="20% off — flash sale"),
-        Coupon(code="MERCARIE5", percent=0.05, max_off=8,  min_subtotal=0,  description="5% off — everyone"),
+        Coupon(code="MERCURI-GLOBAL5", percent=0.05, max_off=8,  min_subtotal=0,  description="5% off — everyone"),
         Coupon(code="GULF15",    percent=0.15, max_off=25, min_subtotal=30, description="15% off — Gulf shoppers"),
         Coupon(code="BULK",      tier=True,    description="Auto wholesale tier — 5+ items 5%, 10+ items 10%"),
     ]

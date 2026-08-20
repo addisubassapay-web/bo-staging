@@ -16,13 +16,13 @@ const CashOutTicker = () => {
   const [rows, setRows] = useState([]);
   const [paused, setPaused] = useState(false);
   const [dismissed, setDismissed] = useState(() => {
-    try { return localStorage.getItem("mercari_ticker_dismissed") === "1"; } catch { return false; }
+    try { return localStorage.getItem("mercuri-global_ticker_dismissed") === "1"; } catch { return false; }
   });
   // Toggle: when true → show amounts in raw USD (source of truth) instead
   // of the picked currency. Lets an INR-browsing visitor peek at the
   // original dollar figure with a single click.
   const [showRaw, setShowRaw] = useState(() => {
-    try { return localStorage.getItem("mercari_ticker_raw_usd") === "1"; } catch { return false; }
+    try { return localStorage.getItem("mercuri-global_ticker_raw_usd") === "1"; } catch { return false; }
   });
   const timerRef = useRef(null);
 
@@ -49,13 +49,13 @@ const CashOutTicker = () => {
 
   const dismiss = () => {
     setDismissed(true);
-    try { localStorage.setItem("mercari_ticker_dismissed", "1"); } catch { /* ignore */ }
+    try { localStorage.setItem("mercuri-global_ticker_dismissed", "1"); } catch { /* ignore */ }
   };
 
   const toggleRaw = () => {
     const next = !showRaw;
     setShowRaw(next);
-    try { localStorage.setItem("mercari_ticker_raw_usd", next ? "1" : "0"); } catch { /* ignore */ }
+    try { localStorage.setItem("mercuri-global_ticker_raw_usd", next ? "1" : "0"); } catch { /* ignore */ }
   };
 
   const showToggle = currency && currency !== "USD";

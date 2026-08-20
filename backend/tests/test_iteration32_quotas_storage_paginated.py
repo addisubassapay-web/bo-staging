@@ -4,12 +4,12 @@ import time
 import pytest
 import requests
 
-BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://mercari-clone-1.preview.emergentagent.com").rstrip("/")
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://mercuri-global-clone-1.preview.emergentagent.com").rstrip("/")
 API = f"{BASE_URL}/api"
 
 DEMO_EMAIL = "sophia_style@demo.local"
 DEMO_PASS = "demo1234"
-ADMIN_EMAIL = "admin@mercari.local"
+ADMIN_EMAIL = "admin@mercuri-global.local"
 ADMIN_PASS = "admin123"
 
 
@@ -237,5 +237,5 @@ class TestPaginated:
         # White-box: import the templates and confirm shape
         from routers.scraper import _SEED_TEMPLATES
         assert _SEED_TEMPLATES["amazon_search"] == "https://www.amazon.com/s?k={q}&page={p}"
-        assert _SEED_TEMPLATES["mercari_search"] == "https://www.mercari.com/search/?keyword={q}&page={p}"
+        assert _SEED_TEMPLATES["mercuri-global_search"] == "https://www.mercuri-global.com/search/?keyword={q}&page={p}"
         assert _SEED_TEMPLATES["amazon_bestsellers"] == "https://www.amazon.com/gp/bestsellers/{q}?pg={p}"

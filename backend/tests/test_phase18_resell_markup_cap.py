@@ -17,7 +17,7 @@ import requests
 BASE_URL = os.environ.get("REACT_APP_BACKEND_URL").rstrip("/")
 API = f"{BASE_URL}/api"
 
-ADMIN_EMAIL = "admin@mercari.local"
+ADMIN_EMAIL = "admin@mercuri-global.local"
 ADMIN_PW = "admin123"
 SELLER_EMAIL = "sophia_style@demo.local"
 SELLER_PW = "demo1234"

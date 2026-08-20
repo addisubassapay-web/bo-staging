@@ -13,7 +13,7 @@ import { Rocket, Loader2, ArrowRight, Sparkles, ExternalLink } from "lucide-reac
 const PROVIDERS = [
   { id: "amazon_search",       label: "Amazon — search results", example: "wireless headphones" },
   { id: "amazon_bestsellers",  label: "Amazon — bestsellers category", example: "electronics" },
-  { id: "mercari_search",      label: "Mercari — search results", example: "vintage denim" },
+  { id: "mercuri-global_search",      label: "Mercuri-global — search results", example: "vintage denim" },
 ];
 
 const PaginatedSeedScrape = () => {
@@ -97,7 +97,7 @@ const PaginatedSeedScrape = () => {
           <Rocket className="h-5 w-5" />
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="text-lg font-bold">Paginated seed — Amazon &amp; Mercari at scale</h3>
+          <h3 className="text-lg font-bold">Paginated seed — Amazon &amp; Mercuri-global at scale</h3>
           <p className="text-sm text-neutral-600 mt-1">
             Enter a keyword, pick how many pages to crawl, and we&apos;ll walk them all. Each page is <span className="font-semibold text-emerald-700">1 Zyte credit</span> and typically yields 30-60 live products — 10 pages ≈ 300-600 listings.
           </p>

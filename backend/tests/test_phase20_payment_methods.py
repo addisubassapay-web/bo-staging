@@ -13,10 +13,10 @@ import uuid
 import pytest
 import requests
 
-BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://mercari-clone-1.preview.emergentagent.com").rstrip("/")
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://mercuri-global-clone-1.preview.emergentagent.com").rstrip("/")
 API = f"{BASE_URL}/api"
 
-ADMIN_EMAIL = "admin@mercari.local"
+ADMIN_EMAIL = "admin@mercuri-global.local"
 ADMIN_PASS = "admin123"
 DEMO_EMAIL = "sophia_style@demo.local"
 DEMO_PASS = "demo1234"

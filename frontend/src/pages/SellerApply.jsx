@@ -123,7 +123,7 @@ const SellerApply = () => {
         <span className="inline-block text-[10px] uppercase tracking-[0.2em] font-semibold text-[#FF7A18] bg-[#FF7A18]/10 border border-[#FF7A18]/20 rounded-full px-3 py-1">
           Become a seller
         </span>
-        <h1 className="mt-2 text-3xl sm:text-4xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">Sell on Mercari</h1>
+        <h1 className="mt-2 text-3xl sm:text-4xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">Sell on Mercuri-global</h1>
         <p className="text-neutral-500 dark:text-neutral-400 mt-1">List items, set your prices, ship worldwide, and get paid. High-trust accounts are approved instantly.</p>
       </div>
 

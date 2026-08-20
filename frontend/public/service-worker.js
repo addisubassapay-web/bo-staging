@@ -1,10 +1,10 @@
-/* Mercari Global — Service Worker
+/* Mercuri-global — Service Worker
  * - App shell + navigation offline fallback
  * - Cache-first for static assets, network-first for API
  */
 const VERSION = "v1";
-const APP_SHELL_CACHE = `mercari-shell-${VERSION}`;
-const RUNTIME_CACHE   = `mercari-runtime-${VERSION}`;
+const APP_SHELL_CACHE = `mercuri-global-shell-${VERSION}`;
+const RUNTIME_CACHE   = `mercuri-global-runtime-${VERSION}`;
 
 const APP_SHELL = [
   "/",

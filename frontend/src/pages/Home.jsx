@@ -477,7 +477,7 @@ const Home = () => {
     api.get("/listings", { params: { sort: "trending", limit: 12 } }).then((r) => setTrending(r.data)).catch(() => {});
     api.get("/shelves").then((r) => setShelves(r.data)).catch(() => {});
     api.get("/stores-featured", { params: { limit: 12 } }).then((r) => setFeaturedStores(r.data)).catch(() => {});
-    const token = localStorage.getItem("mercari_token");
+    const token = localStorage.getItem("mercuri-global_token");
     if (token) {
       api.get("/favorites").then((r) => setFavIds(new Set(r.data.map((l) => l.id)))).catch(() => {});
       api.get("/for-you", { params: { limit: 12 } }).then((r) => setForYou(r.data)).catch(() => {});
@@ -487,7 +487,7 @@ const Home = () => {
   }, []);
 
   const toggleFav = async (id) => {
-    const token = localStorage.getItem("mercari_token");
+    const token = localStorage.getItem("mercuri-global_token");
     if (!token) { window.location.href = "/login"; return; }
     const isFav = favIds.has(id);
     try {

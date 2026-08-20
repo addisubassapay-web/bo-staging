@@ -1,4 +1,4 @@
-"""Backend tests for new nav+search endpoints (Mercari clone)."""
+"""Backend tests for new nav+search endpoints (Mercuri-global clone)."""
 import os
 import pytest
 import requests

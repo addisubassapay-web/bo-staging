@@ -1,4 +1,4 @@
-# Mercari Global — Design Guidelines
+# Mercuri-global — Design Guidelines
 
 ## Brand
 - **Primary red**: `#FF211F` (CTAs, active states, dispute severity)

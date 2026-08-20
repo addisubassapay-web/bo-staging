@@ -11,7 +11,7 @@ import pytest
 BASE = os.environ["REACT_APP_BACKEND_URL"].rstrip("/")
 API = f"{BASE}/api"
 
-ADMIN_EMAIL = "admin@mercari.local"
+ADMIN_EMAIL = "admin@mercuri-global.local"
 ADMIN_PASSWORD = "admin123"
 
 

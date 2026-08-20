@@ -18,7 +18,7 @@ const NewsletterStrip = () => {
       const { data } = await api.post("/newsletter/subscribe", { email, source: "footer" });
       setStatus("ok");
       setMessage(data.already ? "You're already on the list ✓" : "You're in ✓");
-      try { localStorage.setItem("mercari_newsletter_email", email); } catch { /* ignore */ }
+      try { localStorage.setItem("mercuri-global_newsletter_email", email); } catch { /* ignore */ }
       setTimeout(() => { setStatus("idle"); setEmail(""); setMessage(""); }, 3500);
     } catch (err) {
       setStatus("error");
@@ -74,7 +74,7 @@ const Footer = () => (
       <div>
         <div className="flex items-center gap-2 mb-3">
           <BrandMark size={36} variant="outline" data-testid="footer-logo" />
-          <span className="font-bold text-lg text-[#FF7A18]">Mercari Global</span>
+          <span className="font-bold text-lg text-[#FF7A18]">Mercuri-global</span>
         </div>
         <p className="text-sm text-neutral-400 leading-relaxed">
           Your global marketplace for fashion, electronics, home & everyday essentials — millions of items, verified sellers, buyer protection.
@@ -110,13 +110,13 @@ const Footer = () => (
           <li><Link to="/" className="hover:text-[#FF7A18]">Gift Cards</Link></li>
           <li><Link to="/search?sort=trending" className="hover:text-[#FF7A18]">Deals</Link></li>
           <li><Link to="/search?sort=newest" className="hover:text-[#FF7A18]">Coupons</Link></li>
-          <li><Link to="/sell" className="hover:text-[#FF7A18]">Sell on Mercari</Link></li>
+          <li><Link to="/sell" className="hover:text-[#FF7A18]">Sell on Mercuri-global</Link></li>
         </ul>
       </div>
     </div>
     <div className="border-t border-neutral-800">
       <div className="max-w-7xl mx-auto px-4 py-5 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-neutral-500">
-        <span>© {new Date().getFullYear()} Mercari Global. All rights reserved.</span>
+        <span>© {new Date().getFullYear()} Mercuri-global. All rights reserved.</span>
         <span>Secure checkout · Global shipping · Buyer protection</span>
       </div>
     </div>

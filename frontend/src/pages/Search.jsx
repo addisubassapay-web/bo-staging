@@ -35,7 +35,7 @@ const Search = () => {
 
   useEffect(() => {
     api.get("/categories").then((r) => setCategories(r.data)).catch(() => {});
-    const token = localStorage.getItem("mercari_token");
+    const token = localStorage.getItem("mercuri-global_token");
     if (token) api.get("/favorites").then((r) => setFavIds(new Set(r.data.map((l) => l.id)))).catch(() => {});
   }, []);
 

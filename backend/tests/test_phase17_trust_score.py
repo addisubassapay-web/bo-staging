@@ -23,7 +23,7 @@ def _run(x):
 
 
 def _admin_token():
-    r = requests.post(f"{API}/auth/login", json={"email": "admin@mercari.local", "password": "admin123"})
+    r = requests.post(f"{API}/auth/login", json={"email": "admin@mercuri-global.local", "password": "admin123"})
     assert r.status_code == 200, r.text
     return r.json()["token"]
 

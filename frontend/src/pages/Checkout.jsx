@@ -141,10 +141,10 @@ const Checkout = () => {
 
   if (done) {
     const shareUrl = `${window.location.origin}/listing/${done.listing_id || done.listing?.id || id}`;
-    const shareText = `I just scored "${done.listing_title}" on Mercari Global! 🎉`;
+    const shareText = `I just scored "${done.listing_title}" on Mercuri-global! 🎉`;
     const doShare = async () => {
       if (navigator.share) {
-        try { await navigator.share({ title: "Mercari Global", text: shareText, url: shareUrl }); }
+        try { await navigator.share({ title: "Mercuri-global", text: shareText, url: shareUrl }); }
         catch (e) { if (e?.name !== "AbortError") console.warn("[share] failed:", e); }
       } else {
         try {

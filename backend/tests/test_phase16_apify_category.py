@@ -8,7 +8,7 @@ from unittest.mock import MagicMock, patch
 BASE_URL = os.environ.get("REACT_APP_BACKEND_URL").rstrip("/")
 API = f"{BASE_URL}/api"
 
-ADMIN_EMAIL = "admin@mercari.local"
+ADMIN_EMAIL = "admin@mercuri-global.local"
 ADMIN_PASSWORD = "admin123"
 
 

@@ -27,7 +27,7 @@ def _load_backend_url():
 BASE_URL = _load_backend_url()
 API = f"{BASE_URL}/api"
 
-ADMIN = {"email": "admin@mercari.local", "password": "admin123"}
+ADMIN = {"email": "admin@mercuri-global.local", "password": "admin123"}
 SEED_SELLER = {"email": "sophia_style@demo.local", "password": "demo1234"}
 
 

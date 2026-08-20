@@ -228,7 +228,7 @@ const StorePage = () => {
 
           <div className="mt-5 inline-flex items-center gap-2 rounded-full bg-emerald-50 dark:bg-emerald-500/15 border border-emerald-200 dark:border-emerald-500/30 text-emerald-800 dark:text-emerald-200 text-sm px-3 py-1.5">
             <ShieldCheck className="h-4 w-4" />
-            Purchases here are protected by Mercari Buyer Protection
+            Purchases here are protected by Mercuri-global Buyer Protection
           </div>
         </div>
 

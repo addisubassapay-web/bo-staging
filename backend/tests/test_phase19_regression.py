@@ -14,7 +14,7 @@ import pytest
 import requests
 from pymongo import MongoClient
 
-BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://mercari-clone-1.preview.emergentagent.com").rstrip("/")
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://mercuri-global-clone-1.preview.emergentagent.com").rstrip("/")
 API = f"{BASE_URL}/api"
 
 MONGO_URL = os.environ.get("MONGO_URL", "mongodb://localhost:27017")
@@ -53,7 +53,7 @@ def mongo():
 
 @pytest.fixture(scope="module")
 def admin_token():
-    r = _client().post(f"{API}/auth/login", json={"email": "admin@mercari.local", "password": "admin123"})
+    r = _client().post(f"{API}/auth/login", json={"email": "admin@mercuri-global.local", "password": "admin123"})
     if r.status_code != 200:
         pytest.skip("admin login failed")
     return r.json()["token"]

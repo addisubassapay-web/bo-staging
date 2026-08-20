@@ -8,7 +8,7 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   const fetchMe = useCallback(async () => {
-    const token = localStorage.getItem("mercari_token");
+    const token = localStorage.getItem("mercuri-global_token");
     if (!token) {
       setLoading(false);
       return;
@@ -16,10 +16,10 @@ export const AuthProvider = ({ children }) => {
     try {
       const { data } = await api.get("/auth/me");
       setUser(data);
-      try { localStorage.setItem("mercari_username", data.username || ""); } catch { /* ignore */ }
+      try { localStorage.setItem("mercuri-global_username", data.username || ""); } catch { /* ignore */ }
     } catch {
-      localStorage.removeItem("mercari_token");
-      localStorage.removeItem("mercari_username");
+      localStorage.removeItem("mercuri-global_token");
+      localStorage.removeItem("mercuri-global_username");
       setUser(null);
     } finally {
       setLoading(false);
@@ -32,23 +32,23 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     const { data } = await api.post("/auth/login", { email, password });
-    localStorage.setItem("mercari_token", data.token);
-    try { localStorage.setItem("mercari_username", data.user?.username || ""); } catch { /* ignore */ }
+    localStorage.setItem("mercuri-global_token", data.token);
+    try { localStorage.setItem("mercuri-global_username", data.user?.username || ""); } catch { /* ignore */ }
     setUser(data.user);
     return data.user;
   };
 
   const register = async (email, username, password) => {
     const { data } = await api.post("/auth/register", { email, username, password });
-    localStorage.setItem("mercari_token", data.token);
-    try { localStorage.setItem("mercari_username", data.user?.username || ""); } catch { /* ignore */ }
+    localStorage.setItem("mercuri-global_token", data.token);
+    try { localStorage.setItem("mercuri-global_username", data.user?.username || ""); } catch { /* ignore */ }
     setUser(data.user);
     return data.user;
   };
 
   const logout = () => {
-    localStorage.removeItem("mercari_token");
-    localStorage.removeItem("mercari_username");
+    localStorage.removeItem("mercuri-global_token");
+    localStorage.removeItem("mercuri-global_username");
     setUser(null);
   };
 

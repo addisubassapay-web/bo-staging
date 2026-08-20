@@ -5,7 +5,7 @@ import { Eye, EyeOff } from "lucide-react";
  * useBalanceVisibility — persist the "eye" state per-device in localStorage
  * so hiding your balance carries across page loads.
  */
-export function useBalanceVisibility(key = "mercari_balance_visible") {
+export function useBalanceVisibility(key = "mercuri-global_balance_visible") {
   const [visible, setVisible] = React.useState(() => {
     try {
       const v = localStorage.getItem(key);

@@ -20,7 +20,7 @@ def _load_backend_url():
 BASE_URL = _load_backend_url()
 API = f"{BASE_URL}/api"
 
-ADMIN_EMAIL = "admin@mercari.local"
+ADMIN_EMAIL = "admin@mercuri-global.local"
 ADMIN_PASS = "admin123"
 SELLER_EMAIL = "urban_finds@demo.local"
 SELLER_PASS = "demo1234"
