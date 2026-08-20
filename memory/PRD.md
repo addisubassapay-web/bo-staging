@@ -25,7 +25,16 @@ Full-stack ecommerce marketplace **Merchari-global** — same color scheme (`#FF
 ---
 
 ## Implemented (with dates)
-### Feb 2026 — Zyte scraper removed · Apify-only marketplace · larger catalog display
+### Feb 2026 — Admin Support Inbox
+- **New page** `/admin/support-tickets` (`/app/frontend/src/pages/AdminSupport.jsx`) — two-column inbox: left rail lists all tickets with status pill (open/pending/closed), channel badge (chat/email), buyer name+email, relative timestamp, and an emerald unread dot for admin-side new messages. Right pane loads the full transcript with distinct bubbles (blue-gradient for admin replies, white for buyer messages).
+- **Filters + search**: status Select, channel Select, and free-text search across subject/name/email.
+- **Reply flow**: multiline textarea + Send button; Cmd/Ctrl+Enter shortcut sends. New admin messages appear within 3s via automatic re-fetch. 20s background poll refreshes the open ticket so live buyer typing surfaces.
+- **Close flow**: "Close" button on open tickets prompts a confirm; on confirm the status pill flips to `closed` and the reply box is replaced with a "This ticket is closed" notice.
+- **Sidebar entry** — new `SidebarSupportLink` component in `Admin.jsx` polls `/api/admin/support/unread-count` every 30s and shows an emerald pill with the unread count (99+ cap).
+- **Role guard** — nested under `/admin`, so non-admin users are redirected to `/`.
+- **Verified by testing agent** (verdict: frontend 100%): E2E reply/close flows exercised, non-admin redirect confirmed, unread badge live-polls correctly.
+
+
 - **Bug fix**: user asked to drop Zyte listing logic, stay Apify-only, and surface the largest possible number of products.
 - **Backend removals**: `/api/scraper/*` (all methods, with & without trailing slash) now returns HTTP 410 Gone via the new deprecation stub (`routers/scraper_stub.py`). The real 935-line `routers/scraper.py` is left on disk unused for reference and is no longer routed.
 - **Query-level filter**: `_build_listings_query` gained a `$nor` clause that excludes any listing whose `source_url` matches `toscrape.com`, `scrape.me`, or `quotes.toscrape` so legacy Zyte rows never surface. DB migration applied: 1 stale "Soumission" listing purged.

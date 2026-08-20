@@ -19,6 +19,7 @@ import AdminPaymentMethods from "@/pages/AdminPaymentMethods";
 import AdminLedgerAudit from "@/pages/AdminLedgerAudit";
 import AdminEmailLog from "@/pages/AdminEmailLog";
 import AdminStoreBoosts from "@/pages/AdminStoreBoosts";
+import AdminSupport from "@/pages/AdminSupport";
 import AdminProducts from "@/pages/AdminProducts";
 
 const SidebarLink = ({ to, icon: Icon, children }) => (
@@ -32,6 +33,40 @@ const SidebarLink = ({ to, icon: Icon, children }) => (
     <Icon className="h-4 w-4" /> {children}
   </NavLink>
 );
+
+const SidebarSupportLink = () => {
+  const [unread, setUnread] = useState(0);
+  useEffect(() => {
+    let alive = true;
+    const load = async () => {
+      try {
+        const { data } = await api.get("/admin/support/unread-count");
+        if (alive) setUnread(data.unread || 0);
+      } catch { /* silent */ }
+    };
+    load();
+    const t = setInterval(load, 30000);
+    return () => { alive = false; clearInterval(t); };
+  }, []);
+  return (
+    <NavLink
+      to="/admin/support-tickets"
+      end
+      className={({ isActive }) =>
+        `flex items-center gap-2 px-3 py-2 rounded-md text-sm ${isActive ? "bg-[#FFF3F2] text-[#FF211F] font-medium" : "text-neutral-700 hover:bg-neutral-100"}`
+      }
+      data-testid="admin-sidebar-support"
+    >
+      <MessageCircle className="h-4 w-4" />
+      <span className="flex-1">Support</span>
+      {unread > 0 && (
+        <span className="min-w-[20px] h-5 px-1.5 rounded-full bg-emerald-500 text-white text-[10px] font-bold grid place-items-center tabular-nums" data-testid="admin-sidebar-support-badge">
+          {unread > 99 ? "99+" : unread}
+        </span>
+      )}
+    </NavLink>
+  );
+};
 
 const StatCard = ({ label, value, hint }) => (
   <div className="bg-white border border-neutral-200 rounded-lg p-5">
@@ -1594,6 +1629,7 @@ const Admin = () => {
         <SidebarLink to="/admin/shelves" icon={LayoutGrid}>Homepage shelves</SidebarLink>
         <SidebarLink to="/admin/apify-sync" icon={Database}>Apify sync</SidebarLink>
         <SidebarLink to="/admin/store-boosts" icon={StoreIcon}>Store boosts</SidebarLink>
+        <SidebarSupportLink />
         <SidebarLink to="/admin/email-log" icon={Mail}>Email log</SidebarLink>
         <SidebarLink to="/admin/settings" icon={SettingsIcon}>Settings</SidebarLink>
       </aside>
@@ -1614,6 +1650,7 @@ const Admin = () => {
           <Route path="shelves" element={<AdminShelves />} />
           <Route path="apify-sync" element={<ApifySync />} />
           <Route path="store-boosts" element={<AdminStoreBoosts />} />
+          <Route path="support-tickets" element={<AdminSupport />} />
           <Route path="email-log" element={<AdminEmailLog />} />
           <Route path="settings" element={<SettingsMgr />} />
         </Routes>
