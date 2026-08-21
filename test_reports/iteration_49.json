@@ -1,0 +1,32 @@
+{
+  "summary": "Verified image fix across storefront. Backend: 11/11 pytest passing (7 unit tests for _is_clean_amazon_image, 2 DB cleanup counts = 0, 2 API sanity). Frontend browser: 0 broken images on homepage (0/60), search (0/24), category=electronics (0/24). onError fallback verified — synthetic broken src is swapped to next clean image in listing.images[] (naturalWidth=1500 after fallback). Product detail hero image loads at 1500x1500. NOTE: had to restart backend once at start of test — uvicorn had become unresponsive to new connections (likely event-loop blocked by Apify sync run_in_executor call chain earlier). After restart, all endpoints served <30ms.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "N/A", "issue": "Backend became unresponsive to new HTTP connections before restart despite supervisor showing RUNNING and old requests receiving 200 OK. Possibly related to long-running Apify sync + reload=True on uvicorn. Consider disabling --reload in production or investigating thread-pool starvation."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration49_images.py",
+    "/app/test_reports/pytest/iteration49.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "ProductCard.jsx onError handler: `dataset.imgIdx` state persists on the element, but if the FIRST image (index 0) is already bad, the initial `attempted=0` combined with `i > attempted` skips index 0. The condition should also fall through to picsum on the very first failure — current code does this correctly via the else branch, verified in browser test.",
+    "apify_sync.py _is_clean_amazon_image() correctly rejects composite `._CL` / `%7C` / raw pipe URLs. Consider also stripping the encoded pipe fragment out of otherwise valid Amazon URLs rather than dropping the whole URL (defensive)."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration49_images.py (NEW)"
+  ],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "test_credentials": "Not used — image render is a public-viewer flow",
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Backend can hang after long Apify sync runs — if endpoints time out, `sudo supervisorctl restart backend` restores service. Backend tests use MongoDB Atlas directly via MONGO_URL; ensure envs are exported before running pytest."
+}

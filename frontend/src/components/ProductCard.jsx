@@ -78,6 +78,21 @@ const ProductCard = ({ listing, isFavorite = false, onFavoriteChange }) => {
           src={listing.images?.[0] || "https://picsum.photos/seed/placeholder/400"}
           alt={listing.title}
           loading="lazy"
+          onError={(e) => {
+            // Amazon "composite variant" URLs (contain %7C or ._CL fragments)
+            // and rotated CDN links occasionally 404. Walk the images[] array
+            // for the next resolvable one; fall back to a neutral placeholder.
+            const t = e.currentTarget;
+            const attempted = parseInt(t.dataset.imgIdx || "0", 10);
+            const next = (listing.images || []).findIndex((u, i) => i > attempted && u && !u.includes("%7C") && !u.includes("._CL"));
+            if (next !== -1) {
+              t.dataset.imgIdx = String(next);
+              t.src = listing.images[next];
+            } else if (t.src.indexOf("picsum.photos") === -1) {
+              t.src = `https://picsum.photos/seed/${listing.id || "ph"}/400`;
+            }
+          }}
+          data-img-idx="0"
           className="w-full h-full object-cover group-hover:scale-[1.06] transition-transform duration-500 ease-out"
         />
         {/* Soft bottom fade for legibility of any overlaid badges */}

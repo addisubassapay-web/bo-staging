@@ -25,7 +25,14 @@ Full-stack ecommerce marketplace **Merchari-global** — same color scheme (`#FF
 ---
 
 ## Implemented (with dates)
-### Feb 2026 — AI product polish + first all-category Apify sync fired
+### Feb 2026 — Broken product images fix
+- **Bug**: some product cards showed broken image icons — root cause was Amazon "composite variant" URLs (contain `._CL` fragments or `%7C` URL-encoded pipes) that don't resolve as direct `<img>` sources.
+- **Backend filter** (`apify_sync.py::_is_clean_amazon_image`) — new helper drops composite URLs at ingestion time; `_images()` now filters via it so no new Apify sync can add bad ones.
+- **One-shot DB cleanup** — cleared bad URLs from 7 listings + 2 products (only 9 rows total had them).
+- **Frontend `<img>` onError fallback** (`ProductCard.jsx`) — when an image fails to load, walks through `listing.images[]` for the next clean URL; if none work, falls back to a picsum placeholder. Result: buyers never see a broken alt-text image again.
+- **Verified by testing agent (verdict: 100% both, 0 critical, 0 minor)**: 0/108 broken images across homepage + search + category pages, onError fallback confirmed, DB cleanup verified.
+
+
 - **New AI polish service** `/app/backend/services/product_ai.py` — uses `emergentintegrations.llm.chat.LlmChat` with `gpt-5.4` and the `EMERGENT_LLM_KEY`. Shortens Amazon titles (≤70 chars, no brand prefix), generates 100-200 char benefit-focused descriptions, plus SEO `meta_title` (≤60) + `meta_description` (≤155). Cost per product ≈ $0.0006 → 20k products ≈ $12.
 - **Two new admin endpoints** in `/app/backend/routers/products.py`:
   * `POST /api/admin/products/ai-polish` — batch polish, body `{limit:50, force:false, only_active:true}`. Idempotent via `ai_polished_at` timestamp. Concurrency = 4.

@@ -129,14 +129,30 @@ def _list_price(item: Dict) -> Optional[float]:
     return None
 
 
+def _is_clean_amazon_image(url: str) -> bool:
+    """Reject Amazon composite/variant URLs that often 404 in the browser.
+    Composite thumbnails look like `/images/I/B1p...L._CLa%7C...` — they
+    encode multi-frame Amazon UI overlays and are unreliable as direct
+    <img> sources. Plain `/images/I/ID._AC_SL1500_.jpg` variants are fine.
+    """
+    if not isinstance(url, str) or not url.startswith("http"):
+        return False
+    lowered = url.lower()
+    if "._cl" in lowered:  # composite marker
+        return False
+    if "%7c" in lowered or "|" in url:  # encoded/raw pipe = composite fragment
+        return False
+    return True
+
+
 def _images(item: Dict, limit: int = 3) -> List[str]:
     imgs: List[str] = []
     for k in ("highResolutionImages", "galleryThumbnails"):
         v = item.get(k)
         if isinstance(v, list):
-            imgs.extend([u for u in v if isinstance(u, str) and u.startswith("http")])
+            imgs.extend([u for u in v if _is_clean_amazon_image(u)])
     thumb = item.get("thumbnailImage")
-    if isinstance(thumb, str) and thumb.startswith("http"):
+    if _is_clean_amazon_image(thumb):
         imgs.append(thumb)
     # de-dup preserving order
     seen = set()
