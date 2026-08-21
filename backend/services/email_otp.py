@@ -133,6 +133,19 @@ async def verify_otp(db, user: dict, purpose: str, code: str) -> str:
 
     # Mark OTP as used + issue a token
     await db.email_otps.update_one({"id": otp["id"]}, {"$set": {"used_at": now}})
+
+    # Successfully receiving + reading a code from the account email proves
+    # email ownership — so mark the user email_verified if they weren't
+    # already. Idempotent; skipped when the flag is already set.
+    if not user.get("email_verified"):
+        try:
+            await db.users.update_one(
+                {"id": user["id"], "email_verified": {"$ne": True}},
+                {"$set": {"email_verified": True, "email_verified_at": now}},
+            )
+        except Exception as e:
+            logger.warning(f"verify_otp: failed to backfill email_verified for {user['id']}: {e}")
+
     token = f"otp_{secrets.token_urlsafe(24)}"
     await db.otp_tokens.insert_one({
         "token": token,

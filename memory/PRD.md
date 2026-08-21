@@ -24,6 +24,14 @@ Full-stack ecommerce marketplace **Merchari-global** — same color scheme (`#FF
 
 ---
 
+### Feb 2026 — Seller Application: Email-Only Verification Gate
+- **Product decision**: Only email verification is a hard gate for seller applications. All other identity signals (phone, address, ID doc) are trusted by default so onboarding is frictionless; the admin review queue is the ultimate check.
+- **`services/email_otp.py::verify_otp`** — after a successful OTP verify, the user is now auto-marked `email_verified=True` (idempotent `$ne: True` guard) since reading a code from the account inbox proves email ownership.
+- **`server.py::seller_apply`** — removed the `phone_verified` gate. If the applicant submits a phone number and isn't already phone-verified, the endpoint atomically sets `phone_verified=True, phone_verified_at=now` alongside their `phone`. Only `email_verified` still blocks submission.
+- **`SellerApply.jsx`** — `readyChecks` reduced to just `email_verified`; the amber "please verify" banner now says "verify your email — all other details are trusted by default".
+- **Verified end-to-end via curl** on a fresh account: register → OTP request/verify (email flips to verified) → seller/apply → HTTP 200 with `status=pending`, `phone_verified` auto-flipped, no phone-verify OTP needed.
+
+
 ### Feb 2026 — Email OTP Rate-Limit Fix Verified
 - **Bug (iter50)**: `request_otp` deleted prior unused OTPs BEFORE counting, so the 5/hour rate limit could be bypassed indefinitely.
 - **Fix applied to `/app/backend/services/email_otp.py`**: `count_documents({created_at >= hour_ago})` now runs BEFORE any mutation. Prior unused OTPs are marked `used_at=now, superseded=true` via `update_many` (instead of `delete_many`) so they still count toward the hourly quota. TTL cleans them up after 10 minutes.

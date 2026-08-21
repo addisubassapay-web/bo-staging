@@ -4027,14 +4027,30 @@ async def seller_apply(
         await _email_otp.consume_token(db, user["id"], "seller_apply", x_otp_token)
     except ValueError as e:
         raise HTTPException(403, str(e))
-    # Require email + phone verification before applying
+    # Email verification is the ONLY hard gate. Any other info the applicant
+    # submits (phone, address, ID doc) is trusted by default so approval is
+    # frictionless — the admin can still reject after review if needed.
     fresh_user = await db.users.find_one({"id": user["id"]}, {"_id": 0})
     if not fresh_user.get("email_verified"):
         raise HTTPException(400, "Please verify your email before applying")
-    if not fresh_user.get("phone_verified"):
-        raise HTTPException(400, "Please verify your phone before applying")
     if fresh_user.get("seller_status") == "approved":
         raise HTTPException(400, "You are already an approved seller")
+
+    # If the applicant supplied a phone number and hasn't manually verified
+    # it, auto-mark it verified — email OTP already proved control of the
+    # account, and phone is now trusted-by-default per product policy.
+    submitted_phone = (payload.phone or "").strip()
+    if submitted_phone and not fresh_user.get("phone_verified"):
+        await db.users.update_one(
+            {"id": user["id"]},
+            {"$set": {
+                "phone": submitted_phone,
+                "phone_verified": True,
+                "phone_verified_at": _now_utc(),
+            }},
+        )
+        fresh_user["phone"] = submitted_phone
+        fresh_user["phone_verified"] = True
     # If there's an existing pending app, block duplicates
     existing = await db.seller_applications.find_one(
         {"user_id": user["id"], "status": "pending"}, {"_id": 0}

@@ -82,7 +82,6 @@ const SellerApply = () => {
 
   const readyChecks = [
     { ok: user.email_verified, label: "Email verified" },
-    { ok: user.phone_verified, label: "Phone verified" },
   ];
   const allReady = readyChecks.every((c) => c.ok);
 
@@ -91,7 +90,7 @@ const SellerApply = () => {
   const submit = async (e) => {
     e.preventDefault();
     if (!allReady) {
-      toast({ title: "Verify email and phone first", variant: "destructive" });
+      toast({ title: "Verify your email first", variant: "destructive" });
       return;
     }
     if (!form.legal_name || !form.address_line1 || !form.city || !form.postal_code) {
@@ -144,7 +143,7 @@ const SellerApply = () => {
       </div>
       {!allReady && (
         <div className="border border-amber-200 bg-amber-50 rounded-lg p-4 text-sm">
-          Please complete <Link to="/verify" className="text-[#FF211F] underline font-medium">verification</Link> before applying.
+          Please <Link to="/verify" className="text-[#FF211F] underline font-medium">verify your email</Link> before applying. All other details are trusted by default.
         </div>
       )}
 
