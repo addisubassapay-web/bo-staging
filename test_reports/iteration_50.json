@@ -1,0 +1,44 @@
+{
+  "summary": "Iteration 50 — Email OTP for sensitive actions. 12/14 passed, 1 skipped (email_log not in DB), 1 real backend bug: rate-limit on POST /api/otp/request is broken because request_otp deletes prior unused OTPs BEFORE counting them, so the 5/hour cap never trips. All other behaviors verified end-to-end: guards on withdrawal + seller_apply, request/verify flow with brute-forced sha256, single-use otp_token, TTL indexes on both collections, purpose enum incl. password_reset and cashout.",
+  "backend_issues": {
+    "critical": [
+      {
+        "endpoint": "POST /api/otp/request",
+        "issue": "Rate-limit (5 requests/hour per user+purpose) is INEFFECTIVE. In services/email_otp.py:request_otp, `db.email_otps.delete_many({user_id, purpose, used_at: None})` runs on every request and wipes prior unused OTP docs. Since the rate-limit uses `count_documents({created_at: {$gte: hour_ago}})` on the same collection, the counter never grows past 1 and users can request unlimited OTPs. Verified: 6 back-to-back requests all returned 200. Fix options: (a) mark previous OTPs as `superseded` instead of deleting; (b) keep a separate `otp_request_log` collection for rate counting; or (c) run the count BEFORE the delete but include used/expired rows (i.e. remove the delete_many entirely and let TTL handle cleanup).",
+        "priority": "HIGH"
+      }
+    ],
+    "minor": [
+      {
+        "endpoint": "POST /api/seller/apply",
+        "issue": "Pydantic body validation runs before the OTP guard, so a malformed payload returns 422 instead of 403. Not a bug per se (validation is defense-in-depth), but callers must send a schema-valid body to observe the OTP guard. Test now uses `{legal_name: 'TEST User'}` which is the minimum required body."
+      },
+      {
+        "endpoint": "POST /api/otp/request",
+        "issue": "Mailer send is best-effort — no email_log collection exists in DB, so we cannot programmatically confirm SMTP fired. Contract holds because the OTP row is persisted regardless."
+      }
+    ]
+  },
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_iteration50_email_otp.py",
+    "/app/test_reports/pytest/iter50_otp.xml"
+  ],
+  "action_items": [
+    "FIX rate-limit bug in /app/backend/services/email_otp.py:request_otp — the delete_many() call before insert_one() wipes rows the rate limiter needs. Recommended fix: remove the delete_many() (rely on TTL + the used_at filter in verify_otp to ignore stale codes); or count from a dedicated request-log collection."
+  ],
+  "critical_code_review_comments": [
+    "email_otp.py: `delete_many` + count-based rate limit on same collection is self-defeating — see action_items.",
+    "email_otp.py:58 the raise message uses an unnecessary f-string (`f\"Too many OTP requests...\"` with no interpolation).",
+    "otp.py imports `get_db` and calls it as a function rather than using `Depends(get_db)` — this works but bypasses FastAPI's DI pattern used elsewhere and makes swapping easier for tests harder.",
+    "consume_token error message 'Missing OTP token' is returned for BOTH missing and expired/used tokens on second withdrawal attempt path — semantics slightly conflated but acceptable."
+  ],
+  "updated_files": ["/app/backend/tests/test_iteration50_email_otp.py"],
+  "success_rate": {"backend": "92%", "frontend": "n/a"},
+  "test_credentials": "sophia_style@demo.local / demo1234 (from /app/memory/test_credentials.md)",
+  "seed_data_creation": "None. Test cleans up its own password_reset/cashout OTP rows via direct Mongo delete_many.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "test_iteration50_email_otp.py contains a brute-force sha256 helper (_brute_code) that iterates 0..999999 to recover the plaintext OTP from the DB hash — ~2s per verify. Reuse this pattern for future OTP-guarded endpoints (e.g. seller cashout when added). To retest after the rate-limit fix, just rerun test_rate_limit_password_reset.",
+  "rca of the issue": "In services/email_otp.py:request_otp, the sequence is: (1) count_documents(created_at>=hour_ago) → gets 0 or 1; (2) delete_many({user_id, purpose, used_at:None}) → removes prior unused code; (3) insert_one(new). Because step 2 removes the historic rows the counter needs, on the Nth request the count only ever sees the single 'previous' row that was created milliseconds before. Reproduction: hit /api/otp/request 6 times with {purpose:'password_reset'} — all return 200. Mitigation: don't delete_many; let verify_otp ignore stale codes via `used_at:null` + `expires_at>now` filters (which it already does). TTL index will clean up automatically."
+}

@@ -41,6 +41,7 @@ from routers.store_boosts import router as store_boosts_router
 from routers.products import router as products_router
 from routers.apify_runs import router as apify_runs_router
 from routers.support import router as support_router
+from routers.otp import router as otp_router
 
 
 ROOT_DIR = Path(__file__).parent
@@ -2384,7 +2385,16 @@ async def get_wallet(user: dict = Depends(get_current_user)):
     }
 
 @api_router.post("/wallet/withdraw", response_model=WithdrawalRequest)
-async def request_withdrawal(payload: WithdrawalRequestCreate, user: dict = Depends(get_current_user)):
+async def request_withdrawal(
+    payload: WithdrawalRequestCreate,
+    user: dict = Depends(get_current_user),
+    x_otp_token: Optional[str] = Header(None, alias="x-otp-token"),
+):
+    from services import email_otp as _email_otp
+    try:
+        await _email_otp.consume_token(db, user["id"], "withdrawal", x_otp_token)
+    except ValueError as e:
+        raise HTTPException(403, str(e))
     settings = await get_settings()
     min_wd = settings.get("min_withdrawal", 10.0)
     if payload.amount < min_wd:
@@ -4007,7 +4017,16 @@ async def seller_trust_score(user: dict = Depends(get_current_user)):
 
 
 @api_router.post("/seller/apply", response_model=SellerApplication)
-async def seller_apply(payload: SellerApplicationCreate, user: dict = Depends(get_current_user)):
+async def seller_apply(
+    payload: SellerApplicationCreate,
+    user: dict = Depends(get_current_user),
+    x_otp_token: Optional[str] = Header(None, alias="x-otp-token"),
+):
+    from services import email_otp as _email_otp
+    try:
+        await _email_otp.consume_token(db, user["id"], "seller_apply", x_otp_token)
+    except ValueError as e:
+        raise HTTPException(403, str(e))
     # Require email + phone verification before applying
     fresh_user = await db.users.find_one({"id": user["id"]}, {"_id": 0})
     if not fresh_user.get("email_verified"):
@@ -6664,6 +6683,7 @@ app.include_router(store_boosts_router, prefix="/api")
 app.include_router(products_router, prefix="/api")
 app.include_router(apify_runs_router, prefix="/api")
 app.include_router(support_router, prefix="/api")
+app.include_router(otp_router, prefix="/api")
 
 app.add_middleware(
     CORSMiddleware,
@@ -6682,6 +6702,12 @@ async def startup():
     await db.users.create_index("email", unique=True)
     await db.users.create_index("username", unique=True)
     await db.users.create_index("referral_code")
+    # Email OTP indexes (TTL + lookup)
+    from services import email_otp as _email_otp
+    try:
+        await _email_otp.ensure_indexes(db)
+    except Exception as e:
+        logger.warning(f"OTP index setup skipped: {e}")
     await db.listings.create_index("seller_id")
     await db.listings.create_index("category_id")
     await db.listings.create_index("status")

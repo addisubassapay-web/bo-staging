@@ -24,6 +24,13 @@ Full-stack ecommerce marketplace **Merchari-global** — same color scheme (`#FF
 
 ---
 
+### Feb 2026 — Email OTP Rate-Limit Fix Verified
+- **Bug (iter50)**: `request_otp` deleted prior unused OTPs BEFORE counting, so the 5/hour rate limit could be bypassed indefinitely.
+- **Fix applied to `/app/backend/services/email_otp.py`**: `count_documents({created_at >= hour_ago})` now runs BEFORE any mutation. Prior unused OTPs are marked `used_at=now, superseded=true` via `update_many` (instead of `delete_many`) so they still count toward the hourly quota. TTL cleans them up after 10 minutes.
+- **Verified by backend testing agent (iter51, 6/6 tests, 100%)**: 5x `POST /api/otp/request {purpose:'withdrawal'}` → 200, 6th → 400 "Too many OTP requests. Try again in an hour."; verify_otp still redeems the newest (non-superseded) row correctly; independent quotas per purpose confirmed; invalid purpose → 400; auth guard on the endpoint intact.
+- Regression suite lives at `/app/backend/tests/test_iteration51_otp_rate_limit_fix.py`.
+
+
 ## Implemented (with dates)
 ### Feb 2026 — Broken product images fix
 - **Bug**: some product cards showed broken image icons — root cause was Amazon "composite variant" URLs (contain `._CL` fragments or `%7C` URL-encoded pipes) that don't resolve as direct `<img>` sources.
