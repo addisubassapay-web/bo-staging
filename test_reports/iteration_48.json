@@ -1,0 +1,39 @@
+{
+  "summary": "Backend-only verification of AI Quality Polish (Emergent LLM Key, gpt-5.4) — 17/17 tests passed. Real LLM calls succeeded; idempotency, force flag, auth guards, permanence and structural constraints all validated. The whole 165-product active catalog is now polished (remaining=0), so the real-LLM sub-test auto-switches to force=true when the catalog is fully polished.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "GET /api/admin/products", "issue": "Response is serialized through ProductOut which does NOT declare ai_meta/polished_title/meta_title/meta_description/ai_polished_at → these fields are silently stripped from the admin listing. Admin dashboard will not see polished data via this endpoint. Recommend adding an AdminProductOut model with the extra fields, or return raw docs for admin routes."},
+      {"endpoint": "POST /api/admin/products/ai-polish", "issue": "Endpoint is synchronous and blocks the request while polishing (limit×~5s / concurrency=4). limit=1000 (clamped to 200) will always exceed the ~100s edge/proxy timeout and appear as HTTP 502 to the client even though the backend keeps running. Consider making the batch run as a background task and returning a job id, so the caller can poll /status."},
+      {"endpoint": "services.product_ai.polish_batch", "issue": "On LLM failure the row is stamped with ai_polished_at + ai_polish_failed=true. That prevents retries permanently unless force=true. Consider not stamping ai_polished_at on failure, or exposing a retry_failed flag to re-queue them."},
+      {"endpoint": "services.product_ai._MODEL_NAME", "issue": "Model is hard-coded to 'gpt-5.4' (per playbook) with no env override — makes future model migration harder. Consider `OPENAI_MODEL` env fallback."}
+    ]
+  },
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_iteration48_ai_polish.py",
+    "/app/test_reports/pytest/iteration_48_results.xml"
+  ],
+  "action_items": [
+    "Add polished/meta fields to admin ProductOut (or use a dedicated AdminProductOut) so the admin UI can actually show AI-polished output.",
+    "Consider making /api/admin/products/ai-polish a background job with a status-poll pattern to avoid proxy 502s on large limits.",
+    "Do not stamp ai_polished_at on LLM failure (or add a distinct `ai_polish_failed_at` and keep ai_polished_at reserved for successes) so failures can be retried without force=true."
+  ],
+  "critical_code_review_comments": [
+    "Response-model leak: ProductOut in routers/products.py strips all polish fields on admin GET — silent data loss to the client.",
+    "Synchronous long-running batch: the ai-polish endpoint can take minutes on limit=200 and will hit ingress timeout; needs task queue or streaming response.",
+    "polish_batch stamps ai_polished_at on failure — makes idempotency and retry semantics awkward (only force=true recovers, which also re-polishes successes).",
+    "gpt-5.4 model name is hard-coded — not env-driven.",
+    "polish_one truncates polished_description to 220 chars while the SYSTEM prompt asks for 100–200 — acceptable, but SEO meta_description trimming to 155 chars is done blindly with slicing, which may cut mid-word."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration48_ai_polish.py"
+  ],
+  "success_rate": {"backend": "100%", "frontend": "N/A"},
+  "test_credentials": "admin@mercari.local / admin123 (admin), sophia_style@demo.local / demo1234 (regular user)",
+  "seed_data_creation": "None — used existing 165 active products in the `products` collection.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "The `products` collection is now fully polished (remaining=0). Any future ai-polish test must either (a) insert new un-polished products, or (b) call with force=true. The test file at /app/backend/tests/test_iteration48_ai_polish.py already auto-detects this and switches to force=true. Note that /api/admin/products response strips ai_meta/polished_title etc via ProductOut — tests read directly from Mongo via MONGO_URL/DB_NAME in backend/.env to verify polish fields.",
+  "rca of the issue": "N/A — no failing feature. Only advisory findings, listed under backend_issues.minor and critical_code_review_comments."
+}

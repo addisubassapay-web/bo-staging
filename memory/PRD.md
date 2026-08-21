@@ -25,7 +25,15 @@ Full-stack ecommerce marketplace **Merchari-global** — same color scheme (`#FF
 ---
 
 ## Implemented (with dates)
-### Feb 2026 — Apify: Focus on ALL Amazon categories + auto-mirror to permanent products
+### Feb 2026 — AI product polish + first all-category Apify sync fired
+- **New AI polish service** `/app/backend/services/product_ai.py` — uses `emergentintegrations.llm.chat.LlmChat` with `gpt-5.4` and the `EMERGENT_LLM_KEY`. Shortens Amazon titles (≤70 chars, no brand prefix), generates 100-200 char benefit-focused descriptions, plus SEO `meta_title` (≤60) + `meta_description` (≤155). Cost per product ≈ $0.0006 → 20k products ≈ $12.
+- **Two new admin endpoints** in `/app/backend/routers/products.py`:
+  * `POST /api/admin/products/ai-polish` — batch polish, body `{limit:50, force:false, only_active:true}`. Idempotent via `ai_polished_at` timestamp. Concurrency = 4.
+  * `GET /api/admin/products/ai-polish/status` — progress meter for the admin dashboard.
+- **Verified end-to-end**: testing agent ran **17/17 backend tests at 100%** with real GPT calls. All 165 existing products were polished before iteration close; sample output: `"The Children's Place Boys' Pull on Cargo Pants, Multipacks" → "Boys Pull-On Cargo Pants Multipack"` (brand stripped, 34 chars).
+- **Fired the first all-category sync** — Apify credits topped up by user. Fixed two bugs during launch: (a) endpoint validation cap was still 20,000 → raised to 50,000, (b) `CATEGORY_URLS` had 1 duplicate URL (`arts-crafts` in both toys + handmade) that the actor rejects; added dedup in `apify_sync.py` before building actor input. Sync is currently running across **49 unique URLs, up to 600 items each** (~29k raw items expected). Auto-mirror pipeline will populate `/api/products` on completion.
+
+
 - **`CATEGORY_URLS` expanded 28 → 50 Amazon department URLs** covering deep sub-categories across all 10 canonical slugs. Distribution: electronics 7, home 7, women 6, beauty 5, kids 6, men 5, sports 4, books 4, toys 3, handmade 3.
 - **`target_count` default bumped 20000 → 30000** — Apify actor pulls up to 30k items per run.
 - **Auto-mirror to permanent products** — after `import_from_apify` inserts into `db.listings`, it now also `UpdateOne(sku=apify_asin)` **upserts every row into `db.products`** via `bulk_write` batches of 500. Result: every future Apify sync automatically populates `/api/products` — no manual bridge step needed.

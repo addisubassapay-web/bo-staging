@@ -557,3 +557,47 @@ async def import_products_from_listings(
         "total_products_in_catalog": total,
         "active_products": active,
     }
+
+@router.post("/admin/products/ai-polish")
+async def admin_products_ai_polish(
+    payload: dict = Body(default={}),
+    _admin: dict = Depends(require_admin),
+):
+    """Batch-run AI polish (GPT via Emergent LLM Key).
+
+    Body: {
+      "limit": 50,        // products per call (default 50, max 200)
+      "force": false,     // if true, re-polish rows even if ai_polished_at is set
+      "only_active": true
+    }
+
+    Cost per product: ~1500 tokens ≈ $0.0006 with gpt-5.4. 20k products ≈ $12.
+    """
+    from services.product_ai import polish_batch
+    db = get_db()
+    limit = max(1, min(int(payload.get("limit", 50)), 200))
+    force = bool(payload.get("force", False))
+    only_active = bool(payload.get("only_active", True))
+    result = await polish_batch(db, limit=limit, force=force, only_active=only_active)
+    remaining = await db.products.count_documents({
+        "is_active": True if only_active else {"$exists": True},
+        "ai_polished_at": {"$exists": False},
+    })
+    return {"ok": True, **result, "remaining_unpolished": remaining}
+
+
+@router.get("/admin/products/ai-polish/status")
+async def admin_products_ai_polish_status(_admin: dict = Depends(require_admin)):
+    """Progress meter for the polish job — surfaces on the admin dashboard."""
+    db = get_db()
+    total = await db.products.count_documents({"is_active": True})
+    polished = await db.products.count_documents({"is_active": True, "ai_polished_at": {"$exists": True}})
+    failed = await db.products.count_documents({"is_active": True, "ai_polish_failed": True})
+    return {
+        "total_active": total,
+        "polished": polished,
+        "failed": failed,
+        "remaining": max(0, total - polished),
+        "pct_complete": round(100.0 * polished / total, 1) if total else 100.0,
+    }
+

@@ -275,7 +275,17 @@ async def import_from_apify(
         return {"ok": False, "error": "Need categories + at least 3 seller users seeded"}
 
     per_url = max(500, target_count // len(CATEGORY_URLS))
-    urls = [{"url": url} for (_slug, url) in CATEGORY_URLS if _slug in cats]
+    # Dedupe URLs — the same Amazon department can appear under two of our
+    # internal slugs (e.g. arts-crafts is both toys AND handmade). The actor
+    # rejects duplicate items in `categoryOrProductUrls`, so we send each URL
+    # only once. The keyword classifier still routes each product to its
+    # correct primary slug at insert time.
+    seen: set = set()
+    urls: List[Dict] = []
+    for _slug, url in CATEGORY_URLS:
+        if _slug in cats and url not in seen:
+            urls.append({"url": url})
+            seen.add(url)
     slugs = [slug for (slug, url) in CATEGORY_URLS if slug in cats]
 
     client = _get_client()
