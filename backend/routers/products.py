@@ -21,7 +21,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
+from fastapi import APIRouter, Body, Depends, Header, HTTPException, Query, Request
 from pydantic import BaseModel, Field
 
 from routers.deps import get_db, require_admin
@@ -475,4 +475,85 @@ async def admin_bulk_products(
         "action": payload.action,
         "affected": result.modified_count,
         "matched": result.matched_count,
+    }
+
+
+@router.post("/admin/products/import-from-listings")
+async def import_products_from_listings(
+    payload: dict = Body(default={}),
+    _admin: dict = Depends(require_admin),
+):
+    """One-shot: promote every Apify-sourced row in `listings` into the
+    permanent `products` catalog via upsert on sku (=apify_asin).
+
+    Idempotent — re-running only refreshes titles/prices/images/categories
+    and never creates duplicates because upsert is keyed on `sku`.
+
+    Body (all optional):
+      {
+        "only_apify": true,           // if false, also promote non-Apify listings that have a source_url
+        "status_filter": "active"     // which listing status(es) to consider
+      }
+    """
+    db = get_db()
+    only_apify = bool(payload.get("only_apify", True))
+    status_filter = payload.get("status_filter", "active")
+
+    q: dict = {"status": status_filter} if status_filter else {}
+    if only_apify:
+        q["apify_asin"] = {"$ne": None, "$exists": True}
+    else:
+        # Non-Apify: only take rows that have SOME external identifier
+        q["$or"] = [
+            {"apify_asin": {"$ne": None, "$exists": True}},
+            {"source_url": {"$ne": None, "$exists": True}},
+        ]
+
+    listings = await db.listings.find(q, {"_id": 0}).to_list(50000)
+    created = 0
+    updated = 0
+    skipped = 0
+    now = datetime.now(timezone.utc)
+
+    for l in listings:
+        sku = l.get("apify_asin") or None
+        source_url = l.get("apify_url") or l.get("source_url") or None
+        if not sku and not source_url:
+            skipped += 1
+            continue
+        # Upsert key — prefer sku, fall back to source_url
+        upsert_query = {"sku": sku} if sku else {"source_url": source_url}
+        # Skip if we somehow have neither in an insertable form
+        product_doc = {
+            "title": (l.get("title") or "")[:180],
+            "description": l.get("description") or "",
+            "price": float(l.get("price") or 0.0),
+            "currency": l.get("currency") or "USD",
+            "images": list(l.get("images") or []),
+            "category": l.get("category_name") or None,
+            "sku": sku,
+            "source_url": source_url,
+            "is_active": True,
+            "updated_at": now,
+        }
+        existing = await db.products.find_one(upsert_query, {"_id": 0, "id": 1})
+        if existing:
+            await db.products.update_one(upsert_query, {"$set": product_doc})
+            updated += 1
+        else:
+            product_doc["id"] = str(uuid.uuid4())
+            product_doc["created_at"] = now
+            await db.products.insert_one(product_doc)
+            created += 1
+
+    total = await db.products.count_documents({})
+    active = await db.products.count_documents({"is_active": True})
+    return {
+        "ok": True,
+        "listings_scanned": len(listings),
+        "created": created,
+        "updated": updated,
+        "skipped": skipped,
+        "total_products_in_catalog": total,
+        "active_products": active,
     }

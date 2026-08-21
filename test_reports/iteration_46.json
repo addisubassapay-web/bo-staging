@@ -1,0 +1,33 @@
+{
+  "summary": "Iteration 46 — validated Apify listings → permanent products bridge. All 11 backend tests pass (11/11 = 100%). Confirmed: (1) products catalog now has >=165 items with sku populated (Amazon ASINs), (2) POST /api/admin/products/import-from-listings is idempotent (second call returns created=0 and total unchanged), (3) auth guards enforced (401/403 without token, 403 for non-admin sophia_style), (4) MongoDB products collection has zero TTL indexes, (5) single product GET returns all required fields, invalid id → 404, (6) Apify webhook still 200s and reports created/updated, (7) canonical 10 categories intact, listings & products both populated → NO DB_NAME regression.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_apify_products_bridge.py",
+    "/app/test_reports/pytest/iteration_46_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Bridge endpoint POST /api/admin/products/import-from-listings behaves correctly with idempotent upsert on sku=apify_asin — verified across two consecutive calls.",
+    "DB_NAME env var currently set to 'merchari_global' (per test_credentials.md) — this is the intended value with real data. Note: it is a typo-shaped word ('merchari' vs 'mercari') — safe as long as memory/test_credentials.md keeps it as source of truth. Any refactor that 'fixes' the spelling to mercari_global would break the connection to the populated DB.",
+    "products.list_indexes contains no expireAfterSeconds — persistence guaranteed.",
+    "No image URL validation observed in bridge results; recommend a follow-up audit of product image URLs for broken/expired links."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_apify_products_bridge.py (new)"
+  ],
+  "success_rate": {"backend": "100%", "frontend": "not tested (backend-only request)"},
+  "test_credentials": "admin@mercari.local / admin123 (admin); sophia_style@demo.local / demo1234 (regular user); webhook secret from .env",
+  "seed_data_creation": "Webhook test created/updated product with sku=B0RETEST. Idempotency test may have upserted listings once — no duplicates created on second call.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "The Apify listings→products bridge is stable. DB_NAME='merchari_global' is intentional per /app/memory/test_credentials.md (Atlas migration). If any future iteration reports products total=0, first check backend/.env DB_NAME hasn't been 'corrected' to mercari_global. Products catalog total observed ~165 including B0RETEST webhook sample.",
+  "rca of the issue": "N/A — all target functionality verified working. No new bugs surfaced during iteration 46."
+}

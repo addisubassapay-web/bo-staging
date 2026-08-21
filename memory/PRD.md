@@ -25,7 +25,14 @@ Full-stack ecommerce marketplace **Merchari-global** — same color scheme (`#FF
 ---
 
 ## Implemented (with dates)
-### Feb 2026 — Category Icons + Incremental Apify sync
+### Feb 2026 — Apify listings → Permanent products bridge (+ DB_NAME typo rollback)
+- **New endpoint** `POST /api/admin/products/import-from-listings` (admin-only, idempotent) promotes every Apify-sourced row in the legacy `listings` collection into the permanent `products` collection via upsert on `sku` (=apify_asin). Body accepts `{only_apify: bool, status_filter: str}`. Returns `{created, updated, skipped, total_products_in_catalog, active_products}`.
+- **Ran the bridge once**: 160 previously-Apify-imported listings promoted → catalog now shows **165 permanent products** (160 bridged + 5 from prior webhook tests) accessible via `GET /api/products` + `GET /api/products/:id`.
+- **CRITICAL FIX**: `backend/.env` `DB_NAME` had regressed from `merchari_global` → `mercari_global` (typo), pointing at an empty database. Rolled back to `merchari_global` where the real 33 users / 10 categories / 1,182 listings live. **`DB_NAME=merchari_global` is intentional** (per `/app/memory/test_credentials.md` — the Atlas migration used that spelling). Future refactors that "fix" the spelling would wipe the app.
+- **Re-seeded** admin user `admin@mercari.local / admin123` because the Atlas DB didn't yet contain it (only the initial seed logic in server.py held the old branded email).
+- **Verified by testing agent (verdict: 100% backend, 11/11 tests)**: `/api/products?page=1&page_size=100` returns 165 items with SKUs (Amazon ASINs), bridge is idempotent (second call `created=0`), no TTL indexes on products, auth-guarded (401 unauthed / 403 non-admin), invalid id → 404, webhook still works, canonical 10 categories intact.
+
+
 - **Category icons** — top-nav category pills now display a custom colored lucide icon per slug: Women (pink Shirt), Men (slate Shirt), Kids (amber Baby), Electronics (blue Cpu), Home (emerald Home), Beauty (rose Palette), Sports (orange Dumbbell), Toys (purple Puzzle), Books (indigo BookOpen), Handmade (teal HandHeart). Icons scale on hover. Fallback for any future slug = Sparkles / neutral.
 - **Incremental Apify sync** — `import_from_apify` default changed to **append + dedup** mode:
   * `replace_existing` default **True → False** — never wipes existing content by default
