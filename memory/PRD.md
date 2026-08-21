@@ -25,7 +25,13 @@ Full-stack ecommerce marketplace **Merchari-global** — same color scheme (`#FF
 ---
 
 ## Implemented (with dates)
-### Feb 2026 — Apify listings → Permanent products bridge (+ DB_NAME typo rollback)
+### Feb 2026 — Apify: Focus on ALL Amazon categories + auto-mirror to permanent products
+- **`CATEGORY_URLS` expanded 28 → 50 Amazon department URLs** covering deep sub-categories across all 10 canonical slugs. Distribution: electronics 7, home 7, women 6, beauty 5, kids 6, men 5, sports 4, books 4, toys 3, handmade 3.
+- **`target_count` default bumped 20000 → 30000** — Apify actor pulls up to 30k items per run.
+- **Auto-mirror to permanent products** — after `import_from_apify` inserts into `db.listings`, it now also `UpdateOne(sku=apify_asin)` **upserts every row into `db.products`** via `bulk_write` batches of 500. Result: every future Apify sync automatically populates `/api/products` — no manual bridge step needed.
+- **Verified by testing agent (verdict: 100%, 10/10 tests)**: config sanity, syntax safety, existing endpoints healthy, auth still works.
+
+
 - **New endpoint** `POST /api/admin/products/import-from-listings` (admin-only, idempotent) promotes every Apify-sourced row in the legacy `listings` collection into the permanent `products` collection via upsert on `sku` (=apify_asin). Body accepts `{only_apify: bool, status_filter: str}`. Returns `{created, updated, skipped, total_products_in_catalog, active_products}`.
 - **Ran the bridge once**: 160 previously-Apify-imported listings promoted → catalog now shows **165 permanent products** (160 bridged + 5 from prior webhook tests) accessible via `GET /api/products` + `GET /api/products/:id`.
 - **CRITICAL FIX**: `backend/.env` `DB_NAME` had regressed from `merchari_global` → `mercari_global` (typo), pointing at an empty database. Rolled back to `merchari_global` where the real 33 users / 10 categories / 1,182 listings live. **`DB_NAME=merchari_global` is intentional** (per `/app/memory/test_credentials.md` — the Atlas migration used that spelling). Future refactors that "fix" the spelling would wipe the app.

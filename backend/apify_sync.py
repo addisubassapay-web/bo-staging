@@ -20,47 +20,72 @@ ACTOR_ID = "junglee/amazon-crawler"
 # Multiple `/s?i=<dept>` URLs per category (this format works reliably with the actor).
 # NOTE: `/s?k=<keyword>` (keyword search) also works but consumes MORE credits per item
 # because the actor visits more pages. Keep this list to department URLs.
+#
+# STORAGE: every ingested product lives permanently in MongoDB Atlas (`products`
+# collection). No TTL, no cleanup — see routers/products.py for the read APIs.
 CATEGORY_URLS = [
-    # Women
+    # ── Women ───────────────────────────────────────────────────
     ("women", "https://www.amazon.com/s?i=fashion-womens&s=exact-aware-popularity-rank"),
     ("women", "https://www.amazon.com/s?i=fashion-womens-shoes&s=exact-aware-popularity-rank"),
     ("women", "https://www.amazon.com/s?i=fashion-womens-handbags&s=exact-aware-popularity-rank"),
-    # Men
+    ("women", "https://www.amazon.com/s?i=fashion-womens-intimate&s=exact-aware-popularity-rank"),
+    ("women", "https://www.amazon.com/s?i=fashion-womens-jewelry&s=exact-aware-popularity-rank"),
+    ("women", "https://www.amazon.com/s?i=fashion-womens-watches&s=exact-aware-popularity-rank"),
+    # ── Men ─────────────────────────────────────────────────────
     ("men", "https://www.amazon.com/s?i=fashion-mens&s=exact-aware-popularity-rank"),
     ("men", "https://www.amazon.com/s?i=fashion-mens-shoes&s=exact-aware-popularity-rank"),
     ("men", "https://www.amazon.com/s?i=fashion-mens-watches&s=exact-aware-popularity-rank"),
-    # Kids
+    ("men", "https://www.amazon.com/s?i=fashion-mens-big-and-tall&s=exact-aware-popularity-rank"),
+    ("men", "https://www.amazon.com/s?i=luggage&s=exact-aware-popularity-rank"),
+    # ── Kids / Baby ─────────────────────────────────────────────
     ("kids", "https://www.amazon.com/s?i=fashion-baby&s=exact-aware-popularity-rank"),
     ("kids", "https://www.amazon.com/s?i=fashion-boys&s=exact-aware-popularity-rank"),
     ("kids", "https://www.amazon.com/s?i=fashion-girls&s=exact-aware-popularity-rank"),
-    # Electronics
+    ("kids", "https://www.amazon.com/s?i=baby-products&s=exact-aware-popularity-rank"),
+    ("kids", "https://www.amazon.com/s?i=fashion-baby-boys&s=exact-aware-popularity-rank"),
+    ("kids", "https://www.amazon.com/s?i=fashion-baby-girls&s=exact-aware-popularity-rank"),
+    # ── Electronics ─────────────────────────────────────────────
     ("electronics", "https://www.amazon.com/s?i=electronics&s=exact-aware-popularity-rank"),
     ("electronics", "https://www.amazon.com/s?i=computers&s=exact-aware-popularity-rank"),
     ("electronics", "https://www.amazon.com/s?i=mobile&s=exact-aware-popularity-rank"),
-    # Home
+    ("electronics", "https://www.amazon.com/s?i=videogames&s=exact-aware-popularity-rank"),
+    ("electronics", "https://www.amazon.com/s?i=musical-instruments&s=exact-aware-popularity-rank"),
+    ("electronics", "https://www.amazon.com/s?i=photo&s=exact-aware-popularity-rank"),
+    ("electronics", "https://www.amazon.com/s?i=wireless&s=exact-aware-popularity-rank"),
+    # ── Home ────────────────────────────────────────────────────
     ("home", "https://www.amazon.com/s?i=garden&s=exact-aware-popularity-rank"),
     ("home", "https://www.amazon.com/s?i=kitchen&s=exact-aware-popularity-rank"),
     ("home", "https://www.amazon.com/s?i=furniture&s=exact-aware-popularity-rank"),
-    # Beauty
+    ("home", "https://www.amazon.com/s?i=hi&s=exact-aware-popularity-rank"),  # tools & home improvement
+    ("home", "https://www.amazon.com/s?i=appliances&s=exact-aware-popularity-rank"),
+    ("home", "https://www.amazon.com/s?i=lawngarden&s=exact-aware-popularity-rank"),
+    ("home", "https://www.amazon.com/s?i=pets&s=exact-aware-popularity-rank"),
+    # ── Beauty ──────────────────────────────────────────────────
     ("beauty", "https://www.amazon.com/s?i=beauty&s=exact-aware-popularity-rank"),
     ("beauty", "https://www.amazon.com/s?i=luxury-beauty&s=exact-aware-popularity-rank"),
     ("beauty", "https://www.amazon.com/s?i=hpc&s=exact-aware-popularity-rank"),
-    # Sports
+    ("beauty", "https://www.amazon.com/s?i=premium-beauty&s=exact-aware-popularity-rank"),
+    ("beauty", "https://www.amazon.com/s?i=grocery&s=exact-aware-popularity-rank"),
+    # ── Sports ──────────────────────────────────────────────────
     ("sports", "https://www.amazon.com/s?i=sporting&s=exact-aware-popularity-rank"),
     ("sports", "https://www.amazon.com/s?i=outdoor&s=exact-aware-popularity-rank"),
-    # Toys
+    ("sports", "https://www.amazon.com/s?i=fitness&s=exact-aware-popularity-rank"),
+    ("sports", "https://www.amazon.com/s?i=automotive&s=exact-aware-popularity-rank"),
+    # ── Toys ────────────────────────────────────────────────────
     ("toys", "https://www.amazon.com/s?i=toys-and-games&s=exact-aware-popularity-rank"),
-    ("toys", "https://www.amazon.com/s?i=videogames&s=exact-aware-popularity-rank"),
-    # Books
+    ("toys", "https://www.amazon.com/s?i=arts-crafts&s=exact-aware-popularity-rank"),
+    ("toys", "https://www.amazon.com/s?i=collectibles&s=exact-aware-popularity-rank"),
+    # ── Books ───────────────────────────────────────────────────
     ("books", "https://www.amazon.com/s?i=stripbooks&s=exact-aware-popularity-rank"),
     ("books", "https://www.amazon.com/s?i=audible&s=exact-aware-popularity-rank"),
-    # Handmade
+    ("books", "https://www.amazon.com/s?i=digital-text&s=exact-aware-popularity-rank"),
+    ("books", "https://www.amazon.com/s?i=magazines&s=exact-aware-popularity-rank"),
+    # ── Handmade ────────────────────────────────────────────────
     ("handmade", "https://www.amazon.com/s?i=handmade&s=exact-aware-popularity-rank"),
-    # Other
-    ("other", "https://www.amazon.com/s?i=office-products&s=exact-aware-popularity-rank"),
-    ("other", "https://www.amazon.com/s?i=pet-supplies&s=exact-aware-popularity-rank"),
-    ("other", "https://www.amazon.com/s?i=automotive&s=exact-aware-popularity-rank"),
+    ("handmade", "https://www.amazon.com/s?i=arts-crafts&s=exact-aware-popularity-rank"),
+    ("handmade", "https://www.amazon.com/s?i=industrial&s=exact-aware-popularity-rank"),
 ]
+
 
 
 def _get_tokens() -> List[str]:
@@ -233,7 +258,7 @@ def _run_actor_sync(client: ApifyClient, urls: List[Dict], max_per_url: int) -> 
 
 async def import_from_apify(
     db,
-    target_count: int = 20000,
+    target_count: int = 30000,
     replace_existing: bool = False,
 ) -> Dict:
     """Scrape Amazon via Apify and import as listings.
@@ -378,6 +403,42 @@ async def import_from_apify(
             f["featured"] = True
         for i in range(0, len(to_insert), 1000):
             await db.listings.insert_many(to_insert[i : i + 1000])
+
+        # Mirror to the permanent `products` catalog (MongoDB Atlas) via upsert
+        # on sku (=apify_asin). This guarantees every Apify-scraped row shows
+        # on `/api/products` immediately — no separate bridge step needed.
+        product_ops = []
+        from pymongo import UpdateOne  # local import — avoids adding to top-level deps
+        mirror_ts = datetime.now(timezone.utc)
+        for l in to_insert:
+            asin = l.get("apify_asin")
+            if not asin:
+                continue
+            product_ops.append(UpdateOne(
+                {"sku": asin},
+                {
+                    "$setOnInsert": {
+                        "id": str(uuid.uuid4()),
+                        "created_at": mirror_ts,
+                        "sku": asin,
+                    },
+                    "$set": {
+                        "title": l.get("title") or "",
+                        "description": l.get("description") or "",
+                        "price": float(l.get("price") or 0.0),
+                        "currency": "USD",
+                        "images": list(l.get("images") or []),
+                        "category": l.get("category_name") or None,
+                        "source_url": l.get("apify_url") or None,
+                        "is_active": True,
+                        "updated_at": mirror_ts,
+                    },
+                },
+                upsert=True,
+            ))
+        if product_ops:
+            for i in range(0, len(product_ops), 500):
+                await db.products.bulk_write(product_ops[i : i + 500], ordered=False)
 
     completed_at = datetime.now(timezone.utc)
     await db.sync_state.update_one(

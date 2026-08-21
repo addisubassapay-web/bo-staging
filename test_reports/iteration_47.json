@@ -1,0 +1,35 @@
+{
+  "summary": "Iteration 47 — backend-only verification of Apify all-categories config expansion (10/10 pytest passed). Verified: (1) apify_sync module imports cleanly (no syntax errors from the walrus-operator fix), (2) CATEGORY_URLS length == 50, (3) every canonical slug {women, men, kids, electronics, home, beauty, sports, toys, books, handmade} has >=3 department URLs (min = toys=3, handmade=3; max = electronics=7, home=7), (4) import_from_apify default target_count == 30000, (5) POST /api/auth/login admin returns token, (6) GET /api/products?page=1&page_size=5 → 200 with total=190 (>=165), (7) GET /api/categories → exactly the 10 canonical slugs, (8) GET /api/listings?limit=10 returns items, (9) GET /api/admin/sync/status (admin auth) → 200 with sync_running=false, (10) POST /api/admin/products/import-from-listings still works (idempotent bridge intact). No actor call was made (out of Apify credits, per request). Mirror-to-products code path is present and syntactically valid but is only exercised on the next paid Apify sync.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration47_apify_all_categories.py",
+    "/app/test_reports/pytest/iteration_47_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "apify_sync.CATEGORY_URLS distribution: electronics=7, home=7, women=6, kids=6, men=5, beauty=5, sports=4, books=4, toys=3, handmade=3 → sum=50, all slugs >=3.",
+    "The auto-mirror block (apify_sync.py lines 407-441) uses a local `from pymongo import UpdateOne` — good pattern to avoid top-level dep, but consider hoisting the import once inside the module if the mirror runs on every sync (micro-perf).",
+    "Mirror path uses bulk_write in batches of 500 with ordered=False and $setOnInsert for id/created_at/sku — correct idempotency semantics for the sku=apify_asin dedup key.",
+    "Minor: handmade slug reuses `arts-crafts` Amazon URL (also listed under toys). Not a bug but items from that URL will be classified purely by keyword classifier, not by seed slug — acceptable given secondary_categories logic.",
+    "Minor: beauty pool contains `/s?i=grocery` which is semantically off (grocery ≠ beauty). Classifier will fix most, but consider replacing with a real beauty sub-department.",
+    "DB_NAME='merchari_global' preserved per test_credentials.md — do NOT rename to mercari_global."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration47_apify_all_categories.py (new)"
+  ],
+  "success_rate": {"backend": "100% (10/10)", "frontend": "not tested (backend-only request)"},
+  "test_credentials": "admin@mercari.local / admin123 (admin login verified working)",
+  "seed_data_creation": "None. import-from-listings bridge call is idempotent — no duplicate rows created.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Iteration 47 only expanded Apify config + added products-mirror path; the actor was NOT invoked (out of credits). When the next paid Apify sync fires, verify db.products bulk_write upsert path in apify_sync.py lines 407-441 by: (a) running the sync, (b) checking that len(db.listings) grows AND len(db.products) grows by the same count of unique ASINs, (c) confirming no duplicate sku=apify_asin rows in products. Do NOT touch backend/.env DB_NAME.",
+  "rca of the issue": "N/A — no bugs found. All config assertions and endpoint smoke tests pass."
+}
