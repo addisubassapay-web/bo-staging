@@ -481,6 +481,17 @@ async def import_from_apify(
         }},
     )
 
+    # Auto R2 Drain: kick off a background rehost of any newly-imported
+    # products so their images live on our own CDN. Runs detached so the
+    # sync endpoint returns immediately; the task drains until empty.
+    try:
+        from services.r2_storage import r2_enabled
+        if r2_enabled():
+            asyncio.create_task(_drain_r2_rehost(db))
+            logger.info("[apify-sync] R2 drain task scheduled")
+    except Exception as e:
+        logger.warning(f"[apify-sync] R2 drain scheduling failed: {e}")
+
     return {
         "ok": True,
         "imported": len(to_insert),
@@ -488,6 +499,31 @@ async def import_from_apify(
         "per_category": per_cat,
         "dataset_id": dataset_id,
     }
+
+
+async def _drain_r2_rehost(db, max_iterations: int = 50) -> None:
+    """Detached task: keep calling the batch rehost until nothing remains
+    (or a safety cap of `max_iterations` cycles). Silently swallows errors
+    so a rehost hiccup never blocks new Apify imports."""
+    from services.product_r2_rehost import rehost_product_batch
+    for i in range(max_iterations):
+        try:
+            result = await rehost_product_batch(db, limit=25, only_active=True)
+            remaining = await db.products.count_documents({
+                "is_active": True,
+                "r2_rehosted_at": {"$exists": False},
+            })
+            logger.info(
+                f"[r2-drain] iter {i + 1}: processed={result.get('processed', 0)} "
+                f"imgs={result.get('rehosted_images', 0)} remaining={remaining}"
+            )
+            if remaining == 0:
+                break
+        except Exception as e:
+            logger.warning(f"[r2-drain] iter {i + 1} failed: {e}")
+            await asyncio.sleep(5)
+            continue
+        await asyncio.sleep(1)
 
 
 async def simulate_live_update(db) -> Dict:

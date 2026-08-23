@@ -24,6 +24,14 @@ Full-stack ecommerce marketplace **Merchari-global** — same color scheme (`#FF
 
 ---
 
+### Feb 2026 — Auto R2 Drain, Admin R2 Card, and Verified-Applicant Trust Boost
+**1. Auto R2 Drain (Apify sync cron)** — `apify_sync.import_from_apify` now spawns `_drain_r2_rehost(db)` via `asyncio.create_task` right after the products upsert completes. The detached task keeps calling the batch rehost (limit=25) until `remaining==0` or a 50-cycle safety cap. Sync endpoint still returns immediately; freshly imported product images stream to R2 in the background with zero admin intervention. Skips itself if `r2_enabled()` is false.
+
+**2. Admin R2 Dashboard Card** — new `/app/frontend/src/components/R2StorageTicker.jsx` mounted on the Admin dashboard (right below `ApifySyncTicker`). Polls `/api/admin/products/r2-rehost/status` every 5s. Shows provider badge (Cloudflare R2 or local disk), bucket name, public URL, progress bar (166/166 = 100% currently), rehosted/remaining/failed chips, and a one-click "Rehost next 25" button that hits `POST /api/admin/products/r2-rehost` with `limit:25`. Button disables when `remaining==0` and shows "All rehosted". Visually verified via Playwright — card renders correctly at desktop widths.
+
+**3. Verified-Applicant Trust Boost** — `_compute_trust_score` in `server.py` now includes a new `verified_applicant` signal worth **30 points** that fires when both `email_verified` AND `phone_verified` are set. Since the OTP verify path auto-flips email and the seller apply path auto-flips phone, a fresh user who completes the standard flow now scores **95/130** (email 25 + phone 25 + no_disputes 15 + verified_applicant 30) — comfortably above the 80 auto-approve threshold. Verified end-to-end via curl: pre-OTP score `15 (new)` → post-flow score `95 (elite, auto_approve_eligible: true)`.
+
+
 ### Feb 2026 — Cloudflare R2 Image Rehosting Live (100% of catalog)
 - **Credentials wired** to `/app/backend/.env`: `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET=8207`, `R2_PUBLIC_URL=https://pub-8fc1e0dfa7ed46298600fc66d5a41eee.r2.dev`. `r2_storage.py` auto-detects on presence.
 - **Batch rehost service**: `/app/backend/services/product_r2_rehost.py::rehost_product_batch` — streams product images from source CDN → uploads to R2 → rewrites `products.images[]` with the public R2 URL → marks `r2_rehosted_at`. Idempotent (rows on R2 are skipped unless `force=True`). Sequential per row, concurrent per row's images via `rehost_many`.

@@ -3997,6 +3997,15 @@ async def _compute_trust_score(user_id: str) -> dict:
         10 if profile_complete else 0, 10,
         "Fill your bio and add an avatar")
 
+    # Auto-approve boost: reward applicants who completed the full email-OTP
+    # flow AND supplied a phone (which is auto-verified by the seller_apply
+    # endpoint). Pushes a fresh, verified applicant from 40 → 70 so pairing
+    # this with `no_open_disputes` (15) crosses the 80 auto-approve line.
+    verified_applicant = bool(user.get("email_verified")) and bool(user.get("phone_verified"))
+    add("verified_applicant", "Verified applicant (email + phone)",
+        30 if verified_applicant else 0, 30,
+        "Verify your email via OTP and supply a phone number on the seller application")
+
     total = sum(s["earned"] for s in signals)
     max_total = sum(s["weight"] for s in signals)
     tier = "elite" if total >= 80 else "trusted" if total >= 60 else "new"
