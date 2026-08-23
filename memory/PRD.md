@@ -24,6 +24,13 @@ Full-stack ecommerce marketplace **Merchari-global** — same color scheme (`#FF
 
 ---
 
+### Feb 2026 — Page-not-scrollable Bug Fixed (CSS overflow-x clip)
+- **Bug**: pages appeared frozen on mobile and even desktop wheel — hardware wheel/touch gestures did not scroll (JS `scrollTo` still worked). Root cause: `overflow-x: hidden` set on `html`, `body`, and `#root` simultaneously created three nested scroll containers, and iOS Safari 16+ (plus some Playwright/Chromium wheel dispatch paths) refuses to bubble vertical scroll through nested `overflow: hidden` chains.
+- **Fix in `/app/frontend/src/index.css`**: replaced `overflow-x: hidden` with `overflow-x: clip` on all three selectors. `clip` visually contains overflow the same way but does NOT establish a scroll container, so vertical touch/wheel gestures always bubble up to the viewport. Also removed the now-redundant `overscroll-behavior-y: contain` from `body` (it was contributing to the trap).
+- **Verified via Playwright CDP mobile emulation (375×667)**: `mouse.wheel(0, 600) → scrollY: 499` (was 0), `mouse.wheel(0, 800)` on desktop → `scrollY: 687` (was 0). No horizontal overflow regression — `documentElement.scrollWidth === clientWidth === 375`.
+- Browser support: `overflow: clip` is supported in Chrome 90+, Firefox 81+, Safari 16+ (Sep 2022+) — safe as of 2026.
+
+
 ### Feb 2026 — Seller Application: Email-Only Verification Gate
 - **Product decision**: Only email verification is a hard gate for seller applications. All other identity signals (phone, address, ID doc) are trusted by default so onboarding is frictionless; the admin review queue is the ultimate check.
 - **`services/email_otp.py::verify_otp`** — after a successful OTP verify, the user is now auto-marked `email_verified=True` (idempotent `$ne: True` guard) since reading a code from the account inbox proves email ownership.
