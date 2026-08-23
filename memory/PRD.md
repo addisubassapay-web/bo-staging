@@ -24,6 +24,16 @@ Full-stack ecommerce marketplace **Merchari-global** — same color scheme (`#FF
 
 ---
 
+### Feb 2026 — Cloudflare R2 Image Rehosting Live (100% of catalog)
+- **Credentials wired** to `/app/backend/.env`: `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET=8207`, `R2_PUBLIC_URL=https://pub-8fc1e0dfa7ed46298600fc66d5a41eee.r2.dev`. `r2_storage.py` auto-detects on presence.
+- **Batch rehost service**: `/app/backend/services/product_r2_rehost.py::rehost_product_batch` — streams product images from source CDN → uploads to R2 → rewrites `products.images[]` with the public R2 URL → marks `r2_rehosted_at`. Idempotent (rows on R2 are skipped unless `force=True`). Sequential per row, concurrent per row's images via `rehost_many`.
+- **Admin endpoints (products router)**:
+  - `POST /api/admin/products/r2-rehost` — body `{limit≤100, force?, only_active?}`; returns `{processed, rehosted_images, skipped, errors, remaining}`
+  - `GET  /api/admin/products/r2-rehost/status` — returns storage backend info + `{total_active, rehosted, failed, remaining, pct_complete}`
+- **Backfill result**: 166 permanent products rehosted, ~450 images streamed to R2, 0 failures, `pct_complete: 100.0`. Verified with `HEAD` request → `HTTP 200 image/jpeg` served publicly from the R2 endpoint with `Cache-Control: public, max-age=31536000, immutable`.
+- **New Apify imports**: the webhook stays fast (raw URLs on write); the admin rehost job is designed to drain new rows on a schedule/manual trigger. If you want auto-drain, we can wire it into the existing Apify sync cron.
+
+
 ### Feb 2026 — Page-not-scrollable Bug Fixed (CSS overflow-x clip)
 - **Bug**: pages appeared frozen on mobile and even desktop wheel — hardware wheel/touch gestures did not scroll (JS `scrollTo` still worked). Root cause: `overflow-x: hidden` set on `html`, `body`, and `#root` simultaneously created three nested scroll containers, and iOS Safari 16+ (plus some Playwright/Chromium wheel dispatch paths) refuses to bubble vertical scroll through nested `overflow: hidden` chains.
 - **Fix in `/app/frontend/src/index.css`**: replaced `overflow-x: hidden` with `overflow-x: clip` on all three selectors. `clip` visually contains overflow the same way but does NOT establish a scroll container, so vertical touch/wheel gestures always bubble up to the viewport. Also removed the now-redundant `overscroll-behavior-y: contain` from `body` (it was contributing to the trap).

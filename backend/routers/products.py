@@ -601,3 +601,57 @@ async def admin_products_ai_polish_status(_admin: dict = Depends(require_admin))
         "pct_complete": round(100.0 * polished / total, 1) if total else 100.0,
     }
 
+
+
+@router.post("/admin/products/r2-rehost")
+async def admin_products_r2_rehost(
+    payload: dict = Body(default={}),
+    _admin: dict = Depends(require_admin),
+):
+    """Batch-rehost external product images (Amazon, etc.) into Cloudflare R2.
+
+    Body: {
+      "limit": 25,        // products per call (default 25, max 100)
+      "force": false,     // if true, re-rehost even if r2_rehosted_at set
+      "only_active": true
+    }
+
+    Streams each image once → uploads to our R2 bucket → rewrites
+    `products.images[]` with the public R2 URL. Idempotent: rows already
+    on R2 are marked and skipped.
+    """
+    from services.product_r2_rehost import rehost_product_batch
+    db = get_db()
+    limit = max(1, min(int(payload.get("limit", 25)), 100))
+    force = bool(payload.get("force", False))
+    only_active = bool(payload.get("only_active", True))
+    result = await rehost_product_batch(
+        db, limit=limit, force=force, only_active=only_active,
+    )
+    remaining = await db.products.count_documents({
+        **({"is_active": True} if only_active else {}),
+        "r2_rehosted_at": {"$exists": False},
+    })
+    return {"ok": True, **result, "remaining": remaining}
+
+
+@router.get("/admin/products/r2-rehost/status")
+async def admin_products_r2_rehost_status(_admin: dict = Depends(require_admin)):
+    """Progress meter for the rehost job — for the admin dashboard."""
+    from services.r2_storage import storage_status
+    db = get_db()
+    total = await db.products.count_documents({"is_active": True})
+    rehosted = await db.products.count_documents({
+        "is_active": True, "r2_rehosted_at": {"$exists": True},
+    })
+    failed = await db.products.count_documents({
+        "is_active": True, "r2_rehost_failed_at": {"$exists": True},
+    })
+    return {
+        "storage": storage_status(),
+        "total_active": total,
+        "rehosted": rehosted,
+        "failed": failed,
+        "remaining": max(0, total - rehosted),
+        "pct_complete": round(100.0 * rehosted / total, 1) if total else 100.0,
+    }
