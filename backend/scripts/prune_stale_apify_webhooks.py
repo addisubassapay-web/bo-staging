@@ -28,16 +28,42 @@ load_dotenv("/app/backend/.env")
 
 APIFY_API = "https://api.apify.com/v2"
 
-# Rotated secrets we should scrub out of any webhook URL.
-STALE_MARKERS = [
-    "apify_api_HIbL7vW2cRnimJ7VezGHO9RfXz7p0W315LD3",   # old primary token
-    "mg-webhook-4f9c2b8e13a04d76b8b7c9e5f2a1d8e6",       # old webhook secret
+# Regex patterns that identify malformed webhook URLs. Any webhook whose URL
+# path contains a raw Apify token, webhook secret, or the wrong `/apify-import`
+# path (should be `/api/webhooks/apify-import`) is considered stale and needs
+# to be rebuilt with the secret in the X-Webhook-Secret header instead.
+MALFORMED_PATH_PATTERNS = [
+    re.compile(r"/apify_api_[A-Za-z0-9]{20,}"),   # Apify token in path (any token — old or new)
+    re.compile(r"/mg-webhook-[A-Fa-f0-9]{16,}"),  # webhook secret in path (any secret)
+    re.compile(r"/apify-import(?:$|[/?])"),       # wrong route — should be /api/webhooks/apify-import
 ]
+
+# Rotated credentials we explicitly want to scrub, in case Apify ever
+# accepts a webhook we somehow missed above.
+LEGACY_MARKERS = [
+    "apify_api_HIbL7vW2cRnimJ7VezGHO9RfXz7p0W315LD3",   # OLD primary token
+    "mg-webhook-4f9c2b8e13a04d76b8b7c9e5f2a1d8e6",       # OLD webhook secret
+]
+
+# The one canonical URL we want to KEEP. Any webhook whose URL exactly
+# matches this and passes the secret via headers is a keeper.
+CANONICAL_URL = "https://apify-catalog.emergent.host/api/webhooks/apify-import"
 
 
 def is_stale(webhook: dict) -> bool:
-    url = (webhook.get("requestUrl") or "").lower()
-    return any(marker.lower() in url for marker in STALE_MARKERS)
+    url = (webhook.get("requestUrl") or "")
+    lower = url.lower()
+    # 1) Exact-match canonical URL → always keep
+    if url.rstrip("/") == CANONICAL_URL.rstrip("/"):
+        return False
+    # 2) Any legacy (rotated) credential in the URL → stale
+    if any(marker.lower() in lower for marker in LEGACY_MARKERS):
+        return True
+    # 3) Any malformed path pattern (secret-in-path, wrong route) → stale
+    if any(pat.search(url) for pat in MALFORMED_PATH_PATTERNS):
+        return True
+    # 4) Otherwise keep it — could be an unrelated webhook the user set up
+    return False
 
 
 def fetch_all(token: str) -> list[dict]:
@@ -79,10 +105,10 @@ def main() -> int:
     for w in webhooks:
         (stale if is_stale(w) else keep).append(w)
 
-    print(f"Stale (matches old creds): {len(stale)}")
+    print(f"Stale (rotated creds, secret-in-path, or wrong route): {len(stale)}")
     for w in stale:
         print(f"  • id={w.get('id')}  url={w.get('requestUrl')}")
-    print(f"\nKeeping: {len(keep)}")
+    print(f"\nKeeping (canonical URL only): {len(keep)}")
     for w in keep:
         print(f"  • id={w.get('id')}  url={w.get('requestUrl')}")
     print()
