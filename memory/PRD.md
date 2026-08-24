@@ -24,6 +24,18 @@ Full-stack ecommerce marketplace **Merchari-global** — same color scheme (`#FF
 
 ---
 
+### Feb 2026 — Reactivation Onboarding Checklist
+**Product intent**: keep re-suspensions from happening by forcing a 60-second read of the health-recovery guidance the moment a seller is unlocked.
+
+- **Backend arming**: `POST /admin/users/{id}/unlock-listings` now sets `reactivated_at=now` on the user and `$unset`s `reactivation_checklist_acked_at`, so any prior ack is invalidated on every fresh unlock (repeat offenders re-read the guidance).
+- **Endpoints**:
+  - `GET /api/seller/reactivation-checklist` returns `{required, reactivated_at, acked_at, items[]}`. `required=true` when `reactivated_at` exists and (unacked OR `acked_at < reactivated_at`). Auto-clears after `REACTIVATION_CHECKLIST_TTL_DAYS = 7` so a stale row doesn't nag forever.
+  - `POST /api/seller/reactivation-checklist/ack` sets `reactivation_checklist_acked_at=now` (idempotent).
+- **Checklist items** (5): accept new orders in 6h, never let auto-cancel, keep wallet topped up, reply to buyers in 24h, watch dashboard daily for 7 days.
+- **Frontend**: new `ReactivationChecklist.jsx` mounted at the top of `Profile.jsx`. Renders a Radix Dialog that **cannot be dismissed** — Esc, backdrop click, and outside-interaction are all blocked. Each item has a checkbox; the confirm button reads "Check every item to continue" (disabled) until all boxes are ticked, then flips to "I understand — get me back to selling" (green). Live progress counter shows `X / Y read`. On confirm, POSTs the ack and closes.
+- **Verified end-to-end**: unlocked a seller → checklist required=true → acknowledged → required=false → re-unlocked → required=true again. Playwright confirms the modal blocks the profile, checkbox interactions gate the confirm button correctly.
+
+
 ### Feb 2026 — Suspension Guardrails + Health Badge
 **1. Suspension Guardrails** — new `store_health_sweep_loop` runs every 24h (env `HEALTH_SWEEP_INTERVAL_SEC`), recomputes each recent-seller's 30-day store health via the shared `_compute_store_health` helper, and:
   - `tier == 'poor'` → `$inc health_poor_streak_days`; on first poor day sets `health_poor_since=now`

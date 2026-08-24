@@ -1744,15 +1744,24 @@ async def admin_unlock_listings(user_id: str, _admin: dict = Depends(require_adm
         {"$set": {"status": "active"},
          "$unset": {"suspended_at": "", "suspended_reason": ""}},
     )
+    now = datetime.now(timezone.utc)
     await db.users.update_one(
         {"id": user_id},
-        {"$set": {"health_poor_streak_days": 0, "health_poor_since": None},
-         "$unset": {"listings_suspended_at": "", "listings_suspend_reason": ""}},
+        {"$set": {
+            "health_poor_streak_days": 0,
+            "health_poor_since": None,
+            "reactivated_at": now,           # arms the mandatory reactivation checklist
+        },
+         "$unset": {
+            "listings_suspended_at": "",
+            "listings_suspend_reason": "",
+            "reactivation_checklist_acked_at": "",  # force re-ack on every unlock
+         }},
     )
     await notify(
         user_id, "admin",
-        "Your listings are back online",
-        "An admin restored your listings — keep your acceptance rate high to avoid future pauses.",
+        "Your listings are back online — please review the reactivation checklist",
+        "An admin restored your listings. Complete the 60-second checklist on your dashboard so you don't get auto-paused again.",
         "/profile?tab=sales",
     )
     return {
@@ -1760,6 +1769,92 @@ async def admin_unlock_listings(user_id: str, _admin: dict = Depends(require_adm
         "user_id": user_id,
         "listings_restored": result.modified_count,
     }
+
+
+# Days the checklist stays "armed" after reactivation — auto-clears itself.
+REACTIVATION_CHECKLIST_TTL_DAYS = 7
+
+REACTIVATION_CHECKLIST_ITEMS = [
+    {
+        "id": "accept_fast",
+        "title": "Accept new orders within 6 hours",
+        "body": "Speed is the single biggest driver of the health score — the faster you pick, the higher your on-time rate climbs.",
+    },
+    {
+        "id": "no_auto_cancel",
+        "title": "Never let an order auto-cancel",
+        "body": "A single auto-cancel wipes out days of good behaviour. Turn on push notifications and watch your inbox for reminders.",
+    },
+    {
+        "id": "keep_wallet_topped",
+        "title": "Keep your wallet topped up",
+        "body": "Deposit before you list high-value items so you can Pick & Deliver immediately without waiting on a bank transfer.",
+    },
+    {
+        "id": "reply_buyers",
+        "title": "Reply to buyer messages within 24 hours",
+        "body": "Fast replies reduce dispute rates and keep your acceptance rate looking strong.",
+    },
+    {
+        "id": "watch_dashboard",
+        "title": "Check your store health score daily for the next week",
+        "body": "Your dashboard now shows a live tier — if it drops to 'poor' again, you'll be auto-paused after 7 straight days.",
+    },
+]
+
+
+@api_router.get("/seller/reactivation-checklist")
+async def get_reactivation_checklist(user: dict = Depends(get_current_user)):
+    """Returns whether the seller should see the mandatory reactivation
+    checklist (post-unlock onboarding) plus the item list. Auto-expires
+    after REACTIVATION_CHECKLIST_TTL_DAYS."""
+    row = await db.users.find_one(
+        {"id": user["id"]},
+        {"_id": 0, "reactivated_at": 1, "reactivation_checklist_acked_at": 1},
+    ) or {}
+    reactivated_at = row.get("reactivated_at")
+    acked_at = row.get("reactivation_checklist_acked_at")
+
+    def _dt(v):
+        if isinstance(v, str):
+            try:
+                return datetime.fromisoformat(v.replace("Z", "+00:00"))
+            except Exception:
+                return None
+        return v
+
+    reactivated_at = _dt(reactivated_at)
+    acked_at = _dt(acked_at)
+    now = datetime.now(timezone.utc)
+
+    required = False
+    if reactivated_at:
+        if reactivated_at.tzinfo is None:
+            reactivated_at = reactivated_at.replace(tzinfo=timezone.utc)
+        # Auto-clear after TTL so a stale row doesn't nag forever.
+        if (now - reactivated_at).days >= REACTIVATION_CHECKLIST_TTL_DAYS:
+            required = False
+        elif not acked_at or (acked_at.replace(tzinfo=timezone.utc) if acked_at.tzinfo is None else acked_at) < reactivated_at:
+            required = True
+
+    return {
+        "required": required,
+        "reactivated_at": reactivated_at.isoformat() if reactivated_at else None,
+        "acked_at": acked_at.isoformat() if acked_at else None,
+        "items": REACTIVATION_CHECKLIST_ITEMS,
+    }
+
+
+@api_router.post("/seller/reactivation-checklist/ack")
+async def ack_reactivation_checklist(user: dict = Depends(get_current_user)):
+    """Seller acknowledges the reactivation checklist — dismisses the
+    modal until the next admin unlock. Idempotent."""
+    now = datetime.now(timezone.utc)
+    await db.users.update_one(
+        {"id": user["id"]},
+        {"$set": {"reactivation_checklist_acked_at": now}},
+    )
+    return {"ok": True, "acked_at": now.isoformat()}
 
 
 @api_router.get("/seller/orders/pending-pickup")

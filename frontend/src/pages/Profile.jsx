@@ -15,6 +15,7 @@ import EmailPreferences from "@/components/EmailPreferences";
 import AutoConfirmCountdown from "@/components/AutoConfirmCountdown";
 import PickupOrderDialog from "@/components/PickupOrderDialog";
 import StoreHealthCard from "@/components/StoreHealthCard";
+import ReactivationChecklist from "@/components/ReactivationChecklist";
 
 const BADGE_STEPS = [
   { key: "new", label: "New", threshold: { sales: 0, rating: 0 } },
@@ -148,6 +149,7 @@ const Profile = () => {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8" data-testid="profile-page">
+      <ReactivationChecklist />
       {/* Modern gradient hero */}
       <div className="relative rounded-3xl overflow-hidden mb-8 shadow-[0_20px_50px_-25px_rgba(255,33,31,0.35)]" data-testid="profile-hero">
         {/* Decorative gradient background */}
