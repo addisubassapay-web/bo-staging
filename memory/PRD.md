@@ -24,6 +24,22 @@ Full-stack ecommerce marketplace **Mercari-Global** — same color scheme (`#FF2
 
 ---
 
+### Feb 24 2026 — server.py Modular Split (Phase F)
+
+**Tech debt (P1)**:
+- Extracted ~600 lines of routes + models from `backend/server.py` (8348 → 7753 lines).
+- **New model modules** in `backend/models/`:
+  - `reviews.py`, `messages.py`, `notifications.py`, `affiliate.py`, `disputes.py`
+- **New router modules** in `backend/routers/`, each with its own testable surface:
+  - `reviews.py` — 4 routes (`/reviews`, `/reviews/seller/*`, `/reviews/listing/*`, `/reviews/order/*`)
+  - `messaging.py` — 5 routes (both legacy `/messages/*` + UI-facing `/chat/*`)
+  - `notifications.py` — 3 routes (`/notifications`, `/notifications/read-all`, `/notifications/{nid}/read`)
+  - `affiliate.py` — 5 routes (`/affiliate/links|track|stats`, `/referrals/me`)
+  - `disputes.py` — 7 routes (buyer + admin dispute flow + dispute chat thread)
+- server.py now re-imports these models via `from models.X import ...` so the ~7000 remaining lines that still reference `Review`, `Notification`, `Dispute`, etc. keep working unchanged.
+- All 22 extracted OpenAPI paths verified present; end-to-end curl tests pass; 56 pytest cases in wallet/timeline/admin-payment-review/deposits-bulk/url-safety suites still green.
+- Remaining split candidates for a future session: orders + pickup (~1400 lines), wallet + deposits (~2000 lines), seller store-health + reactivation (~600 lines), admin catalog + rebalance (~500 lines).
+
 ### Feb 2026 — SSRF Hardening + Rebrand Polish
 
 **Security (P0)**:
@@ -37,6 +53,7 @@ Full-stack ecommerce marketplace **Mercari-Global** — same color scheme (`#FF2
 - 27 new pytest cases in `tests/test_url_safety.py` cover all block-cases and public-URL green paths.
 - Verified end-to-end via curl: localhost / IMDS / private IP / credentialed URLs all return `HTTP 400` with a reason.
 - Note: `routers/scraper.py` module itself is unmounted — the live app uses `routers/scraper_stub.py` (410 Gone) — but the hardening is now in place for whenever the direct scraper is reintroduced.
+
 
 **UI Rebrand Polish**:
 - Fixed residual "Merchari-global" strings in `public/index.html`, `manifest.json`, `service-worker.js` — browser title now shows "Mercari-Global — Smart Ecommerce Platform".

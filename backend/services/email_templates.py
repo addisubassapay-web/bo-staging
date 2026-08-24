@@ -6,7 +6,7 @@ import os
 BRAND_NAME = "Mercari-Global"
 BRAND_ACCENT = "#FF211F"
 FRONTEND = os.environ.get(
-    "FRONTEND_ORIGIN", "https://mercari-global-clone-1.preview.emergentagent.com"
+    "FRONTEND_ORIGIN", "https://seller-health-portal.preview.emergentagent.com"
 )
 
 

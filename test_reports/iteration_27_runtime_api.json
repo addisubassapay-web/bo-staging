@@ -1,5 +1,5 @@
 {
-  "backend_url": "https://mercari-clone-1.preview.emergentagent.com",
+  "backend_url": "https://seller-health-portal.preview.emergentagent.com",
   "frontend_url": "http://localhost:3000",
   "counts": {
     "active": 233,

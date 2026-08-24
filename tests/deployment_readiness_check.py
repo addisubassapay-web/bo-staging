@@ -15,7 +15,7 @@ import requests
 
 APP = Path("/app")
 BACKEND = APP / "backend"
-PREVIEW_BASE = "https://mercari-clone-1.preview.emergentagent.com"
+PREVIEW_BASE = "https://seller-health-portal.preview.emergentagent.com"
 
 STDLIB = set(sys.stdlib_module_names) | {"__future__"}
 LOCAL_TOP_LEVEL = {

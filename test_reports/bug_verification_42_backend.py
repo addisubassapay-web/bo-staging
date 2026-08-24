@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 import requests
 from requests.exceptions import ChunkedEncodingError, ConnectionError, Timeout
 
-BASE_URL = os.environ.get("TEST_BASE_URL", "https://apify-catalog.preview.emergentagent.com").rstrip("/")
+BASE_URL = os.environ.get("TEST_BASE_URL", "https://seller-health-portal.preview.emergentagent.com").rstrip("/")
 ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "admin@mercari.local")
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "admin123")
 OUT = Path("/app/test_reports/bug_verification_42_backend_results.json")

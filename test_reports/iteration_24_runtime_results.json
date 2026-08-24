@@ -2,30 +2,30 @@
   "passed": true,
   "failures": [],
   "evidence": {
-    "base_url": "https://mercari-clone-1.preview.emergentagent.com",
+    "base_url": "https://seller-health-portal.preview.emergentagent.com",
     "skill_lookup": "No relevant testing skill found.",
     "desktop_initial_summary": {
-      "url": "https://mercari-clone-1.preview.emergentagent.com/search?size=24",
+      "url": "https://seller-health-portal.preview.emergentagent.com/search?size=24",
       "summary": "Showing 1\u201324 of 2,708 items",
       "first_index": 1
     },
     "after_click_page_3": {
-      "url": "https://mercari-clone-1.preview.emergentagent.com/search?size=24&page=3",
+      "url": "https://seller-health-portal.preview.emergentagent.com/search?size=24&page=3",
       "summary": "Showing 49\u201372 of 2,708 items",
       "first_index": 49
     },
     "after_next_from_page_3": {
-      "url": "https://mercari-clone-1.preview.emergentagent.com/search?size=24&page=4",
+      "url": "https://seller-health-portal.preview.emergentagent.com/search?size=24&page=4",
       "summary": "Showing 73\u201396 of 2,708 items",
       "first_index": 73
     },
     "after_jump_to_page_2": {
-      "url": "https://mercari-clone-1.preview.emergentagent.com/search?size=24&page=2",
+      "url": "https://seller-health-portal.preview.emergentagent.com/search?size=24&page=2",
       "summary": "Showing 25\u201348 of 2,708 items",
       "first_index": 25
     },
     "after_filter_reset": {
-      "url": "https://mercari-clone-1.preview.emergentagent.com/search?size=24&page=1&category=82a68761-a263-4f63-837f-5dd1362c2cd9",
+      "url": "https://seller-health-portal.preview.emergentagent.com/search?size=24&page=1&category=seller-health-portal",
       "summary": "Showing 1\u201324 of 615 items",
       "first_index": 1
     },

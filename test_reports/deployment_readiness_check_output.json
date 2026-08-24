@@ -16,7 +16,7 @@
         "status_code": 200
       },
       {
-        "body_preview": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><sitemapindex xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\"><sitemap><loc>https://mercari-clone-1.preview.emergentagent.com/api/sitemap-core.xml</loc><lastmod>2026-08-19</lastmod></sitemap><sitemap><loc>https://mercari-clone-1.preview.emergentagent.com/api",
+        "body_preview": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><sitemapindex xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\"><sitemap><loc>https://seller-health-portal.preview.emergentagent.com/api/sitemap-core.xml</loc><lastmod>2026-08-19</lastmod></sitemap><sitemap><loc>https://seller-health-portal.preview.emergentagent.com/api",
         "content_type": "application/xml",
         "kind_ok": true,
         "name": "sitemap",
@@ -24,7 +24,7 @@
         "status_code": 200
       },
       {
-        "body_preview": "User-agent: *\nDisallow: /admin\nDisallow: /api/\nAllow: /api/sitemap_index.xml\nAllow: /api/sitemap.xml\nAllow: /api/sitemap-\nSitemap: https://mercari-clone-1.preview.emergentagent.com/api/sitemap_index.xml\n",
+        "body_preview": "User-agent: *\nDisallow: /admin\nDisallow: /api/\nAllow: /api/sitemap_index.xml\nAllow: /api/sitemap.xml\nAllow: /api/sitemap-\nSitemap: https://seller-health-portal.preview.emergentagent.com/api/sitemap_index.xml\n",
         "content_type": "text/plain; charset=utf-8",
         "kind_ok": true,
         "name": "robots",

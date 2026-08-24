@@ -13,7 +13,7 @@ import asyncio
 from playwright.async_api import async_playwright, expect
 
 
-BASE_URL = "https://mercari-clone-1.preview.emergentagent.com"
+BASE_URL = "https://seller-health-portal.preview.emergentagent.com"
 ROUTES = ["/search", "/", "/cart", "/marketplace/stores"]
 VIEWPORTS = [(390, 844), (375, 812), (320, 568)]
 

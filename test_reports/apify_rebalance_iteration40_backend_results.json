@@ -5,7 +5,7 @@
     "email": "admin@mercari.local",
     "role": "admin"
   },
-  "base": "https://apify-catalog.preview.emergentagent.com/api",
+  "base": "https://seller-health-portal.preview.emergentagent.com/api",
   "categories": [
     {
       "id": "82a68761-a263-4f63-837f-5dd1362c2cd9",

@@ -13,7 +13,7 @@ from typing import Any, Dict, List
 import requests
 
 
-BASE_URL = os.environ.get("BASE_URL", "https://apify-catalog.preview.emergentagent.com").rstrip("/")
+BASE_URL = os.environ.get("BASE_URL", "https://seller-health-portal.preview.emergentagent.com").rstrip("/")
 ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "admin@mercari.local")
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "admin123")
 OUT_PATH = os.environ.get("OUT_PATH", "/app/test_reports/bug_verification_43_backend_results.json")

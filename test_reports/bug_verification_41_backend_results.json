@@ -1,5 +1,5 @@
 {
-  "api_base": "https://apify-catalog.preview.emergentagent.com/api",
+  "api_base": "https://seller-health-portal.preview.emergentagent.com/api",
   "results": [
     {
       "name": "scraper_GET_/scraper/anything",
@@ -64,17 +64,17 @@
     {
       "name": "category_filter_women",
       "ok": true,
-      "detail": "status=200, count=105, category_id=82a68761-a263-4f63-837f-5dd1362c2cd9"
+      "detail": "status=200, count=105, category_id=seller-health-portal"
     },
     {
       "name": "category_filter_men",
       "ok": true,
-      "detail": "status=200, count=158, category_id=f34099af-f793-45b6-836f-ae2153539e30"
+      "detail": "status=200, count=158, category_id=seller-health-portal"
     },
     {
       "name": "category_filter_Jewelry",
       "ok": true,
-      "detail": "status=200, count=20, category_id=692caf9f-11c7-4a89-84fd-8d1663f0ec2b"
+      "detail": "status=200, count=20, category_id=seller-health-portal"
     },
     {
       "name": "category_filter_three_categories_found",
@@ -99,7 +99,7 @@
     {
       "name": "legacy_source_listing_not_searchable",
       "ok": false,
-      "detail": "legacy_id=e6a4380d-c7a4-4123-8101-dcc74cf983b4, title='Soumission', api_search_count=1, found_in_api=True"
+      "detail": "legacy_id=seller-health-portal, title='Soumission', api_search_count=1, found_in_api=True"
     }
   ],
   "passed": 16,

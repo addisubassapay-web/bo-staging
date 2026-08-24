@@ -17,7 +17,7 @@ from collections import Counter, defaultdict
 import requests
 
 
-BASE = os.environ.get("APIFY_TEST_BASE", "https://apify-catalog.preview.emergentagent.com/api").rstrip("/")
+BASE = os.environ.get("APIFY_TEST_BASE", "https://seller-health-portal.preview.emergentagent.com/api").rstrip("/")
 OUT = "/app/test_reports/apify_rebalance_iteration40_backend_results.json"
 
 

@@ -42,6 +42,11 @@ from routers.products import router as products_router
 from routers.apify_runs import router as apify_runs_router
 from routers.support import router as support_router
 from routers.otp import router as otp_router
+from routers.reviews import router as reviews_router
+from routers.messaging import router as messaging_router
+from routers.notifications import router as notifications_router
+from routers.affiliate import router as affiliate_router
+from routers.disputes import router as disputes_router
 
 
 ROOT_DIR = Path(__file__).parent
@@ -381,21 +386,8 @@ class StoreUpdate(BaseModel):
     website: Optional[str] = None
     category_ids: Optional[List[str]] = None
 
-class AffiliateLink(BaseModel):
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    code: str = Field(default_factory=lambda: uuid.uuid4().hex[:10])
-    affiliate_user_id: str
-    listing_id: Optional[str] = None
-    store_id: Optional[str] = None
-    clicks: int = 0
-    conversions: int = 0
-    earnings: float = 0.0
-    status: Literal["active", "disabled"] = "active"
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-
-class AffiliateLinkCreate(BaseModel):
-    listing_id: Optional[str] = None
-    store_id: Optional[str] = None
+# Affiliate models moved to `models/affiliate.py`
+from models.affiliate import AffiliateLink, AffiliateLinkCreate  # noqa: E402
 
 # Wallet/withdrawal Pydantic models moved to `models/wallet.py` so extracted
 # routers can pull them without depending on this whole module. Re-imported
@@ -475,106 +467,24 @@ DepositRequest = _DepositRequest
 DepositRequestCreate = _DepositRequestCreate
 
 
-class Message(BaseModel):
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    listing_id: str
-    sender_id: str
-    sender_name: str
-    receiver_id: str
-    content: str
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-
-class MessageCreate(BaseModel):
-    listing_id: str
-    receiver_id: str
-    content: str
+# Message models moved to `models/messages.py`
+from models.messages import Message, MessageCreate  # noqa: E402
 
 
-# =========================
-# Phase 12: Disputes & Returns
-# =========================
-DISPUTE_REASONS = ("not_as_described", "damaged", "not_received", "counterfeit", "other")
-DISPUTE_STATUSES = ("open", "reviewing", "refunded", "rejected")
-
-class Dispute(BaseModel):
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    order_id: str
-    buyer_id: str
-    buyer_name: str
-    seller_id: str
-    listing_id: str
-    listing_title: str
-    listing_image: Optional[str] = None
-    amount: float
-    reason: Literal["not_as_described", "damaged", "not_received", "counterfeit", "other"]
-    description: str
-    photos: List[str] = []  # list of /api/files/<id> URLs
-    status: Literal["open", "reviewing", "refunded", "rejected"] = "open"
-    admin_notes: str = ""
-    resolution: Optional[str] = None  # short resolution summary shown to buyer
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    resolved_at: Optional[datetime] = None
-
-class DisputeCreate(BaseModel):
-    order_id: str
-    reason: Literal["not_as_described", "damaged", "not_received", "counterfeit", "other"]
-    description: str
-    photos: List[str] = []
-
-class DisputeResolveIn(BaseModel):
-    action: Literal["refund", "reject", "review"]
-    admin_notes: Optional[str] = ""
-    resolution: Optional[str] = ""
-
-
-class DisputeMessage(BaseModel):
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    dispute_id: str
-    sender_id: str
-    sender_name: str
-    sender_role: Literal["buyer", "seller", "admin"]
-    body: str
-    photos: List[str] = []
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-
-
-class DisputeMessageCreate(BaseModel):
-    body: str = ""
-    photos: List[str] = []
+# Dispute models moved to `models/disputes.py`
+from models.disputes import (  # noqa: E402
+    Dispute, DisputeCreate, DisputeResolveIn,
+    DisputeMessage, DisputeMessageCreate,
+    DISPUTE_REASONS, DISPUTE_STATUSES,
+)
 
 
 # =========================
 # Phase 2: Reviews & Notifications
 # =========================
-class Review(BaseModel):
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    order_id: str
-    reviewer_id: str
-    reviewer_name: str
-    seller_id: str
-    listing_id: str
-    listing_title: str
-    rating: int  # 1..5
-    comment: str = ""
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-
-class ReviewCreate(BaseModel):
-    order_id: str
-    rating: int
-    comment: Optional[str] = ""
-
-NOTIFICATION_TYPES = ("order", "sale", "message", "review", "payout", "system", "dispute", "shipping", "wallet", "verification")
-
-
-class Notification(BaseModel):
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    user_id: str
-    type: str = "system"
-    title: str
-    body: str = ""
-    link: Optional[str] = None
-    read: bool = False
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+# Review + Notification models moved to `models/`
+from models.reviews import Review, ReviewCreate  # noqa: E402
+from models.notifications import Notification, NOTIFICATION_TYPES  # noqa: E402
 
 
 # =========================
@@ -2302,28 +2212,7 @@ async def confirm_delivery(order_id: str, user: dict = Depends(get_current_user)
 # =========================
 # Messages
 # =========================
-@api_router.get("/messages/{listing_id}/{other_user_id}", response_model=List[Message])
-async def get_messages(listing_id: str, other_user_id: str, user: dict = Depends(get_current_user)):
-    docs = await db.messages.find({
-        "listing_id": listing_id,
-        "$or": [
-            {"sender_id": user["id"], "receiver_id": other_user_id},
-            {"sender_id": other_user_id, "receiver_id": user["id"]},
-        ],
-    }, {"_id": 0}).sort("created_at", 1).to_list(500)
-    return [Message(**d) for d in docs]
-
-@api_router.post("/messages", response_model=Message)
-async def send_message(payload: MessageCreate, user: dict = Depends(get_current_user)):
-    msg = Message(
-        listing_id=payload.listing_id,
-        sender_id=user["id"],
-        sender_name=user["username"],
-        receiver_id=payload.receiver_id,
-        content=payload.content,
-    )
-    await db.messages.insert_one(msg.model_dump())
-    return msg
+# Legacy /messages routes moved to routers/messaging.py
 
 
 # =========================
@@ -3041,72 +2930,7 @@ async def my_store(user: dict = Depends(get_current_user)):
 # =========================
 # AFFILIATE LINKS
 # =========================
-@api_router.post("/affiliate/links", response_model=AffiliateLink)
-async def create_affiliate_link(payload: AffiliateLinkCreate, user: dict = Depends(get_current_user)):
-    if not payload.listing_id and not payload.store_id:
-        raise HTTPException(400, "Provide listing_id or store_id")
-    existing = await db.affiliate_links.find_one({
-        "affiliate_user_id": user["id"],
-        "listing_id": payload.listing_id,
-        "store_id": payload.store_id,
-    }, {"_id": 0})
-    if existing:
-        return AffiliateLink(**existing)
-    link = AffiliateLink(affiliate_user_id=user["id"], listing_id=payload.listing_id, store_id=payload.store_id)
-    await db.affiliate_links.insert_one(link.model_dump())
-    return link
-
-@api_router.get("/affiliate/links", response_model=List[AffiliateLink])
-async def my_affiliate_links(user: dict = Depends(get_current_user)):
-    docs = await db.affiliate_links.find({"affiliate_user_id": user["id"]}, {"_id": 0}).sort("created_at", -1).to_list(500)
-    return [AffiliateLink(**d) for d in docs]
-
-@api_router.get("/affiliate/track/{code}")
-async def track_affiliate_click(code: str):
-    link = await db.affiliate_links.find_one({"code": code, "status": "active"}, {"_id": 0})
-    if not link:
-        raise HTTPException(404, "Invalid affiliate code")
-    await db.affiliate_links.update_one({"code": code}, {"$inc": {"clicks": 1}})
-    return {"ok": True, "listing_id": link.get("listing_id"), "store_id": link.get("store_id"), "code": code}
-
-@api_router.get("/affiliate/stats")
-async def affiliate_stats(user: dict = Depends(get_current_user)):
-    links = await db.affiliate_links.find({"affiliate_user_id": user["id"]}, {"_id": 0}).to_list(500)
-    total_clicks = sum(l.get("clicks", 0) for l in links)
-    total_conversions = sum(l.get("conversions", 0) for l in links)
-    total_earnings = sum(l.get("earnings", 0.0) for l in links)
-    return {
-        "links": len(links),
-        "clicks": total_clicks,
-        "conversions": total_conversions,
-        "earnings": round(total_earnings, 2),
-        "conversion_rate": round((total_conversions / total_clicks * 100) if total_clicks else 0, 2),
-    }
-
-
-# =========================
-# REFERRALS
-# =========================
-@api_router.get("/referrals/me")
-async def my_referrals(user: dict = Depends(get_current_user)):
-    l1 = await db.users.find({"referred_by": user["id"]}, {"_id": 0, "id": 1, "username": 1, "created_at": 1}).to_list(1000)
-    l1_ids = [u["id"] for u in l1]
-    l2 = await db.users.find({"referred_by": {"$in": l1_ids}}, {"_id": 0, "id": 1, "username": 1, "referred_by": 1, "created_at": 1}).to_list(1000) if l1_ids else []
-    l2_ids = [u["id"] for u in l2]
-    l3 = await db.users.find({"referred_by": {"$in": l2_ids}}, {"_id": 0, "id": 1, "username": 1, "referred_by": 1, "created_at": 1}).to_list(1000) if l2_ids else []
-    # Earnings from referral wallet transactions
-    txs = await db.wallet_txs.find({"user_id": user["id"], "type": "referral"}, {"_id": 0}).to_list(1000)
-    total_earnings = sum(t.get("amount", 0) for t in txs)
-    return {
-        "referral_code": user.get("referral_code"),
-        "levels": {
-            "l1": l1,
-            "l2": l2,
-            "l3": l3,
-        },
-        "counts": {"l1": len(l1), "l2": len(l2), "l3": len(l3)},
-        "total_referral_earnings": round(total_earnings, 2),
-    }
+# Affiliate + referrals routes moved to routers/affiliate.py
 
 
 # =========================
@@ -4729,165 +4553,10 @@ async def admin_affiliate_links(_admin: dict = Depends(require_admin)):
 # =========================
 # PHASE 2: REVIEWS
 # =========================
-@api_router.post("/reviews", response_model=Review)
-async def create_review(payload: ReviewCreate, user: dict = Depends(get_current_user)):
-    if payload.rating < 1 or payload.rating > 5:
-        raise HTTPException(400, "Rating must be 1-5")
-    order = await db.orders.find_one({"id": payload.order_id}, {"_id": 0})
-    if not order:
-        raise HTTPException(404, "Order not found")
-    if order["buyer_id"] != user["id"]:
-        raise HTTPException(403, "Only the buyer can review")
-    existing = await db.reviews.find_one({"order_id": payload.order_id, "reviewer_id": user["id"]})
-    if existing:
-        raise HTTPException(400, "Already reviewed this order")
-    review = Review(
-        order_id=payload.order_id,
-        reviewer_id=user["id"],
-        reviewer_name=user["username"],
-        seller_id=order["seller_id"],
-        listing_id=order["listing_id"],
-        listing_title=order["listing_title"],
-        rating=payload.rating,
-        comment=payload.comment or "",
-    )
-    await db.reviews.insert_one(review.model_dump())
-    # Update seller rating
-    agg = await db.reviews.aggregate([
-        {"$match": {"seller_id": order["seller_id"]}},
-        {"$group": {"_id": None, "avg": {"$avg": "$rating"}, "count": {"$sum": 1}}},
-    ]).to_list(1)
-    if agg:
-        await db.users.update_one({"id": order["seller_id"]}, {"$set": {"rating": round(agg[0]["avg"], 2)}})
-    await notify(order["seller_id"], "review", f"New {payload.rating}-star review", (payload.comment or "")[:120], f"/listing/{order['listing_id']}")
-    return review
-
-@api_router.get("/reviews/seller/{seller_id}", response_model=List[Review])
-async def get_seller_reviews(seller_id: str):
-    docs = await db.reviews.find({"seller_id": seller_id}, {"_id": 0}).sort("created_at", -1).to_list(200)
-    return [Review(**d) for d in docs]
-
-@api_router.get("/reviews/listing/{listing_id}", response_model=List[Review])
-async def get_listing_reviews(listing_id: str):
-    docs = await db.reviews.find({"listing_id": listing_id}, {"_id": 0}).sort("created_at", -1).to_list(100)
-    return [Review(**d) for d in docs]
-
-@api_router.get("/reviews/order/{order_id}", response_model=Optional[Review])
-async def get_order_review(order_id: str, user: dict = Depends(get_current_user)):
-    doc = await db.reviews.find_one({"order_id": order_id, "reviewer_id": user["id"]}, {"_id": 0})
-    return Review(**doc) if doc else None
-
 
 # =========================
-# PHASE 2: MESSAGES / CHAT
+# Reviews / Messages / Notifications routes moved to routers/
 # =========================
-@api_router.get("/chat/threads")
-async def get_threads(user: dict = Depends(get_current_user)):
-    """Return distinct conversation threads for the user."""
-    pipeline = [
-        {"$match": {"$or": [{"sender_id": user["id"]}, {"receiver_id": user["id"]}]}},
-        {"$sort": {"created_at": -1}},
-        {"$group": {
-            "_id": {
-                "listing_id": "$listing_id",
-                "other": {"$cond": [{"$eq": ["$sender_id", user["id"]]}, "$receiver_id", "$sender_id"]},
-            },
-            "last_content": {"$first": "$content"},
-            "last_at": {"$first": "$created_at"},
-            "sender_id": {"$first": "$sender_id"},
-        }},
-        {"$sort": {"last_at": -1}},
-    ]
-    threads = await db.messages.aggregate(pipeline).to_list(200)
-    # Enrich with user + listing info
-    result = []
-    for t in threads:
-        other_id = t["_id"]["other"]
-        listing_id = t["_id"]["listing_id"]
-        other = await db.users.find_one({"id": other_id}, {"_id": 0, "id": 1, "username": 1})
-        listing = await db.listings.find_one({"id": listing_id}, {"_id": 0, "id": 1, "title": 1, "images": 1, "price": 1})
-        result.append({
-            "listing_id": listing_id,
-            "other_user_id": other_id,
-            "other_username": other.get("username") if other else "Unknown",
-            "listing_title": listing.get("title") if listing else "Listing removed",
-            "listing_image": (listing.get("images") or [None])[0] if listing else None,
-            "last_message": t.get("last_content", "")[:120],
-            "last_at": t.get("last_at"),
-            "unread": False,
-        })
-    return result
-
-@api_router.get("/chat/{listing_id}/{other_user_id}", response_model=List[Message])
-async def chat_messages(listing_id: str, other_user_id: str, user: dict = Depends(get_current_user)):
-    docs = await db.messages.find({
-        "listing_id": listing_id,
-        "$or": [
-            {"sender_id": user["id"], "receiver_id": other_user_id},
-            {"sender_id": other_user_id, "receiver_id": user["id"]},
-        ],
-    }, {"_id": 0}).sort("created_at", 1).to_list(500)
-    return [Message(**d) for d in docs]
-
-@api_router.post("/chat", response_model=Message)
-async def send_chat_message(payload: MessageCreate, user: dict = Depends(get_current_user)):
-    if not payload.content.strip():
-        raise HTTPException(400, "Empty message")
-    msg = Message(
-        listing_id=payload.listing_id,
-        sender_id=user["id"],
-        sender_name=user["username"],
-        receiver_id=payload.receiver_id,
-        content=payload.content.strip(),
-    )
-    await db.messages.insert_one(msg.model_dump())
-    await notify(payload.receiver_id, "message", f"New message from {user['username']}", payload.content[:120], f"/chat/{payload.listing_id}/{user['id']}")
-    return msg
-
-
-# =========================
-# PHASE 2: NOTIFICATIONS
-# =========================
-@api_router.get("/notifications", response_model=List[Notification])
-async def list_notifications(
-    user: dict = Depends(get_current_user),
-    limit: int = 50,
-    since: Optional[str] = None,
-    types: Optional[str] = None,
-):
-    """List a user's notifications, newest first.
-
-    * `since` — ISO datetime filter (`?since=2026-02-18T10:00:00Z`). Powers
-      the wallet toast stream: the client polls with the timestamp of the
-      last row it has seen so we only return brand-new rows.
-    * `types` — CSV of Notification.type values to narrow the stream
-      (e.g. `types=wallet,payout` for money-flow toasts only).
-    """
-    q: dict = {"user_id": user["id"]}
-    if since:
-        try:
-            since_dt = datetime.fromisoformat(since.replace("Z", "+00:00"))
-            if since_dt.tzinfo is None:
-                since_dt = since_dt.replace(tzinfo=timezone.utc)
-            q["created_at"] = {"$gt": since_dt}
-        except Exception:
-            pass  # ignore malformed timestamps rather than 400 the poll
-    if types:
-        wanted = [t.strip() for t in types.split(",") if t.strip()]
-        if wanted:
-            q["type"] = {"$in": wanted}
-    docs = await db.notifications.find(q, {"_id": 0}).sort("created_at", -1).to_list(limit)
-    return [Notification(**d) for d in docs]
-
-@api_router.post("/notifications/read-all")
-async def mark_all_read(user: dict = Depends(get_current_user)):
-    await db.notifications.update_many({"user_id": user["id"], "read": False}, {"$set": {"read": True}})
-    return {"ok": True}
-
-@api_router.post("/notifications/{nid}/read")
-async def mark_read(nid: str, user: dict = Depends(get_current_user)):
-    await db.notifications.update_one({"id": nid, "user_id": user["id"]}, {"$set": {"read": True}})
-    return {"ok": True}
 
 
 # =========================
@@ -7280,278 +6949,9 @@ async def admin_auto_confirm_dispatch(
 
 
 # =========================
-# Phase 12: Disputes & Returns
+# Phase 12: Disputes & Returns (routes moved to routers/disputes.py)
 # =========================
-async def _get_order_or_404(order_id: str) -> dict:
-    order = await db.orders.find_one({"id": order_id}, {"_id": 0})
-    if not order:
-        raise HTTPException(404, "Order not found")
-    return order
 
-
-@api_router.post("/disputes", response_model=Dispute)
-async def create_dispute(payload: DisputeCreate, user: dict = Depends(get_current_user)):
-    """Buyer opens a dispute on one of their orders. Delivered/paid/shipped orders eligible."""
-    order = await _get_order_or_404(payload.order_id)
-    if order["buyer_id"] != user["id"]:
-        raise HTTPException(403, "Only the buyer can open a dispute for this order")
-    if order.get("status") not in ("paid", "shipped", "delivered"):
-        raise HTTPException(400, "This order is not eligible for a dispute")
-    existing = await db.disputes.find_one(
-        {"order_id": payload.order_id, "status": {"$in": ["open", "reviewing"]}}, {"_id": 0}
-    )
-    if existing:
-        raise HTTPException(400, "An open dispute already exists for this order")
-    if not (payload.description or "").strip():
-        raise HTTPException(400, "Please describe what went wrong")
-
-    dispute = Dispute(
-        order_id=order["id"],
-        buyer_id=user["id"],
-        buyer_name=user["username"],
-        seller_id=order["seller_id"],
-        listing_id=order["listing_id"],
-        listing_title=order["listing_title"],
-        listing_image=order.get("listing_image"),
-        amount=float(order.get("amount", 0)),
-        reason=payload.reason,
-        description=payload.description.strip(),
-        photos=[p for p in (payload.photos or []) if isinstance(p, str)][:8],
-    )
-    doc = dispute.model_dump()
-    await db.disputes.insert_one(doc)
-
-    # Auto-refund rule: if the dispute amount is under the admin-configured threshold,
-    # resolve immediately with a wallet refund so support only reviews high-value cases.
-    settings = await get_settings()
-    threshold = float(settings.get("dispute_auto_refund_threshold") or 0.0)
-    excluded = set(settings.get("dispute_auto_refund_excluded_reasons") or [])
-    if (
-        threshold > 0
-        and dispute.amount > 0
-        and dispute.amount <= threshold
-        and dispute.reason not in excluded
-    ):
-        now = datetime.now(timezone.utc)
-        resolution_msg = f"Auto-refunded — orders at or under ${threshold:.2f} are refunded instantly."
-        # Credit buyer via ledger's refund path, debit seller via adjustment.
-        await ledger.refund_credit(
-            db,
-            user_id=dispute.buyer_id,
-            amount=dispute.amount,
-            order_id=order["id"],
-            description=f"Auto-refund for dispute #{dispute.id[:8]}",
-        )
-        seller_debit = float(order["seller_earnings"]) if order.get("seller_earnings") is not None else dispute.amount
-        await ledger.apply_entry(
-            db,
-            user_id=dispute.seller_id,
-            delta=-seller_debit,
-            tx_type="refund",
-            description=f"Auto-refund chargeback for dispute #{dispute.id[:8]}",
-            related_id=order["id"],
-        )
-        await db.orders.update_one({"id": order["id"]}, {"$set": {"status": "cancelled"}})
-        await db.disputes.update_one(
-            {"id": dispute.id},
-            {"$set": {
-                "status": "refunded",
-                "resolution": resolution_msg,
-                "admin_notes": f"Auto-refunded (threshold=${threshold:.2f})",
-                "resolved_at": now,
-            }},
-        )
-        await notify(
-            dispute.buyer_id, "dispute", "Refund issued automatically",
-            resolution_msg, "/wallet",
-        )
-        await notify(
-            dispute.seller_id, "dispute", "Dispute auto-refunded",
-            f"An order under ${threshold:.2f} was automatically refunded to the buyer.",
-            "/profile?tab=disputes",
-        )
-        fresh = await db.disputes.find_one({"id": dispute.id}, {"_id": 0})
-        return Dispute(**fresh)
-
-    await notify(
-        order["seller_id"], "dispute",
-        f"Buyer opened a dispute on '{order['listing_title']}'",
-        payload.description[:120],
-        f"/profile?tab=disputes",
-    )
-    return dispute
-
-
-@api_router.get("/disputes/mine", response_model=List[Dispute])
-async def my_disputes(user: dict = Depends(get_current_user)):
-    """Return disputes where the current user is either buyer or seller."""
-    docs = await db.disputes.find(
-        {"$or": [{"buyer_id": user["id"]}, {"seller_id": user["id"]}]}, {"_id": 0}
-    ).sort("created_at", -1).to_list(200)
-    return [Dispute(**d) for d in docs]
-
-
-@api_router.get("/disputes/{dispute_id}", response_model=Dispute)
-async def get_dispute(dispute_id: str, user: dict = Depends(get_current_user)):
-    d = await db.disputes.find_one({"id": dispute_id}, {"_id": 0})
-    if not d:
-        raise HTTPException(404, "Dispute not found")
-    if user.get("role") != "admin" and user["id"] not in (d["buyer_id"], d["seller_id"]):
-        raise HTTPException(403, "Not allowed")
-    return Dispute(**d)
-
-
-@api_router.get("/admin/disputes", response_model=List[Dispute])
-async def admin_list_disputes(
-    status_filter: Optional[str] = Query(None, alias="status"),
-    _admin: dict = Depends(require_admin),
-):
-    q: dict = {}
-    if status_filter and status_filter in DISPUTE_STATUSES:
-        q["status"] = status_filter
-    docs = await db.disputes.find(q, {"_id": 0}).sort("created_at", -1).to_list(500)
-    return [Dispute(**d) for d in docs]
-
-
-@api_router.post("/admin/disputes/{dispute_id}/resolve", response_model=Dispute)
-async def admin_resolve_dispute(
-    dispute_id: str, payload: DisputeResolveIn, _admin: dict = Depends(require_admin),
-):
-    d = await db.disputes.find_one({"id": dispute_id}, {"_id": 0})
-    if not d:
-        raise HTTPException(404, "Dispute not found")
-    if d["status"] in ("refunded", "rejected"):
-        raise HTTPException(400, f"Dispute already {d['status']}")
-
-    now = datetime.now(timezone.utc)
-    updates: dict = {
-        "admin_notes": (payload.admin_notes or d.get("admin_notes", "")).strip(),
-    }
-    if payload.resolution is not None:
-        updates["resolution"] = payload.resolution.strip()
-
-    if payload.action == "review":
-        updates["status"] = "reviewing"
-    elif payload.action == "reject":
-        updates["status"] = "rejected"
-        updates["resolved_at"] = now
-        await notify(
-            d["buyer_id"], "dispute",
-            "Your dispute was reviewed",
-            (updates.get("resolution") or "Our team sided with the seller after review.")[:200],
-            f"/profile?tab=disputes",
-        )
-    elif payload.action == "refund":
-        updates["status"] = "refunded"
-        updates["resolved_at"] = now
-        # Refund: credit the buyer wallet, debit the seller earnings for that order
-        amount = float(d.get("amount", 0))
-        if amount > 0:
-            await ledger.refund_credit(
-                db,
-                user_id=d["buyer_id"],
-                amount=amount,
-                order_id=d["order_id"],
-                description=f"Refund for dispute #{dispute_id[:8]}",
-            )
-            # Debit seller earnings for that order (uses seller_earnings if we have it)
-            order = await db.orders.find_one({"id": d["order_id"]}, {"_id": 0})
-            seller_debit = float(order["seller_earnings"]) if (order and order.get("seller_earnings") is not None) else amount
-            await ledger.apply_entry(
-                db,
-                user_id=d["seller_id"],
-                delta=-seller_debit,
-                tx_type="refund",
-                description=f"Chargeback for dispute #{dispute_id[:8]}",
-                related_id=dispute_id,
-            )
-        # Mark order as cancelled
-        await db.orders.update_one({"id": d["order_id"]}, {"$set": {"status": "cancelled"}})
-        await notify(
-            d["buyer_id"], "dispute",
-            "Refund issued",
-            (updates.get("resolution") or f"We refunded ${amount:.2f} to your wallet.")[:200],
-            f"/wallet",
-        )
-        await notify(
-            d["seller_id"], "dispute",
-            "Dispute resolved with refund",
-            "The buyer was refunded and the sale was cancelled.",
-            f"/profile?tab=disputes",
-        )
-
-    await db.disputes.update_one({"id": dispute_id}, {"$set": updates})
-    fresh = await db.disputes.find_one({"id": dispute_id}, {"_id": 0})
-    return Dispute(**fresh)
-
-
-# ---- Dispute chat thread ----------------------------------------------------
-async def _dispute_role_for(user: dict, d: dict) -> str:
-    if user.get("role") == "admin":
-        return "admin"
-    if user["id"] == d.get("buyer_id"):
-        return "buyer"
-    if user["id"] == d.get("seller_id"):
-        return "seller"
-    raise HTTPException(403, "Not allowed")
-
-
-@api_router.get("/disputes/{dispute_id}/messages", response_model=List[DisputeMessage])
-async def list_dispute_messages(dispute_id: str, user: dict = Depends(get_current_user)):
-    d = await db.disputes.find_one({"id": dispute_id}, {"_id": 0})
-    if not d:
-        raise HTTPException(404, "Dispute not found")
-    await _dispute_role_for(user, d)
-    docs = await db.dispute_messages.find(
-        {"dispute_id": dispute_id}, {"_id": 0}
-    ).sort("created_at", 1).to_list(500)
-    return [DisputeMessage(**m) for m in docs]
-
-
-@api_router.post("/disputes/{dispute_id}/messages", response_model=DisputeMessage)
-async def post_dispute_message(
-    dispute_id: str, payload: DisputeMessageCreate, user: dict = Depends(get_current_user),
-):
-    d = await db.disputes.find_one({"id": dispute_id}, {"_id": 0})
-    if not d:
-        raise HTTPException(404, "Dispute not found")
-    role = await _dispute_role_for(user, d)
-    if d.get("status") in ("refunded", "rejected"):
-        raise HTTPException(400, "This dispute is closed")
-    body = (payload.body or "").strip()
-    photos = [p for p in (payload.photos or []) if isinstance(p, str)][:8]
-    if not body and not photos:
-        raise HTTPException(400, "Message body or at least one photo is required")
-
-    msg = DisputeMessage(
-        dispute_id=dispute_id,
-        sender_id=user["id"],
-        sender_name=user["username"],
-        sender_role=role,
-        body=body,
-        photos=photos,
-    )
-    await db.dispute_messages.insert_one(msg.model_dump())
-
-    # Notify the other party (or both parties if admin)
-    recipients = []
-    if role == "buyer":
-        recipients = [d["seller_id"]]
-    elif role == "seller":
-        recipients = [d["buyer_id"]]
-    elif role == "admin":
-        recipients = [d["buyer_id"], d["seller_id"]]
-    for rid in recipients:
-        try:
-            await notify(
-                rid, "dispute",
-                f"New message on dispute for '{d['listing_title']}'",
-                body[:120] if body else "New photo attached",
-                "/disputes",
-            )
-        except Exception as e:
-            logger.warning(f"dispute message notify failed: {e}")
-    return msg
 
 
 # =========================
@@ -8098,6 +7498,11 @@ app.include_router(products_router, prefix="/api")
 app.include_router(apify_runs_router, prefix="/api")
 app.include_router(support_router, prefix="/api")
 app.include_router(otp_router, prefix="/api")
+app.include_router(reviews_router, prefix="/api")
+app.include_router(messaging_router, prefix="/api")
+app.include_router(notifications_router, prefix="/api")
+app.include_router(affiliate_router, prefix="/api")
+app.include_router(disputes_router, prefix="/api")
 
 app.add_middleware(
     CORSMiddleware,
