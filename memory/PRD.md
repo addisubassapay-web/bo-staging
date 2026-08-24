@@ -24,6 +24,30 @@ Full-stack ecommerce marketplace **Merchari-global** — same color scheme (`#FF
 
 ---
 
+### Feb 2026 — Recent Searches + Search Analytics + Server-Split Groundwork
+
+**1) Recent Searches (localStorage).**
+- Last 5 queries per shopper stored under `merchari.products.recentSearches`. Deduped case-insensitively, capped at 5.
+- Surfaces the moment the search box focuses with an empty value. Each entry click re-runs the search.
+- Cross-tab sync via `storage` events + a custom `merchari-recent-searches` event so the list stays fresh across tabs.
+- "Clear" link wipes the list in one tap.
+
+**2) Search Analytics (backend).**
+- New service `services/search_analytics.py` — fire-and-forget writer (never blocks the response).
+- Every `/api/products/suggest` call with `q.length >= 2` logs to `search_events` with query, raw_query, corrected, result_count, took_ms, zero_result, created_at.
+- 3 new Mongo indexes on `search_events`: recency, (query, result_count), (zero_result, created_at).
+- New endpoint `GET /api/admin/search/analytics?hours=24` returns `{total_searches, unique_queries, correction_rate, top_queries[], zero_result[]}` — designed for an ops dashboard.
+- New admin page `/admin/search-insights` shows Top Queries + Zero-result Queries side-by-side with a 24h / 7d / 30d window toggle.
+
+**3) Server-Split groundwork.**
+- Created `models/wallet.py` with the 5 shared Pydantic models (`WalletTransaction`, `WithdrawalRequest`, `WithdrawalRequestCreate`, `DepositRequest`, `DepositRequestCreate`) — the single source of truth.
+- `server.py` now imports them back from `models/wallet.py` so every existing call site works unchanged. server.py trimmed 8069 → 8027 lines. Wallet/withdrawal/deposit endpoints all verified against the imported models (balance/frozen returns correct, admin withdrawals/deposits load fine).
+- This unblocks the next session: routes can now be lifted into `routers/wallet.py` without dragging model definitions along.
+
+**Tests**: 35/35 scoped tests pass. 3 new in `test_search_analytics.py` cover admin auth, analytics shape, and zero-result logging round-trip.
+
+
+
 ### Feb 2026 — Search Autocomplete + Sub-category Chips
 **Two big shopper wins on the same PR.**
 

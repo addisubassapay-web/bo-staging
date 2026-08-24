@@ -565,8 +565,78 @@ async def products_suggest(
     and related terms. Powers the search dropdown on `/products`.
     """
     from services.product_search import build_suggest
+    from services.search_analytics import fire_and_forget
     db = get_db()
-    return await build_suggest(db, q, product_limit=limit)
+    result = await build_suggest(db, q, product_limit=limit)
+    # Fire-and-forget analytics — never blocks the response.
+    if len(q.strip()) >= 2:
+        fire_and_forget(
+            db, q, len(result.get("products") or []),
+            result.get("corrected"), result.get("took_ms", 0),
+        )
+    return result
+
+
+@router.get("/admin/search/analytics")
+async def admin_search_analytics(
+    _admin: dict = Depends(require_admin),
+    hours: int = Query(default=24, ge=1, le=720),
+    limit: int = Query(default=25, ge=1, le=100),
+):
+    """Search-analytics dashboard payload.
+
+    Returns:
+      - top_queries: most-searched terms in the window
+      - zero_result: most-searched terms that returned NO products AND
+        had no spelling correction (the vocabulary/inventory gaps)
+      - total_searches, unique_queries, correction_rate
+    """
+    from datetime import timedelta
+    db = get_db()
+    since = datetime.now(timezone.utc) - timedelta(hours=hours)
+
+    total = await db.search_events.count_documents({"created_at": {"$gte": since}})
+    unique = len(await db.search_events.distinct(
+        "query", {"created_at": {"$gte": since}}
+    ))
+    corrections = await db.search_events.count_documents(
+        {"created_at": {"$gte": since}, "corrected": {"$ne": None}}
+    )
+
+    top_pipeline = [
+        {"$match": {"created_at": {"$gte": since}, "query": {"$ne": ""}}},
+        {"$group": {"_id": "$query", "n": {"$sum": 1},
+                    "avg_results": {"$avg": "$result_count"}}},
+        {"$sort": {"n": -1}},
+        {"$limit": limit},
+    ]
+    top_queries = [
+        {"query": r["_id"], "count": int(r["n"]),
+         "avg_results": round(float(r["avg_results"] or 0), 1)}
+        async for r in db.search_events.aggregate(top_pipeline)
+    ]
+
+    zero_pipeline = [
+        {"$match": {"created_at": {"$gte": since}, "zero_result": True, "query": {"$ne": ""}}},
+        {"$group": {"_id": "$query", "n": {"$sum": 1},
+                    "last_seen": {"$max": "$created_at"}}},
+        {"$sort": {"n": -1}},
+        {"$limit": limit},
+    ]
+    zero_result = [
+        {"query": r["_id"], "count": int(r["n"]),
+         "last_seen": r["last_seen"].isoformat() if r.get("last_seen") else None}
+        async for r in db.search_events.aggregate(zero_pipeline)
+    ]
+
+    return {
+        "window_hours": hours,
+        "total_searches": total,
+        "unique_queries": unique,
+        "correction_rate": round(corrections / total, 3) if total else 0.0,
+        "top_queries": top_queries,
+        "zero_result": zero_result,
+    }
 
 
 @router.get("/products/{product_id}", response_model=ProductOut)

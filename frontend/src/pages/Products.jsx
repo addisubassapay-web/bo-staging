@@ -121,6 +121,11 @@ const Products = () => {
     }
   }, [page, q, category, subcategory, inStockOnly]);
 
+  // Sync the search-box draft when navigating back/forward with a `q=` URL.
+  useEffect(() => {
+    setQDraft(q);
+  }, [q]);
+
   useEffect(() => {
     load();
   }, [load]);

@@ -1,7 +1,40 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
 import api from "@/lib/api";
-import { Search as SearchIcon, Package, WandSparkles, X } from "lucide-react";
+import { Search as SearchIcon, Package, WandSparkles, X, Clock } from "lucide-react";
+
+const RECENT_KEY = "merchari.products.recentSearches";
+const RECENT_MAX = 5;
+
+function readRecent() {
+  try {
+    const raw = localStorage.getItem(RECENT_KEY);
+    const arr = raw ? JSON.parse(raw) : [];
+    return Array.isArray(arr) ? arr.slice(0, RECENT_MAX) : [];
+  } catch {
+    return [];
+  }
+}
+
+function pushRecent(q) {
+  const clean = (q || "").trim();
+  if (clean.length < 2) return;
+  try {
+    const cur = readRecent().filter((x) => x.toLowerCase() !== clean.toLowerCase());
+    const next = [clean, ...cur].slice(0, RECENT_MAX);
+    localStorage.setItem(RECENT_KEY, JSON.stringify(next));
+    window.dispatchEvent(new CustomEvent("merchari-recent-searches"));
+  } catch {
+    /* localStorage disabled — silent */
+  }
+}
+
+function clearRecent() {
+  try {
+    localStorage.removeItem(RECENT_KEY);
+    window.dispatchEvent(new CustomEvent("merchari-recent-searches"));
+  } catch { /* noop */ }
+}
 
 /**
  * Debounced autocomplete input for /products.
@@ -17,9 +50,22 @@ export default function ProductSearchAutocomplete({
   const [suggest, setSuggest] = useState(null);
   const [open, setOpen] = useState(false);
   const [activeIdx, setActiveIdx] = useState(-1);
+  const [recent, setRecent] = useState(readRecent);
   const debounceRef = useRef(null);
   const boxRef = useRef(null);
   const abortRef = useRef(null);
+
+  // Keep the recent list in sync when the user searches from another tab
+  // OR our own commit() pushes a new entry.
+  useEffect(() => {
+    const refresh = () => setRecent(readRecent());
+    window.addEventListener("storage", refresh);
+    window.addEventListener("merchari-recent-searches", refresh);
+    return () => {
+      window.removeEventListener("storage", refresh);
+      window.removeEventListener("merchari-recent-searches", refresh);
+    };
+  }, []);
 
   // Debounced fetch
   useEffect(() => {
@@ -70,11 +116,15 @@ export default function ProductSearchAutocomplete({
     return items;
   }, [suggest]);
 
-  const commit = (query) => {
-    onChange(query);
-    setOpen(false);
-    onSubmit(query);
-  };
+  const commit = useCallback(
+    (query) => {
+      onChange(query);
+      pushRecent(query);
+      setOpen(false);
+      onSubmit(query);
+    },
+    [onChange, onSubmit],
+  );
 
   const onKey = (e) => {
     if (!open || !flatItems.length) return;
@@ -148,6 +198,46 @@ export default function ProductSearchAutocomplete({
         >
           <X className="h-4 w-4" />
         </button>
+      ) : null}
+
+      {/* Recent-searches panel — shown when the input is empty and open */}
+      {open && !value && recent.length > 0 ? (
+        <div
+          className="absolute z-30 mt-2 w-[420px] max-w-[92vw] bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl shadow-2xl overflow-hidden"
+          data-testid="products-search-recent"
+        >
+          <div className="px-4 pt-3 pb-1 flex items-center justify-between">
+            <div className="text-[10px] uppercase tracking-wide text-neutral-500 flex items-center gap-1.5">
+              <Clock className="h-3 w-3" /> Recent searches
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                clearRecent();
+                setRecent([]);
+              }}
+              className="text-[11px] text-neutral-500 hover:text-[#FF211F] font-medium"
+              data-testid="products-search-recent-clear"
+            >
+              Clear
+            </button>
+          </div>
+          <ul className="py-1">
+            {recent.map((q) => (
+              <li key={q}>
+                <button
+                  type="button"
+                  onClick={() => commit(q)}
+                  className="w-full text-left px-4 py-2 text-sm text-neutral-800 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-800/60 flex items-center gap-2"
+                  data-testid={`products-search-recent-${q.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}`}
+                >
+                  <SearchIcon className="h-3.5 w-3.5 text-neutral-400 shrink-0" />
+                  {q}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
       ) : null}
 
       {open && suggest && (suggest.products?.length || suggest.corrected || suggest.terms?.length) ? (

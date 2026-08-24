@@ -24,6 +24,7 @@ import AdminEmailLog from "@/pages/AdminEmailLog";
 import AdminStoreBoosts from "@/pages/AdminStoreBoosts";
 import AdminSupport from "@/pages/AdminSupport";
 import AdminProducts from "@/pages/AdminProducts";
+import AdminSearchInsights from "@/pages/AdminSearchInsights";
 
 const SidebarLink = ({ to, icon: Icon, children }) => (
   <NavLink
@@ -1624,6 +1625,7 @@ const Admin = () => {
         <SidebarLink to="/admin/stores" icon={StoreIcon}>Stores</SidebarLink>
         <SidebarLink to="/admin/listings" icon={Package}>Listings</SidebarLink>
         <SidebarLink to="/admin/products" icon={Package}>Products (catalog)</SidebarLink>
+        <SidebarLink to="/admin/search-insights" icon={Package}>Search insights</SidebarLink>
         <SidebarLink to="/admin/orders" icon={ShoppingBag}>Orders</SidebarLink>
         <SidebarLink to="/admin/categories" icon={FolderTree}>Categories</SidebarLink>
         <SidebarLink to="/admin/withdrawals" icon={Wallet}>Withdrawals</SidebarLink>
@@ -1646,6 +1648,7 @@ const Admin = () => {
           <Route path="stores" element={<StoresMgr />} />
           <Route path="listings" element={<ListingsMgr />} />
           <Route path="products" element={<AdminProducts />} />
+          <Route path="search-insights" element={<AdminSearchInsights />} />
           <Route path="orders" element={<OrdersMgr />} />
           <Route path="categories" element={<CategoriesMgr />} />
           <Route path="withdrawals" element={<WithdrawalsMgr />} />
