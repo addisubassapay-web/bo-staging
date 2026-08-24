@@ -24,6 +24,21 @@ Full-stack ecommerce marketplace **Merchari-global** — same color scheme (`#FF
 
 ---
 
+### Feb 2026 — Out-of-Stock Ingest (Zero Skips)
+**Problem**: Ingesting Apify dataset `g5pLGd2OMRI0rm1gD` (4,538 items) skipped 93 records because those Amazon listings were currently out of stock (`price=None`). User request: "all 4538 items should be listed."
+
+**Fix**:
+- `_normalize_product` now accepts items with no current price. It stores `price=0.0`, tags them `in_stock=false`, and returns the doc instead of `None`.
+- `_upsert_chunk` in `services/webhook_ingest.py` does symmetric auto (de)activation on every ingest:
+  - OOS → in-stock transition flips `is_active=true` (tracked as `reactivated`).
+  - In-stock → OOS transition flips `is_active=false`, guaranteeing no $0 tile ever reaches the storefront.
+  - On insert, `is_active = in_stock` (OOS lands inactive).
+- New status counters: `oos_ingested`, `reactivated`.
+
+**Result**: Re-ingesting the dataset now reports `received: 4538 · skipped: 0 · updated: 4538 · oos_ingested: 93`. Catalog: 4,707 active (visible) + 93 OOS (hidden) = every dataset row stored, zero storefront leaks (verified `is_active:true AND price:0` = 0 rows).
+
+
+
 ### Feb 2026 — Catalog Cleanup (Test Data + R2 Orphans)
 **Goal**: only real listings should reach the storefront.
 

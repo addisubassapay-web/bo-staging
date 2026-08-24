@@ -170,14 +170,20 @@ def _extract_category(item: Dict[str, Any]) -> Optional[str]:
 
 
 def _normalize_product(item: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-    """Convert a raw Apify item to a `products` document. Returns None if unusable."""
+    """Convert a raw Apify item to a `products` document. Returns None if unusable.
+
+    Out-of-stock items (no current price) are still ingested — they're stored
+    with `price=0.0`, `in_stock=False`, and are marked inactive on insert so
+    they don't leak onto the storefront. When Apify re-scrapes them with a
+    real price, the ingest loop will flip them back to active.
+    """
     title = _first(item.get("title"), item.get("name"), item.get("productTitle"))
     price = _extract_price(item)
     sku = _extract_sku(item)
     source_url = _extract_source_url(item)
 
-    # Must have a title, a price and at least one of sku/source_url to dedupe on.
-    if not title or price is None:
+    # Bare-minimum requirements: title + something to dedupe on.
+    if not title:
         return None
     if not sku and not source_url:
         return None
@@ -185,15 +191,23 @@ def _normalize_product(item: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     desc_raw = _first(item.get("description"), item.get("productDescription"))
     description = str(desc_raw).strip()[:5000] if desc_raw else ""
 
+    in_stock = price is not None
+    # Some Apify actors also expose an inStock boolean — honour it when the
+    # price is missing (rare items with inStock=True but no listed price).
+    raw_stock = item.get("inStock")
+    if isinstance(raw_stock, bool):
+        in_stock = in_stock and raw_stock
+
     return {
         "title": str(title).strip()[:500],
         "description": description,
-        "price": price,
+        "price": price if price is not None else 0.0,
         "currency": _extract_currency(item),
         "images": _extract_images(item),
         "category": _extract_category(item),
         "sku": str(sku) if sku else None,
         "source_url": str(source_url) if source_url else None,
+        "in_stock": in_stock,
     }
 
 

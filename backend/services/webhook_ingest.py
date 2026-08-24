@@ -55,57 +55,83 @@ async def _upsert_chunk(db, chunk: List[Dict[str, Any]]) -> Dict[str, int]:
     Uses two passes so we can distinguish inserts from updates:
       1. Look up which upsert keys already exist.
       2. bulk_write UpdateOne(upsert=True) for the whole batch.
+
+    Stock-state handling:
+      • Insert: `is_active = in_stock` — OOS items land inactive so they
+        don't leak onto the storefront.
+      • Update: if an item flips from OOS -> in-stock, we auto-reactivate.
+        If it flips the other way, we leave `is_active` untouched (an admin
+        may want to keep the tile visible with a "sold out" badge).
     """
     if not chunk:
-        return {"created": 0, "updated": 0}
+        return {"created": 0, "updated": 0, "reactivated": 0}
 
     now = datetime.now(timezone.utc)
-    # Build filters & remember which are already in the DB
     sku_keys = [c["sku"] for c in chunk if c.get("sku")]
     url_keys = [c["source_url"] for c in chunk if not c.get("sku") and c.get("source_url")]
 
-    existing_skus: set = set()
-    existing_urls: set = set()
+    existing_by_sku: Dict[str, Dict[str, Any]] = {}
+    existing_by_url: Dict[str, Dict[str, Any]] = {}
     if sku_keys:
-        async for d in db.products.find({"sku": {"$in": sku_keys}}, {"_id": 0, "sku": 1}):
+        async for d in db.products.find(
+            {"sku": {"$in": sku_keys}}, {"_id": 0, "sku": 1, "in_stock": 1, "is_active": 1}
+        ):
             if d.get("sku"):
-                existing_skus.add(d["sku"])
+                existing_by_sku[d["sku"]] = d
     if url_keys:
-        async for d in db.products.find({"source_url": {"$in": url_keys}}, {"_id": 0, "source_url": 1}):
+        async for d in db.products.find(
+            {"source_url": {"$in": url_keys}}, {"_id": 0, "source_url": 1, "in_stock": 1, "is_active": 1}
+        ):
             if d.get("source_url"):
-                existing_urls.add(d["source_url"])
+                existing_by_url[d["source_url"]] = d
 
     ops: List[UpdateOne] = []
     created = 0
     updated = 0
+    reactivated = 0
     for norm in chunk:
+        in_stock = bool(norm.get("in_stock"))
         if norm.get("sku"):
             key = {"sku": norm["sku"]}
-            is_new = norm["sku"] not in existing_skus
+            existing = existing_by_sku.get(norm["sku"])
         else:
             key = {"source_url": norm["source_url"]}
-            is_new = norm["source_url"] not in existing_urls
+            existing = existing_by_url.get(norm["source_url"])
+
+        set_doc = {**norm, "updated_at": now}
+
+        if existing:
+            # Symmetric auto (de)activation on stock transitions so the
+            # storefront never shows $0 tiles for out-of-stock items.
+            if in_stock and not existing.get("is_active"):
+                set_doc["is_active"] = True
+                reactivated += 1
+            elif not in_stock and existing.get("is_active"):
+                set_doc["is_active"] = False
+
         ops.append(
             UpdateOne(
                 key,
                 {
-                    "$set": {**norm, "updated_at": now},
+                    "$set": set_doc,
                     "$setOnInsert": {
                         "id": str(uuid.uuid4()),
                         "created_at": now,
-                        "is_active": True,
+                        # OOS items land inactive so the storefront doesn't
+                        # show a $0 tile; admins can manually flip them if desired.
+                        "is_active": in_stock,
                     },
                 },
                 upsert=True,
             )
         )
-        if is_new:
-            created += 1
-        else:
+        if existing:
             updated += 1
+        else:
+            created += 1
 
     await db.products.bulk_write(ops, ordered=False)
-    return {"created": created, "updated": updated}
+    return {"created": created, "updated": updated, "reactivated": reactivated}
 
 
 async def ingest_items(
@@ -118,6 +144,8 @@ async def ingest_items(
     created = 0
     updated = 0
     skipped = 0
+    reactivated = 0
+    oos_ingested = 0
     processed = 0
 
     if job_id:
@@ -127,6 +155,8 @@ async def ingest_items(
             "created": 0,
             "updated": 0,
             "skipped": 0,
+            "reactivated": 0,
+            "oos_ingested": 0,
             "processed": 0,
             "started_at": datetime.now(timezone.utc),
         })
@@ -138,12 +168,15 @@ async def ingest_items(
             skipped += 1
             processed += 1
             continue
+        if not norm.get("in_stock"):
+            oos_ingested += 1
         buf.append(norm)
         processed += 1
         if len(buf) >= CHUNK:
             counts = await _upsert_chunk(db, buf)
             created += counts["created"]
             updated += counts["updated"]
+            reactivated += counts.get("reactivated", 0)
             buf = []
             if job_id:
                 await _update_state(db, job_id, {
@@ -151,18 +184,23 @@ async def ingest_items(
                     "created": created,
                     "updated": updated,
                     "skipped": skipped,
+                    "reactivated": reactivated,
+                    "oos_ingested": oos_ingested,
                 })
 
     if buf:
         counts = await _upsert_chunk(db, buf)
         created += counts["created"]
         updated += counts["updated"]
+        reactivated += counts.get("reactivated", 0)
 
     result = {
         "received": total,
         "created": created,
         "updated": updated,
         "skipped": skipped,
+        "reactivated": reactivated,
+        "oos_ingested": oos_ingested,
     }
     if job_id:
         await _update_state(db, job_id, {
