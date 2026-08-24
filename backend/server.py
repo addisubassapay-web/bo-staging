@@ -1520,7 +1520,21 @@ async def pickup_order(
         "paid_from_frozen": paid_frozen,
         "picked_up_at": now,
     }
-    await db.orders.update_one({"id": order_id}, {"$set": updates})
+    await db.orders.update_one(
+        {"id": order_id},
+        {
+            "$set": updates,
+            "$push": {
+                "pickup_events": {
+                    "type": "picked",
+                    "at": now,
+                    "paid_from_available": paid_available,
+                    "paid_from_frozen": paid_frozen,
+                    "channel": "seller",
+                }
+            },
+        },
+    )
 
     # Notify buyer
     await notify(
@@ -1534,11 +1548,101 @@ async def pickup_order(
     return Order(**updated)
 
 
+@api_router.get("/seller/store-health")
+async def seller_store_health(
+    user: dict = Depends(get_current_user),
+    days: int = 30,
+):
+    """Seller-facing "pickup health score" for their dashboard.
+
+    Returns response-time and on-time acceptance stats over the last N days.
+    Only counts orders whose pickup window has already closed (picked,
+    delivered, shipped, or auto_cancelled) so the numbers stay stable."""
+    days = max(1, min(int(days or 30), 365))
+    since = datetime.now(timezone.utc) - timedelta(days=days)
+
+    resolved_statuses = ["picked", "shipped", "delivered", "auto_cancelled"]
+    cursor = db.orders.find(
+        {
+            "seller_id": user["id"],
+            "created_at": {"$gte": since},
+            "fulfillment_status": {"$in": resolved_statuses},
+        },
+        {"_id": 0, "created_at": 1, "picked_up_at": 1, "pickup_deadline": 1,
+         "fulfillment_status": 1, "auto_cancelled_at": 1},
+    )
+    rows = await cursor.to_list(length=5000)
+    total = len(rows)
+    picked = [r for r in rows if r.get("picked_up_at")]
+    on_time = 0
+    response_seconds: list[float] = []
+    for r in picked:
+        created = r.get("created_at")
+        picked_at = r.get("picked_up_at")
+        deadline = r.get("pickup_deadline")
+        # Normalise
+        for f, k in [(created, "c"), (picked_at, "p"), (deadline, "d")]:
+            pass
+        try:
+            if isinstance(created, str):
+                created = datetime.fromisoformat(created.replace("Z", "+00:00"))
+            if isinstance(picked_at, str):
+                picked_at = datetime.fromisoformat(picked_at.replace("Z", "+00:00"))
+            if isinstance(deadline, str) and deadline:
+                deadline = datetime.fromisoformat(deadline.replace("Z", "+00:00"))
+        except Exception:
+            continue
+        for dt in (created, picked_at, deadline):
+            if dt and dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)  # noqa: F841
+        if not (created and picked_at):
+            continue
+        # Re-normalise timezone (the `dt` above was rebound in loop scope; do it explicitly)
+        if created.tzinfo is None:
+            created = created.replace(tzinfo=timezone.utc)
+        if picked_at.tzinfo is None:
+            picked_at = picked_at.replace(tzinfo=timezone.utc)
+        response_seconds.append((picked_at - created).total_seconds())
+        if deadline:
+            if deadline.tzinfo is None:
+                deadline = deadline.replace(tzinfo=timezone.utc)
+            if picked_at <= deadline:
+                on_time += 1
+
+    picked_count = len(picked)
+    cancelled_count = len([r for r in rows if r.get("fulfillment_status") == "auto_cancelled"])
+    acceptance_rate = round(100.0 * picked_count / total, 1) if total else None
+    on_time_rate = round(100.0 * on_time / picked_count, 1) if picked_count else None
+    avg_response_hours = round(sum(response_seconds) / len(response_seconds) / 3600, 2) if response_seconds else None
+
+    # Composite health score 0-100 — 60% acceptance, 40% on-time.
+    if total == 0:
+        score = None
+        tier = "no_data"
+    else:
+        acc = acceptance_rate or 0.0
+        ot = on_time_rate if on_time_rate is not None else acc
+        score = round(0.6 * acc + 0.4 * ot, 1)
+        if score >= 90: tier = "excellent"
+        elif score >= 75: tier = "good"
+        elif score >= 50: tier = "at_risk"
+        else: tier = "poor"
+
+    return {
+        "window_days": days,
+        "total_orders": total,
+        "picked_count": picked_count,
+        "auto_cancelled_count": cancelled_count,
+        "acceptance_rate_pct": acceptance_rate,
+        "on_time_rate_pct": on_time_rate,
+        "avg_response_hours": avg_response_hours,
+        "score": score,
+        "tier": tier,
+    }
+
+
 @api_router.get("/seller/orders/pending-pickup")
 async def seller_pending_pickups(user: dict = Depends(get_current_user)):
-    """List all orders on this seller's account that still need pickup.
-
-    Used by the seller's dashboard "Pending pickup" widget."""
     cursor = db.orders.find(
         {"seller_id": user["id"], "fulfillment_status": "pending_pickup"},
         {"_id": 0},
@@ -1664,9 +1768,63 @@ async def admin_nudge_seller(
         {
             "$set": {"nudged_at": datetime.now(timezone.utc)},
             "$inc": {"nudge_count": 1},
+            "$push": {
+                "pickup_events": {
+                    "type": "admin_nudge",
+                    "at": datetime.now(timezone.utc),
+                    "admin_id": _admin["id"],
+                    "admin_email": _admin.get("email"),
+                    "message": note or None,
+                    "channel": "email+notify",
+                }
+            },
         },
     )
     return {"ok": True, "order_id": order_id, "message": "Seller nudged"}
+
+
+@api_router.get("/admin/orders/{order_id}/pickup-timeline")
+async def admin_pickup_timeline(order_id: str, _admin: dict = Depends(require_admin)):
+    """Chronological audit trail of everything that fired on this order's
+    pickup lifecycle — used by admins before escalating a lazy seller."""
+    order = await db.orders.find_one(
+        {"id": order_id},
+        {"_id": 0, "id": 1, "fulfillment_status": 1, "created_at": 1,
+         "pickup_deadline": 1, "picked_up_at": 1, "auto_cancelled_at": 1,
+         "nudge_count": 1, "nudged_at": 1, "listing_title": 1,
+         "seller_id": 1, "pickup_events": 1},
+    )
+    if not order:
+        raise HTTPException(404, "Order not found")
+
+    events = list(order.get("pickup_events") or [])
+    # Synthesise the lifecycle bookends so admins see the full picture even
+    # if a legacy order was created before the pickup_events log existed.
+    if order.get("created_at"):
+        events.append({"type": "order_created", "at": order["created_at"], "channel": "system"})
+    if order.get("picked_up_at"):
+        events.append({"type": "picked", "at": order["picked_up_at"], "channel": "seller"})
+    if order.get("auto_cancelled_at"):
+        events.append({"type": "auto_cancelled", "at": order["auto_cancelled_at"], "channel": "system"})
+
+    def _ts(e):
+        v = e.get("at")
+        if isinstance(v, str):
+            try:
+                return datetime.fromisoformat(v.replace("Z", "+00:00"))
+            except Exception:
+                return datetime.min.replace(tzinfo=timezone.utc)
+        return v or datetime.min.replace(tzinfo=timezone.utc)
+
+    events.sort(key=_ts)
+    return {
+        "order_id": order_id,
+        "listing_title": order.get("listing_title"),
+        "fulfillment_status": order.get("fulfillment_status"),
+        "nudge_count": order.get("nudge_count", 0),
+        "pickup_deadline": order.get("pickup_deadline"),
+        "events": events,
+    }
 
 
 
@@ -3745,10 +3903,30 @@ async def admin_update_settings(updates: dict, _admin: dict = Depends(require_ad
         "delivery_days_estimate", "delivery_auto_release_days",
         "resell_markup_caps", "resell_wholesale_discounts", "push_reward_amount",
         "bulk_discount_tiers", "invite_only_signup",
+        # Feb 2026: seller pick & deliver tunables
+        "pickup_deadline_hours", "pickup_reminder_hours",
     }
     filtered = {k: v for k, v in updates.items() if k in allowed}
     if "invite_only_signup" in filtered:
         filtered["invite_only_signup"] = bool(filtered["invite_only_signup"])
+    # Validate pickup tunables — deadline 1-168h (1 week max), reminders 1-72h.
+    if "pickup_deadline_hours" in filtered:
+        try:
+            v = int(filtered["pickup_deadline_hours"])
+            if not (1 <= v <= 168):
+                raise ValueError
+            filtered["pickup_deadline_hours"] = v
+        except (TypeError, ValueError):
+            raise HTTPException(400, "pickup_deadline_hours must be an int in [1, 168]")
+    if "pickup_reminder_hours" in filtered:
+        raw = filtered["pickup_reminder_hours"]
+        if not isinstance(raw, list):
+            raise HTTPException(400, "pickup_reminder_hours must be a list of ints (hours before deadline)")
+        try:
+            cleaned = sorted({int(h) for h in raw if 1 <= int(h) <= 72}, reverse=True)
+        except (TypeError, ValueError):
+            raise HTTPException(400, "pickup_reminder_hours entries must be ints in [1, 72]")
+        filtered["pickup_reminder_hours"] = cleaned
     # Sanitize the exclusion list — only accept known dispute reasons
     if "dispute_auto_refund_excluded_reasons" in filtered:
         raw = filtered["dispute_auto_refund_excluded_reasons"]
@@ -5997,44 +6175,53 @@ async def _send_pickup_email(
 
 
 async def pickup_reminder_loop():
-    """Fire two escalating pickup reminders (T-6h and T-1h) before auto-cancel.
+    """Fire escalating pickup reminders (default T-6h and T-1h) before auto-cancel.
 
+    Cadence is driven by `settings.pickup_reminder_hours` (list of hours
+    before the deadline) — admins can tune this from the dashboard.
     We mark each reminder as sent on the order doc so we never spam the
     seller twice. Runs every 5 minutes."""
     await asyncio.sleep(30)
     while True:
         try:
             now = datetime.now(timezone.utc)
-            # T-6h reminder: deadline within (5h, 6h30] and no 6h reminder yet.
-            for spec in [
-                {"cutoff_lo": timedelta(hours=5), "cutoff_hi": timedelta(hours=6, minutes=30),
-                 "flag": "pickup_reminder_6h_sent_at", "kind": "reminder_6h"},
-                {"cutoff_lo": timedelta(minutes=30), "cutoff_hi": timedelta(hours=1, minutes=30),
-                 "flag": "pickup_reminder_1h_sent_at", "kind": "reminder_1h"},
-            ]:
+            settings = await get_settings()
+            reminder_hours = settings.get("pickup_reminder_hours") or [6, 1]
+            for h in reminder_hours:
+                try:
+                    h = int(h)
+                except (TypeError, ValueError):
+                    continue
+                if h < 1 or h > 72:
+                    continue
+                # Window: pickup_deadline lies within [now + (h - 0.5h), now + (h + 0.5h)]
+                cutoff_lo = timedelta(hours=h - 0.5)
+                cutoff_hi = timedelta(hours=h + 0.5)
+                flag = f"pickup_reminder_{h}h_sent_at"
                 cursor = db.orders.find(
                     {
                         "fulfillment_status": "pending_pickup",
                         "pickup_deadline": {
-                            "$gte": now + spec["cutoff_lo"],
-                            "$lte": now + spec["cutoff_hi"],
+                            "$gte": now + cutoff_lo,
+                            "$lte": now + cutoff_hi,
                         },
-                        spec["flag"]: {"$exists": False},
+                        flag: {"$exists": False},
                     },
                     {"_id": 0, "id": 1, "seller_id": 1, "listing_title": 1,
                      "reseller_wholesale_cost": 1, "seller_earnings": 1, "pickup_deadline": 1},
                 ).limit(100)
                 due = await cursor.to_list(length=100)
-                pickup_hours = 48
+                pickup_hours = int(settings.get("pickup_deadline_hours", 48))
                 for o in due:
                     try:
+                        kind = f"reminder_{h}h"
                         await _send_pickup_email(
                             o["seller_id"], o["id"], o.get("listing_title", "order"),
                             float(o.get("reseller_wholesale_cost") or 0.0),
                             float(o.get("seller_earnings") or 0.0),
-                            pickup_hours, kind=spec["kind"],
+                            pickup_hours, kind=kind,
                         )
-                        headline = "6 hours left to accept" if spec["kind"] == "reminder_6h" else "1 hour left to accept"
+                        headline = f"{h} hour{'s' if h != 1 else ''} left to accept"
                         await notify(
                             o["seller_id"], "sale", headline,
                             f"'{o.get('listing_title','order')}' — accept now or it auto-cancels.",
@@ -6042,10 +6229,20 @@ async def pickup_reminder_loop():
                         )
                         await db.orders.update_one(
                             {"id": o["id"]},
-                            {"$set": {spec["flag"]: now}},
+                            {
+                                "$set": {flag: now},
+                                "$push": {
+                                    "pickup_events": {
+                                        "type": "reminder",
+                                        "hours_before": h,
+                                        "at": now,
+                                        "channel": "email+notify",
+                                    }
+                                },
+                            },
                         )
                     except Exception as e:
-                        logger.warning(f"pickup_reminder({spec['kind']}) failed for {o.get('id')}: {e}")
+                        logger.warning(f"pickup_reminder({h}h) failed for {o.get('id')}: {e}")
         except Exception as e:
             logger.exception(f"pickup_reminder_loop error: {e}")
         await asyncio.sleep(int(os.environ.get("PICKUP_REMINDER_INTERVAL_SEC", "300")))
@@ -6080,11 +6277,21 @@ async def pickup_expiry_loop():
                         )
                     await db.orders.update_one(
                         {"id": o["id"]},
-                        {"$set": {
-                            "fulfillment_status": "auto_cancelled",
-                            "status": "cancelled",
-                            "auto_cancelled_at": now,
-                        }},
+                        {
+                            "$set": {
+                                "fulfillment_status": "auto_cancelled",
+                                "status": "cancelled",
+                                "auto_cancelled_at": now,
+                            },
+                            "$push": {
+                                "pickup_events": {
+                                    "type": "auto_cancelled",
+                                    "at": now,
+                                    "reason": "pickup_deadline_expired",
+                                    "channel": "system",
+                                }
+                            },
+                        },
                     )
                     # Return the listing to "active" so someone else can buy it.
                     if o.get("listing_id"):

@@ -1,9 +1,10 @@
 import React, { useCallback, useEffect, useState } from "react";
 import api from "@/lib/api";
-import { AlertOctagon, Loader2, Send, Timer, PackageX } from "lucide-react";
+import { AlertOctagon, Loader2, Send, Timer, PackageX, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
+import PickupTimelineDialog from "@/components/PickupTimelineDialog";
 
 const fmt = (n) => `$${Number(n ?? 0).toFixed(2)}`;
 
@@ -17,6 +18,7 @@ const StoreAdminNudgeBanner = ({ slug }) => {
   const { user } = useAuth();
   const [data, setData] = useState(null);
   const [busy, setBusy] = useState({});
+  const [timelineOrderId, setTimelineOrderId] = useState(null);
   const { toast } = useToast();
 
   const load = useCallback(async () => {
@@ -96,6 +98,15 @@ const StoreAdminNudgeBanner = ({ slug }) => {
               </div>
               <Button
                 size="sm"
+                variant="outline"
+                onClick={() => setTimelineOrderId(o.id)}
+                data-testid={`admin-timeline-btn-${o.id}`}
+                className="rounded-full border-red-300 text-red-700 hover:bg-red-100"
+              >
+                <History className="w-4 h-4 mr-1.5" /> Timeline
+              </Button>
+              <Button
+                size="sm"
                 onClick={() => nudge(o.id)}
                 disabled={busy[o.id]}
                 data-testid={`admin-nudge-btn-${o.id}`}
@@ -115,6 +126,11 @@ const StoreAdminNudgeBanner = ({ slug }) => {
           ))}
         </div>
       </div>
+      <PickupTimelineDialog
+        orderId={timelineOrderId}
+        open={!!timelineOrderId}
+        onClose={() => setTimelineOrderId(null)}
+      />
     </div>
   );
 };

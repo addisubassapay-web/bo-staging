@@ -14,6 +14,7 @@ import DigestCard from "@/components/DigestCard";
 import EmailPreferences from "@/components/EmailPreferences";
 import AutoConfirmCountdown from "@/components/AutoConfirmCountdown";
 import PickupOrderDialog from "@/components/PickupOrderDialog";
+import StoreHealthCard from "@/components/StoreHealthCard";
 
 const BADGE_STEPS = [
   { key: "new", label: "New", threshold: { sales: 0, rating: 0 } },
@@ -461,6 +462,9 @@ const Profile = () => {
         </TabsContent>
 
         <TabsContent value="sales">
+          <div className="mb-4">
+            <StoreHealthCard />
+          </div>
           {sales.length === 0 ? (
             <div className="text-center py-16 border border-dashed rounded-xl text-neutral-600">No sales yet.</div>
           ) : (

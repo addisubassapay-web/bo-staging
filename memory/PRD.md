@@ -24,6 +24,14 @@ Full-stack ecommerce marketplace **Merchari-global** — same color scheme (`#FF
 
 ---
 
+### Feb 2026 — Store Health Score, Nudge Timeline, Reminder Tuner
+**1. Reminder Timing Tuner** — `pickup_deadline_hours` and `pickup_reminder_hours` are now first-class allowlisted settings on `PUT /api/admin/settings`. Deadline validated to [1, 168] hours; reminders validated as list of ints in [1, 72], deduped and sorted desc. `pickup_reminder_loop` now iterates `settings.pickup_reminder_hours` (default `[6, 1]`) with a ±30-minute window per entry and writes `pickup_reminder_{h}h_sent_at` flags so no double-sends. Admin dashboard has a new `PickupTimingTuner.jsx` card with two inputs and a Save button — verified live saving `deadline: 36h, reminders: [12, 6, 1]`.
+
+**2. Nudge History Log** — new `pickup_events[]` array on the Order doc gets `$push`ed on every lifecycle event: order_created, reminder (with `hours_before`), admin_nudge (with admin_id + admin_email + custom message), picked (with `paid_from_available`/`paid_from_frozen`), auto_cancelled (with reason). New `GET /api/admin/orders/{id}/pickup-timeline` returns chronological events (synthesised bookends for legacy orders too). Frontend `PickupTimelineDialog.jsx` opens from a new "Timeline" button in the nudge banner — icons per event type, quoted admin message, formatted timestamps. Verified: 2-event timeline (order_created + admin_nudge with message "Please pick this now") displayed correctly.
+
+**3. Store Health Score** — new `GET /api/seller/store-health?days=30` returns `{acceptance_rate_pct, on_time_rate_pct, avg_response_hours, auto_cancelled_count, score, tier}`. Score is `0.6 × acceptance + 0.4 × on_time`, tier bands `excellent≥90, good≥75, at_risk≥50, poor<50, no_data` when zero orders. Only counts resolved orders (picked/shipped/delivered/auto_cancelled) so numbers stay stable. New `StoreHealthCard.jsx` on the Profile → Sales tab shows the composite score with tier color, 3-metric grid (acceptance / on-time / avg response), and a red warning strip when there are auto-cancels. Verified via in-process call for a seller with 4 picked orders: `score=70.0, tier=at_risk` (100% acceptance × 0.6 + 25% on-time × 0.4).
+
+
 ### Feb 2026 — Admin Nudge, Pickup Reminders, Auto-Split Balance Logic
 **1. Admin Nudge on Store Page** — new `POST /api/admin/orders/{id}/nudge` fires an email + in-app notif to the seller, tracks `nudged_at` and `nudge_count` on the order. New `GET /api/stores/{slug}/pending-pickups` (admin-only) lists pending pickups for a store's seller with `hours_left`. New `StoreAdminNudgeBanner.jsx` renders a red 2-border card at the top of `/store/:slug` for admin viewers listing every stalled order + a 1-click "Nudge seller" button (verified live: `nudge_count=1, nudged_at=True` after a click).
 
