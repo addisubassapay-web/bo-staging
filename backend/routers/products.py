@@ -227,6 +227,27 @@ def _iter_apify_items(payload: Any) -> List[Dict[str, Any]]:
     return []
 
 
+def _extract_dataset_id(payload: Any) -> Optional[str]:
+    """Pull the Apify default dataset id from a webhook envelope when the
+    body doesn't include inline items. Apify's real webhooks send:
+        { "resource": { "defaultDatasetId": "abc123", ... }, ... }
+    We also accept top-level `defaultDatasetId` / `dataset_id` for convenience.
+    """
+    if not isinstance(payload, dict):
+        return None
+    for key in ("defaultDatasetId", "dataset_id", "datasetId"):
+        v = payload.get(key)
+        if isinstance(v, str) and v:
+            return v
+    resource = payload.get("resource")
+    if isinstance(resource, dict):
+        for key in ("defaultDatasetId", "dataset_id", "datasetId"):
+            v = resource.get(key)
+            if isinstance(v, str) and v:
+                return v
+    return None
+
+
 # ---------------------------------------------------------------------------
 # Endpoints
 # ---------------------------------------------------------------------------
@@ -236,13 +257,28 @@ async def webhook_apify_import(
     x_webhook_secret: Optional[str] = Header(default=None, alias="X-Webhook-Secret"),
     authorization: Optional[str] = Header(default=None),
     secret: Optional[str] = Query(default=None),
+    background: Optional[bool] = Query(
+        default=None,
+        description="Force queue path (true) or sync path (false). Default: auto by payload size.",
+    ),
 ):
     """Ingest products from an Apify webhook payload.
 
-    Upserts on (sku or source_url). Existing records are updated with the
-    latest data; new records are inserted. Records are stored **permanently**
-    — no TTL, no scheduled cleanup.
+    Small inline payloads (<= INLINE_LIMIT items and no dataset_id) are
+    processed synchronously and return created/updated counters — this
+    preserves the behaviour our regression tests rely on.
+
+    Large inline payloads or Apify-native envelopes that reference a
+    `defaultDatasetId` are handed off to the arq worker so the HTTP call
+    returns 200 immediately, avoiding the 502 timeout Apify hits when
+    posting 4,000+ items in one shot. Poll `GET /api/admin/webhooks/
+    apify-import/status/{job_id}` (or the /status list endpoint) for
+    progress.
+
+    Records are stored **permanently** — no TTL, no scheduled cleanup.
     """
+    INLINE_LIMIT = 200  # items processed synchronously; anything larger is queued
+
     _authorize_webhook(x_webhook_secret, authorization, secret)
 
     try:
@@ -251,6 +287,71 @@ async def webhook_apify_import(
         raise HTTPException(400, "Invalid JSON body")
 
     raw_items = _iter_apify_items(payload)
+    dataset_id = _extract_dataset_id(payload) if not raw_items else None
+
+    # Decide sync vs async
+    force_bg = background is True
+    force_sync = background is False
+    should_queue = (
+        force_bg
+        or (not force_sync and dataset_id is not None)
+        or (not force_sync and len(raw_items) > INLINE_LIMIT)
+    )
+
+    if should_queue:
+        from arq import create_pool
+        from arq.connections import RedisSettings
+
+        redis_url = os.environ.get("REDIS_URL") or "redis://localhost:6379/0"
+        job_id = str(uuid.uuid4())
+        kind = "dataset" if dataset_id else "items"
+        job_payload: Any = dataset_id if dataset_id else raw_items
+
+        try:
+            pool = await create_pool(RedisSettings.from_dsn(redis_url))
+            try:
+                await pool.enqueue_job(
+                    "webhook_ingest_task",
+                    kind,
+                    job_payload,
+                    job_id,
+                    _job_id=f"webhook-import:{job_id}",
+                )
+            finally:
+                await pool.close()
+        except Exception as e:  # noqa: BLE001
+            logger.exception("[apify-webhook] failed to enqueue")
+            raise HTTPException(503, f"Queue unavailable: {e}")
+
+        db = get_db()
+        await db.apify_ingest_state.update_one(
+            {"id": job_id},
+            {
+                "$set": {
+                    "id": job_id,
+                    "kind": kind,
+                    "status": "queued",
+                    "dataset_id": dataset_id,
+                    "queued_items": len(raw_items),
+                    "created_at": datetime.now(timezone.utc),
+                }
+            },
+            upsert=True,
+        )
+        logger.info(
+            f"[apify-webhook] queued job={job_id} kind={kind} items={len(raw_items)} dataset_id={dataset_id}"
+        )
+        return {
+            "ok": True,
+            "queued": True,
+            "job_id": job_id,
+            "kind": kind,
+            "received": len(raw_items) if raw_items else None,
+            "dataset_id": dataset_id,
+            "message": "Ingest queued — poll /api/admin/webhooks/apify-import/status/{job_id}",
+        }
+
+    # ---- Sync path (small payloads) -----------------------------------------
     if not raw_items:
         return {
             "ok": True,
@@ -261,56 +362,14 @@ async def webhook_apify_import(
             "message": "No parseable items in payload",
         }
 
+    from services.webhook_ingest import ingest_items
     db = get_db()
-    now = datetime.now(timezone.utc)
-
-    created = 0
-    updated = 0
-    skipped = 0
-
-    for raw in raw_items:
-        norm = _normalize_product(raw)
-        if not norm:
-            skipped += 1
-            continue
-
-        # Build the upsert filter — prefer SKU, fall back to source_url.
-        if norm.get("sku"):
-            key = {"sku": norm["sku"]}
-        else:
-            key = {"source_url": norm["source_url"]}
-
-        existing = await db.products.find_one(key, {"_id": 0, "id": 1})
-
-        update_doc = {
-            "$set": {
-                **norm,
-                "updated_at": now,
-                # is_active is preserved on update (default True on insert only)
-            },
-            "$setOnInsert": {
-                "id": str(uuid.uuid4()),
-                "created_at": now,
-                "is_active": True,
-            },
-        }
-        await db.products.update_one(key, update_doc, upsert=True)
-
-        if existing:
-            updated += 1
-        else:
-            created += 1
-
+    result = await ingest_items(db, raw_items)
     logger.info(
-        f"[apify-webhook] received={len(raw_items)} created={created} updated={updated} skipped={skipped}"
+        f"[apify-webhook] sync received={result['received']} created={result['created']} "
+        f"updated={result['updated']} skipped={result['skipped']}"
     )
-    return {
-        "ok": True,
-        "received": len(raw_items),
-        "created": created,
-        "updated": updated,
-        "skipped": skipped,
-    }
+    return {"ok": True, **result}
 
 
 @router.get("/products", response_model=ProductListResponse)
@@ -349,6 +408,36 @@ async def get_product(product_id: str):
     if not doc:
         raise HTTPException(404, "Product not found")
     return doc
+
+
+# ---------------------------------------------------------------------------
+# Webhook ingest status (public read; requires knowing the job_id from the
+# webhook response, so effectively private without listing them)
+# ---------------------------------------------------------------------------
+@router.get("/admin/webhooks/apify-import/status/{job_id}")
+async def webhook_ingest_status(
+    job_id: str,
+    _admin: dict = Depends(require_admin),
+):
+    """Progress of a queued webhook ingest job."""
+    db = get_db()
+    doc = await db.apify_ingest_state.find_one({"id": job_id}, {"_id": 0})
+    if not doc:
+        raise HTTPException(404, "Ingest job not found")
+    return doc
+
+
+@router.get("/admin/webhooks/apify-import/status")
+async def webhook_ingest_status_list(
+    _admin: dict = Depends(require_admin),
+    limit: int = Query(20, ge=1, le=100),
+):
+    """Latest webhook ingest jobs (newest first)."""
+    db = get_db()
+    cursor = db.apify_ingest_state.find({}, {"_id": 0}).sort("created_at", -1).limit(limit)
+    docs = await cursor.to_list(length=limit)
+    return {"items": docs, "count": len(docs)}
+
 
 
 # ---------------------------------------------------------------------------

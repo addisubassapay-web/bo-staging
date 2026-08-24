@@ -24,6 +24,22 @@ Full-stack ecommerce marketplace **Merchari-global** — same color scheme (`#FF
 
 ---
 
+### Feb 2026 — Apify Webhook Async Ingest (P0 Fix)
+**Problem**: Manually replaying a 4,538-item Apify dataset through `POST /api/webhooks/apify-import` returned HTTP 502 — the endpoint iterated + upserted every item synchronously and blew past the ingress timeout. Real Apify webhooks that arrive with `resource.defaultDatasetId` were even worse: they carry NO inline items and required an out-of-band Apify API fetch.
+
+**Fix**:
+- Small payloads (≤ 200 inline items, no dataset_id) still process synchronously — regression tests that assert `created`/`updated` counters keep passing.
+- Larger inline payloads AND every envelope containing `resource.defaultDatasetId` are now handed to an arq task (`webhook_ingest_task` in `services/webhook_ingest.py`). The endpoint returns `{"ok": true, "queued": true, "job_id": "..."}` in < 500 ms.
+- The worker chunks upserts 500-at-a-time via `pymongo.UpdateOne` bulk_write, records progress on every chunk in `apify_ingest_state`, and (when given a dataset id) fetches items from Apify with primary/fallback tokens.
+- New admin endpoints for progress visibility:
+  - `GET /api/admin/webhooks/apify-import/status/{job_id}`
+  - `GET /api/admin/webhooks/apify-import/status?limit=20`
+- Optional `?background=true|false` query flag lets an operator force the queue path (or force sync for tiny debugging pushes).
+- Regression suite: `/app/backend/tests/test_webhook_async_ingest.py` — 7 tests cover sync path, async path (large + dataset), admin auth, admin status list/detail, and the `background=true` override. Previous suite `test_webhook_rotation.py` (8 tests) still passes.
+- End-to-end verified: replayed the previously-failing `g5pLGd2OMRI0rm1gD` dataset (4,538 items) — endpoint returned in 0.23 s and the worker completed the full ingest (`created: 4309, updated: 136, skipped: 93`) in ~6 s.
+
+
+
 ### Feb 2026 — Wholesale Escrow Accounting Fix
 **Problem** (flagged by iteration 52 testing agent): at checkout the buyer's payment lands in the seller's frozen bucket as `sale_frozen`. When the seller went to pick up the SAME order, `frozen_usable = 0.75 × total_frozen` erroneously included that buyer's own escrow — so a seller with $0 available and only THIS order's escrow in frozen could still fund 75% of the source cost from the buyer's own money, making refund reconciliation ugly if the buyer later disputed.
 

@@ -25,6 +25,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from services.zyte import extract_product, extract_product_list, normalize_product, normalize_product_list_item, ZyteError
 from services.r2_storage import rehost_many
 from services.quotas import record_spend
+from services.webhook_ingest import webhook_ingest_task
 
 logger = logging.getLogger("scraper_queue")
 
@@ -408,7 +409,7 @@ from arq import cron
 
 
 class WorkerSettings:
-    functions = [scrape_url_task, scrape_category_task]
+    functions = [scrape_url_task, scrape_category_task, webhook_ingest_task]
     cron_jobs = [
         # Daily at 09:00 UTC — hands-off catalog growth for every seller.
         cron(cron_run_saved_seeds, hour=9, minute=0, run_at_startup=False),
