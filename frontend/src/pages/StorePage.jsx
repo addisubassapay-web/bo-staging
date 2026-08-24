@@ -13,6 +13,7 @@ import { VerificationBadges } from "@/components/VerificationBadges";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { flagEmoji, countryName } from "@/constants/countries";
+import StoreAdminNudgeBanner from "@/components/StoreAdminNudgeBanner";
 
 const tierMeta = {
   none: null,
@@ -136,6 +137,7 @@ const StorePage = () => {
 
   return (
     <div className="bg-neutral-50 dark:bg-neutral-950 min-h-screen" data-testid="store-page">
+      <StoreAdminNudgeBanner slug={slug} />
       {/* Sticky mini-header when scrolled */}
       {scrolled && (
         <div className="fixed top-0 left-0 right-0 z-40 bg-white/95 dark:bg-neutral-900/95 backdrop-blur border-b border-neutral-200 dark:border-neutral-800 shadow-sm animate-in slide-in-from-top-2" data-testid="store-sticky-nav">

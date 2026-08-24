@@ -24,6 +24,27 @@ Full-stack ecommerce marketplace **Merchari-global** — same color scheme (`#FF
 
 ---
 
+### Feb 2026 — Admin Nudge, Pickup Reminders, Auto-Split Balance Logic
+**1. Admin Nudge on Store Page** — new `POST /api/admin/orders/{id}/nudge` fires an email + in-app notif to the seller, tracks `nudged_at` and `nudge_count` on the order. New `GET /api/stores/{slug}/pending-pickups` (admin-only) lists pending pickups for a store's seller with `hours_left`. New `StoreAdminNudgeBanner.jsx` renders a red 2-border card at the top of `/store/:slug` for admin viewers listing every stalled order + a 1-click "Nudge seller" button (verified live: `nudge_count=1, nudged_at=True` after a click).
+
+**2. Pickup Push Notifications** — `_send_pickup_email` helper in `server.py` renders a branded HTML template with cost/profit and a CTA button, respecting the seller's `email_preferences.sale` opt-out. Fired at:
+- **T-0** (order created): scheduled via `asyncio.create_task` from the checkout hook so response stays fast
+- **T-6h before deadline**: `pickup_reminder_loop` scans every 5 min, sends "6 hours left" reminder, marks `pickup_reminder_6h_sent_at` so it never fires twice
+- **T-1h before deadline**: same loop sends "1 hour left" reminder, marks `pickup_reminder_1h_sent_at`
+- **Admin nudge**: reuses the same template with an escalated headline
+
+Both timers also drop an in-app `notify` alongside the email.
+
+**3. Auto-Split Balance Logic** — the `use_frozen` opt-in checkbox is gone. Frozen reinvest is now **automatic and only when needed**:
+- `available >= cost` → pull entire amount from `available`; frozen untouched
+- `available < cost` → pull all `available` first, then top up `(cost - available)` from frozen (still capped at 75% of frozen)
+- `available + frozen_usable < cost` → HTTP 402 with `deposit_needed`
+
+Pickup-quote returns `will_use_available` and `will_use_frozen` so the dialog previews the exact split (blue "your available is short — we'll top up from frozen" callout appears only when frozen will actually be used). Seller earnings continue to sit in frozen until buyer confirms delivery.
+
+**4. Buyer auto-confirm shortened**: `AUTO_CONFIRM_AFTER_HOURS` default changed from 72h → **24h**. If the buyer doesn't confirm/complain within 24h of delivery, the frozen earnings automatically release to the seller's available balance.
+
+
 ### Feb 2026 — Seller Pick & Deliver Flow (Manual Fulfillment Gate)
 **Product intent**: after a buyer orders, the seller must explicitly accept the order and pay the source cost from their wallet BEFORE fulfillment starts. Applies to every order/listing. Auto-cancels after 48h if the seller doesn't accept.
 

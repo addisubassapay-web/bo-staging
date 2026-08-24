@@ -1268,6 +1268,14 @@ async def create_order(payload: OrderCreate, user: dict = Depends(get_current_us
         seller_body = f"{listing['title']}. Accept within {pickup_hours}h to keep the sale."
     await notify(listing["seller_id"], "sale", seller_headline, seller_body,
                  f"/profile?tab=orders&pickup={order.id}")
+    # Fire the initial pickup email (fire-and-forget so checkout stays fast).
+    try:
+        asyncio.create_task(_send_pickup_email(
+            listing["seller_id"], order.id, listing["title"],
+            reseller_wholesale_cost, max(0.0, seller_earnings), pickup_hours, kind="new",
+        ))
+    except Exception as e:
+        logger.warning(f"pickup email schedule failed for order {order.id}: {e}")
     await notify(user["id"], "order", f"Order placed: {listing['title']}",
                  f"You paid ${amount + shipping_fee:.2f} · arrives in ~{eta_days} days",
                  f"/profile?tab=orders")
@@ -1383,6 +1391,12 @@ async def pickup_quote(order_id: str, user: dict = Depends(get_current_user)):
     hours_left = max(0.0, round((deadline - now).total_seconds() / 3600, 1)) if deadline else None
 
     max_pay = round(available + frozen_usable, 2)
+    # Compute the auto-split preview so the UI can show exactly which
+    # buckets will fund the pickup — no more opt-in checkbox.
+    will_use_available = round(min(available, cost), 2) if cost > 0 else 0.0
+    will_use_frozen = round(max(0.0, cost - available), 2) if cost > 0 else 0.0
+    if will_use_frozen > frozen_usable:
+        will_use_frozen = frozen_usable
     return {
         "order_id": order_id,
         "listing_title": order.get("listing_title"),
@@ -1392,6 +1406,8 @@ async def pickup_quote(order_id: str, user: dict = Depends(get_current_user)):
         "wallet": {"available": available, "frozen": frozen, "frozen_usable": frozen_usable},
         "affordable_from_available": available >= cost,
         "affordable_with_frozen": max_pay >= cost,
+        "will_use_available": will_use_available,
+        "will_use_frozen": will_use_frozen,
         "deposit_needed": max(0.0, round(cost - max_pay, 2)),
         "fulfillment_status": order.get("fulfillment_status") or "pending_pickup",
         "pickup_deadline": deadline.isoformat() if deadline else None,
@@ -1435,7 +1451,11 @@ async def pickup_order(
         raise HTTPException(410, "Pickup window expired — order has been auto-cancelled")
 
     cost = float(order.get("reseller_wholesale_cost") or 0.0)
-    use_frozen = bool(payload.get("use_frozen", False))
+    # New (Feb 2026 refinement): frozen reinvest is AUTOMATIC and only when
+    # available cannot cover the full pickup cost. The seller can no longer
+    # opt-in to frozen when they have enough available — this keeps their
+    # frozen earnings safely in escrow whenever possible. If available < cost
+    # we use ALL available first, then top up from frozen (capped at 75%).
 
     seller_row = await db.users.find_one(
         {"id": order["seller_id"]},
@@ -1448,27 +1468,26 @@ async def pickup_order(
     paid_frozen = 0.0
     paid_available = 0.0
     if cost > 0:
-        if use_frozen:
-            paid_frozen = round(min(frozen_usable, cost), 2)
-            paid_available = round(cost - paid_frozen, 2)
-        else:
+        if available >= cost:
             paid_available = cost
-
-        if paid_available > available:
-            max_pay = available + (frozen_usable if use_frozen else 0.0)
-            raise HTTPException(
-                402,
-                detail={
-                    "code": "insufficient_funds",
-                    "cost": cost,
-                    "available": available,
-                    "frozen": frozen,
-                    "frozen_usable": frozen_usable,
-                    "used_frozen": use_frozen,
-                    "deposit_needed": round(cost - max_pay, 2),
-                    "message": "Deposit more or tick 'use frozen balance too' to fund this pickup.",
-                },
-            )
+        else:
+            paid_available = available
+            paid_frozen = round(cost - available, 2)
+            if paid_frozen > frozen_usable:
+                # Frozen 75% cap can't cover the shortfall either.
+                max_pay = round(available + frozen_usable, 2)
+                raise HTTPException(
+                    402,
+                    detail={
+                        "code": "insufficient_funds",
+                        "cost": cost,
+                        "available": available,
+                        "frozen": frozen,
+                        "frozen_usable": frozen_usable,
+                        "deposit_needed": round(cost - max_pay, 2),
+                        "message": "Not enough funds. Deposit into your wallet to pick this order.",
+                    },
+                )
 
         # Debit frozen first (if any), then available. Both use the ledger
         # so wallet_txs stays reconciled.
@@ -1539,6 +1558,115 @@ async def seller_pending_pickups(user: dict = Depends(get_current_user)):
         r["hours_left"] = max(0.0, round((d - now).total_seconds() / 3600, 1)) if d else None
         out.append(r)
     return {"orders": out, "count": len(out)}
+
+
+@api_router.get("/stores/{slug}/pending-pickups")
+async def store_pending_pickups(slug: str, user: dict = Depends(get_current_user)):
+    """Admin-only: list pending pickups for the seller behind a store.
+    Powers the red "nudge seller" banner on `/store/:slug`."""
+    if user.get("role") != "admin":
+        raise HTTPException(403, "Admin only")
+    store = await db.stores.find_one({"slug": slug}, {"_id": 0, "owner_id": 1, "name": 1})
+    if not store:
+        raise HTTPException(404, "Store not found")
+    cursor = db.orders.find(
+        {"seller_id": store["owner_id"], "fulfillment_status": "pending_pickup"},
+        {"_id": 0, "id": 1, "listing_title": 1, "reseller_wholesale_cost": 1,
+         "pickup_deadline": 1, "created_at": 1, "buyer_id": 1, "amount": 1,
+         "nudged_at": 1, "nudge_count": 1},
+    ).sort("pickup_deadline", 1)
+    rows = await cursor.to_list(length=200)
+    now = datetime.now(timezone.utc)
+    for r in rows:
+        d = r.get("pickup_deadline")
+        if isinstance(d, str):
+            try:
+                d = datetime.fromisoformat(d.replace("Z", "+00:00"))
+            except Exception:
+                d = None
+        if d and d.tzinfo is None:
+            d = d.replace(tzinfo=timezone.utc)
+        r["hours_left"] = max(0.0, round((d - now).total_seconds() / 3600, 1)) if d else None
+    return {
+        "store": {"slug": slug, "owner_id": store["owner_id"], "name": store.get("name")},
+        "orders": rows,
+        "count": len(rows),
+    }
+
+
+@api_router.post("/admin/orders/{order_id}/nudge")
+async def admin_nudge_seller(
+    order_id: str,
+    payload: dict = Body(default={}),
+    _admin: dict = Depends(require_admin),
+):
+    """Admin-triggered nudge: sends a stern email + in-app notification
+    urging the seller to Pick & Deliver an order that's still pending.
+    Tracks `nudged_at` + `nudge_count` on the order so admins can see
+    how many times they've chased this one."""
+    order = await db.orders.find_one({"id": order_id}, {"_id": 0})
+    if not order:
+        raise HTTPException(404, "Order not found")
+    if order.get("fulfillment_status") != "pending_pickup":
+        raise HTTPException(400, f"Order is not pending pickup ({order.get('fulfillment_status')})")
+
+    note = str(payload.get("message") or "").strip()
+    seller_id = order["seller_id"]
+    cost = float(order.get("reseller_wholesale_cost") or 0.0)
+    profit = float(order.get("seller_earnings") or 0.0)
+
+    # In-app notification.
+    body = note or (
+        f"An admin is chasing this order — pay the ${cost:.2f} source cost now "
+        f"or lose the sale (and your ${profit:.2f} profit)."
+    )
+    await notify(
+        seller_id, "admin",
+        f"Admin nudge: pick and deliver '{order.get('listing_title','order')}'",
+        body,
+        f"/profile?tab=orders&pickup={order_id}",
+    )
+
+    # Escalated email — reuse pickup email template with `admin_nudge` kind.
+    try:
+        from services.mailer import send_email
+        from services.email_templates import _shell, FRONTEND
+        seller = await db.users.find_one({"id": seller_id}, {"_id": 0, "email": 1, "username": 1})
+        if seller and seller.get("email"):
+            cta_url = f"{FRONTEND.rstrip('/')}/profile?tab=orders&pickup={order_id}"
+            html = _shell(seller.get("username") or "Seller", f"""
+<h1 style="margin:0 0 8px 0;font-size:22px;color:#111;">Admin nudge — accept your order now</h1>
+<p style="margin:0 0 12px 0;color:#333;">
+{note or "One of our admins is watching this order. Accept and pay the source cost immediately, or the order will auto-cancel and the buyer will be refunded."}
+</p>
+<div style="border:1px solid #eee;border-radius:8px;padding:14px 16px;background:#fafafa;margin:12px 0;">
+  <div style="font-weight:600;color:#111;margin-bottom:6px;">{order.get('listing_title','')}</div>
+  <div>Source cost: <b>${cost:.2f}</b></div>
+  <div>Your profit (held until delivery): <b style="color:#0a7c3e;">${profit:.2f}</b></div>
+</div>
+<p style="margin:16px 0;">
+  <a href="{cta_url}" style="background:#FF211F;color:#fff;padding:10px 22px;border-radius:999px;text-decoration:none;font-weight:600;">
+    Pick &amp; Deliver →
+  </a>
+</p>
+""".strip())
+            await send_email(
+                to=seller["email"],
+                subject="[Merchari-global] Admin nudge — accept your order now",
+                html=html,
+                tags=["pickup", "admin_nudge"],
+            )
+    except Exception as e:
+        logger.warning(f"admin nudge email failed for order {order_id}: {e}")
+
+    await db.orders.update_one(
+        {"id": order_id},
+        {
+            "$set": {"nudged_at": datetime.now(timezone.utc)},
+            "$inc": {"nudge_count": 1},
+        },
+    )
+    return {"ok": True, "order_id": order_id, "message": "Seller nudged"}
 
 
 
@@ -5814,6 +5942,115 @@ async def shipping_progress_loop():
         await asyncio.sleep(30)
 
 
+async def _send_pickup_email(
+    seller_id: str, order_id: str, listing_title: str,
+    cost: float, profit: float, pickup_hours: int, *, kind: str = "new"
+) -> None:
+    """Send a pickup-required email to the seller. `kind` = "new" | "reminder_6h" | "reminder_1h"."""
+    try:
+        from services.mailer import send_email
+        from services.email_templates import _shell, FRONTEND
+        seller = await db.users.find_one({"id": seller_id}, {"_id": 0, "email": 1, "username": 1, "email_preferences": 1})
+        if not seller or not seller.get("email"):
+            return
+        # Respect opt-outs for the "sale" lane.
+        prefs = seller.get("email_preferences") or {}
+        if prefs.get("sale") is False:
+            return
+
+        if kind == "reminder_6h":
+            headline = "Reminder: 6 hours left to accept your order"
+            urgency = "Your buyer is waiting — accept before the pickup window closes."
+        elif kind == "reminder_1h":
+            headline = "Last hour to accept your order"
+            urgency = "This order will auto-cancel and refund the buyer in about an hour."
+        else:
+            headline = "New order — please Pick & Deliver"
+            urgency = f"You have {pickup_hours}h to accept and pay the source cost."
+
+        cta_url = f"{FRONTEND.rstrip('/')}/profile?tab=orders&pickup={order_id}"
+        cost_line = f"<div>Source cost: <b>${cost:.2f}</b></div>" if cost > 0 else "<div>Source cost: <b>$0.00</b></div>"
+        body_html = f"""
+<h1 style="margin:0 0 8px 0;font-size:22px;color:#111;">{headline}</h1>
+<p style="margin:0 0 12px 0;color:#555;">{urgency}</p>
+<div style="border:1px solid #eee;border-radius:8px;padding:14px 16px;background:#fafafa;margin:12px 0;">
+  <div style="font-weight:600;color:#111;margin-bottom:6px;">{listing_title}</div>
+  {cost_line}
+  <div>Your profit (held until delivery): <b style="color:#0a7c3e;">${profit:.2f}</b></div>
+</div>
+<p style="margin:16px 0;">
+  <a href="{cta_url}" style="background:#FF211F;color:#fff;padding:10px 22px;border-radius:999px;text-decoration:none;font-weight:600;">
+    Pick &amp; Deliver →
+  </a>
+</p>
+<p style="color:#888;font-size:12px;">Not accepted in time = the order auto-cancels and the buyer is refunded.</p>
+""".strip()
+        html = _shell(seller.get("username") or "Seller", body_html)
+        await send_email(
+            to=seller["email"],
+            subject=f"[Merchari-global] {headline}",
+            html=html,
+            tags=["pickup", kind],
+        )
+    except Exception as e:
+        logger.warning(f"_send_pickup_email({kind}) failed for order {order_id}: {e}")
+
+
+async def pickup_reminder_loop():
+    """Fire two escalating pickup reminders (T-6h and T-1h) before auto-cancel.
+
+    We mark each reminder as sent on the order doc so we never spam the
+    seller twice. Runs every 5 minutes."""
+    await asyncio.sleep(30)
+    while True:
+        try:
+            now = datetime.now(timezone.utc)
+            # T-6h reminder: deadline within (5h, 6h30] and no 6h reminder yet.
+            for spec in [
+                {"cutoff_lo": timedelta(hours=5), "cutoff_hi": timedelta(hours=6, minutes=30),
+                 "flag": "pickup_reminder_6h_sent_at", "kind": "reminder_6h"},
+                {"cutoff_lo": timedelta(minutes=30), "cutoff_hi": timedelta(hours=1, minutes=30),
+                 "flag": "pickup_reminder_1h_sent_at", "kind": "reminder_1h"},
+            ]:
+                cursor = db.orders.find(
+                    {
+                        "fulfillment_status": "pending_pickup",
+                        "pickup_deadline": {
+                            "$gte": now + spec["cutoff_lo"],
+                            "$lte": now + spec["cutoff_hi"],
+                        },
+                        spec["flag"]: {"$exists": False},
+                    },
+                    {"_id": 0, "id": 1, "seller_id": 1, "listing_title": 1,
+                     "reseller_wholesale_cost": 1, "seller_earnings": 1, "pickup_deadline": 1},
+                ).limit(100)
+                due = await cursor.to_list(length=100)
+                pickup_hours = 48
+                for o in due:
+                    try:
+                        await _send_pickup_email(
+                            o["seller_id"], o["id"], o.get("listing_title", "order"),
+                            float(o.get("reseller_wholesale_cost") or 0.0),
+                            float(o.get("seller_earnings") or 0.0),
+                            pickup_hours, kind=spec["kind"],
+                        )
+                        headline = "6 hours left to accept" if spec["kind"] == "reminder_6h" else "1 hour left to accept"
+                        await notify(
+                            o["seller_id"], "sale", headline,
+                            f"'{o.get('listing_title','order')}' — accept now or it auto-cancels.",
+                            f"/profile?tab=orders&pickup={o['id']}",
+                        )
+                        await db.orders.update_one(
+                            {"id": o["id"]},
+                            {"$set": {spec["flag"]: now}},
+                        )
+                    except Exception as e:
+                        logger.warning(f"pickup_reminder({spec['kind']}) failed for {o.get('id')}: {e}")
+        except Exception as e:
+            logger.exception(f"pickup_reminder_loop error: {e}")
+        await asyncio.sleep(int(os.environ.get("PICKUP_REMINDER_INTERVAL_SEC", "300")))
+
+
 async def pickup_expiry_loop():
     """Auto-cancel orders whose `pickup_deadline` has elapsed without the
     seller accepting. Refunds the buyer (the payment sat in escrow — since
@@ -5893,7 +6130,7 @@ async def auto_confirm_delivery_loop():
     await asyncio.sleep(30)
     while True:
         try:
-            hours = int(os.environ.get("AUTO_CONFIRM_AFTER_HOURS", "72"))
+            hours = int(os.environ.get("AUTO_CONFIRM_AFTER_HOURS", "24"))
             cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
             cursor = db.orders.find(
                 {
@@ -7240,6 +7477,7 @@ async def startup():
     asyncio.create_task(auto_confirm_delivery_loop())
     asyncio.create_task(auto_confirm_nudge_loop())
     asyncio.create_task(pickup_expiry_loop())
+    asyncio.create_task(pickup_reminder_loop())
     asyncio.create_task(sitemap_ping_sweeper())
 
 

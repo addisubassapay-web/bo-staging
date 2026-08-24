@@ -3,7 +3,6 @@ import api from "@/lib/api";
 import { Loader2, PackageCheck, Wallet, Snowflake, AlertTriangle, Info, Timer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
 
@@ -11,18 +10,14 @@ const fmt = (n) => `$${Number(n ?? 0).toFixed(2)}`;
 
 /**
  * PickupOrderDialog — modal that shows the cost breakdown, wallet balances,
- * and the "Pick and Deliver" call-to-action. Debits wholesale from wallet
- * (with optional frozen-reinvest up to 75% cap) via the /pickup endpoint.
+ * and a "Pick and Deliver" call-to-action.
  *
- * Props:
- *   orderId: string
- *   trigger: ReactNode (optional custom trigger)
- *   onPicked: (updatedOrder) => void
+ * Split logic (Feb 2026): frozen reinvest is AUTOMATIC and only when
+ * available cannot cover cost — the backend decides. No opt-in checkbox.
  */
 const PickupOrderDialog = ({ orderId, trigger, onPicked }) => {
   const [open, setOpen] = useState(false);
   const [quote, setQuote] = useState(null);
-  const [useFrozen, setUseFrozen] = useState(false);
   const [busy, setBusy] = useState(false);
   const { toast } = useToast();
 
@@ -48,9 +43,7 @@ const PickupOrderDialog = ({ orderId, trigger, onPicked }) => {
     if (busy || !quote) return;
     setBusy(true);
     try {
-      const { data } = await api.post(`/orders/${orderId}/pickup`, {
-        use_frozen: useFrozen,
-      });
+      const { data } = await api.post(`/orders/${orderId}/pickup`, {});
       toast({
         title: "Order picked up",
         description: `${fmt(quote.cost)} paid · profit ${fmt(quote.profit)} locked until delivery`,
@@ -62,7 +55,7 @@ const PickupOrderDialog = ({ orderId, trigger, onPicked }) => {
       if (typeof detail === "object" && detail?.code === "insufficient_funds") {
         toast({
           title: "Insufficient funds",
-          description: `Deposit ${fmt(detail.deposit_needed)} or tick "use frozen balance" to fund this pickup.`,
+          description: `Deposit ${fmt(detail.deposit_needed)} into your wallet to fund this pickup.`,
           variant: "destructive",
         });
       } else {
@@ -77,7 +70,8 @@ const PickupOrderDialog = ({ orderId, trigger, onPicked }) => {
     }
   };
 
-  const affordable = quote && (useFrozen ? quote.affordable_with_frozen : quote.affordable_from_available);
+  const affordable = quote && quote.affordable_with_frozen;
+  const needsFrozen = quote && quote.will_use_frozen > 0;
 
   return (
     <>
@@ -124,7 +118,7 @@ const PickupOrderDialog = ({ orderId, trigger, onPicked }) => {
                   <span className="font-semibold text-neutral-900" data-testid="pickup-cost">{fmt(quote.cost)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-neutral-600">Your profit (held until delivery)</span>
+                  <span className="text-neutral-600">Your profit (held in frozen until delivery)</span>
                   <span className="font-semibold text-emerald-700" data-testid="pickup-profit">{fmt(quote.profit)}</span>
                 </div>
                 {quote.hours_left !== null && (
@@ -154,26 +148,26 @@ const PickupOrderDialog = ({ orderId, trigger, onPicked }) => {
                 </div>
               </div>
 
-              {/* Use frozen toggle */}
-              <label
-                className="flex items-start gap-3 cursor-pointer p-3 rounded-lg border border-neutral-200 hover:bg-neutral-50 transition-colors"
-                data-testid="pickup-use-frozen-label"
-              >
-                <Checkbox
-                  checked={useFrozen}
-                  onCheckedChange={(v) => setUseFrozen(Boolean(v))}
-                  data-testid="pickup-use-frozen-checkbox"
-                  className="mt-0.5"
-                />
-                <div className="flex-1 text-sm">
-                  <div className="font-medium text-neutral-900 inline-flex items-center gap-1.5">
-                    <Snowflake className="h-3.5 w-3.5 text-blue-500" /> Use frozen balance too
+              {/* Auto-split preview (shown only when frozen will be used) */}
+              {needsFrozen && quote.cost > 0 && (
+                <div
+                  className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-xs text-blue-900 space-y-1"
+                  data-testid="pickup-split-preview"
+                >
+                  <div className="font-semibold inline-flex items-center gap-1.5">
+                    <Snowflake className="h-3.5 w-3.5" /> Your available balance is short — we&apos;ll top up from frozen
                   </div>
-                  <div className="text-xs text-neutral-500 mt-0.5">
-                    Reinvest up to 75% of your frozen earnings ({fmt(quote.wallet.frozen_usable)}) to fund this pickup. Frozen funds can only be reinvested to initiate order delivery.
+                  <div className="flex justify-between">
+                    <span>From available</span><span className="font-mono">{fmt(quote.will_use_available)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>From frozen (reinvest)</span><span className="font-mono">{fmt(quote.will_use_frozen)}</span>
+                  </div>
+                  <div className="text-[11px] text-blue-800 mt-1">
+                    Frozen funds are only used when needed — they can only be reinvested to initiate order delivery.
                   </div>
                 </div>
-              </label>
+              )}
 
               {/* Affordability banner */}
               {!affordable ? (
@@ -186,8 +180,7 @@ const PickupOrderDialog = ({ orderId, trigger, onPicked }) => {
                     Not enough funds to pick this order
                   </div>
                   <div className="text-xs text-amber-800">
-                    You still need <span className="font-semibold">{fmt(quote.deposit_needed - (useFrozen ? 0 : quote.wallet.frozen_usable))}</span>{" "}
-                    {useFrozen ? "in your wallet" : "— or tick 'Use frozen balance too' to unlock more"}.
+                    You still need <span className="font-semibold">{fmt(quote.deposit_needed)}</span> in your wallet.
                   </div>
                   <Link
                     to="/wallet"
