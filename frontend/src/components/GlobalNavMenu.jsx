@@ -1,10 +1,12 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
-import { useLang } from "@/context/LanguageContext";
+import { useLang, LANGUAGES } from "@/context/LanguageContext";
+import { useCurrency, CURRENCY_LIST } from "@/context/CurrencyContext";
 import {
   Menu as MenuIcon, X, Package, Search, ShoppingCart, Heart, MessageSquare, Wallet,
   AlertCircle, Store, BarChart3, Users, Link as LinkIcon, ShieldCheck, Settings, User,
+  Globe, DollarSign,
 } from "lucide-react";
 
 /**
@@ -27,7 +29,8 @@ const NavItem = ({ to, icon: Icon, children, onClose, testid }) => (
 
 const GlobalNavMenu = () => {
   const { user } = useAuth();
-  const { t } = useLang();
+  const { t, lang, setLang } = useLang();
+  const { currency, setCurrency, meta } = useCurrency();
   const [open, setOpen] = useState(false);
   const btnRef = useRef(null);
 
@@ -67,7 +70,7 @@ const GlobalNavMenu = () => {
           <div className="flex items-center gap-2">
             <img src="/logo-mark.png" alt="Mercari-Global" className="h-9 w-9 shrink-0" />
             <div className="leading-tight">
-              <div className="text-base font-bold text-neutral-900 dark:text-neutral-100">Mercari-Global <span className="text-[#FF7A18]">Global</span></div>
+              <div className="text-base font-bold text-neutral-900 dark:text-neutral-100">Mercari-<span className="text-[#FF7A18]">Global</span></div>
               <div className="text-[10px] text-neutral-500 dark:text-neutral-400 -mt-0.5">{t("menu.mainPages")}</div>
             </div>
           </div>
@@ -82,6 +85,53 @@ const GlobalNavMenu = () => {
         </div>
 
         <nav className="flex-1 overflow-y-auto p-2 space-y-0.5">
+          {/* Language + Currency — quick switchers at the top of the drawer.
+              Values persist to localStorage via the context providers. */}
+          <div className="px-2 pt-2 pb-3 space-y-2" data-testid="gnav-prefs">
+            <label className="flex items-center gap-3 rounded-xl bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 px-3 py-2">
+              <span className="h-8 w-8 rounded-lg bg-sky-100 text-sky-700 grid place-items-center shrink-0">
+                <Globe className="h-4 w-4" />
+              </span>
+              <div className="flex-1 min-w-0">
+                <div className="text-[10px] uppercase tracking-wider text-neutral-500 font-semibold">Language</div>
+                <select
+                  value={lang}
+                  onChange={(e) => setLang(e.target.value)}
+                  className="mt-0.5 w-full bg-transparent text-sm font-semibold text-neutral-900 dark:text-neutral-100 focus:outline-none cursor-pointer"
+                  data-testid="gnav-lang-select"
+                  aria-label="Choose language"
+                >
+                  {LANGUAGES.map((l) => (
+                    <option key={l.code} value={l.code}>{l.flag} {l.label}</option>
+                  ))}
+                </select>
+              </div>
+            </label>
+            <label className="flex items-center gap-3 rounded-xl bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 px-3 py-2">
+              <span className="h-8 w-8 rounded-lg bg-emerald-100 text-emerald-700 grid place-items-center shrink-0">
+                <DollarSign className="h-4 w-4" />
+              </span>
+              <div className="flex-1 min-w-0">
+                <div className="text-[10px] uppercase tracking-wider text-neutral-500 font-semibold">Currency</div>
+                <select
+                  value={currency}
+                  onChange={(e) => setCurrency(e.target.value)}
+                  className="mt-0.5 w-full bg-transparent text-sm font-semibold text-neutral-900 dark:text-neutral-100 focus:outline-none cursor-pointer"
+                  data-testid="gnav-currency-select"
+                  aria-label="Choose currency"
+                >
+                  {CURRENCY_LIST.map((c) => (
+                    <option key={c} value={c}>
+                      {c} {meta?.symbol && c === currency ? `(${meta.symbol})` : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </label>
+          </div>
+
+          <div className="h-px bg-neutral-200 dark:bg-neutral-800 mx-2" />
+
           <NavItem to="/" icon={Package} onClose={close} testid="gnav-home">{t("menu.home")}</NavItem>
           <NavItem to="/search" icon={Search} onClose={close} testid="gnav-search">{t("menu.browse")}</NavItem>
           <NavItem to="/cart" icon={ShoppingCart} onClose={close} testid="gnav-cart">{t("cart.viewCart")}</NavItem>

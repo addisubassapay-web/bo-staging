@@ -3979,6 +3979,69 @@ async def admin_reject_deposit(dep_id: str, payload: dict = Body(default={}), _a
     return {"ok": True, "status": "rejected"}
 
 
+class BulkDepositAction(BaseModel):
+    ids: List[str]
+    reason: Optional[str] = None  # only used for bulk reject
+
+
+@api_router.post("/admin/deposits/bulk-approve")
+async def admin_bulk_approve_deposits(payload: BulkDepositAction, _admin: dict = Depends(require_admin)):
+    """Approve a batch of pending deposits in one call.
+
+    Iterates sequentially so any single failure (e.g. status has already
+    flipped between the queue load and the click) doesn't roll back the rest.
+    Returns per-id results so the UI can badge partial successes."""
+    if not payload.ids:
+        raise HTTPException(400, "No deposit ids supplied")
+    if len(payload.ids) > 100:
+        raise HTTPException(400, "Bulk actions capped at 100 rows per call")
+    results: list[dict] = []
+    for dep_id in payload.ids:
+        dep = await db.deposits.find_one({"id": dep_id}, {"_id": 0})
+        if not dep:
+            results.append({"id": dep_id, "ok": False, "error": "not_found"})
+            continue
+        if dep["status"] != "pending":
+            results.append({"id": dep_id, "ok": False, "error": f"already_{dep['status']}"})
+            continue
+        await db.deposits.update_one({"id": dep_id}, {"$set": {"status": "approved", "processed_at": datetime.now(timezone.utc)}})
+        label = dep.get("currency") or dep.get("method", "deposit")
+        await ledger.deposit_approved(db, user_id=dep["user_id"], amount=float(dep["amount"]),
+                                      deposit_id=dep_id, label=label)
+        await notify(dep["user_id"], "wallet", f"Deposit approved — ${float(dep['amount']):.2f}",
+                     f"Your {label} deposit has been credited to your wallet.", "/wallet")
+        results.append({"id": dep_id, "ok": True})
+    approved = sum(1 for r in results if r["ok"])
+    return {"ok": True, "approved": approved, "total": len(payload.ids), "results": results}
+
+
+@api_router.post("/admin/deposits/bulk-reject")
+async def admin_bulk_reject_deposits(payload: BulkDepositAction, _admin: dict = Depends(require_admin)):
+    """Reject a batch of pending deposits with one shared reason."""
+    if not payload.ids:
+        raise HTTPException(400, "No deposit ids supplied")
+    if len(payload.ids) > 100:
+        raise HTTPException(400, "Bulk actions capped at 100 rows per call")
+    reason = (payload.reason or "").strip() or "Rejected in bulk review"
+    results: list[dict] = []
+    for dep_id in payload.ids:
+        dep = await db.deposits.find_one({"id": dep_id}, {"_id": 0})
+        if not dep:
+            results.append({"id": dep_id, "ok": False, "error": "not_found"})
+            continue
+        if dep["status"] != "pending":
+            results.append({"id": dep_id, "ok": False, "error": f"already_{dep['status']}"})
+            continue
+        await db.deposits.update_one({"id": dep_id},
+                                     {"$set": {"status": "rejected", "admin_note": reason,
+                                               "processed_at": datetime.now(timezone.utc)}})
+        await notify(dep["user_id"], "wallet", f"Deposit rejected — ${float(dep['amount']):.2f}",
+                     reason, "/wallet")
+        results.append({"id": dep_id, "ok": True})
+    rejected = sum(1 for r in results if r["ok"])
+    return {"ok": True, "rejected": rejected, "total": len(payload.ids), "results": results}
+
+
 @api_router.post("/wallet/deposits/{dep_id}/resubmit", response_model=DepositRequest)
 async def resubmit_rejected_deposit(
     dep_id: str,

@@ -117,6 +117,24 @@ Each row carries an **SLA badge** (`fresh` < 30 min, `attention` < 2 h, `urgent`
 
 **Tests**: `tests/test_admin_payment_reviews.py` (4 cases: 401/403 for non-admins, response shape, pending appearance with SLA, resubmitted row moves to correct section). All pass.
 
+### Feb 2026 — Bulk Reviews + Hamburger Prefs + Responsiveness Polish
+
+**Bulk approve / reject for admin payment reviews**:
+- Two new endpoints: `POST /api/admin/deposits/bulk-approve` and `/bulk-reject`. Each takes `{ids: [...]}` (capped at 100 rows). Iterates sequentially so a stale row (already approved/rejected by another admin, or a non-existent id) does not roll back the rest — every id gets a per-row `ok`/`error` result. Same accounting path as the single endpoints (ledger.deposit_approved + notify).
+- Each Payment Reviews row now has a checkbox (`accent-[#FF211F]`), and each section header has a "Select all / Deselect all" toggle. Selected rows highlight with a rose border + tinted background.
+- Floating dark action bar (`fixed inset-x-0 bottom-4`) appears once anything is selected, showing "N selected · Clear · Approve N · Reject". Reject prompts for a shared reason.
+- 5 new pytest cases in `test_admin_deposits_bulk.py`: happy approve, happy reject with note propagation, mixed batch that skips non-pending / non-existent, cap enforcement (empty & > 100), non-admin blocked. All pass.
+
+**Currency + Language in the hamburger drawer**:
+- Added a "Preferences" block to the top of the slide-out menu (`GlobalNavMenu`) with two shadcn-style tiles: `Globe` (sky) → language `<select>` with 10 languages (English/Español/Français/Deutsch/Italiano/Português/日本語/中文/العربية/हिन्दी) and `DollarSign` (emerald) → currency `<select>` with 13 currencies. Selections persist to localStorage via the existing `LanguageContext` and `CurrencyContext` (also flips `<html dir>` to RTL for Arabic and updates hreflang alternates).
+- Desktop still shows the same pickers in the header as pills; mobile users now have a first-class discovery path.
+
+**Responsiveness / cosmetic polish**:
+- Fixed the "Mercari-global Global" duplicate in the hamburger header ("Mercari-Global").
+- Fixed the header brand casing "Mercari-global" → "Mercari-Global".
+- Verified end-to-end at both 1440 × 900 (desktop) and 390 × 844 (iPhone 12) — currency/language pills correctly `hidden md:flex`, category chips horizontally scroll with `scrollbar-hide`, nothing overflows viewport.
+
+
   1. `products`: group by `title`, keep newest, repoint every `listings.imported_from_id` to the survivor before deleting the rest.
   2. `listings` (same-seller): group by `(title, seller_id)`, keep newest.
   3. `listings` (cross-seller): if a peer seller already lists the title, soft-remove the Merchari Store mirror.

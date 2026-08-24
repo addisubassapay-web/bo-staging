@@ -179,7 +179,7 @@ const Header = () => {
               data-testid="header-logo"
             />
             <div className={`hidden lg:block leading-tight transition-opacity ${compact ? "hidden xl:block" : ""}`}>
-              <div className={`font-bold text-neutral-900 dark:text-neutral-100 ${compact ? "text-base" : "text-lg xl:text-xl"}`}>Mercari<span className="text-[#FF7A18]">-global</span></div>
+              <div className={`font-bold text-neutral-900 dark:text-neutral-100 ${compact ? "text-base" : "text-lg xl:text-xl"}`}>Mercari<span className="text-[#FF7A18]">-Global</span></div>
               {!compact && <div className="text-[11px] text-neutral-500 dark:text-neutral-400 -mt-0.5">Smart Ecommerce</div>}
             </div>
           </Link>
