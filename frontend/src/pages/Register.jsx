@@ -39,10 +39,10 @@ const Register = () => {
     const ref = searchParams.get("ref");
     if (ref) {
       setForm((f) => ({ ...f, referral_code: ref.toUpperCase() }));
-      try { localStorage.setItem("merchari-global_pending_referral", ref.toUpperCase()); } catch { /* ignore */ }
+      try { localStorage.setItem("mercari-global_pending_referral", ref.toUpperCase()); } catch { /* ignore */ }
     } else {
       try {
-        const pending = localStorage.getItem("merchari-global_pending_referral");
+        const pending = localStorage.getItem("mercari-global_pending_referral");
         if (pending) setForm((f) => ({ ...f, referral_code: pending }));
       } catch { /* ignore */ }
     }
@@ -87,8 +87,8 @@ const Register = () => {
         password: form.password,
         referral_code: form.referral_code || null,
       });
-      localStorage.setItem("merchari-global_token", data.token);
-      try { localStorage.removeItem("merchari-global_pending_referral"); } catch { /* ignore */ }
+      localStorage.setItem("mercari-global_token", data.token);
+      try { localStorage.removeItem("mercari-global_pending_referral"); } catch { /* ignore */ }
       toast({ title: `Welcome, ${data.user.username}!`, description: "Your account is ready." });
       window.location.href = "/";
     } catch (err) {
@@ -131,7 +131,7 @@ const Register = () => {
             </ul>
           </div>
 
-          <div className="text-xs text-white/60">© {new Date().getFullYear()} Merchari-global · All rights reserved.</div>
+          <div className="text-xs text-white/60">© {new Date().getFullYear()} Mercari-Global · All rights reserved.</div>
         </div>
 
         {/* Right — form pane */}
@@ -162,7 +162,7 @@ const Register = () => {
               <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
                 {inviteOnly
                   ? "Enter the invitation code shared by an existing member to join."
-                  : "Join Merchari-global and get your storefront in seconds."}
+                  : "Join Mercari-Global and get your storefront in seconds."}
               </p>
 
               <form onSubmit={submit} className="mt-6 space-y-4" data-testid="register-form">
@@ -282,7 +282,7 @@ const Register = () => {
                   </div>
                   {inviteOnly && !inviteLoading && (
                     <p className="mt-1 text-[11px] text-neutral-500 dark:text-neutral-400 inline-flex items-center gap-1">
-                      <Sparkles className="h-3 w-3 text-amber-500" /> New signups need a valid invitation from a Merchari-global member.
+                      <Sparkles className="h-3 w-3 text-amber-500" /> New signups need a valid invitation from a Mercari-Global member.
                     </p>
                   )}
                 </div>
@@ -296,7 +296,7 @@ const Register = () => {
                     data-testid="register-accept"
                   />
                   <span>
-                    I agree to Merchari-global&apos;s{" "}
+                    I agree to Mercari-Global&apos;s{" "}
                     <a href="/terms" className="text-[#2563EB] dark:text-[#7DD3FC] hover:underline">Terms</a> and{" "}
                     <a href="/privacy" className="text-[#2563EB] dark:text-[#7DD3FC] hover:underline">Privacy Policy</a>.
                   </span>

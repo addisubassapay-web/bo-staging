@@ -130,7 +130,7 @@ export const DepositDialog = ({ open, onOpenChange, onDeposited }) => {
                     onClick={() => setCryptoIdx(i)}
                     className={`min-h-[44px] px-4 rounded-full text-sm font-semibold transition-colors duration-200 border ${
                       i === cryptoIdx
-                        ? "bg-merchari-global-red text-canvas-0 border-merchari-global-red shadow-brand-sm"
+                        ? "bg-mercari-global-red text-canvas-0 border-mercari-global-red shadow-brand-sm"
                         : "bg-canvas-0 text-ink-body border-hairline hover:border-ink"
                     }`}
                     data-testid={`deposit-crypto-${c.currency}`}
@@ -187,7 +187,7 @@ export const DepositDialog = ({ open, onOpenChange, onDeposited }) => {
                     onClick={() => setManualIdx(i)}
                     className={`min-h-[44px] px-4 rounded-full text-sm font-semibold transition-colors duration-200 border ${
                       i === manualIdx
-                        ? "bg-merchari-global-red text-canvas-0 border-merchari-global-red shadow-brand-sm"
+                        ? "bg-mercari-global-red text-canvas-0 border-mercari-global-red shadow-brand-sm"
                         : "bg-canvas-0 text-ink-body border-hairline hover:border-ink"
                     }`}
                     data-testid={`deposit-manual-${m.id}`}
@@ -249,7 +249,7 @@ export const DepositDialog = ({ open, onOpenChange, onDeposited }) => {
           <Button
             onClick={submit}
             disabled={submitting || allEmpty}
-            className="h-12 w-full sm:w-auto rounded-full bg-merchari-global-red hover:bg-merchari-global-red-hover text-canvas-0 font-semibold shadow-brand-md gap-1.5"
+            className="h-12 w-full sm:w-auto rounded-full bg-mercari-global-red hover:bg-mercari-global-red-hover text-canvas-0 font-semibold shadow-brand-md gap-1.5"
             data-testid="deposit-submit"
           >
             <Send className="h-4 w-4" />
@@ -341,7 +341,7 @@ export const WithdrawDialog = ({ open, onOpenChange, onSubmitted }) => {
                     onClick={() => setCryptoCurrency(c)}
                     className={`min-h-[44px] px-4 rounded-full text-sm font-semibold transition-colors duration-200 border ${
                       c === cryptoCurrency
-                        ? "bg-merchari-global-red text-canvas-0 border-merchari-global-red shadow-brand-sm"
+                        ? "bg-mercari-global-red text-canvas-0 border-mercari-global-red shadow-brand-sm"
                         : "bg-canvas-0 text-ink-body border-hairline hover:border-ink"
                     }`}
                     data-testid={`withdraw-currency-${c}`}
@@ -394,7 +394,7 @@ export const WithdrawDialog = ({ open, onOpenChange, onSubmitted }) => {
           <Button
             onClick={submit}
             disabled={submitting}
-            className="h-12 w-full sm:w-auto rounded-full bg-merchari-global-red hover:bg-merchari-global-red-hover text-canvas-0 font-semibold shadow-brand-md gap-1.5"
+            className="h-12 w-full sm:w-auto rounded-full bg-mercari-global-red hover:bg-mercari-global-red-hover text-canvas-0 font-semibold shadow-brand-md gap-1.5"
             data-testid="withdraw-submit"
           >
             <Send className="h-4 w-4" />

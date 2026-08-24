@@ -6,7 +6,7 @@ Apify-scraped catalog lived in `products`. Shoppers were only seeing the
 away on `/products` where most visitors never went.
 
 Strategy:
-  1. Ensure a synthetic seller `merchari_store` exists (admin-owned so
+  1. Ensure a synthetic seller `mercari_store` exists (admin-owned so
      wallet/escrow logic still resolves).
   2. Upsert one `listings` doc per active product, keyed by
      `imported_from_id = product.id`. Idempotent — re-running only
@@ -37,8 +37,8 @@ load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 from motor.motor_asyncio import AsyncIOMotorClient
 from pymongo import UpdateOne
 
-MERCHARI_SELLER_USERNAME = "merchari_store"
-MERCHARI_SELLER_DISPLAY = "Merchari Store"
+MERCHARI_SELLER_USERNAME = "mercari_store"
+MERCHARI_SELLER_DISPLAY = "Mercari Store"
 
 # Canonical product category -> (category_id, category_name) tuples used
 # on listings. Category IDs are looked up dynamically so we tolerate any
@@ -68,12 +68,12 @@ async def ensure_merchari_seller(db) -> dict:
         "id": str(uuid.uuid4()),
         "username": MERCHARI_SELLER_USERNAME,
         "display_name": MERCHARI_SELLER_DISPLAY,
-        "email": "store@merchari.local",
+        "email": "store@mercari.local",
         "role": "seller",
         "seller_status": "active",
         "email_verified": True,
         "avatar": None,
-        "bio": "The official Merchari-global catalog.",
+        "bio": "The official Mercari-Global catalog.",
         "wallet_balance": 0.0,
         "wallet_frozen_balance": 0.0,
         "created_at": now,

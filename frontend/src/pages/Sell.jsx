@@ -104,7 +104,7 @@ const Sell = () => {
   const enhanceAll = async () => {
     if (images.length === 0) return;
     setEnhanceAllBusy(true);
-    const token = localStorage.getItem("merchari-global_token");
+    const token = localStorage.getItem("mercari-global_token");
     const nextImages = [...images];
     for (let i = 0; i < nextImages.length; i++) {
       const src = nextImages[i];
@@ -129,7 +129,7 @@ const Sell = () => {
       const body = src.startsWith("data:") ? { image_base64: src } : { image_url: src };
       const { data } = await api.post("/ai/photo-enhance", body);
       // Use the enhanced URL directly — replace the photo at the same index
-      const token = localStorage.getItem("merchari-global_token");
+      const token = localStorage.getItem("mercari-global_token");
       const enhancedUrl = `${process.env.REACT_APP_BACKEND_URL}${data.url}?auth=${encodeURIComponent(token || "")}`;
       setImages((prev) => prev.map((v, i) => (i === idx ? enhancedUrl : v)));
       toast({ title: "Photo enhanced", description: "Background removed & polished by AI" });
@@ -308,7 +308,7 @@ const Sell = () => {
           <div className="rounded-2xl border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/40 p-6 text-center" data-testid="import-deprecated-notice">
             <div className="text-2xl font-extrabold text-amber-900 dark:text-amber-100">Direct URL imports have moved</div>
             <p className="mt-2 text-sm text-amber-800 dark:text-amber-200 max-w-md mx-auto">
-              Merchari-global now sources every catalog listing from the curated Apify Amazon feed. Use the <b>Resell from catalog</b> tab to publish inventory to your storefront — new items refresh automatically as the platform-wide sync runs.
+              Mercari-Global now sources every catalog listing from the curated Apify Amazon feed. Use the <b>Resell from catalog</b> tab to publish inventory to your storefront — new items refresh automatically as the platform-wide sync runs.
             </p>
             <button
               type="button"

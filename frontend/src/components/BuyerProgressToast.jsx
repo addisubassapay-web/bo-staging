@@ -13,7 +13,7 @@ import { Truck } from "lucide-react";
  * Persists last-seen notification id in localStorage so the toast only fires
  * for genuinely new events (not on every page load).
  */
-const LS_KEY = "merchari-global_last_seen_shipping_notif";
+const LS_KEY = "mercari-global_last_seen_shipping_notif";
 const POLL_MS = 30000;
 
 const BuyerProgressToast = () => {

@@ -43,7 +43,7 @@ const ForgotPassword = () => {
           <p className="text-sm text-neutral-500 mt-1">
             {sent
               ? "If that email is registered, we've sent a one-time reset link. It expires in 60 minutes."
-              : "Enter the email tied to your Merchari-global account and we'll send you a one-time reset link."}
+              : "Enter the email tied to your Mercari-Global account and we'll send you a one-time reset link."}
           </p>
 
           {sent ? (

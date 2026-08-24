@@ -27,7 +27,7 @@ API = f"{BASE_URL}/api"
 MONGO_URL = os.environ["MONGO_URL"]
 DB_NAME = os.environ["DB_NAME"]
 
-ADMIN_EMAIL = "admin@merchari-global.local"
+ADMIN_EMAIL = "admin@mercari-global.local"
 ADMIN_PASSWORD = "admin123"
 
 

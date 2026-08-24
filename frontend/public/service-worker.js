@@ -1,4 +1,4 @@
-/* Merchari-global — Service Worker
+/* Mercari-Global — Service Worker
  * - App shell + navigation offline fallback
  * - Cache-first for static assets, network-first for API
  */

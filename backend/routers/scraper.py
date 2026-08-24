@@ -12,7 +12,6 @@ import os
 import uuid
 from datetime import datetime, timezone
 from typing import Optional
-from urllib.parse import urlparse
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
@@ -21,16 +20,21 @@ from .deps import get_db, get_current_user, require_admin
 from services.queue import enqueue_scrape, enqueue_category
 from services.r2_storage import storage_status
 from services.quotas import get_status as quota_status, admin_all_usage, assert_can_spend, get_user_cap, get_usage
+from services.url_safety import is_safe_public_url
 
 router = APIRouter(prefix="/scraper", tags=["scraper"])
 
 
 def _valid_url(url: str) -> bool:
-    try:
-        u = urlparse(url)
-        return u.scheme in ("http", "https") and bool(u.netloc)
-    except Exception:
-        return False
+    ok, _ = is_safe_public_url(url)
+    return ok
+
+
+def _reject_unsafe_url(url: str) -> None:
+    """Raise 400 with a human-friendly reason when `url` fails SSRF checks."""
+    ok, reason = is_safe_public_url(url)
+    if not ok:
+        raise HTTPException(400, reason or "Enter a valid http(s) URL")
 
 
 class ScrapeJobCreate(BaseModel):
@@ -60,8 +64,7 @@ class CategoryScrapeCreate(BaseModel):
 
 @router.post("/jobs")
 async def create_scrape_job(payload: ScrapeJobCreate, user: dict = Depends(get_current_user)):
-    if not _valid_url(payload.url):
-        raise HTTPException(400, "Enter a valid http(s) URL")
+    _reject_unsafe_url(payload.url)
     if not (os.environ.get("ZYTE_API_KEY") or "").strip():
         raise HTTPException(503, "Zyte API key is not configured")
     db = get_db()
@@ -217,8 +220,7 @@ async def create_category_scrape(payload: CategoryScrapeCreate, user: dict = Dep
     etc. and Zyte returns 30-100 products in a single call. When
     `auto_publish=true` + `category_id` is set, each product goes live
     immediately under that category."""
-    if not _valid_url(payload.url):
-        raise HTTPException(400, "Enter a valid http(s) URL")
+    _reject_unsafe_url(payload.url)
     if not (os.environ.get("ZYTE_API_KEY") or "").strip():
         raise HTTPException(503, "Zyte API key is not configured")
     if payload.auto_publish and not payload.category_id:
@@ -420,17 +422,17 @@ async def scraper_status(_admin: dict = Depends(require_admin)):
 
 
 # =========================================================================
-# Paginated seed scraper — Amazon + Merchari-global at scale
+# Paginated seed scraper — Amazon + Mercari-Global at scale
 # =========================================================================
 _SEED_TEMPLATES = {
     "amazon_search":  "https://www.amazon.com/s?k={q}&page={p}",
-    "merchari-global_search": "https://www.merchari-global.com/search/?keyword={q}&page={p}",
+    "mercari-global_search": "https://www.mercari-global.com/search/?keyword={q}&page={p}",
     "amazon_bestsellers": "https://www.amazon.com/gp/bestsellers/{q}?pg={p}",
 }
 
 
 class PaginatedSeedCreate(BaseModel):
-    provider: str = Field(..., description="amazon_search | merchari-global_search | amazon_bestsellers")
+    provider: str = Field(..., description="amazon_search | mercari-global_search | amazon_bestsellers")
     query: str = Field(..., min_length=1, max_length=200)
     pages: int = Field(5, ge=1, le=50, description="How many pages to walk")
     category_id: Optional[str] = None
@@ -780,7 +782,7 @@ async def suggest_keywords(user: dict = Depends(get_current_user)):
 # Saved Seeds — persist favorite keywords + nightly auto-run
 # =========================================================================
 class SavedSeedCreate(BaseModel):
-    provider: str = Field(..., description="amazon_search | merchari-global_search | amazon_bestsellers")
+    provider: str = Field(..., description="amazon_search | mercari-global_search | amazon_bestsellers")
     query: str = Field(..., min_length=1, max_length=200)
     pages: int = Field(20, ge=1, le=50)
     category_id: str

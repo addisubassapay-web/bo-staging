@@ -39,20 +39,20 @@ const AuthCallback = () => {
       try {
         // Optional referral code carried over from the /register?ref=CODE flow
         const referralCode = (() => {
-          try { return localStorage.getItem("merchari-global_pending_referral") || null; } catch { return null; }
+          try { return localStorage.getItem("mercari-global_pending_referral") || null; } catch { return null; }
         })();
         const { data } = await api.post("/auth/google/session", {
           session_id: sessionId,
           referral_code: referralCode,
         });
         try {
-          localStorage.setItem("merchari-global_token", data.token);
-          if (data.user?.username) localStorage.setItem("merchari-global_username", data.user.username);
-          localStorage.removeItem("merchari-global_pending_referral");
+          localStorage.setItem("mercari-global_token", data.token);
+          if (data.user?.username) localStorage.setItem("mercari-global_username", data.user.username);
+          localStorage.removeItem("mercari-global_pending_referral");
         } catch { /* ignore storage errors */ }
         // Clear the hash so back-nav doesn't re-run this
         window.history.replaceState(null, "", "/");
-        setState({ status: "ok", message: data.created ? "Welcome to merchari-global!" : "Welcome back!" });
+        setState({ status: "ok", message: data.created ? "Welcome to mercari-global!" : "Welcome back!" });
         // Full reload so AuthProvider picks up the fresh token
         setTimeout(() => { window.location.href = "/"; }, 600);
       } catch (err) {

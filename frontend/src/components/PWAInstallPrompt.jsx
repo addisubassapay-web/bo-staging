@@ -16,9 +16,9 @@ import { Download, Share, Plus, X as XIcon } from "lucide-react";
  *   • This is the visitor's first-ever session (returning visitors only)
  *   • Viewport is desktop-wide
  */
-const VISITS_KEY = "merchari-global_pwa_visit_count";
-const DISMISS_KEY = "merchari-global_pwa_prompt_dismissed";
-const INSTALLED_KEY = "merchari-global_pwa_installed";
+const VISITS_KEY = "mercari-global_pwa_visit_count";
+const DISMISS_KEY = "mercari-global_pwa_prompt_dismissed";
+const INSTALLED_KEY = "mercari-global_pwa_installed";
 
 const isStandalone = () => {
   if (typeof window === "undefined") return false;
@@ -110,7 +110,7 @@ const PWAInstallPrompt = () => {
     <div
       className="fixed inset-x-3 bottom-3 z-50 sm:hidden animate-in slide-in-from-bottom-6 fade-in duration-500"
       role="dialog"
-      aria-label="Add Merchari-global to your home screen"
+      aria-label="Add Mercari-Global to your home screen"
       data-testid="pwa-install-prompt"
     >
       <div className="mx-auto max-w-md rounded-2xl shadow-2xl border border-neutral-200 bg-white overflow-hidden">
@@ -119,7 +119,7 @@ const PWAInstallPrompt = () => {
             <img src="/logo-mark.png" alt="" className="h-7 w-7 object-contain" />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-sm font-bold text-neutral-900">Install Merchari-global</div>
+            <div className="text-sm font-bold text-neutral-900">Install Mercari-Global</div>
             <div className="text-[12px] text-neutral-500 mt-0.5">
               {iosMode
                 ? "Add to your home screen for one-tap access — no App Store required."

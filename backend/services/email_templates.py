@@ -3,10 +3,10 @@ from __future__ import annotations
 import os
 
 
-BRAND_NAME = "Merchari-global"
+BRAND_NAME = "Mercari-Global"
 BRAND_ACCENT = "#FF211F"
 FRONTEND = os.environ.get(
-    "FRONTEND_ORIGIN", "https://merchari-global-clone-1.preview.emergentagent.com"
+    "FRONTEND_ORIGIN", "https://mercari-global-clone-1.preview.emergentagent.com"
 )
 
 
@@ -26,7 +26,7 @@ def _shell(title: str, body_html: str, cta_url: str | None = None, cta_label: st
              style="background:#fff;border:1px solid #E5E7EB;border-radius:16px;overflow:hidden;">
         <tr><td style="padding:24px;background:linear-gradient(160deg,#0F172A,#1E293B);color:#fff;">
           <div style="font-size:20px;font-weight:800;letter-spacing:-0.02em;">
-            <span style="color:{BRAND_ACCENT};">Merchari-global</span> Global
+            <span style="color:{BRAND_ACCENT};">Mercari-Global</span> Global
           </div>
         </td></tr>
         <tr><td style="padding:28px 28px 8px 28px;">
@@ -45,7 +45,7 @@ def _shell(title: str, body_html: str, cta_url: str | None = None, cta_label: st
 
 
 def password_reset(reset_url: str, username: str | None = None):
-    subject = "Reset your Merchari-global password"
+    subject = "Reset your Mercari-Global password"
     who = f"Hi {username}," if username else "Hi,"
     body = (
         f"<p>{who}</p><p>We received a request to reset your password. "
@@ -56,12 +56,12 @@ def password_reset(reset_url: str, username: str | None = None):
 
 
 def welcome(username: str):
-    subject = "Welcome to Merchari-global"
+    subject = "Welcome to Mercari-Global"
     body = (
         f"<p>Hi {username}, your account is ready. Your storefront is auto-provisioned "
         "and you can list your first product right away.</p>"
     )
-    return subject, _shell("Welcome aboard", body, f"{FRONTEND}/marketplace", "Open Merchari-global")
+    return subject, _shell("Welcome aboard", body, f"{FRONTEND}/marketplace", "Open Mercari-Global")
 
 
 def order_confirmation(buyer_name: str, order_id: str, listing_title: str, amount_str: str):
@@ -80,7 +80,7 @@ def deposit_approved(username: str, amount_str: str):
 
 
 def account_locked(username: str, unlock_url: str):
-    subject = "Your Merchari-global account was temporarily locked"
+    subject = "Your Mercari-Global account was temporarily locked"
     body = (
         f"<p>Hi {username}, your account was locked after too many failed sign-in attempts. "
         "For your safety, we&apos;ve auto-unlocked it if this was you. If not, please reset your password.</p>"
@@ -95,7 +95,7 @@ def catalog_seed_complete(username: str, provider: str, query: str, pages: int,
     friendly_provider = {
         "amazon_search": "Amazon search",
         "amazon_bestsellers": "Amazon bestsellers",
-        "merchari-global_search": "Merchari-global search",
+        "mercari-global_search": "Mercari-Global search",
     }.get(provider, provider)
     minutes = max(1, duration_seconds // 60)
     body = (

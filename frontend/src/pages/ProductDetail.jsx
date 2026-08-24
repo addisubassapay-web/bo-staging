@@ -3,7 +3,37 @@ import { useParams, Link } from "react-router-dom";
 import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Package, ExternalLink, ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
+import { Package, ExternalLink, ArrowLeft, ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
+
+const DESCRIPTION_PREVIEW_CHARS = 280;
+
+const ProductDescription = ({ description }) => {
+  const [open, setOpen] = useState(false);
+  const text = (description || "").trim();
+  const needsToggle = text.length > DESCRIPTION_PREVIEW_CHARS;
+  const shown = open || !needsToggle
+    ? text
+    : text.slice(0, DESCRIPTION_PREVIEW_CHARS).trimEnd() + "…";
+  return (
+    <div className="mt-6" data-testid="product-description">
+      <p className="text-neutral-700 dark:text-neutral-300 whitespace-pre-line leading-relaxed">
+        {shown}
+      </p>
+      {needsToggle && (
+        <button
+          type="button"
+          onClick={() => setOpen(!open)}
+          className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-[#B85C38] hover:text-[#93441e] transition"
+          data-testid="product-description-toggle"
+          aria-expanded={open}
+        >
+          {open ? "Show less" : "Read full description"}
+          <ChevronDown className={`h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`} />
+        </button>
+      )}
+    </div>
+  );
+};
 
 const formatMoney = (amount, currency = "USD") => {
   try {
@@ -202,12 +232,7 @@ const ProductDetail = () => {
           </div>
 
           {product.description ? (
-            <p
-              className="mt-6 text-neutral-700 dark:text-neutral-300 whitespace-pre-line leading-relaxed"
-              data-testid="product-description"
-            >
-              {product.description}
-            </p>
+            <ProductDescription description={product.description} />
           ) : null}
 
           <dl className="mt-8 grid grid-cols-2 gap-3 text-sm border-t border-neutral-200 dark:border-neutral-800 pt-6">

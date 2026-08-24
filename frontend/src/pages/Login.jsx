@@ -85,7 +85,7 @@ const Login = () => {
             </ul>
           </div>
 
-          <div className="text-xs text-white/60">© {new Date().getFullYear()} Merchari-global · All rights reserved.</div>
+          <div className="text-xs text-white/60">© {new Date().getFullYear()} Mercari-Global · All rights reserved.</div>
         </div>
 
         {/* Right — form pane */}
@@ -103,7 +103,7 @@ const Login = () => {
                 <ShieldCheck className="h-3 w-3" /> Secure sign-in
               </div>
               <h1 className="mt-3 text-2xl sm:text-3xl font-extrabold text-neutral-900 dark:text-neutral-100">Welcome back</h1>
-              <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">Sign in to continue to your Merchari-global account.</p>
+              <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">Sign in to continue to your Mercari-Global account.</p>
 
               <form onSubmit={submit} className="mt-6 space-y-4" data-testid="login-form">
                 <div>
@@ -184,7 +184,7 @@ const Login = () => {
                   </>
                 ) : (
                   <>
-                    New to Merchari-global? <Link to="/register" className="text-[#2563EB] dark:text-[#7DD3FC] font-semibold hover:underline" data-testid="login-to-register">Create your account</Link>
+                    New to Mercari-Global? <Link to="/register" className="text-[#2563EB] dark:text-[#7DD3FC] font-semibold hover:underline" data-testid="login-to-register">Create your account</Link>
                   </>
                 )}
               </p>

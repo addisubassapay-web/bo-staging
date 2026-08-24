@@ -62,13 +62,13 @@ AI_MODEL_NAME = "gpt-5.4"  # Set to gpt-5.6-luna, gpt-5.6-terra, gpt-5.6-sol etc
 # Emergent object storage
 STORAGE_BASE = (os.environ.get("INTEGRATION_PROXY_URL") or "").strip() or "https://integrations.emergentagent.com"
 STORAGE_URL = STORAGE_BASE.rstrip("/") + "/objstore/api/v1/storage"
-APP_NAME = "merchari-global-clone"
+APP_NAME = "mercari-global-clone"
 _storage_key: Optional[str] = None
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 security = HTTPBearer(auto_error=False)
 
-app = FastAPI(title="Merchari-global Clone API")
+app = FastAPI(title="Mercari-Global Clone API")
 api_router = APIRouter(prefix="/api")
 
 # Static mount for scraper/local media uploads — served at /api/uploads/*
@@ -791,7 +791,7 @@ async def notify(user_id: str, ntype: str, title: str, body: str = "", link: Opt
         from services.email_templates import _shell, FRONTEND
         cta_url = f"{FRONTEND}{link}" if link and link.startswith("/") else (link or FRONTEND)
         subject = f"{title}"
-        html = _shell(title, f"<p>Hi {user.get('username','')},</p><p>{body}</p>", cta_url, "Open Merchari-global")
+        html = _shell(title, f"<p>Hi {user.get('username','')},</p><p>{body}</p>", cta_url, "Open Mercari-Global")
         result = await mailer.send_email(to=user["email"], subject=subject, html=html, tags=[f"notify:{ntype}"])
         await db.email_log.insert_one({
             "kind": ntype, "to": user["email"], "user_id": user_id,
@@ -2064,7 +2064,7 @@ async def admin_nudge_seller(
 """.strip())
             await send_email(
                 to=seller["email"],
-                subject="[Merchari-global] Admin nudge — accept your order now",
+                subject="[Mercari-Global] Admin nudge — accept your order now",
                 html=html,
                 tags=["pickup", "admin_nudge"],
             )
@@ -5037,7 +5037,7 @@ async def admin_review_seller_app(app_id: str, updates: dict, admin: dict = Depe
     if new_status == "approved":
         await ensure_store_for_user(doc["user_id"])
         await notify(doc["user_id"], "system", "Seller application approved",
-                     "You can now sell on Merchari-global. Connect your payout method.", "/verify")
+                     "You can now sell on Mercari-Global. Connect your payout method.", "/verify")
     else:
         await notify(doc["user_id"], "system", "Seller application rejected",
                      notes or "See admin notes.", "/profile")
@@ -5079,7 +5079,7 @@ async def admin_bulk_review_seller_apps(payload: dict, admin: dict = Depends(req
             await ensure_store_for_user(doc["user_id"])
         if new_status == "approved":
             await notify(doc["user_id"], "system", "Seller application approved",
-                         "You can now sell on Merchari-global. Connect your payout method.", "/verify")
+                         "You can now sell on Mercari-Global. Connect your payout method.", "/verify")
         else:
             await notify(doc["user_id"], "system", "Seller application rejected",
                          notes or "See admin notes.", "/profile")
@@ -5269,6 +5269,10 @@ async def ai_listing_suggest(payload: AIListingSuggestRequest, user: dict = Depe
 
     image_b64 = payload.image_base64
     if not image_b64:
+        from services.url_safety import is_safe_public_url
+        ok, reason = is_safe_public_url(payload.image_url or "")
+        if not ok:
+            raise HTTPException(400, f"Invalid image_url: {reason}")
         try:
             r = _requests.get(payload.image_url, timeout=25)
             r.raise_for_status()
@@ -5285,7 +5289,7 @@ async def ai_listing_suggest(payload: AIListingSuggestRequest, user: dict = Depe
     cat_list = ", ".join([f"{c['slug']} ({c['name']})" for c in categories])
 
     system_msg = (
-        "You are an expert Merchari-global listing assistant. Analyze the product photo and return "
+        "You are an expert Mercari-Global listing assistant. Analyze the product photo and return "
         "STRICT JSON only (no prose, no code fences) with keys: "
         "title (string, max 60 chars, catchy), "
         "description (string, 3-5 short lines, buyer-friendly, up to 400 chars), "
@@ -5492,7 +5496,7 @@ async def search_vibe(payload: VibeSearchRequest, request: Request):
     cat_list = ", ".join(cat_slugs)
 
     system_msg = (
-        "You translate free-form shopping 'vibes' into concrete Merchari-global filters. "
+        "You translate free-form shopping 'vibes' into concrete Mercari-Global filters. "
         "Return STRICT JSON only (no prose, no code fences) with keys: "
         "keywords (array of 2-5 BROAD single-word or 2-word search terms that commonly appear in product titles for this vibe — favor generic words like 'watch', 'sweater', 'lamp' over niche phrases), "
         f"category_slugs (array of 1-3 slugs from this exact list: {cat_list}), "
@@ -5626,6 +5630,10 @@ async def ai_photo_enhance(payload: PhotoEnhanceRequest, user: dict = Depends(ge
         except Exception:
             raise HTTPException(400, "Invalid base64 image")
     elif payload.image_url:
+        from services.url_safety import is_safe_public_url
+        ok, reason = is_safe_public_url(payload.image_url)
+        if not ok:
+            raise HTTPException(400, f"Invalid image_url: {reason}")
         try:
             r = _requests.get(payload.image_url, timeout=30)
             r.raise_for_status()
@@ -5777,7 +5785,7 @@ async def wishlist_digest_loop():
                 continue
                 subject = f"Weekly wishlist digest: {len(drops)} price drop(s) on your favourites"
                 lines = [f"- {d['title']}: ${d['previous_price']:.2f} -> ${d['price']:.2f}" for d in drops[:20]]
-                body = "Hi " + user.get("username", "there") + ",\n\n" + "\n".join(lines) + "\n\nShop now on Merchari-global!"
+                body = "Hi " + user.get("username", "there") + ",\n\n" + "\n".join(lines) + "\n\nShop now on Mercari-Global!"
                 logger.info(f"[MOCK Resend] to={user['email']} subject={subject!r}")
                 await db.email_log.insert_one({
                     "id": str(uuid.uuid4()),
@@ -5821,7 +5829,7 @@ async def newsletter_digest_loop():
                 subject_bits.append(f"{len(drops)} price drop(s)")
             if top_listings:
                 subject_bits.append(f"{len(top_listings)} trending pick(s)")
-            subject = "Weekly Merchari-global digest: " + " · ".join(subject_bits)
+            subject = "Weekly Mercari-Global digest: " + " · ".join(subject_bits)
 
             body_lines = ["Hi there,", ""]
             if drops:
@@ -5830,11 +5838,11 @@ async def newsletter_digest_loop():
                     body_lines.append(f"  - {d['title']}: ${d['previous_price']:.2f} → ${d['price']:.2f}")
                 body_lines.append("")
             if top_listings:
-                body_lines.append("✨ Trending on Merchari-global:")
+                body_lines.append("✨ Trending on Mercari-Global:")
                 for t in top_listings:
                     body_lines.append(f"  - {t['title']} — ${t['price']:.2f}")
                 body_lines.append("")
-            body_lines.append("Shop everything at Merchari-global.")
+            body_lines.append("Shop everything at Mercari-Global.")
             body_lines.append("To unsubscribe, POST /api/newsletter/unsubscribe with your email.")
             body = "\n".join(body_lines)
 
@@ -6504,7 +6512,7 @@ async def _send_pickup_email(
         html = _shell(seller.get("username") or "Seller", body_html)
         await send_email(
             to=seller["email"],
-            subject=f"[Merchari-global] {headline}",
+            subject=f"[Mercari-Global] {headline}",
             html=html,
             tags=["pickup", kind],
         )
@@ -7205,7 +7213,7 @@ async def seed_data():
     admin_id = str(uuid.uuid4())
     admin = {
         "id": admin_id,
-        "email": "admin@merchari-global.local",
+        "email": "admin@mercari-global.local",
         "username": "admin",
         "role": "admin",
         "avatar": None,
@@ -7247,13 +7255,13 @@ async def seed_data():
         "users": len(sellers) + 1,
         "listings": 0,
         "note": "Categories, admin, and demo sellers seeded. Listings come from Apify — trigger /api/admin/sync/apify to import real Amazon products.",
-        "admin_credentials": {"email": "admin@merchari-global.local", "password": "admin123"},
+        "admin_credentials": {"email": "admin@mercari-global.local", "password": "admin123"},
     }
 
 
 @api_router.get("/")
 async def root():
-    return {"message": "Merchari-global Clone API", "status": "ok"}
+    return {"message": "Mercari-Global Clone API", "status": "ok"}
 
 
 # =========================

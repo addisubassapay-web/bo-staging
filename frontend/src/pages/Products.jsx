@@ -19,19 +19,64 @@ const formatMoney = (amount, currency = "USD") => {
   }
 };
 
+const CATEGORY_STYLES = {
+  Books: {
+    frame: "bg-[#FDF8EF] dark:bg-[#1E1A12] border-[#E5D3AA] dark:border-[#3B301B]",
+    accent: "text-[#7B4A15]",
+    priceColor: "text-[#7B4A15]",
+    tag: "bg-[#7B4A15]/10 text-[#7B4A15]",
+    titleFont: "font-serif italic",
+  },
+  Beauty: {
+    frame: "bg-[#FDF2F1] dark:bg-[#221518] border-[#F1CFCB] dark:border-[#3D2529]",
+    accent: "text-[#B85359]",
+    priceColor: "text-[#B85359]",
+    tag: "bg-[#B85359]/10 text-[#B85359]",
+    titleFont: "",
+  },
+  Electronics: {
+    frame: "bg-[#F4F6FA] dark:bg-[#141922] border-[#D6DEEC] dark:border-[#2B3648]",
+    accent: "text-[#1F3B70]",
+    priceColor: "text-[#1F3B70]",
+    tag: "bg-[#1F3B70]/10 text-[#1F3B70]",
+    titleFont: "font-medium",
+  },
+  Home: {
+    frame: "bg-[#F5F1EA] dark:bg-[#1F1B15] border-[#E1D6C4] dark:border-[#3A311F]",
+    accent: "text-[#7B5D2E]",
+    priceColor: "text-[#B85C38]",
+    tag: "bg-[#B85C38]/10 text-[#B85C38]",
+    titleFont: "",
+  },
+  Sports: {
+    frame: "bg-[#EEF6F0] dark:bg-[#141C17] border-[#C8DECF] dark:border-[#25392E]",
+    accent: "text-[#2F5D3F]",
+    priceColor: "text-[#2F5D3F]",
+    tag: "bg-[#2F5D3F]/10 text-[#2F5D3F]",
+    titleFont: "font-medium",
+  },
+};
+const DEFAULT_STYLE = {
+  frame: "bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800",
+  priceColor: "text-[#B85C38]",
+  tag: "bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300",
+  titleFont: "",
+};
+
 const ProductCardMini = ({ p }) => {
   const img = p.images?.[0];
   const oos = p.in_stock === false;
+  const style = CATEGORY_STYLES[p.category] || DEFAULT_STYLE;
   return (
     <Link
       to={`/products/${p.id}`}
-      className={`group bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl overflow-hidden hover:shadow-lg transition ${
+      className={`group ${style.frame} border rounded-2xl overflow-hidden hover:shadow-xl transition-all hover:-translate-y-0.5 ${
         oos ? "opacity-90" : ""
       }`}
       data-testid={`product-card-${p.id}`}
       aria-label={oos ? `${p.title} — currently unavailable` : p.title}
     >
-      <div className="relative aspect-square bg-neutral-100 dark:bg-neutral-800 overflow-hidden">
+      <div className="relative aspect-square overflow-hidden">
         {img ? (
           <img
             src={img}
@@ -42,7 +87,7 @@ const ProductCardMini = ({ p }) => {
             }`}
           />
         ) : (
-          <div className="w-full h-full grid place-items-center text-neutral-400">
+          <div className="w-full h-full grid place-items-center text-neutral-400 bg-neutral-100 dark:bg-neutral-800">
             <Package className="h-10 w-10" />
           </div>
         )}
@@ -59,8 +104,8 @@ const ProductCardMini = ({ p }) => {
           </>
         )}
       </div>
-      <div className="p-3">
-        <div className="text-sm text-neutral-900 dark:text-neutral-100 line-clamp-2 min-h-[2.5rem]">
+      <div className="p-3.5">
+        <div className={`text-sm text-neutral-900 dark:text-neutral-100 line-clamp-2 min-h-[2.5rem] ${style.titleFont}`}>
           {p.title}
         </div>
         <div className="mt-2 flex items-baseline justify-between">
@@ -72,12 +117,12 @@ const ProductCardMini = ({ p }) => {
               Restocking soon
             </span>
           ) : (
-            <span className="text-lg font-bold text-[#FF211F]">
+            <span className={`text-lg font-bold ${style.priceColor}`}>
               {formatMoney(p.price, p.currency)}
             </span>
           )}
           {p.category ? (
-            <span className="text-[10px] uppercase tracking-wide text-neutral-500">
+            <span className={`text-[10px] uppercase tracking-wide rounded-full px-2 py-0.5 ${style.tag}`}>
               {p.category}
             </span>
           ) : null}
@@ -194,28 +239,40 @@ const Products = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8" data-testid="products-catalog-page">
-      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6">
-        <div>
-          <div className="flex items-center gap-2">
-            <Package className="h-6 w-6 text-[#FF211F]" />
-            <h1 className="text-3xl font-bold text-neutral-900 dark:text-neutral-100">
-              Permanent Catalog
+      {/* Editorial-boutique hero — warm cream field, terracotta accents, serif display */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#FBF6EF] via-[#F5ECE0] to-[#EBDFD0] dark:from-[#1C1712] dark:via-[#231C15] dark:to-[#2A2119] p-8 sm:p-10 mb-6 border border-[#E7D9C6] dark:border-[#3A2E23]">
+        <div className="absolute -top-16 -right-16 h-56 w-56 rounded-full bg-[#B85C38]/15 blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-20 -left-10 h-64 w-64 rounded-full bg-[#3A5A40]/10 blur-3xl pointer-events-none" />
+        <div className="relative flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full bg-white/70 dark:bg-neutral-900/50 backdrop-blur px-3 py-1 text-[10px] uppercase tracking-[0.2em] font-semibold text-[#B85C38] mb-3">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#B85C38]" /> Curated for you
+            </div>
+            <h1
+              className="font-serif text-4xl sm:text-5xl lg:text-6xl leading-[1.05] tracking-tight text-neutral-900 dark:text-neutral-50"
+              style={{ fontFamily: "'Playfair Display', 'DM Serif Display', Georgia, serif" }}
+            >
+              The <em className="italic text-[#B85C38]">Mercari-Global</em> catalogue
             </h1>
+            <p className="mt-3 text-neutral-700 dark:text-neutral-300 max-w-xl leading-relaxed">
+              Every category, every drop — curated from real supply.{" "}
+              {data ? (
+                <span className="font-semibold text-neutral-900 dark:text-neutral-50">
+                  {data.total.toLocaleString()} pieces
+                </span>
+              ) : null}{" "}
+              ready to ship.
+            </p>
           </div>
-          <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
-            Curated products imported directly from our supply pipeline
-            {data ? ` · ${data.total.toLocaleString()} products` : ""}
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <label className="inline-flex items-center gap-2 text-sm text-neutral-700 dark:text-neutral-300 select-none">
-            <input
-              type="checkbox"
-              checked={inStockOnly}
-              onChange={(e) => {
-                const next = new URLSearchParams(params);
-                if (e.target.checked) next.set("in_stock", "1");
-                else next.delete("in_stock");
+          <div className="flex flex-wrap items-center gap-3">
+            <label className="inline-flex items-center gap-2 text-sm text-neutral-700 dark:text-neutral-300 select-none bg-white/60 dark:bg-neutral-900/40 backdrop-blur rounded-full px-3 h-10 border border-[#E7D9C6] dark:border-[#3A2E23]">
+              <input
+                type="checkbox"
+                checked={inStockOnly}
+                onChange={(e) => {
+                  const next = new URLSearchParams(params);
+                  if (e.target.checked) next.set("in_stock", "1");
+                  else next.delete("in_stock");
                 next.set("page", "1");
                 setParams(next);
               }}
@@ -230,6 +287,7 @@ const Products = () => {
             onSubmit={submitSearch}
             placeholder="Search products…"
           />
+        </div>
         </div>
       </div>
 

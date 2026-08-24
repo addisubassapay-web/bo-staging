@@ -6,7 +6,7 @@ export const API = `${BACKEND_URL}/api`;
 const api = axios.create({ baseURL: API });
 
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("merchari-global_token");
+  const token = localStorage.getItem("mercari-global_token");
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
@@ -15,7 +15,7 @@ export default api;
 
 // --- Currency-aware price formatter (used by non-context call sites) ---
 // Fallback rates match CurrencyContext.FALLBACK_RATES. Live rates fetched
-// by CurrencyContext are cached to `merchari-global_rates` in localStorage and
+// by CurrencyContext are cached to `mercari-global_rates` in localStorage and
 // win over these static values.
 const STATIC_RATES = {
   USD: 1, EUR: 0.92, GBP: 0.78, JPY: 155, INR: 83.2, CAD: 1.36,
@@ -29,7 +29,7 @@ const CURRENCY_LOCALES = {
 const readLiveRate = (currency) => {
   if (typeof localStorage === "undefined") return null;
   try {
-    const raw = localStorage.getItem("merchari-global_rates");
+    const raw = localStorage.getItem("mercari-global_rates");
     if (!raw) return null;
     const parsed = JSON.parse(raw);
     const rate = parsed?.rates?.[currency];
@@ -38,7 +38,7 @@ const readLiveRate = (currency) => {
 };
 
 export const formatPrice = (usd) => {
-  const currency = (typeof localStorage !== "undefined" && localStorage.getItem("merchari-global_currency")) || "USD";
+  const currency = (typeof localStorage !== "undefined" && localStorage.getItem("mercari-global_currency")) || "USD";
   const rate = readLiveRate(currency) ?? STATIC_RATES[currency] ?? 1;
   const value = Number(usd || 0) * rate;
   const locale = CURRENCY_LOCALES[currency] || "en-US";

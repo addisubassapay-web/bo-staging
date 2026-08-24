@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 
-const STORAGE_KEY = "merchari-global-theme";
+const STORAGE_KEY = "mercari-global-theme";
 const ThemeContext = createContext({ theme: "light", toggleTheme: () => {}, setTheme: () => {} });
 
 const applyClass = (t) => {

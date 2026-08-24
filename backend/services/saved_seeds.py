@@ -40,7 +40,7 @@ async def run_saved_seed(db, seed: dict) -> dict | None:
     tmpl_map = {
         "amazon_search":      "https://www.amazon.com/s?k={q}&page={p}",
         "amazon_bestsellers": "https://www.amazon.com/gp/bestsellers/{q}?pg={p}",
-        "merchari-global_search":     "https://www.merchari-global.com/search/?keyword={q}&page={p}",
+        "mercari-global_search":     "https://www.mercari-global.com/search/?keyword={q}&page={p}",
     }
     tmpl = tmpl_map.get(seed.get("provider") or "amazon_search")
     if not tmpl:

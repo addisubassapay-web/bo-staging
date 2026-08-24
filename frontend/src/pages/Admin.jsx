@@ -769,7 +769,7 @@ const SettingsMgr = () => {
             <Users className="h-4 w-4 text-amber-500" /> Signup access control
           </h3>
           <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-4">
-            When enabled, new accounts can only register with a valid invitation code (an existing member&apos;s referral code). This turns Merchari-global into a closed, invite-only community until you flip it back off.
+            When enabled, new accounts can only register with a valid invitation code (an existing member&apos;s referral code). This turns Mercari-Global into a closed, invite-only community until you flip it back off.
           </p>
           <div className="flex items-center justify-between gap-4 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-950 p-4">
             <div className="flex-1 min-w-0">
@@ -1425,13 +1425,13 @@ const DisputesMgr = () => {
                     {d.photos.map((url, i) => (
                       <a
                         key={i}
-                        href={url.startsWith("http") ? url : `${process.env.REACT_APP_BACKEND_URL}${url}?auth=${localStorage.getItem("merchari-global_token") || ""}`}
+                        href={url.startsWith("http") ? url : `${process.env.REACT_APP_BACKEND_URL}${url}?auth=${localStorage.getItem("mercari-global_token") || ""}`}
                         target="_blank" rel="noreferrer"
                         className="block aspect-square rounded-lg overflow-hidden bg-neutral-100 hover:ring-2 hover:ring-[#FF7A18]"
                         data-testid={`admin-dispute-photo-${d.id}-${i}`}
                       >
                         <img
-                          src={url.startsWith("http") ? url : `${process.env.REACT_APP_BACKEND_URL}${url}?auth=${localStorage.getItem("merchari-global_token") || ""}`}
+                          src={url.startsWith("http") ? url : `${process.env.REACT_APP_BACKEND_URL}${url}?auth=${localStorage.getItem("mercari-global_token") || ""}`}
                           alt="evidence" className="h-full w-full object-cover"
                         />
                       </a>
@@ -1568,8 +1568,8 @@ const AdminDisputeThread = ({ disputeId, closed }) => {
                     {m.photos?.length > 0 && (
                       <div className="mt-1.5 grid grid-cols-2 gap-1">
                         {m.photos.map((url, i) => (
-                          <a key={i} href={url.startsWith("http") ? url : `${process.env.REACT_APP_BACKEND_URL}${url}?auth=${localStorage.getItem("merchari-global_token") || ""}`} target="_blank" rel="noreferrer" className="block aspect-square rounded-md overflow-hidden">
-                            <img src={url.startsWith("http") ? url : `${process.env.REACT_APP_BACKEND_URL}${url}?auth=${localStorage.getItem("merchari-global_token") || ""}`} alt="" className="h-full w-full object-cover" />
+                          <a key={i} href={url.startsWith("http") ? url : `${process.env.REACT_APP_BACKEND_URL}${url}?auth=${localStorage.getItem("mercari-global_token") || ""}`} target="_blank" rel="noreferrer" className="block aspect-square rounded-md overflow-hidden">
+                            <img src={url.startsWith("http") ? url : `${process.env.REACT_APP_BACKEND_URL}${url}?auth=${localStorage.getItem("mercari-global_token") || ""}`} alt="" className="h-full w-full object-cover" />
                           </a>
                         ))}
                       </div>

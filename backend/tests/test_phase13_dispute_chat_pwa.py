@@ -15,7 +15,7 @@ import requests
 BASE_URL = os.environ["REACT_APP_BACKEND_URL"].rstrip("/")
 API = f"{BASE_URL}/api"
 
-ADMIN_EMAIL = "admin@merchari-global.local"
+ADMIN_EMAIL = "admin@mercari-global.local"
 ADMIN_PASSWORD = "admin123"
 SELLER_EMAIL = "sophia_style@demo.local"
 SELLER_PASSWORD = "demo1234"
@@ -225,7 +225,7 @@ class TestPWA:
         data = r.json()
         assert data.get("theme_color") == "#FF211F"
         assert data.get("display") == "standalone"
-        assert "Merchari-global" in (data.get("name") or "")
+        assert "Mercari-Global" in (data.get("name") or "")
 
     def test_service_worker_ok(self):
         r = requests.get(f"{BASE_URL}/service-worker.js")

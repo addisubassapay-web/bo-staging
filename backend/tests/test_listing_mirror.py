@@ -20,7 +20,7 @@ API = f"{BASE_URL}/api"
 
 
 def test_listings_count_reflects_full_catalog():
-    """Listings count must include the mirrored Merchari Store catalog,
+    """Listings count must include the mirrored Mercari Store catalog,
     otherwise the /search page would still under-report the true inventory."""
     listings_total = requests.get(f"{API}/listings/count", timeout=15).json()["total"]
     products_total = requests.get(f"{API}/products?page=1&page_size=1", timeout=15).json()["total"]
@@ -32,13 +32,13 @@ def test_listings_count_reflects_full_catalog():
     )
 
 
-def test_merchari_store_seller_exists_and_owns_listings():
+def test_mercari_store_seller_exists_and_owns_listings():
     r = requests.get(f"{API}/listings?limit=100", timeout=15)
     items = r.json() if isinstance(r.json(), list) else r.json().get("items", [])
-    merchari_owned = [i for i in items if i.get("seller_name") == "Merchari Store"]
-    # Mirror sync should surface Merchari Store listings on newest sort
+    merchari_owned = [i for i in items if i.get("seller_name") == "Mercari Store"]
+    # Mirror sync should surface Mercari Store listings on newest sort
     assert len(merchari_owned) > 0, (
-        "no Merchari Store listings surfaced — mirror sync missing"
+        "no Mercari Store listings surfaced — mirror sync missing"
     )
 
 
@@ -47,7 +47,7 @@ def test_mirror_listings_have_imported_from_id():
     reconcile the collections."""
     r = requests.get(f"{API}/listings?limit=50", timeout=15)
     items = r.json() if isinstance(r.json(), list) else r.json().get("items", [])
-    merchari = [i for i in items if i.get("seller_name") == "Merchari Store"]
+    merchari = [i for i in items if i.get("seller_name") == "Mercari Store"]
     if not merchari:
         return  # tolerated: /search may have surfaced only seller items first
     for it in merchari[:5]:

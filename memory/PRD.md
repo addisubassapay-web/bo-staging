@@ -1,7 +1,7 @@
-# Merchari-global — Product Requirements Document
+# Mercari-Global — Product Requirements Document
 
 ## Original Problem Statement
-Full-stack ecommerce marketplace **Merchari-global** — same color scheme (`#FF211F`), rebranded from a Mercari-inspired UI. Full-stack (FastAPI + MongoDB + React), JWT auth with roles (admin/user), product listings, and admin panel controlling every aspect. Extended to include dropshipping features, affiliate marketing, storefronts, multi-level referrals, and live Amazon product scraping via Apify.
+Full-stack ecommerce marketplace **Mercari-Global** — same color scheme (`#FF211F`), rebranded from a Mercari-inspired UI. Full-stack (FastAPI + MongoDB + React), JWT auth with roles (admin/user), product listings, and admin panel controlling every aspect. Extended to include dropshipping features, affiliate marketing, storefronts, multi-level referrals, and live Amazon product scraping via Apify.
 
 ## Users
 - **Buyers**: browse/search listings, favorite, cart, checkout, review sellers, chat.
@@ -23,6 +23,25 @@ Full-stack ecommerce marketplace **Merchari-global** — same color scheme (`#FF
 - **Phase 1 (Trust & Payments)**: Email + phone verification, seller application queue, mock Stripe Connect payouts.
 
 ---
+
+### Feb 2026 — SSRF Hardening + Rebrand Polish
+
+**Security (P0)**:
+- New helper `services/url_safety.py` with `is_safe_public_url()` rejects:
+  - non-http(s) schemes, embedded userinfo, empty hosts, `>2KB` URLs
+  - literal loopback / private / link-local / reserved / multicast / unspecified IPs (IPv4 + IPv6)
+  - hostnames that resolve to any of the above
+  - cloud-metadata endpoints: `169.254.169.254`, `metadata.google.internal`, `metadata.aws*`, `instance-data`
+  - `*.localhost`, `*.internal`, `*.local` suffixes
+- Wired into `routers/scraper.py` (`/api/scraper/jobs`, `/jobs/category`) and both `/api/ai/listing-suggest` + photo-enhance image_url paths in `server.py`.
+- 27 new pytest cases in `tests/test_url_safety.py` cover all block-cases and public-URL green paths.
+- Verified end-to-end via curl: localhost / IMDS / private IP / credentialed URLs all return `HTTP 400` with a reason.
+- Note: `routers/scraper.py` module itself is unmounted — the live app uses `routers/scraper_stub.py` (410 Gone) — but the hardening is now in place for whenever the direct scraper is reintroduced.
+
+**UI Rebrand Polish**:
+- Fixed residual "Merchari-global" strings in `public/index.html`, `manifest.json`, `service-worker.js` — browser title now shows "Mercari-Global — Smart Ecommerce Platform".
+- Verified editorial-boutique category styling, category chips, and Read-more/Show-less description toggle on `ProductDetail` all render correctly via screenshot.
+
 
 ### Feb 2026 — Catalog Dedupe + Test-Data Guardrails on the Mirror
 

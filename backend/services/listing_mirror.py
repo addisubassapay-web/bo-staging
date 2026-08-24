@@ -16,8 +16,8 @@ from typing import Dict, List
 
 from pymongo import UpdateOne
 
-MERCHARI_SELLER_USERNAME = "merchari_store"
-MERCHARI_SELLER_DISPLAY = "Merchari Store"
+MERCHARI_SELLER_USERNAME = "mercari_store"
+MERCHARI_SELLER_DISPLAY = "Mercari Store"
 
 
 async def _ensure_merchari_seller(db) -> dict:
@@ -29,7 +29,7 @@ async def _ensure_merchari_seller(db) -> dict:
         "id": str(uuid.uuid4()),
         "username": MERCHARI_SELLER_USERNAME,
         "display_name": MERCHARI_SELLER_DISPLAY,
-        "email": "store@merchari.local",
+        "email": "store@mercari.local",
         "role": "seller",
         "seller_status": "active",
         "email_verified": True,
