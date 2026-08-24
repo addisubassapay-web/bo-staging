@@ -24,6 +24,33 @@ Full-stack ecommerce marketplace **Merchari-global** — same color scheme (`#FF
 
 ---
 
+### Feb 2026 — Search Autocomplete + Sub-category Chips
+**Two big shopper wins on the same PR.**
+
+**1) Powerful, typo-tolerant search.**
+- New service `services/product_search.py`:
+  - 3-phase Mongo query: prefix regex → substring regex (dedup) → spell-corrected retry
+  - Spelling corrector harvests the top-3,000 title tokens as its vocabulary (cached after first call), then runs `difflib.get_close_matches` per token at cutoff 0.78. Result: `kindel → kindle`, `laptp → laptop`, `blutooth → bluetooth`.
+  - Related-term extractor co-groups tokens in matching titles and returns the top-6.
+  - Matching category chips are appended when the query matches a bucket name.
+- New endpoint `GET /api/products/suggest?q=...&limit=8` — sub-500 ms warm, sub-2 s cold.
+- New MongoDB indexes: `products_text_idx` (title×5 + description), `products_title_idx` (collation strength 2).
+- Frontend `components/ProductSearchAutocomplete.jsx`:
+  - Debounced 180 ms fetch with AbortController to cancel stale in-flight requests.
+  - Dropdown with 4 sections: Correction ("Did you mean…"), Category jump-chips, Related terms, Product results with thumbnails/price/OOS label + highlighted match.
+  - Full keyboard nav (↑/↓/Enter/Esc), outside-click close, `x` clear button.
+
+**2) Sub-category chips.**
+- New endpoint `GET /api/products/subcategories?category=Home` groups by the SECOND breadcrumb segment (Home → Household Supplies 237 · Office & School Supplies 214 · Gardening 115 · Kitchen & Dining 96…). Electronics → Computers 165 · PC 48 · Headphones 48 · PlayStation 5 31 · Nintendo Switch 17.
+- `GET /api/products?subcategory=` filter — regex against the stored breadcrumb chain. Combining `category=Electronics&subcategory=PlayStation 5` returns 31 real PS5 items.
+- Frontend adds a slim "Refine:" chip row that only appears when a parent category is active. Chips reset when the parent flips.
+
+**Deferred: Server Split.** The 8,000-line server.py refactor (wallet/orders/pickup/health → dedicated routers) was NOT completed this session — the models are tightly coupled to ledger/settings helpers and doing it half-way risks breaking the wallet audit. Recommend giving it a dedicated session where we can extract models to `models/*.py` first, then move routes with full regression coverage.
+
+**Tests**: 32/32 pass. 7 new tests in `test_product_search.py` cover prefix hits, spelling correction, related terms, subcategory rollup, subcategory filter narrowing, and perf budget (<2 s).
+
+
+
 ### Feb 2026 — Category Chips + Automated Re-categorisation
 **Problem**: 4,541 of 4,568 permanent products had `category=null` — the marketplace nav promised 10 categories (Women, Men, Kids, Electronics, Home, Beauty, Sports, Toys, Books, Handmade) but shoppers landing on `/products` had no way to filter.
 

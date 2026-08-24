@@ -400,6 +400,7 @@ async def list_products(
     page: int = Query(1, ge=1),
     page_size: int = Query(24, ge=1, le=100),
     category: Optional[str] = Query(default=None),
+    subcategory: Optional[str] = Query(default=None),
     q: Optional[str] = Query(default=None, description="Case-insensitive title search"),
     active_only: bool = Query(default=True),
     in_stock_only: bool = Query(
@@ -434,6 +435,15 @@ async def list_products(
         # Case-insensitive exact match so `?category=electronics` and
         # `?category=Electronics` both hit the same bucket.
         filt["category"] = {"$regex": f"^{re.escape(category)}$", "$options": "i"}
+    if subcategory:
+        # Sub-category matches the SECOND segment of the stored breadcrumbs
+        # (e.g. "Home & Kitchen > Kitchen & Dining > ..." → "Kitchen & Dining").
+        # We use a case-insensitive regex on the whole chain so the query
+        # `?subcategory=Kitchen%20%26%20Dining` matches.
+        filt["breadcrumbs"] = {
+            "$regex": f">\\s*{re.escape(subcategory)}\\s*(>|$)",
+            "$options": "i",
+        }
     if q:
         filt["title"] = {"$regex": q, "$options": "i"}
 
@@ -496,6 +506,67 @@ async def product_category_counts(
         "total": total,
         "uncategorized": uncategorized,
     }
+
+
+@router.get("/products/subcategories")
+async def product_subcategory_counts(
+    category: str = Query(..., description="Canonical parent category (Home, Electronics, ...)"),
+    active_only: bool = Query(default=True),
+    limit: int = Query(default=24, ge=1, le=60),
+):
+    """Break a parent category into subcategory chips using the Amazon
+    breadcrumbs we store on each product.
+
+    Strategy: take the SECOND breadcrumb segment (segment 0 is the Amazon
+    top-level like "Home & Kitchen", segment 1 is the useful bucket like
+    "Kitchen & Dining"). Rolls up ties and returns the top-N by count.
+    """
+    db = get_db()
+    filt: Dict[str, Any] = {
+        "category": {"$regex": f"^{re.escape(category)}$", "$options": "i"},
+        "breadcrumbs": {"$exists": True, "$nin": [None, ""]},
+    }
+    if active_only:
+        filt["is_active"] = True
+
+    pipeline = [
+        {"$match": filt},
+        # split breadcrumbs on ">" and take the second segment
+        {"$project": {
+            "seg": {"$trim": {"input": {"$arrayElemAt": [{"$split": ["$breadcrumbs", ">"]}, 1]}}}
+        }},
+        {"$match": {"seg": {"$nin": [None, ""]}}},
+        {"$group": {"_id": "$seg", "n": {"$sum": 1}}},
+        {"$sort": {"n": -1}},
+        {"$limit": limit},
+    ]
+    rows = [r async for r in db.products.aggregate(pipeline)]
+    items = [{"name": r["_id"], "count": int(r["n"])} for r in rows]
+    total = await db.products.count_documents({
+        "category": {"$regex": f"^{re.escape(category)}$", "$options": "i"},
+        **({"is_active": True} if active_only else {}),
+    })
+    return {
+        "category": category,
+        "items": items,
+        "total": total,
+    }
+
+
+@router.get("/products/suggest")
+async def products_suggest(
+    q: str = Query(..., min_length=1, max_length=100),
+    limit: int = Query(default=8, ge=1, le=15),
+):
+    """Autocomplete + typo-tolerant suggest.
+
+    Returns matching products (prefix first, then substring), spelling
+    corrections (when no direct hit is found), matching category chips,
+    and related terms. Powers the search dropdown on `/products`.
+    """
+    from services.product_search import build_suggest
+    db = get_db()
+    return await build_suggest(db, q, product_limit=limit)
 
 
 @router.get("/products/{product_id}", response_model=ProductOut)

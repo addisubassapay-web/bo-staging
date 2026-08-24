@@ -2,8 +2,8 @@ import React, { useEffect, useState, useCallback } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Package, Search as SearchIcon, ChevronLeft, ChevronRight } from "lucide-react";
+import { Package, ChevronLeft, ChevronRight } from "lucide-react";
+import ProductSearchAutocomplete from "@/components/ProductSearchAutocomplete";
 
 const PAGE_SIZE = 24;
 
@@ -92,11 +92,13 @@ const Products = () => {
   const page = Math.max(1, Number(params.get("page") || 1));
   const q = params.get("q") || "";
   const category = params.get("category") || "";
+  const subcategory = params.get("subcategory") || "";
   const inStockOnly = params.get("in_stock") === "1";
   const [qDraft, setQDraft] = useState(q);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [categoryCounts, setCategoryCounts] = useState(null);
+  const [subcategoryCounts, setSubcategoryCounts] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -107,6 +109,7 @@ const Products = () => {
           page_size: PAGE_SIZE,
           ...(q ? { q } : {}),
           ...(category ? { category } : {}),
+          ...(subcategory ? { subcategory } : {}),
           ...(inStockOnly ? { in_stock_only: true } : {}),
         },
       });
@@ -116,7 +119,7 @@ const Products = () => {
     } finally {
       setLoading(false);
     }
-  }, [page, q, category, inStockOnly]);
+  }, [page, q, category, subcategory, inStockOnly]);
 
   useEffect(() => {
     load();
@@ -133,19 +136,44 @@ const Products = () => {
       .catch(() => setCategoryCounts(null));
   }, [inStockOnly]);
 
+  // Sub-category chips appear when a parent chip is selected.
+  useEffect(() => {
+    if (!category) {
+      setSubcategoryCounts(null);
+      return;
+    }
+    api
+      .get("/products/subcategories", { params: { category, limit: 20 } })
+      .then((r) => setSubcategoryCounts(r.data))
+      .catch(() => setSubcategoryCounts(null));
+  }, [category]);
+
   const setCategory = (next) => {
     const nextParams = new URLSearchParams(params);
     if (next) nextParams.set("category", next);
     else nextParams.delete("category");
+    nextParams.delete("subcategory"); // reset sub-filter when parent changes
     nextParams.set("page", "1");
     setParams(nextParams);
   };
 
-  const submitSearch = (e) => {
-    e.preventDefault();
+  const setSubcategory = (next) => {
+    const nextParams = new URLSearchParams(params);
+    if (next) nextParams.set("subcategory", next);
+    else nextParams.delete("subcategory");
+    nextParams.set("page", "1");
+    setParams(nextParams);
+  };
+
+  const submitSearch = (queryOverride, categoryOverride) => {
     const next = new URLSearchParams(params);
-    if (qDraft) next.set("q", qDraft);
+    const q = queryOverride !== undefined ? queryOverride : qDraft;
+    if (q) next.set("q", q);
     else next.delete("q");
+    if (categoryOverride) {
+      next.set("category", categoryOverride);
+      next.delete("subcategory");
+    }
     next.set("page", "1");
     setParams(next);
   };
@@ -174,7 +202,7 @@ const Products = () => {
             {data ? ` · ${data.total.toLocaleString()} products` : ""}
           </p>
         </div>
-        <form onSubmit={submitSearch} className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-3">
           <label className="inline-flex items-center gap-2 text-sm text-neutral-700 dark:text-neutral-300 select-none">
             <input
               type="checkbox"
@@ -191,20 +219,13 @@ const Products = () => {
             />
             In stock only
           </label>
-          <div className="relative">
-            <SearchIcon className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
-            <Input
-              value={qDraft}
-              onChange={(e) => setQDraft(e.target.value)}
-              placeholder="Search products…"
-              className="pl-9 w-64"
-              data-testid="products-search-input"
-            />
-          </div>
-          <Button type="submit" className="bg-[#FF211F] hover:bg-[#e01d1b]" data-testid="products-search-btn">
-            Search
-          </Button>
-        </form>
+          <ProductSearchAutocomplete
+            value={qDraft}
+            onChange={setQDraft}
+            onSubmit={submitSearch}
+            placeholder="Search products…"
+          />
+        </div>
       </div>
 
       {/* Category chips — one-tap filter with live counts */}
@@ -263,6 +284,57 @@ const Products = () => {
                     }`}
                   >
                     {c.count.toLocaleString()}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
+
+      {/* Sub-category chips — only when a parent category is active */}
+      {category && subcategoryCounts?.items?.length ? (
+        <div
+          className="mb-6 -mx-1 overflow-x-auto scrollbar-hide"
+          data-testid="products-subcategory-chips"
+        >
+          <div className="flex items-center gap-2 px-1 pb-1">
+            <span className="text-xs text-neutral-500 shrink-0 pr-1">Refine:</span>
+            <button
+              type="button"
+              onClick={() => setSubcategory("")}
+              data-testid="products-subchip-all"
+              className={`shrink-0 rounded-full px-3 h-7 text-xs font-medium border transition ${
+                !subcategory
+                  ? "bg-neutral-900 text-white border-neutral-900 dark:bg-white dark:text-neutral-900 dark:border-white"
+                  : "bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 border-neutral-200 dark:border-neutral-800 hover:border-neutral-500/50"
+              }`}
+            >
+              All {category}
+            </button>
+            {subcategoryCounts.items.map((s) => {
+              const isActive = subcategory === s.name;
+              return (
+                <button
+                  key={s.name}
+                  type="button"
+                  onClick={() => setSubcategory(isActive ? "" : s.name)}
+                  data-testid={`products-subchip-${s.name.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}`}
+                  className={`shrink-0 inline-flex items-center gap-1.5 rounded-full px-3 h-7 text-xs font-medium border transition ${
+                    isActive
+                      ? "bg-neutral-900 text-white border-neutral-900 dark:bg-white dark:text-neutral-900 dark:border-white"
+                      : "bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 border-neutral-200 dark:border-neutral-800 hover:border-neutral-500/50"
+                  }`}
+                >
+                  {s.name}
+                  <span
+                    className={`text-[10px] tabular-nums rounded-full px-1.5 py-px ${
+                      isActive
+                        ? "bg-white/25 text-white dark:bg-neutral-900/20 dark:text-neutral-900"
+                        : "bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300"
+                    }`}
+                  >
+                    {s.count}
                   </span>
                 </button>
               );
