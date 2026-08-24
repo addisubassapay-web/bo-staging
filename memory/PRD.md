@@ -24,6 +24,23 @@ Full-stack ecommerce marketplace **Merchari-global** — same color scheme (`#FF
 
 ---
 
+### Feb 2026 — Catalog Cleanup (Test Data + R2 Orphans)
+**Goal**: only real listings should reach the storefront.
+
+**Purged**:
+- **Users**: 118 test accounts (117 `e2e_*` + 1 `lockout_test_*`) — kept admin, 5 demo sellers, and every real user.
+- **Listings**: 32 `TEST_p52 *` rows.
+- **Products (permanent catalog)**: 4 `B00TEST*` rows created by webhook regression tests.
+- **Cascade**: 33 stores, 32 orders, 143 wallet_txs, 186 notifications, 4 seller applications, 4 verification tokens, and the associated support/message/review/deposit rows.
+- **R2 storage**: 422 orphaned objects (56.3 MB) — bucket footprint 100.5 MB → 44.2 MB.
+- **apify_ingest_state**: 5 test-run entries (large-payload regression + failing dataset attempts).
+
+**Kept**: 1,182 real listings (1,179 active) · 4,476 permanent products · 31 real users · 10 real stores · 25 real orders · every R2 object referenced by a live product/listing/store/user avatar.
+
+**How**: `/app/backend/scripts/cleanup_test_data.py` — dry-run by default. Backs up every doc slated for deletion to `/app/backend/cleanup_backups/{tag}/{collection}.json` before touching anything. R2 orphan sweep scans the bucket and only deletes keys that no live doc references (products.images, listings.images, users.avatar, stores.logo/banner). Rerunning is safe & idempotent.
+
+
+
 ### Feb 2026 — Apify Webhook Async Ingest (P0 Fix)
 **Problem**: Manually replaying a 4,538-item Apify dataset through `POST /api/webhooks/apify-import` returned HTTP 502 — the endpoint iterated + upserted every item synchronously and blew past the ingress timeout. Real Apify webhooks that arrive with `resource.defaultDatasetId` were even worse: they carry NO inline items and required an out-of-band Apify API fetch.
 

@@ -1,0 +1,72 @@
+[
+  {
+    "_id": "6a8c2ddb6321906e8c002f1b",
+    "sku": "B00TEST43E7C1FDA",
+    "category": null,
+    "created_at": "2026-08-24T11:41:15.567000",
+    "currency": "USD",
+    "description": "desc 1",
+    "id": "c8924a98-1e75-4218-8007-cef961d07783",
+    "images": [
+      "https://picsum.photos/300"
+    ],
+    "is_active": true,
+    "price": 9.99,
+    "source_url": "https://amazon.com/dp/B00TEST43E7C1FDA",
+    "title": "Test Product 1",
+    "updated_at": "2026-08-24T11:41:15.866000"
+  },
+  {
+    "_id": "6a8c2ddb6321906e8c002f1c",
+    "sku": "B00TEST43E7C1FDB",
+    "category": null,
+    "created_at": "2026-08-24T11:41:15.567000",
+    "currency": "USD",
+    "description": "desc 2",
+    "id": "c0231890-676b-495c-a5ca-a9806911bb7e",
+    "images": [
+      "https://picsum.photos/301"
+    ],
+    "is_active": true,
+    "price": 19.99,
+    "source_url": "https://amazon.com/dp/B00TEST43E7C1FDB",
+    "title": "Test Product 2",
+    "updated_at": "2026-08-24T11:41:15.866000"
+  },
+  {
+    "_id": "6a8c590f6321906e8c0040f1",
+    "sku": "B00TEST62FE3A35A",
+    "category": null,
+    "created_at": "2026-08-24T14:45:35.223000",
+    "currency": "USD",
+    "description": "desc 1",
+    "id": "9a7fee99-f508-4700-bc09-c8c5de98d6e0",
+    "images": [
+      "https://pub-8fc1e0dfa7ed46298600fc66d5a41eee.r2.dev/products/f9/f903b7397027243ee5f336ac.jpg"
+    ],
+    "is_active": true,
+    "price": 9.99,
+    "source_url": "https://amazon.com/dp/B00TEST62FE3A35A",
+    "title": "Test Product 1",
+    "updated_at": "2026-08-24T14:45:35.551000",
+    "r2_rehosted_at": "2026-08-24T14:55:38.244000"
+  },
+  {
+    "_id": "6a8c590f6321906e8c0040f2",
+    "sku": "B00TEST62FE3A35B",
+    "category": null,
+    "created_at": "2026-08-24T14:45:35.223000",
+    "currency": "USD",
+    "description": "desc 2",
+    "id": "457ed9ff-bf80-49a1-80d8-c535c72e6e18",
+    "images": [
+      "https://pub-8fc1e0dfa7ed46298600fc66d5a41eee.r2.dev/products/92/92f1faa7f8e7ee1ab885575f.jpg"
+    ],
+    "is_active": true,
+    "price": 19.99,
+    "source_url": "https://amazon.com/dp/B00TEST62FE3A35B",
+    "title": "Test Product 2",
+    "updated_at": "2026-08-24T14:45:35.551000",
+    "r2_rehosted_at": "2026-08-24T14:55:39.418000"
+  }
+]

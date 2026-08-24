@@ -1,0 +1,6933 @@
+[
+  {
+    "_id": "6a83227cfd578f06e6d25978",
+    "email": "e2e_9cec27e1@example.com",
+    "username": "e2ed8f1a7",
+    "id": "baf7fd4d-9405-4039-8953-6829c7db4f59",
+    "role": "user",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "8D7EC46C",
+    "referred_by": null,
+    "wallet_balance": 0.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-17T15:02:20.081000",
+    "password_hash": "$2b$12$ixaG.b6nDYckKwJFP/FmGunjv9CBQeIVLpYfepNfAcCkEkT/dxHdG"
+  },
+  {
+    "_id": "6a84094751270c545afd65ec",
+    "email": "e2e_a13b40eb@example.com",
+    "username": "e2e415ceb",
+    "id": "a377c3ec-6dc3-4e28-a96c-e34047cf7bcb",
+    "role": "user",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "2B91085C",
+    "referred_by": null,
+    "wallet_balance": 0.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-18T07:27:03.548000",
+    "password_hash": "$2b$12$nhzYfVfPKBaTZWw56W8.6.J4Oic58NRXE8FfHrUCTxdkXx0gyyhS6"
+  },
+  {
+    "_id": "6a84320b082ff2cbafc68dd8",
+    "email": "e2e_bulk_f594b66c@example.com",
+    "username": "e2ef85cd1",
+    "id": "799f69c5-95b6-4d2e-af52-20758b66a7e5",
+    "role": "user",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "3E350AD0",
+    "referred_by": null,
+    "wallet_balance": 0.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-18T10:20:58.792000",
+    "password_hash": "$2b$12$misP1YMruH..QUcYaaXsHOk0/z96JTornd4xPIkBHV1pR22tKKiJy"
+  },
+  {
+    "_id": "6a85cedec4b4a97465153c03",
+    "email": "e2e_stripe_removed_50c4b6ad43@example.com",
+    "username": "stripegone50c4b6ad43",
+    "id": "2672bce5-814d-44d9-8e8a-8124b4cf7460",
+    "role": "user",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "13B88235",
+    "referred_by": null,
+    "wallet_balance": 0.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": true,
+    "email_verified_at": "2026-08-19T15:42:23.177000",
+    "phone": "+15557154144",
+    "phone_verified": true,
+    "phone_verified_at": "2026-08-19T15:42:24.946000",
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-19T15:42:22.612000",
+    "password_hash": "$2b$12$pzD3a3XEnQ8av17dcqoujeA7cZWO3wlu7DHnHCXFtkzPvF44JJ.cW"
+  },
+  {
+    "_id": "6a831bebdae2ca03383c0dca",
+    "email": "e2e_a09531d1@example.com",
+    "username": "e2efad060",
+    "id": "43154011-4871-4cf6-b224-aa81e2f707c0",
+    "role": "user",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "E1FFE993",
+    "referred_by": null,
+    "wallet_balance": 0.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-17T14:34:19.356000",
+    "password_hash": "$2b$12$cdUwS/vx.XVYhK2K9muTUOxgjYSAt4B5bQPVR0ScNlLtOEacR2zOq"
+  },
+  {
+    "_id": "6a843208082ff2cbafc68dd4",
+    "email": "e2e_03c57b31@example.com",
+    "username": "e2e8b86a4",
+    "id": "52342b2d-22cb-4e32-a306-a28f39ae23b5",
+    "role": "user",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "75A7AC36",
+    "referred_by": null,
+    "wallet_balance": 0.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-18T10:20:56.382000",
+    "password_hash": "$2b$12$Io9mXWM0QapAIYGjhR8DEOYQwL8aL8/.OgBE56No0l/Qwun/MliXq"
+  },
+  {
+    "_id": "6a832267fd578f06e6d25973",
+    "email": "e2e_bulk_0c9d54a7@example.com",
+    "username": "e2e31216c",
+    "id": "db004f8c-f50d-451f-9069-f79d24733184",
+    "role": "user",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "C27BBEED",
+    "referred_by": null,
+    "wallet_balance": 0.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-17T15:01:59.133000",
+    "password_hash": "$2b$12$N5QZTWvRjbx5AhvgPOwYmuqZx.fJ19o/5VT2/PSnAN8xKbCD2F.7W"
+  },
+  {
+    "_id": "6a85cd8a48e9ed4a61a77d9a",
+    "email": "e2e_stripe_removed_1787153802@example.com",
+    "username": "stripegone1787153802",
+    "id": "8bc42106-b356-4e90-a151-f0b95cc17143",
+    "role": "user",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "52833FB6",
+    "referred_by": null,
+    "wallet_balance": 0.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": true,
+    "email_verified_at": "2026-08-19T15:36:43.232000",
+    "phone": "+15557153802",
+    "phone_verified": true,
+    "phone_verified_at": "2026-08-19T15:36:45.161000",
+    "seller_status": "pending",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-19T15:36:42.686000",
+    "password_hash": "$2b$12$5bY1huKyWzFSpS57x/LXh.znEKxDgKTeo13Vzwma.RrhpzFzuclE2"
+  },
+  {
+    "_id": "6a8270911e3c068cb5159a8a",
+    "email": "lockout_test_1786933392@gmail.com",
+    "username": "lockout3392",
+    "id": "caddabcc-d054-4fa5-b434-3955d30ffd00",
+    "role": "user",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "E95E90BC",
+    "referred_by": null,
+    "wallet_balance": 0.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "created_at": "2026-08-17T02:23:13.187000",
+    "password_hash": "$2b$12$MMx0bo/Hb3JFoF1WScG9fOWpHdWnqctJ8s6D24OdznjTzTlYnoTZ.",
+    "failed_login_attempts": 5,
+    "last_failed_at": "2026-08-17T02:23:15.447000",
+    "locked_until": "2026-08-17T02:38:15.447000"
+  },
+  {
+    "_id": "6a84094a51270c545afd6606",
+    "email": "e2e_bulk_7f80b929@example.com",
+    "username": "e2e7cd15b",
+    "id": "c23c30c1-5e7b-49ed-8777-6cc75028b5a7",
+    "role": "user",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "18548C1E",
+    "referred_by": null,
+    "wallet_balance": 0.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-18T07:27:06.009000",
+    "password_hash": "$2b$12$dRyBwxgviGpNKArm2bF3bOV3r6JwIlwDHNDKpfaueD2e14YOdsS4q"
+  },
+  {
+    "_id": "6a88936c10c0307228c6246b",
+    "email": "e2e_otp_1787335531_3b6dc8@example.com",
+    "username": "e2eotp1787335531",
+    "id": "f60c5462-8d95-4620-b69e-0dfcdfef3f78",
+    "role": "user",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "9FAE708C",
+    "referred_by": null,
+    "wallet_balance": 0.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-21T18:05:31.851000",
+    "password_hash": "$2b$12$67ulJnyX6mx/mZ1nIbMUYOELUwrBMxjPpZu7AbtoX4KtJ3PnE9Rpe"
+  },
+  {
+    "_id": "6a88939ef00cbf298d1bd304",
+    "email": "e2e_otp_1787335582_913cdf@example.com",
+    "username": "e2eotp1787335582",
+    "id": "e4340085-b3f8-40ba-9959-d6d6fc581073",
+    "role": "user",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "02B521E7",
+    "referred_by": null,
+    "wallet_balance": 0.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-21T18:06:22.519000",
+    "password_hash": "$2b$12$QVDGTdAuBaIhpFMu36F9tOGs//IKSQxfAWh.WFI6AwNuJs/y3cdQ6"
+  },
+  {
+    "_id": "6a889c19badebcbc229b289d",
+    "email": "e2e_seller_1787337752@example.com",
+    "username": "seller1787337752",
+    "id": "0713cc7d-a3e5-4b3d-a3d8-36d689b5b88c",
+    "role": "user",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "EA2ED5A2",
+    "referred_by": null,
+    "wallet_balance": 0.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-21T18:42:32.931000",
+    "password_hash": "$2b$12$fDHuSw44MXCdbtbqFhGqpuuBZN70lNcYXjUQfHgAWu64jM2Mnmeg."
+  },
+  {
+    "_id": "6a889c4566197ff7cad65135",
+    "email": "e2e_seller_1787337796@example.com",
+    "username": "seller1787337796",
+    "id": "f2ec03c1-f97e-4267-98f5-16b38f6ecfaf",
+    "role": "user",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "F8185407",
+    "referred_by": null,
+    "wallet_balance": 0.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-21T18:43:17.366000",
+    "password_hash": "$2b$12$UJ7o.IYJucxxsoTR.Wo75.gKMtNDc.VTRv1XcMcep6QMV9YfJRp7W"
+  },
+  {
+    "_id": "6a889c5966197ff7cad65138",
+    "email": "e2e_seller2_1787337816@example.com",
+    "username": "seller21787337816",
+    "id": "6431b81d-1a27-45f7-bec8-e3cbfa5a607b",
+    "role": "user",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "52C174E1",
+    "referred_by": null,
+    "wallet_balance": 0.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-21T18:43:37.319000",
+    "password_hash": "$2b$12$/AdfDXybZuUUNSg6k3Y4PeJf3FIrBRk/AlJ.QUz/j7AriFKw4hiFq"
+  },
+  {
+    "_id": "6a889c7066197ff7cad6513a",
+    "email": "e2e_seller3_1787337839@example.com",
+    "username": "seller31787337839",
+    "id": "67a19f8a-e11f-49ae-bfc5-faa8375a8e2b",
+    "role": "user",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "24295B8B",
+    "referred_by": null,
+    "wallet_balance": 0.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": true,
+    "email_verified_at": "2026-08-21T18:44:04.067000",
+    "phone": "+15551234567",
+    "phone_verified": true,
+    "phone_verified_at": "2026-08-21T18:44:04.682000",
+    "seller_status": "pending",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-21T18:44:00.191000",
+    "password_hash": "$2b$12$UqFL3riK.9kmA1gaP5K6c.AamMHFDCShNDt3./Eqs7QVWl6zQ02yS"
+  },
+  {
+    "_id": "6a889c8e66197ff7cad65140",
+    "email": "e2e_seller4_1787337870@example.com",
+    "username": "seller41787337870",
+    "id": "b543383b-f1ee-42c0-9335-0a6d5c1b2d6e",
+    "role": "user",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "F9A7EDD3",
+    "referred_by": null,
+    "wallet_balance": 0.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": true,
+    "email_verified_at": "2026-08-21T18:44:34.163000",
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-21T18:44:30.355000",
+    "password_hash": "$2b$12$nn/0ZY2wnNa/pO3IfBn3POJpZaPwAxDCFMJkKY1un9tMDFqR67IYW"
+  },
+  {
+    "_id": "6a889ca866197ff7cad65143",
+    "email": "e2e_seller5_1787337896@example.com",
+    "username": "seller51787337896",
+    "id": "34baec7b-2cd3-4d0a-a493-acb20f4d5932",
+    "role": "user",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "3B34D4F3",
+    "referred_by": null,
+    "wallet_balance": 0.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": true,
+    "email_verified_at": "2026-08-21T18:44:59.950000",
+    "phone": "+15551234567",
+    "phone_verified": true,
+    "phone_verified_at": "2026-08-21T18:45:00.619000",
+    "seller_status": "pending",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-21T18:44:56.719000",
+    "password_hash": "$2b$12$B0LtrMUJSbO86qHVsHkHOOk/SWhKuFDfGHgpiHftRYvU9YIHI7rG."
+  },
+  {
+    "_id": "6a8b461fbf1a19af31d62362",
+    "email": "e2e_boost_1787512350@example.com",
+    "username": "boost1787512350",
+    "id": "e3a92310-8106-4338-abf9-289a627a268c",
+    "role": "user",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "30A72E10",
+    "referred_by": null,
+    "wallet_balance": 0.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": "60a6f614-43a7-40c2-b69f-997abf9d1de7",
+    "email_verified": true,
+    "email_verified_at": "2026-08-23T19:12:34.880000",
+    "phone": "+15551234567",
+    "phone_verified": true,
+    "phone_verified_at": "2026-08-23T19:12:35.225000",
+    "seller_status": "approved",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-23T19:12:30.810000",
+    "password_hash": "$2b$12$rvNcR1CCoUMWqqJe/7YVhu/byAsbdzyO2R/KFomMw6riqVjtdCjUC"
+  },
+  {
+    "_id": "6a8bd26d5d8ae69dcd6c0321",
+    "email": "e2e_seller_1787548269433_6f079d@example.com",
+    "username": "e2e_seller_1787548269433_6f079d",
+    "id": "e386c6b9-7e2c-409c-b4c5-605df1d91497",
+    "role": "seller",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "E1C7E78B",
+    "referred_by": null,
+    "wallet_balance": 0.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:11:09.581000",
+    "password_hash": "$2b$12$.bBGLrlwgHF3kaS774MLgO/hoLwqLvJKNrg9cowNig/OwmfiCbjbi",
+    "failed_login_attempts": 0,
+    "last_login_at": "2026-08-24T05:11:10.461000",
+    "locked_until": null
+  },
+  {
+    "_id": "6a8bd26e5d8ae69dcd6c0322",
+    "email": "e2e_buyer_1787548270517_7cb71a@example.com",
+    "username": "e2e_buyer_1787548270517_7cb71a",
+    "id": "4f6e7dd2-2ba0-46cc-aef9-810a383c45c9",
+    "role": "user",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "78A81FEF",
+    "referred_by": null,
+    "wallet_balance": 500.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:11:10.676000",
+    "password_hash": "$2b$12$68vQQqzFDMqGoxnt1TuIf.NXu0aq1PVHnKeaBSdRWDnpl.tDvHRki"
+  },
+  {
+    "_id": "6a8bd2715d8ae69dcd6c0326",
+    "email": "e2e_seller_1787548273010_be3647@example.com",
+    "username": "e2e_seller_1787548273010_be3647",
+    "id": "e26e0372-be20-4fc9-85ab-231d9dfbc930",
+    "role": "seller",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "884CF23A",
+    "referred_by": null,
+    "wallet_balance": 100.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:11:13.170000",
+    "password_hash": "$2b$12$1nEBlyfOXSlmMWSmf.sh6.TF51syg5xGPyHorPoUmGS2P77nMOUZG",
+    "failed_login_attempts": 0,
+    "last_login_at": "2026-08-24T05:11:14.031000",
+    "locked_until": null
+  },
+  {
+    "_id": "6a8bd2725d8ae69dcd6c0327",
+    "email": "e2e_buyer_1787548274088_d73b2e@example.com",
+    "username": "e2e_buyer_1787548274088_d73b2e",
+    "id": "b75ad00a-27f4-4da3-93ff-917c7bc5b1ae",
+    "role": "user",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "A33B9707",
+    "referred_by": null,
+    "wallet_balance": 500.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:11:14.279000",
+    "password_hash": "$2b$12$lrqcauJ7.Po7uRbLwdD9Qe0glY5k0K81kA8BisAkTfJnpthcKEU6e"
+  },
+  {
+    "_id": "6a8bd2775d8ae69dcd6c032e",
+    "email": "e2e_seller_1787548278631_12505c@example.com",
+    "username": "e2e_seller_1787548278631_12505c",
+    "id": "2cdb3ba2-db10-4d16-9798-7583a44c7a5d",
+    "role": "seller",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "7BC63B8F",
+    "referred_by": null,
+    "wallet_balance": 100.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:11:18.800000",
+    "password_hash": "$2b$12$Mt7g4ymo1PHLECaqupwaluhQO25hMBTNGBX7EjNOKx5R8xzoomzYC",
+    "failed_login_attempts": 0,
+    "last_login_at": "2026-08-24T05:11:19.681000",
+    "locked_until": null
+  },
+  {
+    "_id": "6a8bd2785d8ae69dcd6c032f",
+    "email": "e2e_buyer_1787548279741_09f76b@example.com",
+    "username": "e2e_buyer_1787548279741_09f76b",
+    "id": "1d5c5536-c1b3-4226-baf5-424048422bbb",
+    "role": "user",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "AE06A228",
+    "referred_by": null,
+    "wallet_balance": 500.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:11:19.887000",
+    "password_hash": "$2b$12$UifokvsGWW.rwQ/waLtN2OxNznVLVpLM16QozsbPoyRRPE31AA1mu"
+  },
+  {
+    "_id": "6a8bd27c5d8ae69dcd6c0337",
+    "email": "e2e_seller_1787548283896_5212a1@example.com",
+    "username": "e2e_seller_1787548283896_5212a1",
+    "id": "ec722107-f3cf-4a8f-aad6-dbfb6850d066",
+    "role": "seller",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "C44F7844",
+    "referred_by": null,
+    "wallet_balance": 10.0,
+    "wallet_frozen_balance": 100.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:11:24.052000",
+    "password_hash": "$2b$12$jVRW2p/qUHN2wdJdN/kdM.A7pwwk55rtYbVXFmYT9PPOp8Zm0mMGm",
+    "failed_login_attempts": 0,
+    "last_login_at": "2026-08-24T05:11:24.900000",
+    "locked_until": null
+  },
+  {
+    "_id": "6a8bd27d5d8ae69dcd6c0338",
+    "email": "e2e_buyer_1787548284996_0b4ebd@example.com",
+    "username": "e2e_buyer_1787548284996_0b4ebd",
+    "id": "a4e76682-101a-4bd5-9cc9-75f3789021ae",
+    "role": "user",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "6FEA5D9B",
+    "referred_by": null,
+    "wallet_balance": 500.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:11:25.145000",
+    "password_hash": "$2b$12$gZPhpYCVaCJy7bapdNy24uXj6pdHqSY7BsANRujs0.ctJZKpfz8sy"
+  },
+  {
+    "_id": "6a8bd2835d8ae69dcd6c0345",
+    "email": "e2e_seller_1787548290897_b4c1ea@example.com",
+    "username": "e2e_seller_1787548290897_b4c1ea",
+    "id": "b6d39cf5-1d42-4eee-bb41-6747b00f9414",
+    "role": "seller",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "2E35E840",
+    "referred_by": null,
+    "wallet_balance": 0.0,
+    "wallet_frozen_balance": 100.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:11:31.051000",
+    "password_hash": "$2b$12$.T1egojjcB4i43ZfCdYpweX2fGtIwtJ9Aoi/sQyWHtRaeV7YAFuk2",
+    "failed_login_attempts": 0,
+    "last_login_at": "2026-08-24T05:11:31.918000",
+    "locked_until": null
+  },
+  {
+    "_id": "6a8bd2845d8ae69dcd6c0346",
+    "email": "e2e_buyer_1787548291980_ec0943@example.com",
+    "username": "e2e_buyer_1787548291980_ec0943",
+    "id": "aaea8421-6a33-4fbe-a4eb-d07d7c028305",
+    "role": "user",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "682052A1",
+    "referred_by": null,
+    "wallet_balance": 500.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:11:32.143000",
+    "password_hash": "$2b$12$QiE1yvlMt3fvPGrgxPfWL.FZBgyuyRxpZcAVziTiW44WcggrRgm3i"
+  },
+  {
+    "_id": "6a8bd2885d8ae69dcd6c034d",
+    "email": "e2e_seller_1787548296366_373428@example.com",
+    "username": "e2e_seller_1787548296366_373428",
+    "id": "8728fd69-f4dd-4071-93a9-14a1ba375af9",
+    "role": "seller",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "92C31A83",
+    "referred_by": null,
+    "wallet_balance": 5.0,
+    "wallet_frozen_balance": 10.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:11:36.512000",
+    "password_hash": "$2b$12$fyh.RsQ/l3YpoLl176M.PORPinxpTyZKMedY14h099u1mQoNdkc9e",
+    "failed_login_attempts": 0,
+    "last_login_at": "2026-08-24T05:11:37.417000",
+    "locked_until": null
+  },
+  {
+    "_id": "6a8bd2895d8ae69dcd6c034e",
+    "email": "e2e_buyer_1787548297473_b120ee@example.com",
+    "username": "e2e_buyer_1787548297473_b120ee",
+    "id": "faec94c4-0dca-4a01-afef-11049693c46c",
+    "role": "user",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "1643066C",
+    "referred_by": null,
+    "wallet_balance": 500.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:11:37.621000",
+    "password_hash": "$2b$12$80UcxaQMcyDiGZ6ZA7GujOHJCkIdkPnD.99G8Kmu4XUn1MWMeEJBW"
+  },
+  {
+    "_id": "6a8bd2905d8ae69dcd6c0358",
+    "email": "e2e_seller_1787548304211_0cd187@example.com",
+    "username": "e2e_seller_1787548304211_0cd187",
+    "id": "6541788e-55e8-4fbe-90d9-d13ff8c78b30",
+    "role": "seller",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "21A7FD64",
+    "referred_by": null,
+    "wallet_balance": 200.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:11:44.358000",
+    "password_hash": "$2b$12$Cturc3btky.VXHmABMQR1.2vF5k2Yip72a8HZXJJ7LShwvnjvuRwW",
+    "failed_login_attempts": 0,
+    "last_login_at": "2026-08-24T05:11:45.306000",
+    "locked_until": null
+  },
+  {
+    "_id": "6a8bd2915d8ae69dcd6c0359",
+    "email": "e2e_buyer_1787548305361_786117@example.com",
+    "username": "e2e_buyer_1787548305361_786117",
+    "id": "ef1167bd-5f57-42c6-b076-bc13f6551621",
+    "role": "user",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "436C3F5A",
+    "referred_by": null,
+    "wallet_balance": 500.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:11:45.519000",
+    "password_hash": "$2b$12$flY.Lhy7D8y/ecHfBdqnQ.uDXBvNcUDtUZKcbBOI3jr8tJ88b5qm2"
+  },
+  {
+    "_id": "6a8bd2965d8ae69dcd6c0360",
+    "email": "e2e_seller_1787548310517_761fe5@example.com",
+    "username": "e2e_seller_1787548310517_761fe5",
+    "id": "f0bae84e-ed8f-4434-9bd9-e11e8a4d2f84",
+    "role": "seller",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "25A3DBEE",
+    "referred_by": null,
+    "wallet_balance": 200.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:11:50.674000",
+    "password_hash": "$2b$12$Pm1x0lKe7niB.rKtMIwm8.YawQfgsoGuHatcz/pRyhuTCZA8GmxLG",
+    "failed_login_attempts": 0,
+    "last_login_at": "2026-08-24T05:11:51.536000",
+    "locked_until": null
+  },
+  {
+    "_id": "6a8bd2975d8ae69dcd6c0361",
+    "email": "e2e_buyer_1787548311594_0bfd21@example.com",
+    "username": "e2e_buyer_1787548311594_0bfd21",
+    "id": "6cedb3b1-c7a1-49a1-ae20-5490ea1fc6b5",
+    "role": "user",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "C15B61FF",
+    "referred_by": null,
+    "wallet_balance": 500.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:11:51.744000",
+    "password_hash": "$2b$12$OjL6GNv3mYxO0Q4jAC56xeK7MzDMKyOdYCxDbjzmwM8btT8KbCz5q"
+  },
+  {
+    "_id": "6a8bd2985d8ae69dcd6c0362",
+    "email": "e2e_other_1787548312055_1563b8@example.com",
+    "username": "e2e_other_1787548312055_1563b8",
+    "id": "448c3a3a-e842-4d4d-a9cd-344bb779a932",
+    "role": "user",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "6BA87570",
+    "referred_by": null,
+    "wallet_balance": 0.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:11:52.218000",
+    "password_hash": "$2b$12$g9j53mco3lGubIxoT50N4./grZyfYjD/AAPhJv8PMR/pEQvp/lSlq"
+  },
+  {
+    "_id": "6a8bd29d5d8ae69dcd6c0369",
+    "email": "e2e_seller_1787548317244_df295e@example.com",
+    "username": "e2e_seller_1787548317244_df295e",
+    "id": "8f4731a1-f246-4971-a7db-f9037e8b4a29",
+    "role": "seller",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "21FAD426",
+    "referred_by": null,
+    "wallet_balance": 200.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:11:57.399000",
+    "password_hash": "$2b$12$hi.QY.N0m92jmZOZDEzz9.yp7irdP65ai9lL.soDqrxK1LWqh7UuC",
+    "failed_login_attempts": 0,
+    "last_login_at": "2026-08-24T05:11:58.253000",
+    "locked_until": null
+  },
+  {
+    "_id": "6a8bd29e5d8ae69dcd6c036a",
+    "email": "e2e_buyer_1787548318315_c61563@example.com",
+    "username": "e2e_buyer_1787548318315_c61563",
+    "id": "80a9dca5-43a2-4ceb-ae18-324d4007e4bc",
+    "role": "user",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "A6E751A4",
+    "referred_by": null,
+    "wallet_balance": 500.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:11:58.460000",
+    "password_hash": "$2b$12$/HK8DVf/a5ukfAknWAnGquqAQ1AurbzjU3r7sd/XBZuyR2z8B73vW"
+  },
+  {
+    "_id": "6a8bd2a25d8ae69dcd6c0371",
+    "email": "e2e_seller_1787548322601_f7eee2@example.com",
+    "username": "e2e_seller_1787548322601_f7eee2",
+    "id": "c0cf788c-17c5-4560-b89d-e39eb2b563cf",
+    "role": "seller",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "3A829884",
+    "referred_by": null,
+    "wallet_balance": 200.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:12:02.768000",
+    "password_hash": "$2b$12$1uiCE7WGD1X61QgrATt6W.o.wzAHtXafDxDAY.Os31h3ToiNjDcXK",
+    "failed_login_attempts": 0,
+    "last_login_at": "2026-08-24T05:12:03.636000",
+    "locked_until": null
+  },
+  {
+    "_id": "6a8bd2a45d8ae69dcd6c0372",
+    "email": "e2e_buyer_1787548323699_d84e69@example.com",
+    "username": "e2e_buyer_1787548323699_d84e69",
+    "id": "a2adeea7-2205-485f-acb5-20c4f589fb87",
+    "role": "user",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "3B15C90C",
+    "referred_by": null,
+    "wallet_balance": 500.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:12:03.851000",
+    "password_hash": "$2b$12$.JPv4XjZi/KrVUtghzRUBOh6sVC6l8D3wkkr/AMuwKiAobNsGWwGO"
+  },
+  {
+    "_id": "6a8bd2a85d8ae69dcd6c0379",
+    "email": "e2e_seller_1787548327776_d9ca99@example.com",
+    "username": "e2e_seller_1787548327776_d9ca99",
+    "id": "98cef20c-dc40-4775-aff9-4a9525613143",
+    "role": "seller",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "12A02A9A",
+    "referred_by": null,
+    "wallet_balance": 0.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:12:07.926000",
+    "password_hash": "$2b$12$NH4AZM3VZgCVE3TcLTfCD.CivTaNaHnm65.iP0Ra52SLvZwV8nSsu",
+    "failed_login_attempts": 0,
+    "last_login_at": "2026-08-24T05:12:08.830000",
+    "locked_until": null
+  },
+  {
+    "_id": "6a8bd2a95d8ae69dcd6c037a",
+    "email": "e2e_buyer_1787548328900_5d1413@example.com",
+    "username": "e2e_buyer_1787548328900_5d1413",
+    "id": "7b1822f9-7a74-4308-8133-56f18435c8f1",
+    "role": "user",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "13ED5436",
+    "referred_by": null,
+    "wallet_balance": 500.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:12:09.051000",
+    "password_hash": "$2b$12$Wu2jWtppwaWoGmqSxfE6wuTRRctBjf6y4JHMxLnqDqXxMT/qTt2L2"
+  },
+  {
+    "_id": "6a8bd2ac5d8ae69dcd6c037e",
+    "email": "e2e_seller_1787548332381_80f894@example.com",
+    "username": "e2e_seller_1787548332381_80f894",
+    "id": "ca9b2450-75dd-4a55-b47d-c8157fed24ef",
+    "role": "seller",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "30ED7459",
+    "referred_by": null,
+    "wallet_balance": 0.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:12:12.544000",
+    "password_hash": "$2b$12$Oqx9G/f.0cf8jl47CPSiwu01hAH2vEcA.3o06Xq6PLWpjU1tW3R0G",
+    "failed_login_attempts": 0,
+    "last_login_at": "2026-08-24T05:12:13.463000",
+    "locked_until": null
+  },
+  {
+    "_id": "6a8bd2ad5d8ae69dcd6c037f",
+    "email": "e2e_buyer_1787548333529_bb0c7b@example.com",
+    "username": "e2e_buyer_1787548333529_bb0c7b",
+    "id": "ee40edd9-1448-4361-af79-9d3065fb292d",
+    "role": "user",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "7EF24358",
+    "referred_by": null,
+    "wallet_balance": 500.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:12:13.679000",
+    "password_hash": "$2b$12$BBZ3N5xc6Z6tPrwxrsFBmuCuo1WyqcJ1Xkji5cQoyv2qsHAcpjHI6"
+  },
+  {
+    "_id": "6a8bd2b05d8ae69dcd6c0383",
+    "email": "e2e_seller_1787548335980_e09937@example.com",
+    "username": "e2e_seller_1787548335980_e09937",
+    "id": "bdd4d294-4a09-484d-8870-e90547ec4ca4",
+    "role": "seller",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "94D33379",
+    "referred_by": null,
+    "wallet_balance": 10.0,
+    "wallet_frozen_balance": 100.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:12:16.130000",
+    "password_hash": "$2b$12$prcw5x/MAtYFCcmwEAzq1OVWml0jLrnqc2ZD504TXijLovCReMaW.",
+    "failed_login_attempts": 0,
+    "last_login_at": "2026-08-24T05:12:16.968000",
+    "locked_until": null
+  },
+  {
+    "_id": "6a8bd2b15d8ae69dcd6c0384",
+    "email": "e2e_buyer_1787548337036_b82883@example.com",
+    "username": "e2e_buyer_1787548337036_b82883",
+    "id": "4448902d-b91a-49fa-86f1-63fb7d4424d9",
+    "role": "user",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "9E3E363D",
+    "referred_by": null,
+    "wallet_balance": 500.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:12:17.190000",
+    "password_hash": "$2b$12$CW69WMxg0HI//bEg7VNl8.oUdItmZsWl/ofeEpFJkgTUHJIQDdtCS"
+  },
+  {
+    "_id": "6a8bd2b75d8ae69dcd6c038e",
+    "email": "e2e_seller_1787548343085_2a2d9b@example.com",
+    "username": "e2e_seller_1787548343085_2a2d9b",
+    "id": "e29e566b-3478-4b93-b668-aeefba585104",
+    "role": "seller",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "6AF3457E",
+    "referred_by": null,
+    "wallet_balance": 200.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:12:23.227000",
+    "password_hash": "$2b$12$nU5WXj4Adlad/g1I4MyP/OpIzdICGcq/ChjmR/jvIvQcWLQxb73fq",
+    "failed_login_attempts": 0,
+    "last_login_at": "2026-08-24T05:12:24.099000",
+    "locked_until": null
+  },
+  {
+    "_id": "6a8bd2b85d8ae69dcd6c038f",
+    "email": "e2e_buyer_1787548344158_1d9f13@example.com",
+    "username": "e2e_buyer_1787548344158_1d9f13",
+    "id": "37b39fea-8f92-43ac-bd8c-c9060b837dfd",
+    "role": "user",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "9036562D",
+    "referred_by": null,
+    "wallet_balance": 500.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:12:24.312000",
+    "password_hash": "$2b$12$GwpqDMoAGdLHSdbnuVjF5.fidcpSC9XUoTO/HMsYc1sbVcbltoIkq"
+  },
+  {
+    "_id": "6a8bd2be5d8ae69dcd6c0396",
+    "email": "e2e_seller_1787548349644_a1987d@example.com",
+    "username": "e2e_seller_1787548349644_a1987d",
+    "id": "03b6f977-115e-4be8-b691-48af1686d121",
+    "role": "seller",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "9C733F65",
+    "referred_by": null,
+    "wallet_balance": 0.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:12:29.837000",
+    "password_hash": "$2b$12$fIAohPS6gNxaF0.PMe4Ol.v1lpFRFweA2Tpm1kzkVveBWp9GznCSi",
+    "failed_login_attempts": 0,
+    "last_login_at": "2026-08-24T05:12:30.760000",
+    "locked_until": null
+  },
+  {
+    "_id": "6a8bd2bf5d8ae69dcd6c0397",
+    "email": "e2e_buyer_1787548350816_82274e@example.com",
+    "username": "e2e_buyer_1787548350816_82274e",
+    "id": "e1d52843-1f7a-4620-a5e7-fd4a01b4fd03",
+    "role": "user",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "432D32C4",
+    "referred_by": null,
+    "wallet_balance": 500.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:12:30.965000",
+    "password_hash": "$2b$12$3TYMnGwY1l6IztOnhxT7JOktkuPwCB7T5v5sCbFDX80BUCToc0BKu"
+  },
+  {
+    "_id": "6a8bd2d25d8ae69dcd6c039b",
+    "email": "e2e_seller_1787548369677_a675f4@example.com",
+    "username": "e2e_seller_1787548369677_a675f4",
+    "id": "e8178163-32c0-4dee-8d8f-285d06ed8e0f",
+    "role": "seller",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "2C622285",
+    "referred_by": null,
+    "wallet_balance": 0.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:12:49.830000",
+    "password_hash": "$2b$12$jP3FEUk3emb8y6VEdCskGu1Qg2Op7xXxswk49jNxlu/F2RfmBhh7W",
+    "failed_login_attempts": 0,
+    "last_login_at": "2026-08-24T05:12:50.705000",
+    "locked_until": null
+  },
+  {
+    "_id": "6a8bd2d35d8ae69dcd6c039c",
+    "email": "e2e_buyer_1787548370761_cdfb31@example.com",
+    "username": "e2e_buyer_1787548370761_cdfb31",
+    "id": "fed27b5a-4530-4320-8d64-b2b45981cff0",
+    "role": "user",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "901A2BCA",
+    "referred_by": null,
+    "wallet_balance": 500.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:12:50.908000",
+    "password_hash": "$2b$12$ZEwKHUFb/Se50NUg6FfVn.R3AmUizSzhpu.Scyq4G8PMcNwCA31LS"
+  },
+  {
+    "_id": "6a8bd2f3eefe2c9f46ebb6bb",
+    "email": "e2e_seller_1787548402746_0820cf@example.com",
+    "username": "e2e_seller_1787548402746_0820cf",
+    "id": "b869d6de-1787-461d-a2e9-4f0f05cacc9d",
+    "role": "seller",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 1,
+    "is_active": true,
+    "referral_code": "21221100",
+    "referred_by": null,
+    "wallet_balance": 0.0,
+    "wallet_frozen_balance": 35.0,
+    "store_id": "9c1e2d3b-8d0b-4907-a09d-86cfe66bbf22",
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "approved",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:13:22.888000",
+    "password_hash": "$2b$12$aARm1Y7IQgwSvtauZsfpBecPiJu99cqAsB7FkpxPsc0XTgG6/3sC2",
+    "failed_login_attempts": 0,
+    "last_login_at": "2026-08-24T05:13:23.940000",
+    "locked_until": null,
+    "health_history": [
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      }
+    ],
+    "health_poor_since": null,
+    "health_poor_streak_days": 0,
+    "health_score": null,
+    "health_scored_at": "2026-08-24T14:47:30.398000",
+    "health_tier": "no_data"
+  },
+  {
+    "_id": "6a8bd2f4eefe2c9f46ebb6bc",
+    "email": "e2e_buyer_1787548403994_70a5a0@example.com",
+    "username": "e2e_buyer_1787548403994_70a5a0",
+    "id": "1766c8a1-b489-4a4f-b336-35c704905f7b",
+    "role": "user",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "B8365E9D",
+    "referred_by": null,
+    "wallet_balance": 500.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:13:24.146000",
+    "password_hash": "$2b$12$HaleAWGo39c/KtL0J0kKaOm5gCEkmOMTLLUtEPVwI6q8NlpBNV6Bq"
+  },
+  {
+    "_id": "6a8bd2faeefe2c9f46ebb6c8",
+    "email": "e2e_seller_1787548410604_0f7d05@example.com",
+    "username": "e2e_seller_1787548410604_0f7d05",
+    "id": "d81a9fdd-fb17-435d-96f0-049e1f9fd475",
+    "role": "seller",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 1,
+    "is_active": true,
+    "referral_code": "FD492433",
+    "referred_by": null,
+    "wallet_balance": 100.0,
+    "wallet_frozen_balance": 50.0,
+    "store_id": "d7c92dfc-f5aa-4876-9596-c4aeeefc89da",
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "approved",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:13:30.747000",
+    "password_hash": "$2b$12$saHXUiS/5TkbLsmLEBnMDeAOHfvnNx0rjmnTu9CTxkRE1PeDGWlEy",
+    "failed_login_attempts": 0,
+    "last_login_at": "2026-08-24T05:13:31.623000",
+    "locked_until": null,
+    "health_history": [
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      }
+    ],
+    "health_poor_since": null,
+    "health_poor_streak_days": 0,
+    "health_score": null,
+    "health_scored_at": "2026-08-24T14:47:30.398000",
+    "health_tier": "no_data"
+  },
+  {
+    "_id": "6a8bd2fceefe2c9f46ebb6c9",
+    "email": "e2e_buyer_1787548411688_ece794@example.com",
+    "username": "e2e_buyer_1787548411688_ece794",
+    "id": "fde06d51-0139-499a-8384-04b90ce8df7b",
+    "role": "user",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "17B8D8A5",
+    "referred_by": null,
+    "wallet_balance": 500.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:13:31.836000",
+    "password_hash": "$2b$12$SK6MK6SK5jpv08gXrGvyBOdjLJtY1rbflXFaaCcz7Mgt5fLr34Ac."
+  },
+  {
+    "_id": "6a8bd30beefe2c9f46ebb6dc",
+    "email": "e2e_seller_1787548427123_63e871@example.com",
+    "username": "e2e_seller_1787548427123_63e871",
+    "id": "93ca4004-30c8-4e7c-98f0-3951c22d85ec",
+    "role": "seller",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 1,
+    "is_active": true,
+    "referral_code": "FDB0C641",
+    "referred_by": null,
+    "wallet_balance": 10.0,
+    "wallet_frozen_balance": 160.0,
+    "store_id": "fb0b5c5d-b8ac-4ff3-b30c-a6f596cc8d65",
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "approved",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:13:47.271000",
+    "password_hash": "$2b$12$ZqOyzN3aqcr5G5oy/CMhguH.YRZK6NjCIF.F/Mf4gccf19So/KKkC",
+    "failed_login_attempts": 0,
+    "last_login_at": "2026-08-24T05:13:48.231000",
+    "locked_until": null,
+    "health_history": [
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      }
+    ],
+    "health_poor_since": null,
+    "health_poor_streak_days": 0,
+    "health_score": null,
+    "health_scored_at": "2026-08-24T14:47:30.398000",
+    "health_tier": "no_data"
+  },
+  {
+    "_id": "6a8bd314eefe2c9f46ebb6eb",
+    "email": "e2e_seller_1787548436347_33cc52@example.com",
+    "username": "e2e_seller_1787548436347_33cc52",
+    "id": "b6955817-dd9c-4348-b07f-6c128cce50c3",
+    "role": "seller",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 1,
+    "is_active": true,
+    "referral_code": "241F3F40",
+    "referred_by": null,
+    "wallet_balance": 70.0,
+    "wallet_frozen_balance": 50.0,
+    "store_id": "ab34441f-34da-4b15-abe6-7ebf78e50306",
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "approved",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:13:56.497000",
+    "password_hash": "$2b$12$VAyQfrPGkl/MXRlidkplce6sfHDKuPQVcBSPaCIKJUT7PepzfF1h.",
+    "failed_login_attempts": 0,
+    "last_login_at": "2026-08-24T05:13:57.386000",
+    "locked_until": null,
+    "health_history": [
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      }
+    ],
+    "health_poor_since": null,
+    "health_poor_streak_days": 0,
+    "health_score": 100.0,
+    "health_scored_at": "2026-08-24T14:47:30.398000",
+    "health_tier": "excellent"
+  },
+  {
+    "_id": "6a8bd315eefe2c9f46ebb6ec",
+    "email": "e2e_buyer_1787548437456_bf4fa1@example.com",
+    "username": "e2e_buyer_1787548437456_bf4fa1",
+    "id": "9654c467-cdff-4cca-9880-79e250ef34c4",
+    "role": "user",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "ED2BEA64",
+    "referred_by": null,
+    "wallet_balance": 500.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:13:57.596000",
+    "password_hash": "$2b$12$V5LJLjXmKROA009pzgPHIeuDowV9XWckyCURnobGJTTuQ10KrfDjq"
+  },
+  {
+    "_id": "6a8bd31feefe2c9f46ebb6fe",
+    "email": "e2e_seller_1787548447308_e82684@example.com",
+    "username": "e2e_seller_1787548447308_e82684",
+    "id": "e1ccfe24-5a93-47c7-888c-249f905605df",
+    "role": "seller",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 1,
+    "is_active": true,
+    "referral_code": "22FB55AE",
+    "referred_by": null,
+    "wallet_balance": 0.0,
+    "wallet_frozen_balance": 130.0,
+    "store_id": "18591768-5ecf-40e6-b007-9efec069e83c",
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "approved",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:14:07.478000",
+    "password_hash": "$2b$12$mcgtEdC5f3evMrbROqKaTO8QGwkBKqbEdBoKfCJb80RrGf.0P8sL.",
+    "failed_login_attempts": 0,
+    "last_login_at": "2026-08-24T05:14:08.368000",
+    "locked_until": null,
+    "health_history": [
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      }
+    ],
+    "health_poor_since": null,
+    "health_poor_streak_days": 0,
+    "health_score": 100.0,
+    "health_scored_at": "2026-08-24T14:47:30.398000",
+    "health_tier": "excellent"
+  },
+  {
+    "_id": "6a8bd320eefe2c9f46ebb6ff",
+    "email": "e2e_buyer_1787548448420_9a7f52@example.com",
+    "username": "e2e_buyer_1787548448420_9a7f52",
+    "id": "6fd2b92c-52ea-4f5e-ba1c-555728d7b70a",
+    "role": "user",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "572DCF54",
+    "referred_by": null,
+    "wallet_balance": 500.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:14:08.570000",
+    "password_hash": "$2b$12$pR6/C0TjCf.TYfuMJaWFGu7RZIeSb2PH6Po7pyIVKXN65jG3V9PRi"
+  },
+  {
+    "_id": "6a8bd32feefe2c9f46ebb715",
+    "email": "e2e_seller_1787548463250_bb0ff0@example.com",
+    "username": "e2e_seller_1787548463250_bb0ff0",
+    "id": "d00b6ca9-7005-418f-a8e8-488224484264",
+    "role": "seller",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 1,
+    "is_active": true,
+    "referral_code": "643EE206",
+    "referred_by": null,
+    "wallet_balance": 0.0,
+    "wallet_frozen_balance": 120.0,
+    "store_id": "7f49a2fd-9c0c-47c1-8a58-10e0c0a6f33c",
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "approved",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:14:23.505000",
+    "password_hash": "$2b$12$foSksK8AIc.LRZ9fqVd/q.5wUofuqB/DScEo58ixpoRwPJld7he1O",
+    "failed_login_attempts": 0,
+    "last_login_at": "2026-08-24T05:14:24.379000",
+    "locked_until": null,
+    "health_history": [
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      }
+    ],
+    "health_poor_since": null,
+    "health_poor_streak_days": 0,
+    "health_score": 100.0,
+    "health_scored_at": "2026-08-24T14:47:30.398000",
+    "health_tier": "excellent"
+  },
+  {
+    "_id": "6a8bd330eefe2c9f46ebb716",
+    "email": "e2e_buyer_1787548464430_94180e@example.com",
+    "username": "e2e_buyer_1787548464430_94180e",
+    "id": "5a4d5b28-8da9-4c00-b945-4b72fe2a5e27",
+    "role": "user",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "CF80F019",
+    "referred_by": null,
+    "wallet_balance": 500.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:14:24.584000",
+    "password_hash": "$2b$12$jmSUD72Gh7jH2E6EhJqzkeuu3FoFFuikasB.Zf5ntxztDFlbzkLlW"
+  },
+  {
+    "_id": "6a8bd348eefe2c9f46ebb728",
+    "email": "e2e_seller_1787548487756_f859c5@example.com",
+    "username": "e2e_seller_1787548487756_f859c5",
+    "id": "5edb9a7f-0979-4c37-9e08-19640a50d0cb",
+    "role": "seller",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 1,
+    "is_active": true,
+    "referral_code": "FF9F2574",
+    "referred_by": null,
+    "wallet_balance": 0.0,
+    "wallet_frozen_balance": 25.0,
+    "store_id": "e6f0616f-e969-4c56-bc41-6118f137b794",
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "approved",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:14:47.908000",
+    "password_hash": "$2b$12$9uR/2isIyRGnvpvzJ1.80eCQTSdRFk1rSWueVn.RdAHq9ufO6r3ky",
+    "failed_login_attempts": 0,
+    "last_login_at": "2026-08-24T05:14:48.789000",
+    "locked_until": null,
+    "health_history": [
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      }
+    ],
+    "health_poor_since": null,
+    "health_poor_streak_days": 0,
+    "health_score": 100.0,
+    "health_scored_at": "2026-08-24T14:47:30.398000",
+    "health_tier": "excellent"
+  },
+  {
+    "_id": "6a8bd349eefe2c9f46ebb729",
+    "email": "e2e_buyer_1787548488855_7a7083@example.com",
+    "username": "e2e_buyer_1787548488855_7a7083",
+    "id": "32b2bda6-79f6-4a22-afe3-73366dc957d6",
+    "role": "user",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "966AC740",
+    "referred_by": null,
+    "wallet_balance": 500.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:14:49.003000",
+    "password_hash": "$2b$12$.mqWUKuoZ6zeShgXA3WcDevuvxPY2jhpYCMh4kk30LE1L6JsrzqaG"
+  },
+  {
+    "_id": "6a8bd356eefe2c9f46ebb73f",
+    "email": "e2e_seller_1787548501843_de41bd@example.com",
+    "username": "e2e_seller_1787548501843_de41bd",
+    "id": "22ebac90-4353-4c3a-99fd-c825962b6502",
+    "role": "seller",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 1,
+    "is_active": true,
+    "referral_code": "227B0B47",
+    "referred_by": null,
+    "wallet_balance": 200.0,
+    "wallet_frozen_balance": 40.0,
+    "store_id": "f77e0067-a7dd-4ac1-9e1b-db94efadea42",
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "approved",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:15:01.989000",
+    "password_hash": "$2b$12$LHjiaiU35HWAMGub2Y5wrOeMYPsQ/40jv0E3e1PcN4.qMJK.xaAbO",
+    "failed_login_attempts": 0,
+    "last_login_at": "2026-08-24T05:15:02.873000",
+    "locked_until": null,
+    "health_history": [
+      {
+        "date": "2026-08-24",
+        "score": 0.0,
+        "tier": "poor"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 0.0,
+        "tier": "poor"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 0.0,
+        "tier": "poor"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 0.0,
+        "tier": "poor"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 0.0,
+        "tier": "poor"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 0.0,
+        "tier": "poor"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 0.0,
+        "tier": "poor"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 0.0,
+        "tier": "poor"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 0.0,
+        "tier": "poor"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 0.0,
+        "tier": "poor"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 0.0,
+        "tier": "poor"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 0.0,
+        "tier": "poor"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 0.0,
+        "tier": "poor"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 0.0,
+        "tier": "poor"
+      }
+    ],
+    "health_poor_since": null,
+    "health_poor_streak_days": 0,
+    "health_score": 0.0,
+    "health_scored_at": "2026-08-24T14:47:30.398000",
+    "health_tier": "poor",
+    "reactivated_at": "2026-08-24T14:57:22.203000"
+  },
+  {
+    "_id": "6a8bd357eefe2c9f46ebb740",
+    "email": "e2e_buyer_1787548502931_85ac32@example.com",
+    "username": "e2e_buyer_1787548502931_85ac32",
+    "id": "07705bfc-6300-4352-bb2a-61aa890dd4f1",
+    "role": "user",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "9E8AF9CF",
+    "referred_by": null,
+    "wallet_balance": 540.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:15:03.082000",
+    "password_hash": "$2b$12$TVOKXLsdsajB/XMCyXsh4O53ZQdtdbfz/fjZSjFRZd98DHq1xnovi"
+  },
+  {
+    "_id": "6a8bd360eefe2c9f46ebb74f",
+    "email": "e2e_seller_1787548512011_22b9d1@example.com",
+    "username": "e2e_seller_1787548512011_22b9d1",
+    "id": "e640e73e-f0d3-4260-827b-638de1bb6bf0",
+    "role": "seller",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 1,
+    "is_active": true,
+    "referral_code": "03E6837E",
+    "referred_by": null,
+    "wallet_balance": 200.0,
+    "wallet_frozen_balance": 40.0,
+    "store_id": "f3ad1f60-2b92-4bdf-bb27-65f0877afcde",
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "approved",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:15:12.150000",
+    "password_hash": "$2b$12$qfXrKSi7WzggrL1XHXAxluVPXJp7Q7THYvJdKOZHwq/71yRngQLw.",
+    "failed_login_attempts": 0,
+    "last_login_at": "2026-08-24T05:15:13.016000",
+    "locked_until": null,
+    "health_history": [
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      }
+    ],
+    "health_poor_since": null,
+    "health_poor_streak_days": 0,
+    "health_score": null,
+    "health_scored_at": "2026-08-24T14:47:30.398000",
+    "health_tier": "no_data"
+  },
+  {
+    "_id": "6a8bd361eefe2c9f46ebb750",
+    "email": "e2e_buyer_1787548513067_7ec4e7@example.com",
+    "username": "e2e_buyer_1787548513067_7ec4e7",
+    "id": "2b1d3286-95e1-465b-a1ac-4ba489a0698c",
+    "role": "user",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "D3BB3EB4",
+    "referred_by": null,
+    "wallet_balance": 500.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:15:13.209000",
+    "password_hash": "$2b$12$6qpgGfu2UoTD1X7/hxrhfeKRJzW.VsDoi7oaF/HUCYLX4uNVeWMNS"
+  },
+  {
+    "_id": "6a8bd361eefe2c9f46ebb751",
+    "email": "e2e_other_1787548513510_d32352@example.com",
+    "username": "e2e_other_1787548513510_d32352",
+    "id": "7c2a83bd-3aaa-4524-8d23-9173f426140e",
+    "role": "user",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "EF2465BA",
+    "referred_by": null,
+    "wallet_balance": 0.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:15:13.658000",
+    "password_hash": "$2b$12$qb/0KfKJtmUfVadub6v46eukyKaad1.GW.eM/vMxQluTEgU300oXy"
+  },
+  {
+    "_id": "6a8bd36aeefe2c9f46ebb760",
+    "email": "e2e_seller_1787548521881_e7714f@example.com",
+    "username": "e2e_seller_1787548521881_e7714f",
+    "id": "97a3d8cc-ee67-4e57-bef1-ea7e4bd91c35",
+    "role": "seller",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 1,
+    "is_active": true,
+    "referral_code": "CEAD5283",
+    "referred_by": null,
+    "wallet_balance": 180.0,
+    "wallet_frozen_balance": 40.0,
+    "store_id": "58f47ceb-d4f4-4170-af1f-89f8456408b8",
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "approved",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:15:22.022000",
+    "password_hash": "$2b$12$JYJwTyhncT3eFjalueUEIuTYuxAdGCrlRIRuBh3MREx.tLU.WlYOG",
+    "failed_login_attempts": 0,
+    "last_login_at": "2026-08-24T05:15:22.934000",
+    "locked_until": null,
+    "health_history": [
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      }
+    ],
+    "health_poor_since": null,
+    "health_poor_streak_days": 0,
+    "health_score": 100.0,
+    "health_scored_at": "2026-08-24T14:47:30.398000",
+    "health_tier": "excellent"
+  },
+  {
+    "_id": "6a8bd36beefe2c9f46ebb761",
+    "email": "e2e_buyer_1787548522996_f12177@example.com",
+    "username": "e2e_buyer_1787548522996_f12177",
+    "id": "0d341098-f9ee-417c-bf12-2972fcb864ae",
+    "role": "user",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "B3E19DA1",
+    "referred_by": null,
+    "wallet_balance": 500.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:15:23.136000",
+    "password_hash": "$2b$12$5rUFMA0EwBvbDAaodGikuOxkz5SLmnr.NXq/vG6PLQpW0f2OH1ZvS"
+  },
+  {
+    "_id": "6a8bd375eefe2c9f46ebb773",
+    "email": "e2e_seller_1787548533265_78cfee@example.com",
+    "username": "e2e_seller_1787548533265_78cfee",
+    "id": "18f3fa01-07bf-449e-b477-ffba76e862fe",
+    "role": "seller",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 1,
+    "is_active": true,
+    "referral_code": "2C5C5B3D",
+    "referred_by": null,
+    "wallet_balance": 200.0,
+    "wallet_frozen_balance": 50.0,
+    "store_id": "505a473b-5ffc-4a27-8d0c-165b7cb0467a",
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "approved",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:15:33.416000",
+    "password_hash": "$2b$12$0Dm6pToqO7cIRIN.kbihQeIy7Tlwn7PIHDeKLUpkrblRgYdUkDwye",
+    "failed_login_attempts": 0,
+    "last_login_at": "2026-08-24T05:15:34.286000",
+    "locked_until": null,
+    "health_history": [
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      }
+    ],
+    "health_poor_since": null,
+    "health_poor_streak_days": 0,
+    "health_score": null,
+    "health_scored_at": "2026-08-24T14:47:30.398000",
+    "health_tier": "no_data"
+  },
+  {
+    "_id": "6a8bd376eefe2c9f46ebb774",
+    "email": "e2e_buyer_1787548534335_cae11b@example.com",
+    "username": "e2e_buyer_1787548534335_cae11b",
+    "id": "b331da56-2594-4916-b8d9-544e6b59f686",
+    "role": "user",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "34E43C7F",
+    "referred_by": null,
+    "wallet_balance": 500.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:15:34.482000",
+    "password_hash": "$2b$12$SsF3SgUjRTIqYJgxJF1pgODsepKkk.bW57zeJ7TrXky0uachaou8C"
+  },
+  {
+    "_id": "6a8bd37eeefe2c9f46ebb783",
+    "email": "e2e_seller_1787548542440_be9080@example.com",
+    "username": "e2e_seller_1787548542440_be9080",
+    "id": "d474119c-b97c-408c-b344-946c81defec8",
+    "role": "seller",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 1,
+    "is_active": true,
+    "referral_code": "735E0D18",
+    "referred_by": null,
+    "wallet_balance": 0.0,
+    "wallet_frozen_balance": 40.0,
+    "store_id": "02a0fe24-2598-4f41-a09c-1f93b9e0d69d",
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "approved",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:15:42.611000",
+    "password_hash": "$2b$12$fcExn1cJWRamQPfB7k2sIOGIsr2SJw2tuIatnAlIXVZYkOghDGGQy",
+    "failed_login_attempts": 0,
+    "last_login_at": "2026-08-24T05:15:43.488000",
+    "locked_until": null,
+    "health_history": [
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      }
+    ],
+    "health_poor_since": null,
+    "health_poor_streak_days": 0,
+    "health_score": null,
+    "health_scored_at": "2026-08-24T14:47:30.398000",
+    "health_tier": "no_data"
+  },
+  {
+    "_id": "6a8bd37feefe2c9f46ebb784",
+    "email": "e2e_buyer_1787548543551_504cfd@example.com",
+    "username": "e2e_buyer_1787548543551_504cfd",
+    "id": "e0c0c38e-b119-4451-bd1c-f430dcdb4a89",
+    "role": "user",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "D89D8655",
+    "referred_by": null,
+    "wallet_balance": 500.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:15:43.702000",
+    "password_hash": "$2b$12$VWOjU/hgD7NMlNwJKfqCK.MP/oth2JXoT/IUwmKKkccnGEkUVqZFS"
+  },
+  {
+    "_id": "6a8bd387eefe2c9f46ebb791",
+    "email": "e2e_seller_1787548551599_6006a8@example.com",
+    "username": "e2e_seller_1787548551599_6006a8",
+    "id": "3ec94326-c898-491b-a2a0-e38eafe63f40",
+    "role": "seller",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 1,
+    "is_active": true,
+    "referral_code": "576727CD",
+    "referred_by": null,
+    "wallet_balance": 0.0,
+    "wallet_frozen_balance": 40.0,
+    "store_id": "ce270828-1937-4cc6-9728-b7fcde96dcf6",
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "approved",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:15:51.742000",
+    "password_hash": "$2b$12$9vyEnIBMpETS0PVJau2Kn.U74Djqu5.ccKx/GP9UKBVCa3GREuHQ2",
+    "failed_login_attempts": 0,
+    "last_login_at": "2026-08-24T05:15:52.654000",
+    "locked_until": null,
+    "health_history": [
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      }
+    ],
+    "health_poor_since": null,
+    "health_poor_streak_days": 0,
+    "health_score": null,
+    "health_scored_at": "2026-08-24T14:47:30.398000",
+    "health_tier": "no_data"
+  },
+  {
+    "_id": "6a8bd389eefe2c9f46ebb792",
+    "email": "e2e_buyer_1787548552703_06c5e4@example.com",
+    "username": "e2e_buyer_1787548552703_06c5e4",
+    "id": "bcc96507-f7e0-4e76-a01a-7689f443b91d",
+    "role": "user",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "FF465B6E",
+    "referred_by": null,
+    "wallet_balance": 500.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:15:52.845000",
+    "password_hash": "$2b$12$TMvbNsloC4AEdMdEAM9CeeqSxkrnjK2nQ9ajxxN1BxtZY81Px5kLC"
+  },
+  {
+    "_id": "6a8bd390eefe2c9f46ebb79e",
+    "email": "e2e_other_1787548560378_74879a@example.com",
+    "username": "e2e_other_1787548560378_74879a",
+    "id": "97ca4b45-e9fb-4647-ab92-8ddb562d9d4a",
+    "role": "user",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "ECE6419C",
+    "referred_by": null,
+    "wallet_balance": 0.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:16:00.519000",
+    "password_hash": "$2b$12$q5v5kKDH47wQTft7VJJpdel9UrWYo5x/RwdoW14aINUMUoitEpTV2"
+  },
+  {
+    "_id": "6a8bd391eefe2c9f46ebb79f",
+    "email": "e2e_seller_1787548560971_6032d6@example.com",
+    "username": "e2e_seller_1787548560971_6032d6",
+    "id": "bb827bbf-b188-42a4-a18b-f34697dab8b9",
+    "role": "seller",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 1,
+    "is_active": true,
+    "referral_code": "3DE391FC",
+    "referred_by": null,
+    "wallet_balance": 0.0,
+    "wallet_frozen_balance": 130.0,
+    "store_id": "0bfff162-9d78-4731-9b0d-d08d25dba844",
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "approved",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:16:01.141000",
+    "password_hash": "$2b$12$MjPNQ2j//wp3in.BD.X2zumxSylcdFTJh4OuIGrWfhSpFUkgjJlCm",
+    "failed_login_attempts": 0,
+    "last_login_at": "2026-08-24T05:16:02.018000",
+    "locked_until": null,
+    "health_history": [
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      }
+    ],
+    "health_poor_since": null,
+    "health_poor_streak_days": 0,
+    "health_score": 100.0,
+    "health_scored_at": "2026-08-24T14:47:30.398000",
+    "health_tier": "excellent"
+  },
+  {
+    "_id": "6a8bd392eefe2c9f46ebb7a0",
+    "email": "e2e_buyer_1787548562082_d104d5@example.com",
+    "username": "e2e_buyer_1787548562082_d104d5",
+    "id": "7e8b577a-ad69-4859-989d-494e301f9058",
+    "role": "user",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "30CBFB6F",
+    "referred_by": null,
+    "wallet_balance": 500.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:16:02.242000",
+    "password_hash": "$2b$12$MhGiq7vw8cPXhoPj4bUTqOfoycca4ohwF2VcpBt.AAX66WyND1lA6"
+  },
+  {
+    "_id": "6a8bd39eeefe2c9f46ebb7b6",
+    "email": "e2e_seller_1787548574502_5ac4fe@example.com",
+    "username": "e2e_seller_1787548574502_5ac4fe",
+    "id": "a037ae09-9b93-4d54-95e9-3d2996948f36",
+    "role": "seller",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 1,
+    "is_active": true,
+    "referral_code": "47B1B081",
+    "referred_by": null,
+    "wallet_balance": 180.0,
+    "wallet_frozen_balance": 40.0,
+    "store_id": "876b4112-9c58-4771-9f6d-2974f8bea31e",
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "approved",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:16:14.641000",
+    "password_hash": "$2b$12$7b/T3ysNKzMiXiIVFsws3uUGJHylyqui5YJ6ytlx2vFp5jmIDOeXi",
+    "failed_login_attempts": 0,
+    "last_login_at": "2026-08-24T05:16:15.496000",
+    "locked_until": null,
+    "health_history": [
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      }
+    ],
+    "health_poor_since": null,
+    "health_poor_streak_days": 0,
+    "health_score": 100.0,
+    "health_scored_at": "2026-08-24T14:47:30.398000",
+    "health_tier": "excellent"
+  },
+  {
+    "_id": "6a8bd39feefe2c9f46ebb7b7",
+    "email": "e2e_buyer_1787548575548_998ac9@example.com",
+    "username": "e2e_buyer_1787548575548_998ac9",
+    "id": "b9f43508-a9d6-456a-84d3-9721848f7dff",
+    "role": "user",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "F513C37C",
+    "referred_by": null,
+    "wallet_balance": 500.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:16:15.685000",
+    "password_hash": "$2b$12$A9bcgLcwPS52V3pbg5gsDeO3oK4/XGz28h0yEYqUKIRe6AxXCA9PK"
+  },
+  {
+    "_id": "6a8bd3aceefe2c9f46ebb7c9",
+    "email": "e2e_seller_1787548588164_d1f541@example.com",
+    "username": "e2e_seller_1787548588164_d1f541",
+    "id": "c23debaf-c11d-43fd-b612-24d172947f10",
+    "role": "seller",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 1,
+    "is_active": true,
+    "referral_code": "AFB2F8FA",
+    "referred_by": null,
+    "wallet_balance": 0.0,
+    "wallet_frozen_balance": 40.0,
+    "store_id": "9cd19f2d-a941-4aeb-8361-6f98e588b141",
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "approved",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:16:28.319000",
+    "password_hash": "$2b$12$J4iup1.BWmM3YTrutlCFIu.xQcgdXpMcShC61s1sNxSIyxt4mKin.",
+    "failed_login_attempts": 0,
+    "last_login_at": "2026-08-24T05:16:29.219000",
+    "locked_until": null,
+    "health_history": [
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      }
+    ],
+    "health_poor_since": null,
+    "health_poor_streak_days": 0,
+    "health_score": null,
+    "health_scored_at": "2026-08-24T14:47:30.398000",
+    "health_tier": "no_data"
+  },
+  {
+    "_id": "6a8bd3adeefe2c9f46ebb7ca",
+    "email": "e2e_buyer_1787548589283_da9708@example.com",
+    "username": "e2e_buyer_1787548589283_da9708",
+    "id": "3804fa44-22e5-4289-a6ca-5935bf6015be",
+    "role": "user",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "874D491E",
+    "referred_by": null,
+    "wallet_balance": 500.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:16:29.435000",
+    "password_hash": "$2b$12$2yPjnsnlNpx.50KwW.Xa6uuX5/.bzd.W.ZSiKjtOwhlFEYRnnN896"
+  },
+  {
+    "_id": "6a8bd40942a2c781309ae96d",
+    "email": "e2e_seller_1787548680834_8db95f@example.com",
+    "username": "e2e_seller_1787548680834_8db95f",
+    "id": "8c9f3e2e-db80-4b0f-8f37-232fa86743bf",
+    "role": "seller",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 1,
+    "is_active": true,
+    "referral_code": "0011290A",
+    "referred_by": null,
+    "wallet_balance": 0.0,
+    "wallet_frozen_balance": 35.0,
+    "store_id": "96ed280f-2faa-43a5-9dc7-d12e5027e489",
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "approved",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:18:00.976000",
+    "password_hash": "$2b$12$C.bSNLzItf4wYmJgDX1OgeG9kGZPc3KbLAwcYSVuwmEjwM9a3LDMy",
+    "failed_login_attempts": 0,
+    "last_login_at": "2026-08-24T05:18:02.006000",
+    "locked_until": null,
+    "health_history": [
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      }
+    ],
+    "health_poor_since": null,
+    "health_poor_streak_days": 0,
+    "health_score": null,
+    "health_scored_at": "2026-08-24T14:47:30.398000",
+    "health_tier": "no_data"
+  },
+  {
+    "_id": "6a8bd40a42a2c781309ae96e",
+    "email": "e2e_buyer_1787548682057_bbcdda@example.com",
+    "username": "e2e_buyer_1787548682057_bbcdda",
+    "id": "e1fe59b8-8173-4765-895b-08efefd14cc4",
+    "role": "user",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "653860F8",
+    "referred_by": null,
+    "wallet_balance": 500.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:18:02.201000",
+    "password_hash": "$2b$12$F9W6N1QT967/6eczAGbVjuG611EoL4OMZ.LvZsS1VeFe0XrVFS3w6"
+  },
+  {
+    "_id": "6a8bd41a42a2c781309ae97b",
+    "email": "e2e_seller_1787548698285_4640e1@example.com",
+    "username": "e2e_seller_1787548698285_4640e1",
+    "id": "2ee1cc03-2f35-4f37-8e04-28bbc82f9179",
+    "role": "seller",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 1,
+    "is_active": true,
+    "referral_code": "FEC3B34A",
+    "referred_by": null,
+    "wallet_balance": 100.0,
+    "wallet_frozen_balance": 50.0,
+    "store_id": "57d69b5e-e229-4d4c-8beb-79da44c77007",
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "approved",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:18:18.446000",
+    "password_hash": "$2b$12$3X0srL.YQc5xi1sGPgqp6.5kV1WanoW1Om2kfu0f6.3GTWw69trrO",
+    "failed_login_attempts": 0,
+    "last_login_at": "2026-08-24T05:18:19.318000",
+    "locked_until": null,
+    "health_history": [
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      }
+    ],
+    "health_poor_since": null,
+    "health_poor_streak_days": 0,
+    "health_score": null,
+    "health_scored_at": "2026-08-24T14:47:30.398000",
+    "health_tier": "no_data"
+  },
+  {
+    "_id": "6a8bd41b42a2c781309ae97c",
+    "email": "e2e_buyer_1787548699383_92a7fd@example.com",
+    "username": "e2e_buyer_1787548699383_92a7fd",
+    "id": "1e694f81-0477-44f9-bbc0-f52320edb3dc",
+    "role": "user",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "E4889932",
+    "referred_by": null,
+    "wallet_balance": 500.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:18:19.529000",
+    "password_hash": "$2b$12$zNq2Ev4/ePgheXP45dPFded0hWgjhFhbLgI3Lsztznz63/JaxTbXm"
+  },
+  {
+    "_id": "6a8bd42342a2c781309ae996",
+    "email": "e2e_seller_1787548707618_5437e1@example.com",
+    "username": "e2e_seller_1787548707618_5437e1",
+    "id": "2b2c519a-65ce-4279-b745-d23875bdab8f",
+    "role": "seller",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 1,
+    "is_active": true,
+    "referral_code": "2D18E90E",
+    "referred_by": null,
+    "wallet_balance": 10.0,
+    "wallet_frozen_balance": 160.0,
+    "store_id": "17e5a23f-fc70-4216-bae6-900e231f5753",
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "approved",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:18:27.758000",
+    "password_hash": "$2b$12$hsR4sWvZ7yicOGZnUmkTpeR9E.bdLEInbpiJBUcTd5AhVKJvtuGKm",
+    "failed_login_attempts": 0,
+    "last_login_at": "2026-08-24T05:18:28.662000",
+    "locked_until": null,
+    "health_history": [
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      }
+    ],
+    "health_poor_since": null,
+    "health_poor_streak_days": 0,
+    "health_score": null,
+    "health_scored_at": "2026-08-24T14:47:30.398000",
+    "health_tier": "no_data"
+  },
+  {
+    "_id": "6a8bd42d42a2c781309ae9a5",
+    "email": "e2e_seller_1787548716937_f03c40@example.com",
+    "username": "e2e_seller_1787548716937_f03c40",
+    "id": "392639ea-d413-427b-b543-a013ce57bcec",
+    "role": "seller",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 1,
+    "is_active": true,
+    "referral_code": "BE88CEAC",
+    "referred_by": null,
+    "wallet_balance": 70.0,
+    "wallet_frozen_balance": 50.0,
+    "store_id": "7e0d8e90-a2a0-47b7-8c2e-7c5fd9ffe487",
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "approved",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:18:37.088000",
+    "password_hash": "$2b$12$LnilX.ZGlhHXq20LdWuD4efT3yR0.qfhRShd695KyYC8JXKIwlb/K",
+    "failed_login_attempts": 0,
+    "last_login_at": "2026-08-24T05:18:37.990000",
+    "locked_until": null,
+    "health_history": [
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      }
+    ],
+    "health_poor_since": null,
+    "health_poor_streak_days": 0,
+    "health_score": 100.0,
+    "health_scored_at": "2026-08-24T14:47:30.398000",
+    "health_tier": "excellent"
+  },
+  {
+    "_id": "6a8bd42e42a2c781309ae9a6",
+    "email": "e2e_buyer_1787548718083_d58dd7@example.com",
+    "username": "e2e_buyer_1787548718083_d58dd7",
+    "id": "f8df0364-50bf-4f97-aa8e-cbfec259590a",
+    "role": "user",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "7E534BF0",
+    "referred_by": null,
+    "wallet_balance": 500.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:18:38.236000",
+    "password_hash": "$2b$12$cl0tnYT38MD40UnRqsYJIuwuV42Y09FEOyjpGBl7DoG0St/7qO15u"
+  },
+  {
+    "_id": "6a8bd43842a2c781309ae9b8",
+    "email": "e2e_seller_1787548727661_bfbac0@example.com",
+    "username": "e2e_seller_1787548727661_bfbac0",
+    "id": "df9ed704-8f35-4348-ab27-4fc37de47329",
+    "role": "seller",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 1,
+    "is_active": true,
+    "referral_code": "5AD3A8E7",
+    "referred_by": null,
+    "wallet_balance": 0.0,
+    "wallet_frozen_balance": 130.0,
+    "store_id": "1473d729-608a-4465-ad4f-fe7de6284985",
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "approved",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:18:47.825000",
+    "password_hash": "$2b$12$JInIChgbHKv88ZmKelKftO4F7ZUHXN15GAPFOMX2XG3YXasBVRQ2m",
+    "failed_login_attempts": 0,
+    "last_login_at": "2026-08-24T05:18:48.728000",
+    "locked_until": null,
+    "health_history": [
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      }
+    ],
+    "health_poor_since": null,
+    "health_poor_streak_days": 0,
+    "health_score": 100.0,
+    "health_scored_at": "2026-08-24T14:47:30.398000",
+    "health_tier": "excellent"
+  },
+  {
+    "_id": "6a8bd43942a2c781309ae9b9",
+    "email": "e2e_buyer_1787548728823_e55fa1@example.com",
+    "username": "e2e_buyer_1787548728823_e55fa1",
+    "id": "7d31aefc-cbde-4323-8084-64d7be027a79",
+    "role": "user",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "A2B1BE77",
+    "referred_by": null,
+    "wallet_balance": 500.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:18:48.961000",
+    "password_hash": "$2b$12$r.cWH2CyryPOEIvAqicy1eR1/3LFyr3pGv24qJImxF7Whw18rAQyu"
+  },
+  {
+    "_id": "6a8bd44642a2c781309ae9cf",
+    "email": "e2e_seller_1787548741923_209f3c@example.com",
+    "username": "e2e_seller_1787548741923_209f3c",
+    "id": "2b5b7d3b-ee28-4046-8b67-e27c4fe30494",
+    "role": "seller",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 1,
+    "is_active": true,
+    "referral_code": "5517F2B2",
+    "referred_by": null,
+    "wallet_balance": 0.0,
+    "wallet_frozen_balance": 106.0,
+    "store_id": "d685f1b4-bee4-48a5-b5cc-8cb824056b2e",
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "approved",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:19:02.098000",
+    "password_hash": "$2b$12$3ReeXeTnL9iOHA1dJEsa1eql5BBbpnx4dg7KHtexxUqvyumLaUHM6",
+    "failed_login_attempts": 0,
+    "last_login_at": "2026-08-24T05:19:02.946000",
+    "locked_until": null,
+    "health_history": [
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      }
+    ],
+    "health_poor_since": null,
+    "health_poor_streak_days": 0,
+    "health_score": null,
+    "health_scored_at": "2026-08-24T14:47:30.398000",
+    "health_tier": "no_data"
+  },
+  {
+    "_id": "6a8bd44742a2c781309ae9d0",
+    "email": "e2e_buyer_1787548742996_7c5524@example.com",
+    "username": "e2e_buyer_1787548742996_7c5524",
+    "id": "fe5d22c9-daf6-4d20-9eb3-bf106779cb5b",
+    "role": "user",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "FFA8F490",
+    "referred_by": null,
+    "wallet_balance": 500.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:19:03.133000",
+    "password_hash": "$2b$12$APwCusN.Y08C1ihQ65lr4eqol1FVO27kqI1zhI6JoJCDyPSwPyfb6"
+  },
+  {
+    "_id": "6a8bd45042a2c781309ae9df",
+    "email": "e2e_seller_1787548752417_26acf7@example.com",
+    "username": "e2e_seller_1787548752417_26acf7",
+    "id": "f9f91335-52b4-4b73-b990-8af45b40d2da",
+    "role": "seller",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 1,
+    "is_active": true,
+    "referral_code": "071A530C",
+    "referred_by": null,
+    "wallet_balance": 5.0,
+    "wallet_frozen_balance": 11.0,
+    "store_id": "bcc5b53f-0309-42ff-a99d-40bcf7f73c3e",
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "approved",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:19:12.574000",
+    "password_hash": "$2b$12$hhc1/UqQmKKT5QDHunsIUOGMDO2BqPIaT6Y5YcswhXZumDNghcAde",
+    "failed_login_attempts": 0,
+    "last_login_at": "2026-08-24T05:19:13.430000",
+    "locked_until": null,
+    "health_history": [
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      }
+    ],
+    "health_poor_since": null,
+    "health_poor_streak_days": 0,
+    "health_score": null,
+    "health_scored_at": "2026-08-24T14:47:30.398000",
+    "health_tier": "no_data"
+  },
+  {
+    "_id": "6a8bd45142a2c781309ae9e0",
+    "email": "e2e_buyer_1787548753492_5a5ba3@example.com",
+    "username": "e2e_buyer_1787548753492_5a5ba3",
+    "id": "d9e2fdcf-cf5b-438c-a80a-d4b61bf9a7f6",
+    "role": "user",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "DB2319D9",
+    "referred_by": null,
+    "wallet_balance": 500.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:19:13.631000",
+    "password_hash": "$2b$12$6ARABFX0cxCMkojShaQYF.tjAovITKhSV.HzI9dvSSR8yYE9GFmay"
+  },
+  {
+    "_id": "6a8bd45b42a2c781309ae9f2",
+    "email": "e2e_seller_1787548763535_8bce1a@example.com",
+    "username": "e2e_seller_1787548763535_8bce1a",
+    "id": "f2850bcf-ec44-4ff2-b159-84bc6b337f93",
+    "role": "seller",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 1,
+    "is_active": true,
+    "referral_code": "C45D168C",
+    "referred_by": null,
+    "wallet_balance": 200.0,
+    "wallet_frozen_balance": 40.0,
+    "store_id": "c76f5cf4-056a-46d0-8ef2-6feba76c1bb8",
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "approved",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:19:23.678000",
+    "password_hash": "$2b$12$3YkD9ASNG9hZc06YKWeyYOZjEVWT4xC52ilHmeDSDjtVUr.7IzFP.",
+    "failed_login_attempts": 0,
+    "last_login_at": "2026-08-24T05:19:24.550000",
+    "locked_until": null,
+    "health_history": [
+      {
+        "date": "2026-08-24",
+        "score": 0.0,
+        "tier": "poor"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 0.0,
+        "tier": "poor"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 0.0,
+        "tier": "poor"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 0.0,
+        "tier": "poor"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 0.0,
+        "tier": "poor"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 0.0,
+        "tier": "poor"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 0.0,
+        "tier": "poor"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 0.0,
+        "tier": "poor"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 0.0,
+        "tier": "poor"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 0.0,
+        "tier": "poor"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 0.0,
+        "tier": "poor"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 0.0,
+        "tier": "poor"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 0.0,
+        "tier": "poor"
+      }
+    ],
+    "health_poor_since": null,
+    "health_poor_streak_days": 0,
+    "health_score": 0.0,
+    "health_scored_at": "2026-08-24T14:47:30.398000",
+    "health_tier": "poor",
+    "reactivated_at": "2026-08-24T14:57:13.694000"
+  },
+  {
+    "_id": "6a8bd45d42a2c781309ae9f3",
+    "email": "e2e_buyer_1787548764642_34a9c7@example.com",
+    "username": "e2e_buyer_1787548764642_34a9c7",
+    "id": "9c43672d-b042-41d5-86e6-13b4364a0b25",
+    "role": "user",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "9D9394B1",
+    "referred_by": null,
+    "wallet_balance": 540.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:19:24.795000",
+    "password_hash": "$2b$12$NmWbWt5JzM9GzbOOHPpRneB7I0DQM9c7jtkGos2tl1vjOB8B/lfNW"
+  },
+  {
+    "_id": "6a8bd46642a2c781309aea02",
+    "email": "e2e_seller_1787548773876_1bd789@example.com",
+    "username": "e2e_seller_1787548773876_1bd789",
+    "id": "e878c2f0-de4e-4784-a785-9ab10b05bf6e",
+    "role": "seller",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 1,
+    "is_active": true,
+    "referral_code": "553EC5C8",
+    "referred_by": null,
+    "wallet_balance": 200.0,
+    "wallet_frozen_balance": 40.0,
+    "store_id": "1069e434-1a3a-447e-8542-e6e7187f7afd",
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "approved",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:19:34.020000",
+    "password_hash": "$2b$12$MD5k2dUN1FVodWnrxsHjm.JebAa5SzCu/U5RqlqoM1PcOTJKHInuq",
+    "failed_login_attempts": 0,
+    "last_login_at": "2026-08-24T05:19:34.898000",
+    "locked_until": null,
+    "health_history": [
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      }
+    ],
+    "health_poor_since": null,
+    "health_poor_streak_days": 0,
+    "health_score": null,
+    "health_scored_at": "2026-08-24T14:47:30.398000",
+    "health_tier": "no_data"
+  },
+  {
+    "_id": "6a8bd46742a2c781309aea03",
+    "email": "e2e_buyer_1787548774949_63cb3c@example.com",
+    "username": "e2e_buyer_1787548774949_63cb3c",
+    "id": "d7a2219b-b8ad-4dd8-81be-8cf8149afd02",
+    "role": "user",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "237A6D18",
+    "referred_by": null,
+    "wallet_balance": 500.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:19:35.112000",
+    "password_hash": "$2b$12$lcm0uVE8fj0UFb0d/Hi2Zex8F6QTaSAelG0ow/lAXM5Pphimots/K"
+  },
+  {
+    "_id": "6a8bd46742a2c781309aea04",
+    "email": "e2e_other_1787548775415_4ec728@example.com",
+    "username": "e2e_other_1787548775415_4ec728",
+    "id": "a12e5aa8-c1ef-4504-9305-ff02c2c838b4",
+    "role": "user",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "9B51945E",
+    "referred_by": null,
+    "wallet_balance": 0.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:19:35.555000",
+    "password_hash": "$2b$12$lefEhkXansE73CcxncEOHuytBexb/5jeZGIXrBaL3GAAQpLV5jTku"
+  },
+  {
+    "_id": "6a8bd47042a2c781309aea13",
+    "email": "e2e_seller_1787548784021_2c3a03@example.com",
+    "username": "e2e_seller_1787548784021_2c3a03",
+    "id": "ef1bf467-46e2-4b4d-8e51-a92762f3f52c",
+    "role": "seller",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 1,
+    "is_active": true,
+    "referral_code": "BE92EF37",
+    "referred_by": null,
+    "wallet_balance": 180.0,
+    "wallet_frozen_balance": 40.0,
+    "store_id": "61e417f7-2a5d-4155-9b81-18aae9187767",
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "approved",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:19:44.161000",
+    "password_hash": "$2b$12$tJ3ZNxSw0IPm8zPRVE1sdeQEKJKDwqJO6WnLB8I8EbxO/Mn4Xv8oS",
+    "failed_login_attempts": 0,
+    "last_login_at": "2026-08-24T05:19:45.027000",
+    "locked_until": null,
+    "health_history": [
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      }
+    ],
+    "health_poor_since": null,
+    "health_poor_streak_days": 0,
+    "health_score": 100.0,
+    "health_scored_at": "2026-08-24T14:47:30.398000",
+    "health_tier": "excellent"
+  },
+  {
+    "_id": "6a8bd47142a2c781309aea14",
+    "email": "e2e_buyer_1787548785083_1c32b0@example.com",
+    "username": "e2e_buyer_1787548785083_1c32b0",
+    "id": "386001a6-ba8e-42a3-8922-e1b5f76c1bbe",
+    "role": "user",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "896352C2",
+    "referred_by": null,
+    "wallet_balance": 500.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:19:45.225000",
+    "password_hash": "$2b$12$E/IrPtUVPCe3JA.R6ibAx.PacOoSyPOe1VW9lA7zSVTG6A399z2XG"
+  },
+  {
+    "_id": "6a8bd47b42a2c781309aea26",
+    "email": "e2e_seller_1787548794856_77a079@example.com",
+    "username": "e2e_seller_1787548794856_77a079",
+    "id": "a45b2274-25d2-4889-bd3e-49a2daa779a5",
+    "role": "seller",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 1,
+    "is_active": true,
+    "referral_code": "988A806A",
+    "referred_by": null,
+    "wallet_balance": 200.0,
+    "wallet_frozen_balance": 50.0,
+    "store_id": "8fb8116d-def2-4ded-ae24-2c26120acbd2",
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "approved",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:19:54.996000",
+    "password_hash": "$2b$12$QHqL8.dvqjdY0szV8zocUeaVri3A8D8zE0AsoeIiDrgvWO0YHPvfi",
+    "failed_login_attempts": 0,
+    "last_login_at": "2026-08-24T05:19:55.887000",
+    "locked_until": null,
+    "health_history": [
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      }
+    ],
+    "health_poor_since": null,
+    "health_poor_streak_days": 0,
+    "health_score": null,
+    "health_scored_at": "2026-08-24T14:47:30.398000",
+    "health_tier": "no_data"
+  },
+  {
+    "_id": "6a8bd47c42a2c781309aea27",
+    "email": "e2e_buyer_1787548795956_7ad1c9@example.com",
+    "username": "e2e_buyer_1787548795956_7ad1c9",
+    "id": "295be41a-0caa-443d-9dce-f0b8d570baa1",
+    "role": "user",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "E9062423",
+    "referred_by": null,
+    "wallet_balance": 500.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:19:56.110000",
+    "password_hash": "$2b$12$emLnSkb.NGBR1C2xeDFWV.sZHAUYS9Cmcx0A0Rr5ewIlTqL8nkN0W"
+  },
+  {
+    "_id": "6a8bd48442a2c781309aea36",
+    "email": "e2e_seller_1787548804050_0346b7@example.com",
+    "username": "e2e_seller_1787548804050_0346b7",
+    "id": "0fb61fef-ec93-49e6-a6cf-eb2a32a471f6",
+    "role": "seller",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 1,
+    "is_active": true,
+    "referral_code": "BDC6F12B",
+    "referred_by": null,
+    "wallet_balance": 0.0,
+    "wallet_frozen_balance": 40.0,
+    "store_id": "bfccae8a-17be-479e-a7dc-92b8ec48051f",
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "approved",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:20:04.250000",
+    "password_hash": "$2b$12$jqrEeGrms9YR3S2XmbY3d.WvlyUZSDxNRL/usCx0HSFZY0YfvwFsK",
+    "failed_login_attempts": 0,
+    "last_login_at": "2026-08-24T05:20:05.102000",
+    "locked_until": null,
+    "health_history": [
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      }
+    ],
+    "health_poor_since": null,
+    "health_poor_streak_days": 0,
+    "health_score": null,
+    "health_scored_at": "2026-08-24T14:47:30.398000",
+    "health_tier": "no_data"
+  },
+  {
+    "_id": "6a8bd48542a2c781309aea37",
+    "email": "e2e_buyer_1787548805152_c2b0a5@example.com",
+    "username": "e2e_buyer_1787548805152_c2b0a5",
+    "id": "2e4ed38c-7221-4d7e-9853-c3dad9191fc4",
+    "role": "user",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "155F3704",
+    "referred_by": null,
+    "wallet_balance": 500.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:20:05.292000",
+    "password_hash": "$2b$12$T5zYboFNlS/imFVbKVIUeOFd1JWCeDraiNwILMw74SVwxXDLt7fpW"
+  },
+  {
+    "_id": "6a8bd49142a2c781309aea44",
+    "email": "e2e_seller_1787548816714_46266f@example.com",
+    "username": "e2e_seller_1787548816714_46266f",
+    "id": "071ffeca-4594-4e39-85d5-c6a4273ab836",
+    "role": "seller",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 1,
+    "is_active": true,
+    "referral_code": "75334F7C",
+    "referred_by": null,
+    "wallet_balance": 0.0,
+    "wallet_frozen_balance": 40.0,
+    "store_id": "782c0da4-23d5-4b50-a6fc-306bf78145a4",
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "approved",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:20:16.860000",
+    "password_hash": "$2b$12$dorin8NuyUEh58NwzOnX.eib6siAspv7g0BZ.TtViNqCWGaA967Ci",
+    "failed_login_attempts": 0,
+    "last_login_at": "2026-08-24T05:20:17.732000",
+    "locked_until": null,
+    "health_history": [
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      }
+    ],
+    "health_poor_since": null,
+    "health_poor_streak_days": 0,
+    "health_score": null,
+    "health_scored_at": "2026-08-24T14:47:30.398000",
+    "health_tier": "no_data"
+  },
+  {
+    "_id": "6a8bd49242a2c781309aea45",
+    "email": "e2e_buyer_1787548817783_9f831d@example.com",
+    "username": "e2e_buyer_1787548817783_9f831d",
+    "id": "7a921ef2-62a1-471f-8b11-0e318af87bf1",
+    "role": "user",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "F32F0D93",
+    "referred_by": null,
+    "wallet_balance": 500.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:20:17.936000",
+    "password_hash": "$2b$12$URKvM5mtI1GT19xSDQAZ9ue4Ky69j4/gfZ1cbzS70VS4YIISNscTO"
+  },
+  {
+    "_id": "6a8bd49842a2c781309aea51",
+    "email": "e2e_other_1787548824245_21e08e@example.com",
+    "username": "e2e_other_1787548824245_21e08e",
+    "id": "a836bd29-2830-4202-b73c-bfc169f4de2d",
+    "role": "user",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "B050F480",
+    "referred_by": null,
+    "wallet_balance": 0.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:20:24.390000",
+    "password_hash": "$2b$12$znMgooN1oPcvZjok2IoXXOjjzkhqkmSi6hqBklApkuKyC/2Xzb32y"
+  },
+  {
+    "_id": "6a8bd49942a2c781309aea52",
+    "email": "e2e_seller_1787548824853_c0889c@example.com",
+    "username": "e2e_seller_1787548824853_c0889c",
+    "id": "8b1d2df6-555b-459c-b7be-1a8f653714d5",
+    "role": "seller",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 1,
+    "is_active": true,
+    "referral_code": "876F1890",
+    "referred_by": null,
+    "wallet_balance": 0.0,
+    "wallet_frozen_balance": 130.0,
+    "store_id": "493361fb-6869-4e95-be2d-9aee00c51585",
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "approved",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:20:24.995000",
+    "password_hash": "$2b$12$f9mXoD5GICv2x58P8CsKWu5mHrM23aI1VnqhAbmp7yhiAI7GIHj92",
+    "failed_login_attempts": 0,
+    "last_login_at": "2026-08-24T05:20:25.910000",
+    "locked_until": null,
+    "health_history": [
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      }
+    ],
+    "health_poor_since": null,
+    "health_poor_streak_days": 0,
+    "health_score": 100.0,
+    "health_scored_at": "2026-08-24T14:47:30.398000",
+    "health_tier": "excellent"
+  },
+  {
+    "_id": "6a8bd49a42a2c781309aea53",
+    "email": "e2e_buyer_1787548825969_ae4710@example.com",
+    "username": "e2e_buyer_1787548825969_ae4710",
+    "id": "7a5ac7fa-8120-4964-ad31-d3aa574efe5b",
+    "role": "user",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "F2534E8D",
+    "referred_by": null,
+    "wallet_balance": 500.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:20:26.112000",
+    "password_hash": "$2b$12$sWlft8HMA502oypOSuhDCOa9JtFIYNeJuBzQf2Pvw5TEp4irpYZji"
+  },
+  {
+    "_id": "6a8bd4b842a2c781309aea69",
+    "email": "e2e_seller_1787548856404_89b1ed@example.com",
+    "username": "e2e_seller_1787548856404_89b1ed",
+    "id": "c81c6b34-08e1-4f38-a394-7e130f0665b8",
+    "role": "seller",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 1,
+    "is_active": true,
+    "referral_code": "8408EAD5",
+    "referred_by": null,
+    "wallet_balance": 180.0,
+    "wallet_frozen_balance": 40.0,
+    "store_id": "f78089ea-86ee-4282-bbb0-548671bff99f",
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "approved",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:20:56.544000",
+    "password_hash": "$2b$12$dbuLw/H5mMZ/67BwMq37.uprZWkECSfccyUlKTILXB29tps.5dLGO",
+    "failed_login_attempts": 0,
+    "last_login_at": "2026-08-24T05:20:57.403000",
+    "locked_until": null,
+    "health_history": [
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      },
+      {
+        "date": "2026-08-24",
+        "score": 100.0,
+        "tier": "excellent"
+      }
+    ],
+    "health_poor_since": null,
+    "health_poor_streak_days": 0,
+    "health_score": 100.0,
+    "health_scored_at": "2026-08-24T14:47:30.398000",
+    "health_tier": "excellent"
+  },
+  {
+    "_id": "6a8bd4b942a2c781309aea6a",
+    "email": "e2e_buyer_1787548857456_fbe18f@example.com",
+    "username": "e2e_buyer_1787548857456_fbe18f",
+    "id": "f0a0d5de-1165-4405-be26-0f5c4a1d5a7d",
+    "role": "user",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "7D0AE4EF",
+    "referred_by": null,
+    "wallet_balance": 500.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:20:57.603000",
+    "password_hash": "$2b$12$bBZocvk1.Jea30rjHd79Kuc/5DF/aVG2rCHsZgXopRXZ09yzJ2pby"
+  },
+  {
+    "_id": "6a8bd4c942a2c781309aea7c",
+    "email": "e2e_seller_1787548873515_a37f90@example.com",
+    "username": "e2e_seller_1787548873515_a37f90",
+    "id": "d7e20f5d-290c-461b-9ccd-607efb732c25",
+    "role": "seller",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 1,
+    "is_active": true,
+    "referral_code": "DA69167F",
+    "referred_by": null,
+    "wallet_balance": 0.0,
+    "wallet_frozen_balance": 40.0,
+    "store_id": "d16f244f-a94f-46b2-afb5-bdf627b3c844",
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "approved",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:21:13.658000",
+    "password_hash": "$2b$12$okvf4NSeof1PvH5CjHDAFuglCECuiP9zl/LXf.BWxxNiZshJO.cY6",
+    "failed_login_attempts": 0,
+    "last_login_at": "2026-08-24T05:21:14.520000",
+    "locked_until": null,
+    "health_history": [
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      },
+      {
+        "date": "2026-08-24",
+        "score": null,
+        "tier": "no_data"
+      }
+    ],
+    "health_poor_since": null,
+    "health_poor_streak_days": 0,
+    "health_score": null,
+    "health_scored_at": "2026-08-24T14:47:30.398000",
+    "health_tier": "no_data"
+  },
+  {
+    "_id": "6a8bd4ca42a2c781309aea7d",
+    "email": "e2e_buyer_1787548874573_b90393@example.com",
+    "username": "e2e_buyer_1787548874573_b90393",
+    "id": "f4582f49-755b-4494-8626-db5c3c881b92",
+    "role": "user",
+    "avatar": null,
+    "bio": "",
+    "rating": 5.0,
+    "sales_count": 0,
+    "is_active": true,
+    "referral_code": "5BBEE65F",
+    "referred_by": null,
+    "wallet_balance": 500.0,
+    "wallet_frozen_balance": 0.0,
+    "store_id": null,
+    "email_verified": false,
+    "email_verified_at": null,
+    "phone": null,
+    "phone_verified": false,
+    "phone_verified_at": null,
+    "seller_status": "none",
+    "stripe_account_id": null,
+    "stripe_status": "none",
+    "weekly_earnings_goal": 0.0,
+    "weekly_digest_opt_in": true,
+    "email_prefs": {
+      "order": true,
+      "sale": true,
+      "wallet": true,
+      "payout": true,
+      "dispute": true,
+      "system": true
+    },
+    "created_at": "2026-08-24T05:21:14.716000",
+    "password_hash": "$2b$12$xoLMMpY7Q3lkUi0lIReM..lanptjd0QNqjx54.DFs8SgT63njsEpS"
+  }
+]
