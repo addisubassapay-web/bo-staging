@@ -140,12 +140,17 @@ const PickupOrderDialog = ({ orderId, trigger, onPicked }) => {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-neutral-600 inline-flex items-center gap-1">
-                    <Snowflake className="h-3.5 w-3.5 text-blue-500" /> Frozen (75% reinvestable)
+                    <Snowflake className="h-3.5 w-3.5 text-blue-500" /> Frozen (75% of other-order earnings reinvestable)
                   </span>
                   <span className="font-mono" data-testid="pickup-wallet-frozen">
                     {fmt(quote.wallet.frozen)} <span className="text-neutral-400">/ {fmt(quote.wallet.frozen_usable)}</span>
                   </span>
                 </div>
+                {quote.wallet.this_order_escrow > 0 && (
+                  <div className="text-[11px] text-neutral-500 pl-5">
+                    Excludes {fmt(quote.wallet.this_order_escrow)} of this order&apos;s own escrow.
+                  </div>
+                )}
               </div>
 
               {/* Auto-split preview (shown only when frozen will be used) */}

@@ -24,6 +24,24 @@ Full-stack ecommerce marketplace **Merchari-global** — same color scheme (`#FF
 
 ---
 
+### Feb 2026 — Wholesale Escrow Accounting Fix
+**Problem** (flagged by iteration 52 testing agent): at checkout the buyer's payment lands in the seller's frozen bucket as `sale_frozen`. When the seller went to pick up the SAME order, `frozen_usable = 0.75 × total_frozen` erroneously included that buyer's own escrow — so a seller with $0 available and only THIS order's escrow in frozen could still fund 75% of the source cost from the buyer's own money, making refund reconciliation ugly if the buyer later disputed.
+
+**Fix in `pickup_quote` + `pickup_order`**: the reinvestable base now excludes the current order's own escrow.
+
+```python
+this_order_escrow = float(order.get("seller_earnings") or 0.0)
+frozen_ex_own = max(0.0, frozen_total - this_order_escrow)
+frozen_usable = frozen_ex_own * FROZEN_USABLE_PCT   # 75% of OTHER orders' earnings
+```
+
+- Pickup-quote response now returns both `frozen` (raw), `frozen_excluding_this_order` (base), `frozen_usable` (75% of base), and `this_order_escrow` (what was subtracted) so the UI can explain the exclusion clearly.
+- 402 error detail body includes the same fields when the seller is short of funds.
+- `PickupOrderDialog.jsx` now shows a small "Excludes $X of this order's own escrow" note under the frozen row so sellers understand the delta.
+
+**Verified live**: order with `profit=$16.73`, seller `frozen=$140.94` → **`frozen_excluding_this_order: $124.21`** → **`frozen_usable: $93.16`** (down from the pre-fix `$105.71`). The buyer's own escrow is now fully excluded from the reinvestable base.
+
+
 ### Feb 2026 — Pickup Workflow Verified End-to-End + Concurrency Hardening
 - **Backend testing agent iteration 52** ran the full 15-test regression suite against the live preview backend — **15/15 passed (100%)**. Every rule from the product spec is behaving as designed. Regression tests live at `/app/backend/tests/test_iteration52_pickup_workflow.py`.
 - **Concurrency guard added**: pickup endpoint now uses `findOneAndUpdate({fulfillment_status:'pending_pickup'}, {$set:{fulfillment_status:'picking'}})` sentinel to serialise concurrent /pickup calls per order — two concurrent requests can no longer both read `available` before either debit lands. Added `"picking"` to the `fulfillment_status` Literal. Any 402 / ledger failure automatically rolls the sentinel back to `pending_pickup`.

@@ -1376,8 +1376,13 @@ async def pickup_quote(order_id: str, user: dict = Depends(get_current_user)):
     seller_row = await db.users.find_one({"id": order["seller_id"]},
                                          {"_id": 0, "wallet_balance": 1, "wallet_frozen_balance": 1})
     available = round(float((seller_row or {}).get("wallet_balance") or 0.0), 2)
-    frozen = round(float((seller_row or {}).get("wallet_frozen_balance") or 0.0), 2)
-    frozen_usable = round(frozen * FROZEN_USABLE_PCT, 2)
+    frozen_total = round(float((seller_row or {}).get("wallet_frozen_balance") or 0.0), 2)
+    # Exclude the current order's own sale_frozen credit (the buyer's escrow
+    # for THIS order) from the reinvestable base — otherwise a seller could
+    # spend 75% of the buyer's own escrow on the same order's source cost,
+    # making refund reconciliation ugly if the buyer later disputes.
+    frozen_ex_own = max(0.0, round(frozen_total - profit, 2))
+    frozen_usable = round(frozen_ex_own * FROZEN_USABLE_PCT, 2)
 
     now = datetime.now(timezone.utc)
     deadline = order.get("pickup_deadline")
@@ -1403,7 +1408,13 @@ async def pickup_quote(order_id: str, user: dict = Depends(get_current_user)):
         "cost": cost,
         "profit": profit,
         "quantity": order.get("quantity", 1),
-        "wallet": {"available": available, "frozen": frozen, "frozen_usable": frozen_usable},
+        "wallet": {
+            "available": available,
+            "frozen": frozen_total,
+            "frozen_excluding_this_order": frozen_ex_own,
+            "frozen_usable": frozen_usable,
+            "this_order_escrow": profit,
+        },
         "affordable_from_available": available >= cost,
         "affordable_with_frozen": max_pay >= cost,
         "will_use_available": will_use_available,
@@ -1483,8 +1494,14 @@ async def pickup_order(
         {"_id": 0, "wallet_balance": 1, "wallet_frozen_balance": 1},
     ) or {}
     available = round(float(seller_row.get("wallet_balance") or 0.0), 2)
-    frozen = round(float(seller_row.get("wallet_frozen_balance") or 0.0), 2)
-    frozen_usable = round(frozen * FROZEN_USABLE_PCT, 2)
+    frozen_total = round(float(seller_row.get("wallet_frozen_balance") or 0.0), 2)
+    # Exclude this order's own escrow credit (seller_earnings) from the
+    # reinvestable base so a seller can't fund the source cost with the
+    # buyer's own escrow for this same order. Refund reconciliation stays
+    # clean if the buyer later disputes.
+    this_order_escrow = float(order.get("seller_earnings") or 0.0)
+    frozen_ex_own = max(0.0, round(frozen_total - this_order_escrow, 2))
+    frozen_usable = round(frozen_ex_own * FROZEN_USABLE_PCT, 2)
 
     paid_frozen = 0.0
     paid_available = 0.0
@@ -1504,8 +1521,10 @@ async def pickup_order(
                         "code": "insufficient_funds",
                         "cost": cost,
                         "available": available,
-                        "frozen": frozen,
+                        "frozen": frozen_total,
+                        "frozen_excluding_this_order": frozen_ex_own,
                         "frozen_usable": frozen_usable,
+                        "this_order_escrow": this_order_escrow,
                         "deposit_needed": round(cost - max_pay, 2),
                         "message": "Not enough funds. Deposit into your wallet to pick this order.",
                     },
