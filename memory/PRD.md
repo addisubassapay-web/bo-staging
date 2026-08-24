@@ -24,6 +24,26 @@ Full-stack ecommerce marketplace **Merchari-global** — same color scheme (`#FF
 
 ---
 
+### Feb 2026 — OOS Badge + Storefront Sort Fix
+**Bug**: `/products` storefront advertised "4,568 products" but the first four pages were nothing but "Currently Unavailable" tiles. Root cause: the 93 newly-created out-of-stock items all shared the same freshly-minted `created_at`, so a default `sort by created_at DESC` clustered them at page 1. Shoppers walked away thinking the catalog was broken.
+
+**Fix**:
+- `_normalize_product` now stores `in_stock: bool` (backfilled `True` on legacy docs).
+- `_upsert_chunk` only auto-reactivates products (never auto-deactivates on OOS) — the OOS badge on the tile is now the single source of truth.
+- `Product` Pydantic schema exposes `in_stock` on API responses.
+- `GET /api/products` new query params:
+  - `sort=stock_then_newest` (default) — puts in-stock items first, then newest. Also `newest | oldest | price_asc | price_desc | title`.
+  - `in_stock_only=true` — excludes OOS entirely.
+- Frontend:
+  - `ProductCardMini` (catalog tile) renders a subtle amber "Currently Unavailable" pill + grayscale image + "Restocking soon" hint instead of the price when `in_stock=false`.
+  - `ProductDetail` shows a top-of-page amber alert + "Restocking soon" price + "Out of stock" status pill.
+  - `AdminProducts` table shows an OOS pill in the Price column so operators spot them in the admin view.
+  - New "In stock only" toggle on `/products` header.
+
+**Verified**: page 1 with default sort → 0 OOS badges (all real inventory · TP-Link Camera $17.99, Febreze $12.94, Clorox $16.43…). Page 191 (last) has all 8 OOS items clustered at the end. `in_stock_only=true` returns 4,475 products (excludes 93 OOS). All 19 backend tests pass (`test_catalog_sort.py` covers the new sort + filter guarantees).
+
+
+
 ### Feb 2026 — Out-of-Stock Ingest (Zero Skips)
 **Problem**: Ingesting Apify dataset `g5pLGd2OMRI0rm1gD` (4,538 items) skipped 93 records because those Amazon listings were currently out of stock (`price=None`). User request: "all 4538 items should be listed."
 

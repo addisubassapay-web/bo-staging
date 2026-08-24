@@ -45,6 +45,9 @@ class ProductOut(BaseModel):
     created_at: datetime
     updated_at: Optional[datetime] = None
     is_active: bool = True
+    # True until Apify sees the source listing become unavailable. Products
+    # with in_stock=False remain on the storefront but render an OOS badge.
+    in_stock: bool = True
 
 
 class ProductListResponse(BaseModel):
@@ -393,21 +396,54 @@ async def list_products(
     category: Optional[str] = Query(default=None),
     q: Optional[str] = Query(default=None, description="Case-insensitive title search"),
     active_only: bool = Query(default=True),
+    in_stock_only: bool = Query(
+        default=False,
+        description="If true, exclude out-of-stock products from the response.",
+    ),
+    sort: str = Query(
+        default="stock_then_newest",
+        description=(
+            "stock_then_newest (default) | newest | oldest | price_asc | "
+            "price_desc | title. Default puts in-stock items first so the "
+            "storefront isn't dominated by OOS tiles clustered at the top."
+        ),
+    ),
 ):
-    """Public list of permanent products. Returns only active items by default."""
+    """Public list of permanent products. Returns only active items by default.
+
+    Products with `in_stock=false` are still returned (they render an OOS
+    badge on the tile) unless `in_stock_only=true` is passed. To keep the
+    catalog scannable, the default sort demotes OOS items to the end so a
+    fresh visitor lands on real inventory, not restock candidates.
+    """
     db = get_db()
     filt: Dict[str, Any] = {}
     if active_only:
         filt["is_active"] = True
+    if in_stock_only:
+        # Treat missing `in_stock` as True for legacy docs that never had
+        # the field populated.
+        filt["$or"] = [{"in_stock": True}, {"in_stock": {"$exists": False}}]
     if category:
         filt["category"] = category
     if q:
         filt["title"] = {"$regex": q, "$options": "i"}
 
+    sort_map: Dict[str, List] = {
+        # in_stock=True > False, so DESC puts in-stock first. Then newest.
+        "stock_then_newest": [("in_stock", -1), ("created_at", -1)],
+        "newest": [("created_at", -1)],
+        "oldest": [("created_at", 1)],
+        "price_asc": [("in_stock", -1), ("price", 1)],
+        "price_desc": [("in_stock", -1), ("price", -1)],
+        "title": [("in_stock", -1), ("title", 1)],
+    }
+    sort_spec = sort_map.get(sort, sort_map["stock_then_newest"])
+
     total = await db.products.count_documents(filt)
     cursor = (
         db.products.find(filt, {"_id": 0})
-        .sort("created_at", -1)
+        .sort(sort_spec)
         .skip((page - 1) * page_size)
         .limit(page_size)
     )

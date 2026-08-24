@@ -84,6 +84,7 @@ const ProductDetail = () => {
 
   const images = product.images?.length ? product.images : [];
   const currentImg = images[activeImg];
+  const oos = product.in_stock === false;
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8" data-testid="product-detail-page">
@@ -159,6 +160,22 @@ const ProductDetail = () => {
               {product.category}
             </Badge>
           ) : null}
+          {oos && (
+            <div
+              className="mb-4 flex items-start gap-3 rounded-xl border border-amber-300/60 bg-amber-50 dark:bg-amber-950/30 px-4 py-3"
+              data-testid="product-oos-alert"
+            >
+              <span className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-amber-500 text-white text-xs font-bold">!</span>
+              <div className="text-sm">
+                <div className="font-semibold text-amber-900 dark:text-amber-200">
+                  Currently unavailable
+                </div>
+                <div className="text-amber-800/80 dark:text-amber-200/70">
+                  This item is temporarily out of stock. We&apos;ll restore pricing the moment the supplier restocks.
+                </div>
+              </div>
+            </div>
+          )}
           <h1
             className="text-2xl md:text-3xl font-bold text-neutral-900 dark:text-neutral-100"
             data-testid="product-title"
@@ -167,10 +184,21 @@ const ProductDetail = () => {
           </h1>
 
           <div className="mt-4 flex items-baseline gap-2">
-            <span className="text-3xl font-bold text-[#FF211F]" data-testid="product-price">
-              {formatMoney(product.price, product.currency)}
-            </span>
-            <span className="text-sm text-neutral-400">{product.currency}</span>
+            {oos ? (
+              <span
+                className="text-2xl font-bold text-neutral-500 dark:text-neutral-400"
+                data-testid="product-price"
+              >
+                Restocking soon
+              </span>
+            ) : (
+              <>
+                <span className="text-3xl font-bold text-[#FF211F]" data-testid="product-price">
+                  {formatMoney(product.price, product.currency)}
+                </span>
+                <span className="text-sm text-neutral-400">{product.currency}</span>
+              </>
+            )}
           </div>
 
           {product.description ? (
@@ -207,12 +235,15 @@ const ProductDetail = () => {
             <dd>
               <span
                 className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                  product.is_active
+                  oos
+                    ? "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300"
+                    : product.is_active
                     ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
                     : "bg-neutral-200 text-neutral-600"
                 }`}
+                data-testid="product-status-badge"
               >
-                {product.is_active ? "Available" : "Unavailable"}
+                {oos ? "Out of stock" : product.is_active ? "Available" : "Unavailable"}
               </span>
             </dd>
           </dl>

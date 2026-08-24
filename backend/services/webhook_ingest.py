@@ -100,14 +100,16 @@ async def _upsert_chunk(db, chunk: List[Dict[str, Any]]) -> Dict[str, int]:
 
         set_doc = {**norm, "updated_at": now}
 
-        if existing:
-            # Symmetric auto (de)activation on stock transitions so the
-            # storefront never shows $0 tiles for out-of-stock items.
-            if in_stock and not existing.get("is_active"):
-                set_doc["is_active"] = True
-                reactivated += 1
-            elif not in_stock and existing.get("is_active"):
-                set_doc["is_active"] = False
+        # OOS-badge policy: OOS products stay visible on the storefront so
+        # shoppers see restock candidates. We track availability via
+        # `in_stock` on the product doc; the tile renders a
+        # "Currently Unavailable" badge when it's false. `is_active` is
+        # reserved for admin-controlled catalog hides.
+        if existing and in_stock and not existing.get("is_active"):
+            # Legacy items that were auto-deactivated by the earlier logic
+            # come back online the moment we see them back in stock.
+            set_doc["is_active"] = True
+            reactivated += 1
 
         ops.append(
             UpdateOne(
@@ -117,9 +119,9 @@ async def _upsert_chunk(db, chunk: List[Dict[str, Any]]) -> Dict[str, int]:
                     "$setOnInsert": {
                         "id": str(uuid.uuid4()),
                         "created_at": now,
-                        # OOS items land inactive so the storefront doesn't
-                        # show a $0 tile; admins can manually flip them if desired.
-                        "is_active": in_stock,
+                        # NEW inserts always land visible — the OOS badge on
+                        # the tile is the source of truth for availability.
+                        "is_active": True,
                     },
                 },
                 upsert=True,

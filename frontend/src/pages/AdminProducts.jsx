@@ -555,7 +555,17 @@ const AdminProducts = () => {
                       {p.sku || "—"}
                     </td>
                     <td className="p-3 text-right font-semibold tabular-nums">
-                      {money(p.price, p.currency)}
+                      {p.in_stock === false ? (
+                        <span
+                          className="inline-flex items-center gap-1 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 px-2 py-0.5 text-[11px] font-semibold"
+                          data-testid={`admin-product-oos-${p.id}`}
+                          title="Out of stock — no price from supplier"
+                        >
+                          <span className="h-1.5 w-1.5 rounded-full bg-amber-500" /> OOS
+                        </span>
+                      ) : (
+                        money(p.price, p.currency)
+                      )}
                     </td>
                     <td className="p-3 text-center">
                       <Switch

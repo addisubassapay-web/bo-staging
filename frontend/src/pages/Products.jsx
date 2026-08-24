@@ -21,24 +21,42 @@ const formatMoney = (amount, currency = "USD") => {
 
 const ProductCardMini = ({ p }) => {
   const img = p.images?.[0];
+  const oos = p.in_stock === false;
   return (
     <Link
       to={`/products/${p.id}`}
-      className="group bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl overflow-hidden hover:shadow-lg transition"
+      className={`group bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl overflow-hidden hover:shadow-lg transition ${
+        oos ? "opacity-90" : ""
+      }`}
       data-testid={`product-card-${p.id}`}
+      aria-label={oos ? `${p.title} — currently unavailable` : p.title}
     >
-      <div className="aspect-square bg-neutral-100 dark:bg-neutral-800 overflow-hidden">
+      <div className="relative aspect-square bg-neutral-100 dark:bg-neutral-800 overflow-hidden">
         {img ? (
           <img
             src={img}
             alt={p.title}
             loading="lazy"
-            className="w-full h-full object-cover group-hover:scale-105 transition"
+            className={`w-full h-full object-cover group-hover:scale-105 transition ${
+              oos ? "grayscale-[45%]" : ""
+            }`}
           />
         ) : (
           <div className="w-full h-full grid place-items-center text-neutral-400">
             <Package className="h-10 w-10" />
           </div>
+        )}
+        {oos && (
+          <>
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-neutral-900/25 to-transparent" />
+            <span
+              className="absolute top-2.5 left-2.5 inline-flex items-center gap-1.5 rounded-full bg-neutral-900/85 text-white text-[10px] font-bold uppercase tracking-wide px-2.5 py-1 shadow ring-1 ring-white/10 backdrop-blur"
+              data-testid={`product-oos-badge-${p.id}`}
+            >
+              <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+              Currently Unavailable
+            </span>
+          </>
         )}
       </div>
       <div className="p-3">
@@ -46,9 +64,18 @@ const ProductCardMini = ({ p }) => {
           {p.title}
         </div>
         <div className="mt-2 flex items-baseline justify-between">
-          <span className="text-lg font-bold text-[#FF211F]">
-            {formatMoney(p.price, p.currency)}
-          </span>
+          {oos ? (
+            <span
+              className="text-sm font-semibold text-neutral-500 dark:text-neutral-400"
+              data-testid={`product-restock-hint-${p.id}`}
+            >
+              Restocking soon
+            </span>
+          ) : (
+            <span className="text-lg font-bold text-[#FF211F]">
+              {formatMoney(p.price, p.currency)}
+            </span>
+          )}
           {p.category ? (
             <span className="text-[10px] uppercase tracking-wide text-neutral-500">
               {p.category}
@@ -65,6 +92,7 @@ const Products = () => {
   const page = Math.max(1, Number(params.get("page") || 1));
   const q = params.get("q") || "";
   const category = params.get("category") || "";
+  const inStockOnly = params.get("in_stock") === "1";
   const [qDraft, setQDraft] = useState(q);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -78,6 +106,7 @@ const Products = () => {
           page_size: PAGE_SIZE,
           ...(q ? { q } : {}),
           ...(category ? { category } : {}),
+          ...(inStockOnly ? { in_stock_only: true } : {}),
         },
       });
       setData(res.data);
@@ -86,7 +115,7 @@ const Products = () => {
     } finally {
       setLoading(false);
     }
-  }, [page, q, category]);
+  }, [page, q, category, inStockOnly]);
 
   useEffect(() => {
     load();
@@ -125,7 +154,23 @@ const Products = () => {
             {data ? ` · ${data.total.toLocaleString()} products` : ""}
           </p>
         </div>
-        <form onSubmit={submitSearch} className="flex items-center gap-2">
+        <form onSubmit={submitSearch} className="flex flex-wrap items-center gap-2">
+          <label className="inline-flex items-center gap-2 text-sm text-neutral-700 dark:text-neutral-300 select-none">
+            <input
+              type="checkbox"
+              checked={inStockOnly}
+              onChange={(e) => {
+                const next = new URLSearchParams(params);
+                if (e.target.checked) next.set("in_stock", "1");
+                else next.delete("in_stock");
+                next.set("page", "1");
+                setParams(next);
+              }}
+              className="h-4 w-4 accent-[#FF211F]"
+              data-testid="products-in-stock-only-toggle"
+            />
+            In stock only
+          </label>
           <div className="relative">
             <SearchIcon className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
             <Input
