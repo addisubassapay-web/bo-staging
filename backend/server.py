@@ -1558,13 +1558,19 @@ async def seller_store_health(
     Returns response-time and on-time acceptance stats over the last N days.
     Only counts orders whose pickup window has already closed (picked,
     delivered, shipped, or auto_cancelled) so the numbers stay stable."""
+    return await _compute_store_health(user["id"], days=days)
+
+
+async def _compute_store_health(seller_id: str, *, days: int = 30) -> dict:
+    """Pure helper used by both the seller-facing endpoint and the nightly
+    suspension sweep. Returns the same shape either way."""
     days = max(1, min(int(days or 30), 365))
     since = datetime.now(timezone.utc) - timedelta(days=days)
 
     resolved_statuses = ["picked", "shipped", "delivered", "auto_cancelled"]
     cursor = db.orders.find(
         {
-            "seller_id": user["id"],
+            "seller_id": seller_id,
             "created_at": {"$gte": since},
             "fulfillment_status": {"$in": resolved_statuses},
         },
@@ -1580,9 +1586,6 @@ async def seller_store_health(
         created = r.get("created_at")
         picked_at = r.get("picked_up_at")
         deadline = r.get("pickup_deadline")
-        # Normalise
-        for f, k in [(created, "c"), (picked_at, "p"), (deadline, "d")]:
-            pass
         try:
             if isinstance(created, str):
                 created = datetime.fromisoformat(created.replace("Z", "+00:00"))
@@ -1592,12 +1595,8 @@ async def seller_store_health(
                 deadline = datetime.fromisoformat(deadline.replace("Z", "+00:00"))
         except Exception:
             continue
-        for dt in (created, picked_at, deadline):
-            if dt and dt.tzinfo is None:
-                dt = dt.replace(tzinfo=timezone.utc)  # noqa: F841
         if not (created and picked_at):
             continue
-        # Re-normalise timezone (the `dt` above was rebound in loop scope; do it explicitly)
         if created.tzinfo is None:
             created = created.replace(tzinfo=timezone.utc)
         if picked_at.tzinfo is None:
@@ -1615,7 +1614,6 @@ async def seller_store_health(
     on_time_rate = round(100.0 * on_time / picked_count, 1) if picked_count else None
     avg_response_hours = round(sum(response_seconds) / len(response_seconds) / 3600, 2) if response_seconds else None
 
-    # Composite health score 0-100 — 60% acceptance, 40% on-time.
     if total == 0:
         score = None
         tier = "no_data"
@@ -1638,6 +1636,129 @@ async def seller_store_health(
         "avg_response_hours": avg_response_hours,
         "score": score,
         "tier": tier,
+    }
+
+
+POOR_STREAK_SUSPEND_DAYS = 7  # after this many consecutive 'poor' days, auto-suspend listings
+
+
+async def store_health_sweep_loop():
+    """Nightly sweep: recompute every seller's rolling 30-day health tier.
+    Sellers who've been at 'poor' for POOR_STREAK_SUSPEND_DAYS consecutive
+    days get all their active listings auto-suspended; a `listings_suspended_at`
+    marker is set on the user so the UI can show a banner. Any tier better
+    than 'poor' resets the streak."""
+    await asyncio.sleep(45)
+    while True:
+        try:
+            # Only score users who've actually sold recently — cheap filter.
+            now = datetime.now(timezone.utc)
+            since = now - timedelta(days=30)
+            seller_ids: list[str] = await db.orders.distinct(
+                "seller_id", {"created_at": {"$gte": since}}
+            )
+            logger.info(f"[health-sweep] scoring {len(seller_ids)} sellers")
+            for sid in seller_ids:
+                try:
+                    health = await _compute_store_health(sid, days=30)
+                    user_row = await db.users.find_one(
+                        {"id": sid},
+                        {"_id": 0, "health_poor_streak_days": 1,
+                         "listings_suspended_at": 1, "email": 1, "username": 1},
+                    ) or {}
+                    prev_streak = int(user_row.get("health_poor_streak_days") or 0)
+                    tier = health.get("tier")
+                    if tier == "poor":
+                        new_streak = prev_streak + 1
+                        set_updates = {
+                            "health_poor_streak_days": new_streak,
+                            "health_score": health.get("score"),
+                            "health_tier": tier,
+                            "health_scored_at": now,
+                        }
+                        if prev_streak == 0:
+                            set_updates["health_poor_since"] = now
+                        # Auto-suspend when we hit the threshold — do it once.
+                        if new_streak >= POOR_STREAK_SUSPEND_DAYS and not user_row.get("listings_suspended_at"):
+                            set_updates["listings_suspended_at"] = now
+                            set_updates["listings_suspend_reason"] = "poor_store_health"
+                            await db.listings.update_many(
+                                {"seller_id": sid, "status": "active"},
+                                {"$set": {"status": "suspended", "suspended_at": now,
+                                          "suspended_reason": "poor_store_health"}},
+                            )
+                            await notify(
+                                sid, "admin",
+                                "Your listings have been paused",
+                                f"7 straight days of 'poor' store health triggered an automatic pause. Improve your acceptance rate and contact support to unpause.",
+                                "/profile?tab=sales",
+                            )
+                        await db.users.update_one({"id": sid}, {"$set": set_updates})
+                    else:
+                        # Any better tier resets the streak.
+                        await db.users.update_one(
+                            {"id": sid},
+                            {"$set": {
+                                "health_poor_streak_days": 0,
+                                "health_poor_since": None,
+                                "health_score": health.get("score"),
+                                "health_tier": tier,
+                                "health_scored_at": now,
+                            }},
+                        )
+                except Exception as e:
+                    logger.warning(f"[health-sweep] failed for seller {sid}: {e}")
+        except Exception as e:
+            logger.exception(f"store_health_sweep_loop error: {e}")
+        # Run daily (or on the interval env var — smaller for testing).
+        await asyncio.sleep(int(os.environ.get("HEALTH_SWEEP_INTERVAL_SEC", "86400")))
+
+
+@api_router.get("/admin/users/suspended-listings")
+async def admin_list_suspended_sellers(_admin: dict = Depends(require_admin)):
+    """List all sellers currently auto-suspended due to poor store health."""
+    cursor = db.users.find(
+        {"listings_suspended_at": {"$exists": True},
+         "listings_suspend_reason": "poor_store_health"},
+        {"_id": 0, "id": 1, "email": 1, "username": 1,
+         "listings_suspended_at": 1, "health_score": 1, "health_tier": 1,
+         "health_poor_streak_days": 1},
+    ).sort("listings_suspended_at", -1)
+    rows = await cursor.to_list(length=200)
+    # Enrich with number of suspended listings each.
+    for r in rows:
+        r["suspended_listing_count"] = await db.listings.count_documents({
+            "seller_id": r["id"], "status": "suspended",
+            "suspended_reason": "poor_store_health",
+        })
+    return {"users": rows, "count": len(rows)}
+
+
+@api_router.post("/admin/users/{user_id}/unlock-listings")
+async def admin_unlock_listings(user_id: str, _admin: dict = Depends(require_admin)):
+    """Restore a seller's suspended listings after a health-tier auto-pause.
+    Only affects listings that were suspended by the health sweep — leaves
+    other suspensions (admin-issued, reported, etc.) untouched."""
+    result = await db.listings.update_many(
+        {"seller_id": user_id, "status": "suspended", "suspended_reason": "poor_store_health"},
+        {"$set": {"status": "active"},
+         "$unset": {"suspended_at": "", "suspended_reason": ""}},
+    )
+    await db.users.update_one(
+        {"id": user_id},
+        {"$set": {"health_poor_streak_days": 0, "health_poor_since": None},
+         "$unset": {"listings_suspended_at": "", "listings_suspend_reason": ""}},
+    )
+    await notify(
+        user_id, "admin",
+        "Your listings are back online",
+        "An admin restored your listings — keep your acceptance rate high to avoid future pauses.",
+        "/profile?tab=sales",
+    )
+    return {
+        "ok": True,
+        "user_id": user_id,
+        "listings_restored": result.modified_count,
     }
 
 
@@ -2554,6 +2675,36 @@ async def get_store_listings(slug: str):
         raise HTTPException(404, "Store not found")
     docs = await db.listings.find({"store_id": store["id"], "status": "active"}, {"_id": 0}).sort("created_at", -1).to_list(500)
     return [Listing(**d) for d in docs]
+
+
+@api_router.get("/stores/{slug}/health-badge")
+async def get_store_health_badge(slug: str):
+    """Public badge endpoint — returns the seller's tier/score for buyers
+    to see on the store header. Only shows positive tiers (`excellent`,
+    `good`) publicly; anything worse returns `visible: false` so we don't
+    embarrass slower sellers in front of buyers."""
+    store = await db.stores.find_one({"slug": slug.lower()}, {"_id": 0, "owner_id": 1})
+    if not store:
+        raise HTTPException(404, "Store not found")
+    # Prefer the cached score written by the nightly sweep for speed.
+    owner = await db.users.find_one(
+        {"id": store["owner_id"]},
+        {"_id": 0, "health_tier": 1, "health_score": 1, "health_scored_at": 1},
+    ) or {}
+    tier = owner.get("health_tier")
+    score = owner.get("health_score")
+    if tier is None:
+        # No cached value yet — compute on the fly (cold path only).
+        h = await _compute_store_health(store["owner_id"], days=30)
+        tier = h.get("tier")
+        score = h.get("score")
+    visible = tier in ("excellent", "good")
+    return {
+        "tier": tier if visible else None,
+        "score": score if visible else None,
+        "visible": visible,
+        "label": {"excellent": "Ships fast", "good": "Reliable seller"}.get(tier),
+    }
 
 @api_router.put("/stores/{store_id}", response_model=Store)
 async def update_store(store_id: str, payload: StoreUpdate, user: dict = Depends(get_current_user)):
@@ -7685,6 +7836,7 @@ async def startup():
     asyncio.create_task(auto_confirm_nudge_loop())
     asyncio.create_task(pickup_expiry_loop())
     asyncio.create_task(pickup_reminder_loop())
+    asyncio.create_task(store_health_sweep_loop())
     asyncio.create_task(sitemap_ping_sweeper())
 
 

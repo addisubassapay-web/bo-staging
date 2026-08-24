@@ -24,6 +24,19 @@ Full-stack ecommerce marketplace **Merchari-global** — same color scheme (`#FF
 
 ---
 
+### Feb 2026 — Suspension Guardrails + Health Badge
+**1. Suspension Guardrails** — new `store_health_sweep_loop` runs every 24h (env `HEALTH_SWEEP_INTERVAL_SEC`), recomputes each recent-seller's 30-day store health via the shared `_compute_store_health` helper, and:
+  - `tier == 'poor'` → `$inc health_poor_streak_days`; on first poor day sets `health_poor_since=now`
+  - Any better tier → resets `health_poor_streak_days=0`, `health_poor_since=null`
+  - When streak hits `POOR_STREAK_SUSPEND_DAYS = 7`: all their active listings flip to `status="suspended"` with `suspended_reason="poor_store_health"`, `listings_suspended_at` set on the user, and a stern in-app admin notification lands
+- **`GET /api/admin/users/suspended-listings`** — lists auto-suspended sellers enriched with `suspended_listing_count`
+- **`POST /api/admin/users/{id}/unlock-listings`** — restores only the health-suspended listings (leaves other suspensions alone), clears user flags, resets streak, notifies the seller
+- **`SuspendedSellersCard.jsx`** on Admin dashboard shows the list (empty state = green "no sellers suspended" card) with a 1-click green "Unlock listings" button per row (verified: simulated 7-day streak → suspension → unlock restored 1 listing → user flags cleared)
+
+**2. Health Score Public Badge** — new public endpoint `GET /api/stores/{slug}/health-badge` returns `{tier, score, visible, label}` — but *only* for positive tiers (`excellent` → "Ships fast", `good` → "Reliable seller"). Anything else returns `visible: false` so slow sellers aren't publicly shamed. Prefers the cached `users.health_tier`/`health_score` written by the sweep for speed; falls back to on-the-fly computation for cold sellers.
+- `StoreHealthBadge.jsx` renders next to the store name on `/store/:slug` as an emerald pill for excellent (Zap icon) or blue pill for good (ShieldCheck icon). Hover reveals `Score: X/100 (rolling 30 days)`. Verified live: sophia_style's store shows a green "Ships fast" badge inline with the store title.
+
+
 ### Feb 2026 — Store Health Score, Nudge Timeline, Reminder Tuner
 **1. Reminder Timing Tuner** — `pickup_deadline_hours` and `pickup_reminder_hours` are now first-class allowlisted settings on `PUT /api/admin/settings`. Deadline validated to [1, 168] hours; reminders validated as list of ints in [1, 72], deduped and sorted desc. `pickup_reminder_loop` now iterates `settings.pickup_reminder_hours` (default `[6, 1]`) with a ±30-minute window per entry and writes `pickup_reminder_{h}h_sent_at` flags so no double-sends. Admin dashboard has a new `PickupTimingTuner.jsx` card with two inputs and a Save button — verified live saving `deadline: 36h, reminders: [12, 6, 1]`.
 

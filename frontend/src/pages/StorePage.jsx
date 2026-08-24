@@ -14,6 +14,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { flagEmoji, countryName } from "@/constants/countries";
 import StoreAdminNudgeBanner from "@/components/StoreAdminNudgeBanner";
+import StoreHealthBadge from "@/components/StoreHealthBadge";
 
 const tierMeta = {
   none: null,
@@ -205,6 +206,7 @@ const StorePage = () => {
                   </Badge>
                 )}
                 {owner && <VerificationBadges user={owner} showLabels={false} />}
+                <StoreHealthBadge slug={slug} />
               </div>
               {store.tagline && <p className="text-neutral-600 dark:text-neutral-300 text-sm mt-1">{store.tagline}</p>}
               {store.bio && <p className="text-neutral-700 dark:text-neutral-300 text-sm mt-2 line-clamp-2 max-w-2xl">{store.bio}</p>}
