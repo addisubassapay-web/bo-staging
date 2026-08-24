@@ -68,6 +68,9 @@ class DepositRequest(BaseModel):
     admin_note: str = ""
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     processed_at: Optional[datetime] = None
+    # Populated when the buyer re-submits after a rejection.
+    resubmitted_at: Optional[datetime] = None
+    resubmit_count: int = 0
 
 
 class DepositRequestCreate(BaseModel):

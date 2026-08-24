@@ -16,6 +16,7 @@ import AutoConfirmCountdown from "@/components/AutoConfirmCountdown";
 import PickupOrderDialog from "@/components/PickupOrderDialog";
 import StoreHealthCard from "@/components/StoreHealthCard";
 import ReactivationChecklist from "@/components/ReactivationChecklist";
+import OrderWalletTimeline from "@/components/OrderWalletTimeline";
 
 const BADGE_STEPS = [
   { key: "new", label: "New", threshold: { sales: 0, rating: 0 } },
@@ -456,6 +457,7 @@ const Profile = () => {
                       </div>
                     )}
                     <ReviewOrderCard order={o} />
+                    <OrderWalletTimeline orderId={o.id} />
                   </div>
                 </div>
               );})}
@@ -508,6 +510,7 @@ const Profile = () => {
                     </div>
                   </div>
                   <ShippingTracker orderId={o.id} canPurchase canAdvance />
+                  <OrderWalletTimeline orderId={o.id} />
                   {o.fulfillment_status === "pending_pickup" && (
                     <div
                       className="mt-3 flex items-center justify-between gap-3 flex-wrap bg-red-50 border border-red-200 rounded-lg px-3 py-2"

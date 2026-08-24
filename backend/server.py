@@ -1208,6 +1208,13 @@ async def create_order(payload: OrderCreate, user: dict = Depends(get_current_us
         pickup_deadline=datetime.now(timezone.utc) + timedelta(hours=int(settings.get("pickup_deadline_hours", 48))),
     )
     await db.orders.insert_one(order.model_dump())
+    # Backfill the placeholder `related_id="pending"` on the buyer's purchase
+    # debit now that we know the real order id. Without this, the buyer's
+    # /api/orders/{id}/wallet-events feed can't find the purchase entry.
+    await db.wallet_txs.update_many(
+        {"user_id": user["id"], "type": "purchase", "related_id": "pending"},
+        {"$set": {"related_id": order.id}},
+    )
     await db.listings.update_one({"id": listing["id"]}, {"$set": {"status": "sold"}})
     await db.users.update_one({"id": listing["seller_id"]}, {"$inc": {"sales_count": 1}})
     await db.cart_items.delete_many({"listing_id": listing["id"]})
@@ -1408,6 +1415,81 @@ async def pickup_quote(order_id: str, user: dict = Depends(get_current_user)):
         "fulfillment_status": order.get("fulfillment_status") or "pending_pickup",
         "pickup_deadline": deadline.isoformat() if deadline else None,
         "hours_left": hours_left,
+    }
+
+
+@api_router.get("/orders/{order_id}/wallet-events")
+async def order_wallet_events(order_id: str, user: dict = Depends(get_current_user)):
+    """Ledger timeline scoped to a single order — used by the Sales / Purchases
+    row expander to render every wallet event that touched this order:
+
+      * buyer's `purchase` debit at checkout
+      * seller's `sale_frozen` credit (escrow held)
+      * seller's `wholesale_debit` at Pick & Deliver
+      * seller's `sale_released` credit when the buyer confirms delivery
+      * affiliate / referral / dropship payouts
+
+    Access: buyer, seller, dropship-source seller, or admin. Non-admin users
+    only see their own rows so we don't leak other parties' balances."""
+    order = await db.orders.find_one(
+        {"id": order_id},
+        {"_id": 0, "id": 1, "buyer_id": 1, "seller_id": 1,
+         "dropship_source_seller_id": 1, "affiliate_user_id": 1, "listing_title": 1},
+    )
+    if not order:
+        raise HTTPException(404, "Order not found")
+
+    is_admin = user.get("role") == "admin"
+    allowed = {order.get("buyer_id"), order.get("seller_id"),
+               order.get("dropship_source_seller_id"), order.get("affiliate_user_id")}
+    allowed.discard(None)
+    if not is_admin and user["id"] not in allowed:
+        raise HTTPException(403, "Not a party to this order")
+
+    q: dict = {"related_id": order_id}
+    if not is_admin:
+        q["user_id"] = user["id"]
+
+    rows = await db.wallet_txs.find(q, {"_id": 0}).sort("created_at", 1).to_list(500)
+
+    # Attach a small view-model role tag so the UI can pick an icon / color
+    # without re-inventing the mapping.
+    def _tag(r: dict) -> dict:
+        t = (r.get("type") or "").lower()
+        amt = float(r.get("amount") or 0.0)
+        if t == "purchase":
+            role = "buyer_paid"
+        elif t == "sale_frozen":
+            role = "seller_escrow_held"
+        elif t == "sale_released":
+            role = "seller_delivery_released"
+        elif t == "sale":
+            role = "seller_credited"
+        elif t == "wholesale_debit":
+            role = "seller_wholesale_paid"
+        elif t == "dropship_frozen":
+            role = "dropship_source_escrow_held"
+        elif t == "dropship_released":
+            role = "dropship_source_released"
+        elif t == "dropship":
+            role = "dropship_source_credited"
+        elif t == "affiliate":
+            role = "affiliate_paid"
+        elif t == "referral":
+            role = "referral_paid"
+        elif t == "refund":
+            role = "refunded"
+        else:
+            role = t or "misc"
+        r["role"] = role
+        r["direction"] = "credit" if amt > 0 else ("debit" if amt < 0 else "hold")
+        return r
+
+    return {
+        "order_id": order_id,
+        "listing_title": order.get("listing_title"),
+        "count": len(rows),
+        "events": [_tag(r) for r in rows],
     }
 
 
@@ -3895,6 +3977,58 @@ async def admin_reject_deposit(dep_id: str, payload: dict = Body(default={}), _a
         "/wallet",
     )
     return {"ok": True, "status": "rejected"}
+
+
+@api_router.post("/wallet/deposits/{dep_id}/resubmit", response_model=DepositRequest)
+async def resubmit_rejected_deposit(
+    dep_id: str,
+    payload: dict = Body(default={}),
+    user: dict = Depends(get_current_user),
+):
+    """Buyer re-uploads a fresh screenshot (and optionally corrects the
+    reference / note) for a previously **rejected** deposit. Flips the
+    deposit back to `pending` so the admin queue picks it up again.
+    Keeps the original amount / method / currency — those are considered
+    immutable to preserve accounting trace."""
+    dep = await db.deposits.find_one({"id": dep_id}, {"_id": 0})
+    if not dep:
+        raise HTTPException(404, "Deposit not found")
+    if dep["user_id"] != user["id"]:
+        raise HTTPException(403, "You can only resubmit your own deposits")
+    if dep.get("status") != "rejected":
+        raise HTTPException(400, f"Only rejected deposits can be resubmitted (current: {dep.get('status')})")
+
+    updates: dict = {
+        "status": "pending",
+        "admin_note": "",
+        "processed_at": None,
+        "resubmitted_at": datetime.now(timezone.utc),
+        "resubmit_count": int(dep.get("resubmit_count") or 0) + 1,
+    }
+    screenshot_url = (payload.get("screenshot_url") or "").strip()
+    if screenshot_url:
+        updates["screenshot_url"] = screenshot_url
+    reference = (payload.get("reference") or "").strip()
+    if reference:
+        updates["reference"] = reference
+    note = payload.get("note")
+    if note is not None:
+        updates["note"] = str(note).strip()[:500]
+
+    # A resubmit must include either a new screenshot or a new reference —
+    # otherwise the buyer is just re-sending the same info that got rejected.
+    if not screenshot_url and not reference and note is None:
+        raise HTTPException(400, "Attach a new screenshot or reference before resubmitting.")
+
+    await db.deposits.update_one({"id": dep_id}, {"$set": updates})
+    fresh = await db.deposits.find_one({"id": dep_id}, {"_id": 0})
+    await notify(
+        user["id"], "wallet",
+        f"Deposit resubmitted — ${float(dep['amount']):.2f}",
+        "We'll review your updated proof and credit your wallet once confirmed.",
+        "/wallet",
+    )
+    return DepositRequest(**fresh)
 
 
 # =========================

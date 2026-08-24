@@ -69,6 +69,27 @@ Full-stack ecommerce marketplace **Mercari-Global** — same color scheme (`#FF2
 
 ### Feb 2026 — Catalog Dedupe + Test-Data Guardrails on the Mirror
 
+### Feb 2026 — Wallet Activity Timeline + Rejected Deposit Resubmit
+
+**Per-order Wallet Activity Timeline**:
+- New endpoint `GET /api/orders/{order_id}/wallet-events` returns every `wallet_txs` row tied to an order, tagged with a semantic `role` (`buyer_paid`, `seller_escrow_held`, `seller_wholesale_paid`, `seller_delivery_released`, `dropship_source_escrow_held`, `dropship_source_released`, `affiliate_paid`, `referral_paid`, `refunded`) and a `direction` (credit/debit/hold).
+- Access control: buyer, seller, dropship-source seller, affiliate, or admin. Non-admins only see rows they own — the same order returns different views for buyer vs seller.
+- Fixed a pre-existing bug where the buyer's `purchase` debit was tagged `related_id="pending"` and never backfilled — the checkout now updates that row to the real order id right after insert.
+- New `<OrderWalletTimeline>` component in `/app/frontend/src/components/`. Collapsed by default, lazy-loads on first expand, renders each event with an icon + label + amount + bucket badge + timestamp.
+- Mounted under both Profile → Purchases (below `ReviewOrderCard`) and Profile → Sales (below `ShippingTracker`).
+
+**Rejected Deposit Resubmit**:
+- New endpoint `POST /api/wallet/deposits/{dep_id}/resubmit`:
+  * Owner-only (403 otherwise), only allowed when `status="rejected"` (400 otherwise).
+  * Requires at least one changed field (`screenshot_url` and/or `reference`) — prevents replaying the same rejected data.
+  * Flips status → `pending`, clears `admin_note`, bumps `resubmit_count`, records `resubmitted_at`, notifies the buyer.
+- `DepositRequest` model got two new fields: `resubmitted_at`, `resubmit_count`.
+- New `<DepositResubmit>` component: shadcn dialog with rejection reason callout, read-only amount/method card, drag-friendly file uploader (10 MB max, images only, posts to `/api/upload/public-image`), editable reference, submit disabled until dirty.
+- Wallet page deposit rows now show the rejection reason inline + a red-outlined "Resubmit" button on any rejected row.
+
+**Tests added**: `tests/test_wallet_timeline_and_resubmit.py` — 9 cases covering buyer view, seller view, non-party 403, admin sees-all, resubmit gating (before reject, after approve, non-owner, no-new-data), happy path with new screenshot. All 40 tests (9 + 5 + 26 SSRF) pass.
+
+
 **Bugs from screenshots**:
 1. **Repetitive Machu Picchu placeholders** with TEST_p52 titles at $40/$50/$60 on a store page (regression-test artefacts that had leaked past earlier guardrails).
 2. **Duplicate marketplace tiles** — BIODANCE Collagen 2×, Assassin's Creed 2×, NYX Brow Glue 3×. Root cause: (a) the `products` collection had duplicate rows for the same real product (59 collisions), (b) sellers had imported some products multiple times (752 same-seller duplicates), and (c) the mirror sync created a Merchari Store listing even when a peer seller already sold the item (195 cross-seller mirror dupes).

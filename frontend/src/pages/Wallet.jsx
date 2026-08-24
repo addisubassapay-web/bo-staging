@@ -20,6 +20,7 @@ import {
 import { useBalanceVisibility, BalanceValue, BalanceEyeToggle } from "@/components/BalanceMask";
 import BalanceHealthTile from "@/components/BalanceHealthTile";
 import StuckEscrowAlerts from "@/components/StuckEscrowAlerts";
+import DepositResubmit from "@/components/DepositResubmit";
 import { useNotificationStream } from "@/hooks/useNotificationStream";
 
 const typeMetaKeys = {
@@ -782,9 +783,25 @@ const Wallet = () => {
                   <div className="min-w-0">
                     <div className="font-medium">{formatPrice(d.amount)} <span className="text-xs text-neutral-500 font-normal">· {d.method === "crypto" ? (d.currency || (t("wallet.crypto") || "crypto")) : (t("wallet.manual") || "manual")}</span></div>
                     <div className="text-xs text-neutral-500 truncate max-w-[60vw]">{new Date(d.created_at).toLocaleDateString()} {d.reference && `· ${d.reference.slice(0, 20)}${d.reference.length > 20 ? "…" : ""}`}</div>
+                    {d.status === "rejected" && d.admin_note && (
+                      <div className="text-[11px] text-rose-700 dark:text-rose-300 mt-0.5 line-clamp-2" data-testid={`deposit-reject-reason-${d.id}`}>
+                        Reason: {d.admin_note}
+                      </div>
+                    )}
+                    {d.resubmit_count > 0 && (
+                      <div className="text-[10px] text-neutral-400 mt-0.5">Resubmitted {d.resubmit_count} time{d.resubmit_count === 1 ? "" : "s"}</div>
+                    )}
                   </div>
                 </div>
-                <Badge variant="secondary" className={`capitalize ${statusBadgeClass(d.status)}`}>{d.status}</Badge>
+                <div className="flex items-center gap-2 shrink-0">
+                  <Badge variant="secondary" className={`capitalize ${statusBadgeClass(d.status)}`}>{d.status}</Badge>
+                  {d.status === "rejected" && (
+                    <DepositResubmit
+                      deposit={d}
+                      onSuccess={(updated) => setDeposits((prev) => prev.map((x) => x.id === updated.id ? updated : x))}
+                    />
+                  )}
+                </div>
               </div>
             ))}
           </div>
