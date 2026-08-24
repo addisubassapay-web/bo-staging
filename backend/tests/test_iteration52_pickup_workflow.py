@@ -2,7 +2,7 @@
 Iteration 52 — Seller Order Acceptance / Wholesale Debit / Frozen Reinvest Workflow
 
 Tests every rule in the review request end-to-end using fresh users per test.
-Auto-split (available first, frozen top-up capped at 75%) is now automatic — the
+Auto-split (available first, frozen top-up capped at 50%) is now automatic — the
 pickup endpoint takes an empty body.
 """
 
@@ -245,22 +245,22 @@ def test_04_pickup_mixed_available_and_frozen(admin_token, category_id):
     assert abs(fresh["wallet_frozen_balance"] - (frozen_before - 30.0)) < 0.5
 
 
-# ---------- Test 5: frozen 75% cap enforced ----------
-def test_05_frozen_75pct_cap(admin_token, category_id):
+# ---------- Test 5: frozen 50% cap enforced ----------
+def test_05_frozen_50pct_cap(admin_token, category_id):
     seller_tok, seller = _make_seller(admin_token)
     buyer_tok, buyer = _register("buyer")
     _adjust_wallet(admin_token, buyer["id"], 500.0)
     _adjust_wallet(admin_token, seller["id"], 100.0, "frozen")
-    # available=0, frozen=100 → frozen_usable=75
+    # available=0, frozen=100 → frozen_usable=50
 
-    # base_price=80 makes cost=80. To keep 75%(frozen) < cost after checkout's
+    # base_price=80 makes cost=80. To keep 50%(frozen) < cost after checkout's
     # sale_frozen escrow credit inflates frozen, use a low retail price so
     # seller_earnings stays tiny.
     lst = _create_listing(seller_tok, category_id, price=6.0, base_price=80.0)  # cost=80
     order = _buy(buyer_tok, lst["id"])
     # checkout credits seller_earnings to frozen too. That grows frozen. To keep
     # the cap-boundary test meaningful we need frozen_usable < cost. Even with
-    # a bigger frozen after the credit, cost=80 and 75% cap of raw frozen must
+    # a bigger frozen after the credit, cost=80 and 50% cap of raw frozen must
     # be < 80. Let's assert deposit_needed comes back correctly given current state.
 
     r = requests.post(f"{API}/orders/{order['id']}/pickup", json={}, headers=_h(seller_tok), timeout=30)
@@ -277,10 +277,10 @@ def test_06_insufficient_funds_deposit_needed(admin_token, category_id):
     buyer_tok, buyer = _register("buyer")
     _adjust_wallet(admin_token, buyer["id"], 500.0)
     _adjust_wallet(admin_token, seller["id"], 5.0, "available")
-    _adjust_wallet(admin_token, seller["id"], 10.0, "frozen")  # 75%=7.5
+    _adjust_wallet(admin_token, seller["id"], 10.0, "frozen")  # 50%=5.0
 
     # Use a very low retail price so seller_earnings escrow doesn't lift
-    # frozen*0.75 above the funding shortfall.
+    # frozen*0.50 above the funding shortfall.
     lst = _create_listing(seller_tok, category_id, price=1.0, base_price=30.0)  # cost=30
     order = _buy(buyer_tok, lst["id"])
 

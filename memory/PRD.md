@@ -43,6 +43,30 @@ Full-stack ecommerce marketplace **Mercari-Global** — same color scheme (`#FF2
 - Verified editorial-boutique category styling, category chips, and Read-more/Show-less description toggle on `ProductDetail` all render correctly via screenshot.
 
 
+
+### Feb 2026 — Wallet-Only Orders + 50% Frozen Cap
+
+**Payment flow redesign**:
+- `OrderCreate.payment_method` is now `Literal["wallet"]` — the `/api/orders` endpoint rejects `crypto` and `bank` at the schema layer (HTTP 422). Existing DB orders with legacy method strings still deserialize correctly (Order model keeps `Optional[str]`).
+- Insufficient-balance path returns **HTTP 402** with `{error, message, wallet_balance, total_due, deposit_needed, redirect: "/wallet"}` so the frontend can deep-link the buyer to the top-up page with the exact amount pre-filled.
+- Removed the "status=pending" branch for crypto/bank orders. All wallet orders are `status="paid"` on creation — no more phantom Pick & Deliver notifications sent before the buyer has actually paid.
+- Fixed the leaky flow where crypto/bank orders instantly froze seller earnings and marked the listing as sold even though the buyer never paid — that class of bug is now impossible.
+
+**Top-up remains crypto / bank (with admin proof review)**:
+- `POST /api/wallet/deposit/pending` (unchanged) — buyer submits amount, method, reference, and a screenshot URL from `/api/upload/public-image`.
+- `POST /api/admin/deposits/{id}/approve` credits wallet via `ledger.deposit_approved` and notifies the buyer.
+- `POST /api/admin/deposits/{id}/reject` bounces the deposit with a reason.
+
+**Seller frozen reinvest cap: 75% → 50%**
+- Constant `FROZEN_USABLE_PCT = 0.50` in `server.py` is used by both `pickup_quote` and `create_pickup`. All references and pytest fixtures updated. New pytest `test_pickup_quote_reports_50pct_cap` verifies the boundary live.
+
+**Frontend Checkout**:
+- Removed the three-chip Wallet / Crypto / Bank selector, all associated state, and the QR / bank-instructions panels. Replaced with a single "Paid from your wallet" callout that links to `/wallet`.
+- Insufficient-balance state shows a red banner + a "Top up wallet" CTA that jumps to `/wallet?open=deposit&suggested=<amount>`.
+- 402 responses from the server now auto-navigate to the wallet top-up page instead of just showing a red toast.
+
+**Tests added**: `tests/test_wallet_only_orders.py` (5 cases: crypto rejected, bank rejected, 402 shape, default method, 50% cap live). All pass.
+
 ### Feb 2026 — Catalog Dedupe + Test-Data Guardrails on the Mirror
 
 **Bugs from screenshots**:

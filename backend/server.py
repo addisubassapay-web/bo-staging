@@ -331,8 +331,8 @@ class OrderCreate(BaseModel):
     shipping_address: dict = {}
     affiliate_code: Optional[str] = None
     share_ref: Optional[str] = None  # e.g. "push" when the buyer arrived from a Storefront Push share link
-    payment_method: Optional[Literal["wallet", "crypto", "bank"]] = None
-    payment_currency: Optional[str] = None  # crypto symbol (ETH/SOL/…) or manual method id
+    payment_method: Optional[Literal["wallet"]] = "wallet"  # wallet-only: top up via /wallet first
+    payment_currency: Optional[str] = None  # kept for backwards-compat (unused for wallet orders)
 
 
 # =========================
@@ -1059,23 +1059,45 @@ async def create_order(payload: OrderCreate, user: dict = Depends(get_current_us
     # Flat shipping (one shipment covers the whole bulk order).
     shipping_fee = 0.0 if listing.get("shipping_paid_by") == "seller" else 5.99
 
-    # Payment method validation — wallet payments must have sufficient balance.
-    method = (payload.payment_method or "").strip().lower() or None
-    if method and method not in ("card", "wallet", "crypto", "bank"):
-        raise HTTPException(400, "Invalid payment method")
+    # Payment method — Mercari-Global orders are wallet-only. Users top up
+    # the wallet via crypto or bank first (see /api/wallet/deposit/pending),
+    # then pay from wallet balance here. This keeps the escrow ledger single-
+    # source and lets admins gate every real-money inflow via one review queue.
+    method = (payload.payment_method or "wallet").strip().lower() or "wallet"
+    if method != "wallet":
+        raise HTTPException(
+            400,
+            "Orders are wallet-only. Please top up your wallet via /wallet "
+            "(crypto or bank transfer) and then pay from your wallet balance.",
+        )
     total_due = round(amount + shipping_fee, 2)
-    if method == "wallet":
-        try:
-            await ledger.purchase_debit(
-                db,
-                user_id=user["id"],
-                amount=total_due,
-                order_id="pending",  # updated after order id is minted
-                description=f"Wallet payment × {quantity}: {listing['title']}",
-            )
-        except ledger.InsufficientFunds:
-            available = float(user.get("wallet_balance", 0.0) or 0.0)
-            raise HTTPException(400, f"Insufficient wallet balance. Available ${available:.2f}, need ${total_due:.2f}")
+    try:
+        await ledger.purchase_debit(
+            db,
+            user_id=user["id"],
+            amount=total_due,
+            order_id="pending",  # updated after order id is minted
+            description=f"Wallet payment × {quantity}: {listing['title']}",
+        )
+    except ledger.InsufficientFunds:
+        # Re-read the wallet balance so the response reflects the current state.
+        fresh = await db.users.find_one({"id": user["id"]}, {"_id": 0, "wallet_balance": 1})
+        available = float((fresh or user).get("wallet_balance", 0.0) or 0.0)
+        deposit_needed = round(max(0.0, total_due - available), 2)
+        raise HTTPException(
+            status_code=402,
+            detail={
+                "error": "insufficient_wallet_balance",
+                "message": (
+                    f"Wallet balance is ${available:.2f}, but this order needs "
+                    f"${total_due:.2f}. Top up ${deposit_needed:.2f} first."
+                ),
+                "wallet_balance": available,
+                "total_due": total_due,
+                "deposit_needed": deposit_needed,
+                "redirect": "/wallet",
+            },
+        )
 
     # Platform fee — scales with the total merchandise amount.
     platform_fee = round(amount * settings["platform_fee_pct"] / 100.0, 2)
@@ -1167,7 +1189,7 @@ async def create_order(payload: OrderCreate, user: dict = Depends(get_current_us
         amount=amount,
         shipping_fee=shipping_fee,
         shipping_address=payload.shipping_address,
-        status=("pending" if method in ("crypto", "bank") else "paid"),
+        status="paid",
         platform_fee=platform_fee,
         seller_earnings=seller_earnings,
         affiliate_link_id=affiliate_link["id"] if affiliate_link else None,
@@ -1316,9 +1338,9 @@ async def nudge_buyer_confirm(order_id: str, user: dict = Depends(get_current_us
 # The Feb 2026 flow: after a buyer places an order, the seller must
 # explicitly accept it and pay the source cost from their wallet before
 # fulfillment starts. If they lack funds, they can top up the wallet or
-# tap into up to 75% of their frozen earnings.
+# tap into up to 50% of their frozen earnings.
 
-FROZEN_USABLE_PCT = 0.75  # sellers can reinvest at most 75% of frozen balance
+FROZEN_USABLE_PCT = 0.50  # sellers can reinvest at most 50% of frozen balance
 
 
 @api_router.get("/orders/{order_id}/pickup-quote")
@@ -1401,7 +1423,7 @@ async def pickup_order(
     * If `available >= cost` — the entire cost is debited from available.
     * Else — `available` is exhausted first, then the shortfall is drawn
       from frozen (capped at 75% of the seller's frozen balance).
-    * If `available + 0.75*frozen < cost` — returns HTTP 402 with a
+    * If `available + 0.5*frozen < cost` — returns HTTP 402 with a
       `deposit_needed` amount so the UI can route the seller to /wallet.
 
     Concurrency: uses a `findOneAndUpdate` sentinel to atomically flip
