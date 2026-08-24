@@ -577,6 +577,20 @@ async def products_suggest(
     return result
 
 
+@router.post("/admin/search/vocab-refresh")
+async def admin_search_vocab_refresh(_admin: dict = Depends(require_admin)):
+    """Invalidate the fuzzy-correction vocab cache so the next suggest
+    call rebuilds it from the latest product titles + successful
+    searches. This is the self-healing loop that grows the vocabulary
+    from what real shoppers type. Meant to be called weekly by a cron —
+    or manually from the admin dashboard after a big ingest."""
+    from services.product_search import clear_vocab_cache, _harvest_vocab
+    clear_vocab_cache()
+    db = get_db()
+    fresh = await _harvest_vocab(db)
+    return {"ok": True, "vocab_size": len(fresh)}
+
+
 @router.get("/admin/search/analytics")
 async def admin_search_analytics(
     _admin: dict = Depends(require_admin),

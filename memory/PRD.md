@@ -24,6 +24,24 @@ Full-stack ecommerce marketplace **Merchari-global** — same color scheme (`#FF
 
 ---
 
+### Feb 2026 — Vocabulary Self-Healing + Wallet Extraction Kickoff
+
+**1) Vocab self-healing loop.**
+- `_harvest_vocab` now folds `search_events` queries into the fuzzy-correction vocabulary — but ONLY queries that scored well WITHOUT a spelling correction (`corrected: None`, `result_count >= 3`, retyped `>= 2 times`). This prevents misspellings like `kindel` from bleeding into the vocab and short-circuiting their own correction.
+- New admin endpoint `POST /api/admin/search/vocab-refresh` invalidates the in-process cache and rebuilds — returns `{vocab_size}`. Wired to a "Grow vocab" button on `/admin/search-insights` (with sonner toast).
+- New arq weekly cron `cron_refresh_search_vocab` runs Sundays 03:00 UTC to keep the vocabulary fresh automatically. Newly-common brand names in shopper queries become correction targets on their own.
+- `clear_vocab_cache()` helper for programmatic refreshes.
+
+**2) Wallet route extraction — pattern established.**
+- Created `routers/wallet.py` — first real extraction of a wallet handler out of server.py.
+- Pattern: module-level `_state` dict populated via a `wire(db=...)` call from server.py at startup. `_TICKER_CACHE` moved into the router module. `include_router(router, prefix="/api")` after `api_router` registration.
+- Lifted **`GET /api/wallet/ticker`** as the pilot. Verified: extracted route serves the ticker payload, `GET /api/wallet` (still in server.py) untouched.
+- **server.py: 8027 → 7954 lines** (−73). 12 wallet routes still remain plus orders/pickup/health — the pattern is now proven so future turns can lift them one at a time without redesigning the plumbing.
+
+**Tests**: 38/38 pass. 3 new in `test_vocab_and_wallet_split.py` cover vocab-refresh auth/response and the extracted ticker route staying public+well-shaped.
+
+
+
 ### Feb 2026 — Recent Searches + Search Analytics + Server-Split Groundwork
 
 **1) Recent Searches (localStorage).**

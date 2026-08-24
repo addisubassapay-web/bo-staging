@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import api from "@/lib/api";
-import { Search as SearchIcon, TrendingUp, AlertTriangle, RefreshCcw } from "lucide-react";
+import { toast } from "sonner";
+import { Search as SearchIcon, TrendingUp, AlertTriangle, RefreshCcw, Sparkles } from "lucide-react";
 
 const WINDOWS = [
   { label: "24h", hours: 24 },
@@ -65,6 +66,22 @@ export default function AdminSearchInsights() {
             data-testid="admin-search-refresh"
           >
             <RefreshCcw className={`h-3 w-3 ${loading ? "animate-spin" : ""}`} /> Refresh
+          </button>
+          <button
+            type="button"
+            onClick={async () => {
+              try {
+                const r = await api.post("/admin/search/vocab-refresh");
+                toast.success(`Vocabulary refreshed · ${r.data.vocab_size.toLocaleString()} words`);
+              } catch {
+                toast.error("Vocab refresh failed");
+              }
+            }}
+            className="inline-flex items-center gap-1.5 rounded-full bg-[#FF211F] text-white px-3 h-8 text-xs font-medium hover:bg-[#e01d1b]"
+            data-testid="admin-search-vocab-refresh"
+            title="Rebuild the fuzzy-correction vocabulary from the past week of high-signal searches"
+          >
+            <Sparkles className="h-3 w-3" /> Grow vocab
           </button>
         </div>
       </header>

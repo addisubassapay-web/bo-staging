@@ -40,7 +40,14 @@ def _tokenize(s: str) -> List[str]:
 
 async def _harvest_vocab(db, cap: int = 3000) -> set:
     """Cache the top-N most frequent title tokens as our fuzzy-correction
-    vocabulary. Runs once per process (module-level `_vocab` cache)."""
+    vocabulary. Runs once per process (module-level `_vocab` cache).
+
+    Two sources merged:
+      1. Title tokens (frequency-ranked) — the bulk of shopping words.
+      2. Past successful searches from `search_events` (result_count > 0)
+         — self-healing loop that grows the vocab from what real
+         shoppers actually type.
+    """
     global _vocab_cache
     if _vocab_cache is not None:
         return _vocab_cache
@@ -51,10 +58,42 @@ async def _harvest_vocab(db, cap: int = 3000) -> set:
             if len(tok) < 3:
                 continue
             counts[tok] = counts.get(tok, 0) + 1
-    # Take the top-N; add canonical vocab so category terms always exist.
+
+    # Take the top-N title tokens
     top = sorted(counts.items(), key=lambda kv: -kv[1])[:cap]
-    _vocab_cache = set(t for t, _ in top) | _CANONICAL_VOCAB
+    vocab = set(t for t, _ in top) | _CANONICAL_VOCAB
+
+    # Fold in every high-signal search query from the past 90 days. We
+    # ONLY trust queries that scored well WITHOUT a spelling correction —
+    # otherwise misspellings like "kindel" bleed into the vocab and
+    # short-circuit their own correction on the next run.
+    try:
+        async for row in db.search_events.aggregate([
+            {"$match": {
+                "result_count": {"$gte": 3},
+                "query": {"$ne": ""},
+                "corrected": None,  # only queries that were correct as typed
+            }},
+            {"$group": {"_id": "$query", "n": {"$sum": 1}}},
+            {"$match": {"n": {"$gte": 2}}},  # user retyped it at least twice
+            {"$sort": {"n": -1}},
+            {"$limit": 2000},
+        ]):
+            for tok in _tokenize(row.get("_id") or ""):
+                if len(tok) >= 3:
+                    vocab.add(tok)
+    except Exception:  # noqa: BLE001 — collection may not exist yet
+        pass
+
+    _vocab_cache = vocab
     return _vocab_cache
+
+
+def clear_vocab_cache() -> None:
+    """Invalidate the in-memory vocab cache. Called by the scheduled
+    weekly refresh job so newly-added shopping terms take effect."""
+    global _vocab_cache
+    _vocab_cache = None
 
 
 _vocab_cache: Optional[set] = None

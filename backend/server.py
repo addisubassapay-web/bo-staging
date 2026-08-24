@@ -6804,92 +6804,11 @@ async def auto_confirm_nudge_loop():
 
 
 # =========================
-# Live Cash-Out Ticker — anonymized public feed of recent frozen→available
-# releases so quiet-hour visitors see the platform is buzzing. Data source:
-# the same `sale_released` / `dropship_released` tx rows the wallet ledger
-# already writes on delivery confirmation. We anonymize the username to
-# `soph…` (first 4 chars + ellipsis) to protect PII while still feeling
-# real. Cached in-memory 15s to keep the poll cost negligible.
+# Live Cash-Out Ticker — extracted to `routers/wallet.py`
+# (see wire()/include_router below). The route + its 15-second in-process
+# cache both live in that module now; nothing in server.py references
+# them anymore.
 # =========================
-_TICKER_CACHE: Dict[str, Any] = {"at": 0.0, "rows": []}
-
-
-@api_router.get("/wallet/ticker")
-async def wallet_ticker(limit: int = 15, minutes: int = 120):
-    """Anonymized recent-release feed for the header ticker.
-
-    Returns up to `limit` rows (max 30) representing frozen→available
-    releases within the last `minutes` minutes (max 1440). Every payload
-    is opinionated: username masked to `abcd…`, listing title truncated,
-    positive amounts only. No auth required — this is intentionally
-    public social proof.
-    """
-    limit = max(1, min(int(limit or 15), 30))
-    minutes = max(5, min(int(minutes or 120), 1440))
-
-    # 15-second cache — the ticker only refreshes every 30s anyway.
-    now_ts = _now_utc().timestamp()
-    if now_ts - _TICKER_CACHE.get("at", 0) < 15:
-        cached = _TICKER_CACHE.get("rows", [])
-        # Trim to caller-requested limit but keep the fresh cache warm.
-        return cached[:limit]
-
-    cutoff = _now_utc() - timedelta(minutes=minutes)
-    # We want the CREDIT side of the release (positive amount in the
-    # available bucket) — that's the "money hit the seller" event.
-    docs = await db.wallet_txs.find(
-        {
-            "type": {"$in": ["sale_released", "dropship_released"]},
-            "bucket": {"$ne": "frozen"},
-            "amount": {"$gt": 0},
-            "created_at": {"$gte": cutoff},
-        },
-        {"_id": 0, "user_id": 1, "amount": 1, "created_at": 1, "description": 1, "related_id": 1},
-    ).sort("created_at", -1).limit(limit).to_list(limit)
-
-    user_ids = list({d["user_id"] for d in docs if d.get("user_id")})
-    users_by_id: Dict[str, dict] = {}
-    if user_ids:
-        async for u in db.users.find({"id": {"$in": user_ids}}, {"_id": 0, "id": 1, "username": 1}):
-            users_by_id[u["id"]] = u
-
-    def mask(name: Optional[str]) -> str:
-        if not name:
-            return "someone"
-        base = name.split("@")[0]
-        return (base[:4] + "…") if len(base) > 4 else base
-
-    def _to_aware(dt):
-        if isinstance(dt, str):
-            try:
-                dt = datetime.fromisoformat(dt.replace("Z", "+00:00"))
-            except Exception:
-                return None
-        if isinstance(dt, datetime) and dt.tzinfo is None:
-            dt = dt.replace(tzinfo=timezone.utc)
-        return dt
-
-    rows: List[dict] = []
-    now = _now_utc()
-    for d in docs:
-        u = users_by_id.get(d.get("user_id"), {})
-        created = _to_aware(d.get("created_at"))
-        ago_min = int((now - created).total_seconds() / 60) if created else 0
-        # Strip the "Released: " / "Auto-released ..." prefix in descriptions
-        # so the ticker line reads clean.
-        desc = (d.get("description") or "").split(":", 1)
-        title = desc[-1].strip() if len(desc) > 1 else desc[0]
-        title = (title[:40] + "…") if len(title) > 40 else title
-        rows.append({
-            "seller_masked": mask(u.get("username")),
-            "amount": round(float(d.get("amount", 0.0)), 2),
-            "ago_min": ago_min,
-            "listing_title": title,
-        })
-
-    _TICKER_CACHE["at"] = now_ts
-    _TICKER_CACHE["rows"] = rows
-    return rows
 
 
 async def _dispatch_auto_confirm(hours: int, dry_run: bool = False) -> dict:
@@ -7550,6 +7469,14 @@ async def robots_txt(request: Request):
 
 
 app.include_router(api_router)
+
+# --- Extracted routers ---------------------------------------------------
+# Each of these modules lives in `routers/` and reaches back for the DB
+# handle (and other shared refs) via a small `wire(...)` call so we don't
+# have circular imports. Keep new extractions grouped here.
+from routers import wallet as _wallet_ext_router  # noqa: E402
+_wallet_ext_router.wire(db=db)
+app.include_router(_wallet_ext_router.router, prefix="/api")
 
 
 # =========================

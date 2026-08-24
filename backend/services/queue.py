@@ -404,6 +404,23 @@ async def cron_best_sellers_rotation(ctx: dict) -> dict:
     return await refresh_all_users(db)
 
 
+async def cron_refresh_search_vocab(ctx: dict) -> dict:
+    """Weekly arq cron — self-heal the fuzzy-correction vocabulary.
+
+    Blows the in-process cache and re-harvests it. The rebuild folds in
+    every high-signal search query (>= 3 hits, retyped >= 2 times) so
+    brand names and shopping terms that only appear in descriptions —
+    or nowhere in the catalog yet — become correction targets. This is
+    what turns "kindle" into "kindle" AND "quantumfiber" into a live
+    correction target after enough shoppers ask for it.
+    """
+    from services.product_search import clear_vocab_cache, _harvest_vocab
+    db = _db()
+    clear_vocab_cache()
+    vocab = await _harvest_vocab(db)
+    return {"vocab_size": len(vocab)}
+
+
 # --- Worker settings -----------------------------------------------------
 from arq import cron
 
@@ -415,6 +432,9 @@ class WorkerSettings:
         cron(cron_run_saved_seeds, hour=9, minute=0, run_at_startup=False),
         # Weekly on Monday at 08:00 UTC — best sellers rotation / demotion.
         cron(cron_best_sellers_rotation, weekday="mon", hour=8, minute=0, run_at_startup=False),
+        # Weekly on Sunday at 03:00 UTC — refresh search vocabulary from
+        # the past week's high-signal queries.
+        cron(cron_refresh_search_vocab, weekday="sun", hour=3, minute=0, run_at_startup=False),
     ]
     redis_settings = _redis_settings()
     max_jobs = 5
