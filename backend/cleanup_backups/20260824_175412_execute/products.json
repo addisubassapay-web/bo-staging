@@ -1,0 +1,18 @@
+[
+  {
+    "_id": "6a8c834c6321906e8c004c1d",
+    "sku": "B00FORCE2AA19A",
+    "category": null,
+    "created_at": "2026-08-24T17:45:48.735000",
+    "currency": "USD",
+    "description": "",
+    "id": "f2703cab-6a6e-4b4a-ab0c-dddaf714d734",
+    "images": [],
+    "in_stock": true,
+    "is_active": true,
+    "price": 1.23,
+    "source_url": "https://amazon.com/dp/FORCEBG",
+    "title": "Force queue",
+    "updated_at": "2026-08-24T17:45:48.735000"
+  }
+]

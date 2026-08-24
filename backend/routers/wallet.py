@@ -78,6 +78,9 @@ async def wallet_ticker(
             "bucket": {"$ne": "frozen"},
             "amount": {"$gt": 0},
             "created_at": {"$gte": cutoff},
+            # Storefront guardrail: e2e testing agents create TEST_p52 sales
+            # that would otherwise dominate this public feed.
+            "description": {"$not": {"$regex": r"TEST_"}},
         },
         {"_id": 0, "user_id": 1, "amount": 1, "created_at": 1,
          "description": 1, "related_id": 1},

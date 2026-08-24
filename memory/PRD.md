@@ -24,6 +24,25 @@ Full-stack ecommerce marketplace **Merchari-global** — same color scheme (`#FF
 
 ---
 
+### Feb 2026 — Storefront Guardrails Against Test-Data Pollution
+
+**Bug**: `/search` (marketplace) showed "1,195 items" — every visible tile was `TEST_p52 34eab0 · $40` from `e2e_seller_*` accounts that had regenerated since the last cleanup. The homepage cash-outs ticker leaked `TEST_p52 34eab0 · +$40 · 33m ago`. `/products` had a "Force queue · $1.23" tile from a background-queue regression test. Root cause: my last cleanup pass ran once; there was nothing at the API layer stopping testing agents from regenerating pollution between sweeps.
+
+**Fix — permanent API-level filters + one-time sweep:**
+- New `services/storefront_filter.py` defines three shared regex filters (test titles, test SKUs, test usernames) as the single source of truth.
+- `_build_listings_query` in server.py appends `{title: {$not: /^(TEST_|Follow Notif Test|FOLLOW NOTIF TEST)/}}` and `{seller_name: {$not: /^e2e_/}}` to its `$nor` clause — this hides test rows from `/api/listings`, `/api/listings/count`, and every seller-store listing feed unconditionally.
+- `/api/products` list + categories endpoints now merge in `product_test_filter()` (excludes `B00(TEST|SYNC|ASY|FORCE|BIG)*` SKUs).
+- `/api/wallet/ticker` in `routers/wallet.py` excludes `wallet_txs` whose description contains `TEST_`.
+- Re-ran `scripts/cleanup_test_data.py --execute` — swept 16 listings, 43 users, 16 stores, 17 orders, 58 wallet_txs, 77 notifications, 14 ingest jobs, 1 product ("Force queue"), 4 verification tokens, 2 favorites, 1 file. All backed up first to `/app/backend/cleanup_backups/20260824_175412_execute/`.
+
+**Verified**:
+- `/api/listings/count` → 1,179 (was 1,195). Zero `TEST_` occurrences on `/search`. Real inventory in the "Newest" sort: BIODANCE, Crocs, Assassin's Creed PS5.
+- `/api/products` → 4,568 (was 4,569 with "Force queue"). Every category still sums to the total.
+- `/api/wallet/ticker` → 0 rows (only test releases existed in the window; production data will refill it organically).
+- 5 new regression tests in `test_storefront_guardrails.py` lock the filters at each affected endpoint. **43/43 backend tests pass.**
+
+
+
 ### Feb 2026 — Vocabulary Self-Healing + Wallet Extraction Kickoff
 
 **1) Vocab self-healing loop.**

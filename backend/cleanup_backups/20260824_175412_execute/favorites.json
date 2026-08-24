@@ -1,0 +1,16 @@
+[
+  {
+    "_id": "6a8c7d03003e63bf22d605ee",
+    "id": "219866e8-fd35-4155-86f5-135da5acc609",
+    "user_id": "9afb4db3-e82d-4951-b5a7-789277de7ddd",
+    "listing_id": "6d92c2c1-7893-468e-b029-0051b76e0461",
+    "created_at": "2026-08-24T17:18:59.209000"
+  },
+  {
+    "_id": "6a8c7d03003e63bf22d605f0",
+    "id": "c20e078c-7994-4b87-91ac-1a80dd34036f",
+    "user_id": "9afb4db3-e82d-4951-b5a7-789277de7ddd",
+    "listing_id": "e9b24274-6aea-497e-afb3-3f4a2537d6dc",
+    "created_at": "2026-08-24T17:18:59.680000"
+  }
+]

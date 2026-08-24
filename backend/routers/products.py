@@ -422,9 +422,14 @@ async def list_products(
     badge on the tile) unless `in_stock_only=true` is passed. To keep the
     catalog scannable, the default sort demotes OOS items to the end so a
     fresh visitor lands on real inventory, not restock candidates.
+
+    Regression-test artefacts (SKUs matching the reserved test-prefix
+    pattern) are excluded server-side so a leaked webhook payload never
+    reaches the storefront.
     """
+    from services.storefront_filter import product_test_filter
     db = get_db()
-    filt: Dict[str, Any] = {}
+    filt: Dict[str, Any] = dict(product_test_filter())
     if active_only:
         filt["is_active"] = True
     if in_stock_only:
@@ -482,8 +487,9 @@ async def product_category_counts(
     stays stable across ingests.
     """
     from services.product_category import CANONICAL_CATEGORIES
+    from services.storefront_filter import product_test_filter
     db = get_db()
-    filt: Dict[str, Any] = {}
+    filt: Dict[str, Any] = dict(product_test_filter())
     if active_only:
         filt["is_active"] = True
     if in_stock_only:

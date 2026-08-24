@@ -893,6 +893,11 @@ def _build_listings_query(
         {"source_url": {"$regex": r"toscrape\.com", "$options": "i"}},
         {"source_url": {"$regex": r"scrape\.me", "$options": "i"}},
         {"source_url": {"$regex": r"quotes\.toscrape", "$options": "i"}},
+        # Storefront guardrail: regression-test artefacts. Testing agents
+        # re-create `e2e_seller_*` accounts with `TEST_p52 *` listings; we
+        # keep them out of every public listing feed unconditionally.
+        {"title": {"$regex": r"^(TEST_|Follow Notif Test|FOLLOW NOTIF TEST)"}},
+        {"seller_name": {"$regex": r"^e2e_"}},
     ]
     and_clauses: list = []
     if q:

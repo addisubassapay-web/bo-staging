@@ -1,0 +1,50 @@
+[
+  {
+    "_id": "6a8c7ca8003e63bf22d60570",
+    "id": "0454ec3a-7469-4e6d-9a48-654d100c19ce",
+    "user_id": "246f21f9-0ddc-41af-8319-58f1636e006f",
+    "kind": "email",
+    "token": "FyOi5uy_CB35IGlyI2E8t8eQCZlB6cXy",
+    "target": "e2e_ver3_1787591847098@example.com",
+    "used": true,
+    "attempts": 0,
+    "expires_at": "2026-08-24T18:17:28.396000",
+    "created_at": "2026-08-24T17:17:28.396000"
+  },
+  {
+    "_id": "6a8c7caa003e63bf22d60573",
+    "id": "549f7888-78ed-40a0-a9d0-97c50f26bf9c",
+    "user_id": "246f21f9-0ddc-41af-8319-58f1636e006f",
+    "kind": "phone",
+    "token": "803414",
+    "target": "+15551230000",
+    "used": true,
+    "attempts": 0,
+    "expires_at": "2026-08-24T17:27:30.526000",
+    "created_at": "2026-08-24T17:17:30.526000"
+  },
+  {
+    "_id": "6a8c7d36003e63bf22d605f4",
+    "id": "801720d5-0564-4218-9b95-5414b7b5b9d9",
+    "user_id": "7248a889-16d0-4a21-9f7e-a58c10718811",
+    "kind": "email",
+    "token": "vBoD9TgP1tyLAptIq5nJvT4FovCR61Cw",
+    "target": "e2e_sellerdoc_1787591989788@example.com",
+    "used": true,
+    "attempts": 0,
+    "expires_at": "2026-08-24T18:19:50.984000",
+    "created_at": "2026-08-24T17:19:50.984000"
+  },
+  {
+    "_id": "6a8c7d39003e63bf22d605f7",
+    "id": "c1ad1f81-991e-4e22-8b9c-64869dc40723",
+    "user_id": "7248a889-16d0-4a21-9f7e-a58c10718811",
+    "kind": "phone",
+    "token": "589436",
+    "target": "+15551234567",
+    "used": true,
+    "attempts": 0,
+    "expires_at": "2026-08-24T17:29:53.431000",
+    "created_at": "2026-08-24T17:19:53.431000"
+  }
+]
