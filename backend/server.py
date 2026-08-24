@@ -298,7 +298,7 @@ class Order(BaseModel):
     # cost from their wallet) before fulfillment can start. Auto-cancels
     # after `pickup_deadline` if the seller never accepts.
     fulfillment_status: Literal[
-        "pending_pickup", "picked", "shipped", "delivered",
+        "pending_pickup", "picking", "picked", "shipped", "delivered",
         "auto_cancelled", "cancelled"
     ] = "pending_pickup"
     pickup_deadline: Optional[datetime] = None
@@ -1418,15 +1418,21 @@ async def pickup_quote(order_id: str, user: dict = Depends(get_current_user)):
 @api_router.post("/orders/{order_id}/pickup", response_model=Order)
 async def pickup_order(
     order_id: str,
-    payload: dict = Body(default={}),
+    payload: dict = Body(default={}),   # kept for backwards compat; body is now ignored
     user: dict = Depends(get_current_user),
 ):
     """Seller accepts the order and pays the wholesale cost from their wallet.
 
-    Body: `{"use_frozen": bool}`. If use_frozen is true, we pull from frozen
-    first (up to 75% of the balance) and fall back to available for the
-    remainder. Otherwise we pull only from available. Insufficient funds →
-    HTTP 402 with `deposit_needed`.
+    Auto-split (Feb 2026): the platform decides where the money comes from.
+    * If `available >= cost` — the entire cost is debited from available.
+    * Else — `available` is exhausted first, then the shortfall is drawn
+      from frozen (capped at 75% of the seller's frozen balance).
+    * If `available + 0.75*frozen < cost` — returns HTTP 402 with a
+      `deposit_needed` amount so the UI can route the seller to /wallet.
+
+    Concurrency: uses a `findOneAndUpdate` sentinel to atomically flip
+    `pending_pickup → picking` so two concurrent pickup calls on the same
+    order can't both slip past the balance check.
     """
     order = await db.orders.find_one({"id": order_id}, {"_id": 0})
     if not order:
@@ -1450,12 +1456,27 @@ async def pickup_order(
     if deadline and deadline < now:
         raise HTTPException(410, "Pickup window expired — order has been auto-cancelled")
 
+    # Atomically claim the order — only one concurrent request can flip
+    # pending_pickup → picking. This prevents a race where two /pickup
+    # calls both read `available` before either wallet debit lands.
+    claim = await db.orders.find_one_and_update(
+        {"id": order_id, "fulfillment_status": "pending_pickup"},
+        {"$set": {"fulfillment_status": "picking", "picking_started_at": now}},
+        return_document=False,  # return the pre-update doc; None means someone else won
+    )
+    if not claim:
+        # Another request is already handling this order (or it's not pending anymore).
+        raise HTTPException(409, "Pickup already in progress for this order")
+
     cost = float(order.get("reseller_wholesale_cost") or 0.0)
-    # New (Feb 2026 refinement): frozen reinvest is AUTOMATIC and only when
-    # available cannot cover the full pickup cost. The seller can no longer
-    # opt-in to frozen when they have enough available — this keeps their
-    # frozen earnings safely in escrow whenever possible. If available < cost
-    # we use ALL available first, then top up from frozen (capped at 75%).
+
+    async def _release_claim():
+        """Roll the sentinel back to pending_pickup on any failure path."""
+        await db.orders.update_one(
+            {"id": order_id, "fulfillment_status": "picking"},
+            {"$set": {"fulfillment_status": "pending_pickup"},
+             "$unset": {"picking_started_at": ""}},
+        )
 
     seller_row = await db.users.find_one(
         {"id": order["seller_id"]},
@@ -1475,6 +1496,7 @@ async def pickup_order(
             paid_frozen = round(cost - available, 2)
             if paid_frozen > frozen_usable:
                 # Frozen 75% cap can't cover the shortfall either.
+                await _release_claim()
                 max_pay = round(available + frozen_usable, 2)
                 raise HTTPException(
                     402,
@@ -1489,29 +1511,34 @@ async def pickup_order(
                     },
                 )
 
-        # Debit frozen first (if any), then available. Both use the ledger
-        # so wallet_txs stays reconciled.
-        if paid_frozen > 0:
-            await ledger.apply_entry(
-                db,
-                user_id=order["seller_id"],
-                delta=-paid_frozen,
-                tx_type="wholesale_debit",
-                description=f"Pick & Deliver (frozen reinvest): {order.get('listing_title','order')}",
-                related_id=order_id,
-                frozen=True,
-                require_available=True,
-            )
-        if paid_available > 0:
-            await ledger.apply_entry(
-                db,
-                user_id=order["seller_id"],
-                delta=-paid_available,
-                tx_type="wholesale_debit",
-                description=f"Pick & Deliver: {order.get('listing_title','order')}",
-                related_id=order_id,
-                require_available=True,
-            )
+        # Debit frozen first (if any), then available. Any ledger failure
+        # rolls the sentinel back so the seller can retry cleanly.
+        try:
+            if paid_frozen > 0:
+                await ledger.apply_entry(
+                    db,
+                    user_id=order["seller_id"],
+                    delta=-paid_frozen,
+                    tx_type="wholesale_debit",
+                    description=f"Pick & Deliver (frozen reinvest): {order.get('listing_title','order')}",
+                    related_id=order_id,
+                    frozen=True,
+                    require_available=True,
+                )
+            if paid_available > 0:
+                await ledger.apply_entry(
+                    db,
+                    user_id=order["seller_id"],
+                    delta=-paid_available,
+                    tx_type="wholesale_debit",
+                    description=f"Pick & Deliver: {order.get('listing_title','order')}",
+                    related_id=order_id,
+                    require_available=True,
+                )
+        except Exception:
+            await _release_claim()
+            raise
+    # -- end wholesale debit block --
 
     updates = {
         "fulfillment_status": "picked",
@@ -2253,7 +2280,7 @@ async def admin_list_users(_admin: dict = Depends(require_admin)):
 
 @api_router.put("/admin/users/{user_id}")
 async def admin_update_user(user_id: str, updates: dict, _admin: dict = Depends(require_admin)):
-    allowed = {"role", "is_active", "bio", "avatar", "resell_markup_override"}
+    allowed = {"role", "is_active", "bio", "avatar", "resell_markup_override", "seller_status"}
     filtered: dict = {}
     for k, v in updates.items():
         if k not in allowed:

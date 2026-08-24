@@ -24,6 +24,30 @@ Full-stack ecommerce marketplace **Merchari-global** — same color scheme (`#FF
 
 ---
 
+### Feb 2026 — Pickup Workflow Verified End-to-End + Concurrency Hardening
+- **Backend testing agent iteration 52** ran the full 15-test regression suite against the live preview backend — **15/15 passed (100%)**. Every rule from the product spec is behaving as designed. Regression tests live at `/app/backend/tests/test_iteration52_pickup_workflow.py`.
+- **Concurrency guard added**: pickup endpoint now uses `findOneAndUpdate({fulfillment_status:'pending_pickup'}, {$set:{fulfillment_status:'picking'}})` sentinel to serialise concurrent /pickup calls per order — two concurrent requests can no longer both read `available` before either debit lands. Added `"picking"` to the `fulfillment_status` Literal. Any 402 / ledger failure automatically rolls the sentinel back to `pending_pickup`.
+- **Pickup docstring updated**: removed stale `Body: {use_frozen}` reference — body is ignored (auto-split is fully automatic).
+- **Admin allowlist**: `PUT /api/admin/users/{id}` now accepts `seller_status` so admins can approve sellers directly via the API (was only settable via Mongo before).
+
+**Confirmed working per spec** (from iteration 52 report):
+- T1 Order → `pending_pickup` + `pickup_deadline` from settings; seller in-app notification typed 'sale' with "New order — Pick & Deliver" title
+- T2 Pickup-quote `will_use_available` / `will_use_frozen` split preview accurate
+- T3 Available-only pickup: $100 avail, $30 cost → `paid_from_available=30, paid_from_frozen=0`
+- T4 Mixed pickup: $10 avail + $100 frozen, $40 cost → `paid_from_available=10, paid_from_frozen=30`
+- T5 Frozen 75% cap enforced → HTTP 402 with `deposit_needed`
+- T6 Insufficient (Available + 75%×Frozen < cost) → HTTP 402 with correct `deposit_needed`
+- T7 Expired pickup_deadline → HTTP 410
+- T8 Only seller can pickup → HTTP 403 for buyer/others
+- T9 Double pickup → HTTP 400
+- T10 Escrow: buyer's payment sits in seller's frozen bucket (`sale_frozen` tx) until delivery
+- T11 Admin nudge stamps `nudged_at`, increments `nudge_count`, appends to `pickup_events`
+- T12 Store pending-pickups admin-only (403 for non-admin)
+- T13 Ledger reconciliation: two `wholesale_debit` rows (available + frozen buckets) sum to -cost
+- T14 Fulfillment transitions clean: `pending_pickup → picked`
+- T15 `settings.pickup_deadline_hours=24` → new orders get ~24h deadline
+
+
 ### Feb 2026 — Store Health Sparkline
 - **Backend**: nightly `store_health_sweep_loop` now `$push`es a `{date, score, tier}` entry into a bounded `users.health_history[]` (`$slice: -30`), populated for both branches of the sweep (poor & non-poor).
 - **On-the-fly backfill** via new `_get_or_backfill_health_history(seller_id, days)` helper: when a seller has fewer than 2 stored entries, the endpoint runs 30 parallel O(days) trailing-window queries via `asyncio.gather` so the sparkline has data on day one. Days without any resolved orders return `{score: null, tier: "no_data"}` so gaps stay honest.

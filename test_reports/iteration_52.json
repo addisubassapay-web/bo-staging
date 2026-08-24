@@ -1,0 +1,52 @@
+{
+  "summary": "Iteration 52 — End-to-end verified the Seller Order Acceptance / Wholesale Debit / Frozen Reinvest workflow. 15/15 backend tests pass against the live preview backend (https://apify-catalog.preview.emergentagent.com). All rules from the review request are behaving as designed: order placement stamps fulfillment_status=pending_pickup + pickup_deadline (driven by settings.pickup_deadline_hours), the pickup-quote endpoint returns correct auto-split preview, POST /pickup with empty body debits available first then frozen (capped at 75%), 402 with deposit_needed on shortfall, 410 on expired deadline, 403 on wrong seller, 400 on double pickup, escrow lands in the frozen bucket (sale_frozen tx), admin nudge stamps order + emits notification/event, and store pending-pickups is admin-gated.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/orders/{id}/pickup docstring", "issue": "Docstring at server.py ~L1425 still says 'Body: {\"use_frozen\": bool}' but the body is now ignored — auto-split is fully automatic. Update docstring to match implementation."},
+      {"endpoint": "PUT /api/admin/users/{id}", "issue": "Allowlist at server.py:2256 accepts only {role, is_active, bio, avatar, resell_markup_override}. The review request implies seller_status can be set via this endpoint, but seller_status is silently dropped. Tests worked around it via direct Mongo write. Consider adding seller_status to the allowlist so admins can approve sellers via the API."}
+    ]
+  },
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_iteration52_pickup_workflow.py",
+    "/app/test_reports/pytest/iter52_pickup.xml"
+  ],
+  "verified_behaviors": [
+    "T1 order placement: buyer with funded wallet buys → order.fulfillment_status='pending_pickup', pickup_deadline set (~48h default), reseller_wholesale_cost=source cost, seller gets in-app notification typed 'sale' with title starting 'New order — Pick & Deliver'.",
+    "T2 GET /orders/{id}/pickup-quote: returns will_use_available=cost / will_use_frozen=0 when available>=cost; returns will_use_available=available / will_use_frozen=cost-available when available<cost; affordable_from_available and affordable_with_frozen flags match.",
+    "T3 Available-only pickup: seller with $100 available and $0 frozen buys $30 cost → HTTP 200, paid_from_available=30, paid_from_frozen=0, reseller_paid_wholesale=true, picked_up_at set, wallet_balance dropped by 30.",
+    "T4 Mixed pickup: seller with $10 available + $100 frozen (plus this-sale escrow) on $40 cost → paid_from_available=10, paid_from_frozen=30, available→0, frozen decreased by 30.",
+    "T5 Frozen 75% cap: cost $80 with frozen ~$106 (100 seed + tiny escrow, kept below 75%*frozen<cost via retail=$6) → HTTP 402 code=insufficient_funds with deposit_needed>0.",
+    "T6 Insufficient: avail=5 frozen=10+escrow, cost=30 → HTTP 402 with deposit_needed>0 and available=5.",
+    "T7 Expired deadline: backdate pickup_deadline in Mongo, POST /pickup → HTTP 410 'expired'.",
+    "T8 Only seller can pickup: buyer + unrelated user → both HTTP 403.",
+    "T9 Double pickup: second POST /pickup → HTTP 400 'already picked'.",
+    "T10 Escrow: wallet_txs row for the seller exists with type='sale_frozen', bucket='frozen', amount == order.seller_earnings.",
+    "T11 Admin nudge: POST /api/admin/orders/{id}/nudge → ok:true; order gets nudged_at + nudge_count incremented + pickup_events entry {type:'admin_nudge'}.",
+    "T12 Store pending-pickups: admin gets 200 with the seller's pending order in the list; non-admin gets 403.",
+    "T13 Ledger reconciliation mixed: exactly two wholesale_debit wallet_txs rows exist (buckets={available,frozen}), amounts sum to -cost.",
+    "T14 Transitions: /orders?role=seller shows fulfillment_status='pending_pickup' pre-pickup and 'picked' post-pickup.",
+    "T15 pickup_deadline_hours setting: PUT /api/admin/settings pickup_deadline_hours=24 → next order has deadline ~24h in the future (test asserts 20 < delta_h < 30). Setting restored after test."
+  ],
+  "action_items": [
+    "(Optional) Update pickup_order docstring to remove stale 'Body: {use_frozen: bool}' description — the body is ignored now.",
+    "(Optional) Add 'seller_status' to the admin_update_user allowlist so admins can approve sellers via PUT /api/admin/users/{id} — currently only settable via Mongo."
+  ],
+  "critical_code_review_comments": [
+    "server.py is 8024 lines — well over the recommended 700-line limit. Route modules for wholesale/pickup, admin, orders should be split out. Ongoing bloat carried over from prior iterations.",
+    "server.py:1426 — pickup_order docstring is stale (still references use_frozen body). The implementation correctly ignores it, but the mismatch is a maintenance trap.",
+    "server.py:1477 raise HTTPException(402) — nice, but the endpoint reads wallet balances fresh with find_one and then debits via ledger.apply_entry. There's a small race window: two concurrent /pickup calls on the same order could both read available before either debit lands. The `require_available=True` guard in ledger.apply_entry prevents actual overdraft (Mongo $gte guarded $inc), but the `paid_from_available` recorded on the order might not match reality if the second debit falls back onto frozen. Recommend wrapping the pickup transition in a `findOneAndUpdate({fulfillment_status:'pending_pickup'}, {$set:{fulfillment_status:'locking'}})` sentinel to serialize pickup attempts per order.",
+    "Design consideration: sale escrow (seller_earnings) is credited to seller frozen at checkout time, so at pickup the seller's frozen bucket already includes THIS order's escrow. The 75% cap lets a seller effectively spend up to 75% of the buyer's own escrow on the same order's source cost. If the buyer disputes/refunds later, the seller has already consumed that escrow and refund reconciliation gets complex. Consider excluding the current order's own sale_frozen credit from the frozen_usable base at pickup time, or documenting this bootstrapping explicitly."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration52_pickup_workflow.py"
+  ],
+  "success_rate": {"backend": "100% (15/15)", "frontend": "n/a"},
+  "test_credentials": "admin@mercari.local / admin123 (from /app/memory/test_credentials.md). Fresh users registered per test via POST /api/auth/register with unique e2e_p52_<ts>_<hex>@example.com / pass1234.",
+  "seed_data_creation": "Every test creates its own fresh seller (registered, elevated to role=seller via admin PUT, seller_status='approved' set via direct Mongo write since the admin endpoint does not accept seller_status), fresh buyer, and one TEST_p52 listing (Mongo-patched with base_price + source_url so reseller_wholesale_cost computes non-zero). Wallets seeded via POST /api/admin/users/{id}/wallet-adjust bucket=available|frozen. No cleanup on purpose — every entity is uniquely timestamped so state accumulates harmlessly and each run is isolated.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Test file /app/backend/tests/test_iteration52_pickup_workflow.py is a full regression suite for the pickup workflow. Key gotchas for future authors: (1) PUT /api/admin/users/{id} allowlist does NOT include seller_status — set it via Mongo. (2) At checkout, seller_earnings is escrowed to the seller's frozen bucket, so tests with cost near frozen_usable must keep retail price low or account for inflation. (3) POST /api/orders/{id}/pickup body is ignored — use_frozen flag has been removed. (4) Pickup endpoint reads pickup_deadline from Mongo on every call; backdating via direct Mongo write is safe for expiry tests. (5) MongoDB Atlas cluster is `merchari_global` — production data mixed with test data uses the TEST_ prefix on listings, no other cleanup necessary. (6) wallet_txs fields are `type` (not tx_type) and `amount` (not delta) plus `bucket`.",
+  "rca of the issue": "N/A — no bugs to reproduce. Two docstring/API-surface polish items were identified during testing and are listed under minor backend issues + action items."
+}
