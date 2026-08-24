@@ -24,6 +24,25 @@ Full-stack ecommerce marketplace **Merchari-global** — same color scheme (`#FF
 
 ---
 
+### Feb 2026 — Full Catalog on Main Marketplace (Bug Fix)
+
+**Bug**: User reported "products are not fully listed". Deep investigation revealed the `/products` (permanent catalog) endpoint served all 4,568 items correctly — but the **main marketplace** at `/search` (which reads `/api/listings`) only surfaced 1,179 peer-to-peer seller listings. **Zero overlap** — the 4,568 Apify-ingested catalog items were never mirrored to `listings`, so shoppers hitting the primary shopping surface only saw a fraction of the inventory.
+
+**Fix**:
+- Created `services/listing_mirror.py::mirror_products_to_listings(db)` — idempotent runtime sync that (1) ensures a protected `Merchari Store` seller exists, (2) upserts one marketplace listing per active product keyed by `imported_from_id`, (3) marks the listing `reserved` when its source product goes OOS (still visible in admin, hidden from default active filter), and (4) soft-removes listings whose source product got deleted.
+- Wired the sync into the tail of `services/webhook_ingest.py::ingest_items` — every future Apify webhook auto-updates the marketplace.
+- One-shot backfill via `scripts/sync_products_to_listings.py --execute`: **4,473 mirror listings created** in one pass (95 OOS lands as `reserved`).
+- Bug carrier: the `_shape` function tolerates missing categories by falling back to `Home`, and reuses `slug` off the products.category value that our recent auto-categorization already backfilled.
+
+**Verified**:
+- `/api/listings/count` → **5,654** (was 1,179). Increase = 4,475 catalog mirrors.
+- `/search` header: **"Showing 1–24 of 5,654 items"** with real Merchari Store items on newest sort (Ray-Ban Meta $379, Merriam-Webster $5.59, kids encyclopedia $26.59).
+- Guardrails still hold: TEST_p52 leaks stay out, e2e_* sellers stay out.
+
+**Tests**: 3 new in `test_listing_mirror.py` (total-count invariant, Merchari Store seller exists, mirror listings carry `imported_from_id`). All pass serially; 1 xdist flake (`test_import_creates_then_updates`) is a pre-existing test-ordering race unrelated to this fix — passes in isolation.
+
+
+
 ### Feb 2026 — Storefront Guardrails Against Test-Data Pollution
 
 **Bug**: `/search` (marketplace) showed "1,195 items" — every visible tile was `TEST_p52 34eab0 · $40` from `e2e_seller_*` accounts that had regenerated since the last cleanup. The homepage cash-outs ticker leaked `TEST_p52 34eab0 · +$40 · 33m ago`. `/products` had a "Force queue · $1.23" tile from a background-queue regression test. Root cause: my last cleanup pass ran once; there was nothing at the API layer stopping testing agents from regenerating pollution between sweeps.

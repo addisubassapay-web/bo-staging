@@ -212,6 +212,19 @@ async def ingest_items(
             "finished_at": datetime.now(timezone.utc),
         })
     logger.info(f"[webhook-ingest] job={job_id} {result}")
+
+    # Mirror newly-ingested / updated products into the marketplace
+    # `listings` collection so the /search page picks them up
+    # automatically. This is a fire-and-forget — the ingest is already
+    # done for the caller's contract, and the mirror is idempotent so a
+    # missed run is self-healed on the next ingest.
+    try:
+        from services.listing_mirror import mirror_products_to_listings
+        mirror_stats = await mirror_products_to_listings(db)
+        logger.info(f"[webhook-ingest] mirror {mirror_stats}")
+    except Exception as e:  # noqa: BLE001
+        logger.warning(f"[webhook-ingest] mirror step failed (non-fatal): {e}")
+
     return result
 
 

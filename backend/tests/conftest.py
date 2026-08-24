@@ -31,6 +31,9 @@ def _purge() -> None:
 
 @pytest.fixture(autouse=True, scope="session")
 def _wipe_webhook_test_products():
-    _purge()
+    # Only purge at session END so parallel xdist workers don't wipe each
+    # other's test products mid-run. On a fresh CI box this leaves the
+    # test artefacts until the end of the whole suite, at which point
+    # every worker joins the cleanup.
     yield
     _purge()
