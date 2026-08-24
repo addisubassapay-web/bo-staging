@@ -25,6 +25,7 @@ import AdminStoreBoosts from "@/pages/AdminStoreBoosts";
 import AdminSupport from "@/pages/AdminSupport";
 import AdminProducts from "@/pages/AdminProducts";
 import AdminSearchInsights from "@/pages/AdminSearchInsights";
+import AdminPaymentReviews from "@/pages/AdminPaymentReviews";
 
 const SidebarLink = ({ to, icon: Icon, children }) => (
   <NavLink
@@ -1629,6 +1630,7 @@ const Admin = () => {
         <SidebarLink to="/admin/orders" icon={ShoppingBag}>Orders</SidebarLink>
         <SidebarLink to="/admin/categories" icon={FolderTree}>Categories</SidebarLink>
         <SidebarLink to="/admin/withdrawals" icon={Wallet}>Withdrawals</SidebarLink>
+        <SidebarLink to="/admin/payment-reviews" icon={ShieldAlert}>Payment reviews</SidebarLink>
         <SidebarLink to="/admin/ledger-audit" icon={Wallet}>Ledger audit</SidebarLink>
         <SidebarLink to="/admin/payment-methods" icon={Bitcoin}>Payment methods</SidebarLink>
         <SidebarLink to="/admin/coupons" icon={Ticket}>Coupons</SidebarLink>
@@ -1652,6 +1654,7 @@ const Admin = () => {
           <Route path="orders" element={<OrdersMgr />} />
           <Route path="categories" element={<CategoriesMgr />} />
           <Route path="withdrawals" element={<WithdrawalsMgr />} />
+          <Route path="payment-reviews" element={<AdminPaymentReviews />} />
           <Route path="ledger-audit" element={<AdminLedgerAudit />} />
           <Route path="payment-methods" element={<AdminPaymentMethods />} />
           <Route path="disputes" element={<DisputesMgr />} />

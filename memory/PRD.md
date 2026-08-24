@@ -96,6 +96,27 @@ Full-stack ecommerce marketplace **Mercari-Global** — same color scheme (`#FF2
 
 **Fix**:
 - New `scripts/dedupe_products_and_listings.py` runs three passes:
+
+### Feb 2026 — Admin Payment Reviews Queue
+
+**Consolidated inbox** for all human-decision cash-flow work in one place — `/admin/payment-reviews`.
+
+**Backend `GET /api/admin/payment-reviews`** returns three sections in a single call:
+- `pending_deposits`: fresh top-up submissions (resubmit_count = 0)
+- `resubmitted_deposits`: previously rejected top-ups now re-uploaded — prioritized first because the buyer already waited once
+- `stuck_escrow`: paid orders where funds are trapped past the auto-release window (either the seller missed the pickup deadline OR the carrier delivered but the buyer never confirmed and the auto-release job hasn't fired)
+
+Each row carries an **SLA badge** (`fresh` < 30 min, `attention` < 2 h, `urgent` < 12 h, `overdue` > 12 h; escrow uses a relaxed 1h / 24h / 72h scale). Resubmit rows anchor SLA age at the resubmit timestamp, not the original submission, so an admin who slept on a resubmit sees it clearly. Response is capped at 200 rows per section.
+
+**Frontend `<AdminPaymentReviews>`**:
+- Sidebar entry ("Payment reviews", `ShieldAlert` icon) under Withdrawals.
+- Four gradient summary cards: pending / resubmitted / stuck / total.
+- Rows show amount, method badge, SLA badge, resubmit chip, user name, reference, previous rejection note.
+- Inline actions: Proof (opens screenshot lightbox), Approve (hits existing `/admin/deposits/{id}/approve`), Reject (prompts for reason, hits `/reject`), Nudge (for stuck escrow, hits `/orders/{id}/nudge-buyer`).
+- Auto-refreshes every 30 s and manually via a Refresh button. Empty state shows "Inbox zero".
+
+**Tests**: `tests/test_admin_payment_reviews.py` (4 cases: 401/403 for non-admins, response shape, pending appearance with SLA, resubmitted row moves to correct section). All pass.
+
   1. `products`: group by `title`, keep newest, repoint every `listings.imported_from_id` to the survivor before deleting the rest.
   2. `listings` (same-seller): group by `(title, seller_id)`, keep newest.
   3. `listings` (cross-seller): if a peer seller already lists the title, soft-remove the Merchari Store mirror.

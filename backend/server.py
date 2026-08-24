@@ -4032,6 +4032,168 @@ async def resubmit_rejected_deposit(
 
 
 # =========================
+# ADMIN PAYMENT REVIEWS QUEUE
+# =========================
+def _sla_badge(age_min: float, thresholds: tuple[int, int, int] = (30, 120, 720)) -> dict:
+    """Return an SLA severity bucket for a work item.
+
+    Defaults (in minutes):
+      * fresh     — < 30m  (green)
+      * attention — 30m-2h (amber)
+      * urgent    — 2h-12h (orange)
+      * overdue   — > 12h  (red)
+    """
+    fresh, attention, urgent = thresholds
+    if age_min < fresh:
+        return {"tier": "fresh",     "label": "Fresh",     "color": "green",  "age_min": round(age_min, 1)}
+    if age_min < attention:
+        return {"tier": "attention", "label": "Attention", "color": "amber",  "age_min": round(age_min, 1)}
+    if age_min < urgent:
+        return {"tier": "urgent",    "label": "Urgent",    "color": "orange", "age_min": round(age_min, 1)}
+    return {"tier": "overdue",       "label": "Overdue",   "color": "red",    "age_min": round(age_min, 1)}
+
+
+def _minutes_since(ts) -> float:
+    if not ts:
+        return 0.0
+    if isinstance(ts, str):
+        try:
+            ts = datetime.fromisoformat(ts.replace("Z", "+00:00"))
+        except Exception:
+            return 0.0
+    if ts.tzinfo is None:
+        ts = ts.replace(tzinfo=timezone.utc)
+    return max(0.0, (datetime.now(timezone.utc) - ts).total_seconds() / 60.0)
+
+
+@api_router.get("/admin/payment-reviews")
+async def admin_payment_reviews(_admin: dict = Depends(require_admin)):
+    """Unified inbox for admin cash-flow review work. Consolidates:
+
+      * Pending top-up deposits (first-time submissions)
+      * Resubmitted deposits (previously rejected, now re-uploaded)
+      * Stuck escrow orders (funds frozen past the auto-release window)
+
+    Every row gets an SLA badge (fresh/attention/urgent/overdue) computed from
+    its age so admins can attack the oldest work first. Response is capped
+    at 200 rows per section — anyone hitting that ceiling should file a
+    follow-up backend task."""
+
+    # ---- 1. Deposits (pending) split by resubmit vs first-submission ----
+    dep_docs = await db.deposits.find(
+        {"status": "pending"}, {"_id": 0}
+    ).sort("created_at", 1).to_list(400)
+
+    pending_deposits: list[dict] = []
+    resubmitted_deposits: list[dict] = []
+    for d in dep_docs:
+        # For resubmits, SLA age starts from the last resubmit — admins should
+        # respond fast because the user already waited once.
+        anchor = d.get("resubmitted_at") if (d.get("resubmit_count") or 0) > 0 else d.get("created_at")
+        age = _minutes_since(anchor)
+        row = {
+            "id": d["id"],
+            "amount": float(d.get("amount") or 0.0),
+            "method": d.get("method"),
+            "currency": d.get("currency"),
+            "reference": d.get("reference"),
+            "note": d.get("note"),
+            "user_id": d.get("user_id"),
+            "user_name": d.get("user_name"),
+            "screenshot_url": d.get("screenshot_url"),
+            "resubmit_count": int(d.get("resubmit_count") or 0),
+            "admin_note": d.get("admin_note"),
+            "submitted_at": (d.get("resubmitted_at") or d.get("created_at")),
+            "sla": _sla_badge(age),
+            "deep_link": f"/admin/deposits/{d['id']}",
+        }
+        if (d.get("resubmit_count") or 0) > 0:
+            resubmitted_deposits.append(row)
+        else:
+            pending_deposits.append(row)
+
+    # ---- 2. Stuck escrow: paid orders whose funds haven't released. ----
+    #
+    # An order is "stuck" when:
+    #   * fulfillment_status is `picked` or `shipped` (or `delivered` from carrier)
+    #   * shipping_delivered_at is set (carrier said "delivered") AND the auto-
+    #     release cutoff has passed but funds are still frozen, OR
+    #   * pickup_deadline has passed and seller never accepted (seller MIA).
+    #
+    # We surface both flavours with distinct SLA anchors so admins can nudge
+    # the right party.
+    now = datetime.now(timezone.utc)
+    settings = await db.settings.find_one({"id": "public"}, {"_id": 0, "release_after_hours": 1}) or {}
+    release_after_h = int(settings.get("release_after_hours") or 72)
+    release_cutoff = now - timedelta(hours=release_after_h)
+
+    stuck_docs = await db.orders.find(
+        {
+            "status": "paid",
+            "$or": [
+                # Carrier-delivered but buyer never confirmed and auto-release
+                # hasn't yet fired (usually a job hiccup).
+                {
+                    "fulfillment_status": {"$in": ["shipped", "delivered", "picked"]},
+                    "shipping_delivered_at": {"$lte": release_cutoff},
+                    "delivered_at": None,
+                },
+                # Seller never accepted a Pick & Deliver order — buyer's money
+                # is trapped in escrow with no one working the pickup.
+                {
+                    "fulfillment_status": "pending_pickup",
+                    "pickup_deadline": {"$lte": now},
+                },
+            ],
+        },
+        {
+            "_id": 0, "id": 1, "buyer_id": 1, "seller_id": 1, "listing_title": 1,
+            "amount": 1, "seller_earnings": 1, "fulfillment_status": 1,
+            "shipping_delivered_at": 1, "pickup_deadline": 1, "created_at": 1,
+        },
+    ).sort("shipping_delivered_at", 1).to_list(200)
+
+    stuck_escrow: list[dict] = []
+    for o in stuck_docs:
+        # Anchor age at whichever milestone should have unblocked the money.
+        if o.get("fulfillment_status") == "pending_pickup":
+            anchor = o.get("pickup_deadline")
+            reason = "Seller missed pickup deadline"
+        else:
+            anchor = o.get("shipping_delivered_at")
+            reason = "Delivered but buyer hasn't confirmed"
+        age = _minutes_since(anchor)
+        stuck_escrow.append({
+            "id": o["id"],
+            "listing_title": o.get("listing_title"),
+            "amount": float(o.get("amount") or 0.0),
+            "seller_earnings": float(o.get("seller_earnings") or 0.0),
+            "buyer_id": o.get("buyer_id"),
+            "seller_id": o.get("seller_id"),
+            "fulfillment_status": o.get("fulfillment_status"),
+            "stuck_reason": reason,
+            "stuck_since": anchor,
+            "sla": _sla_badge(age, thresholds=(60, 24 * 60, 72 * 60)),  # relaxed for escrow
+            "deep_link": f"/admin/orders/{o['id']}",
+        })
+
+    return {
+        "generated_at": now,
+        "counts": {
+            "pending_deposits": len(pending_deposits),
+            "resubmitted_deposits": len(resubmitted_deposits),
+            "stuck_escrow": len(stuck_escrow),
+            "total": len(pending_deposits) + len(resubmitted_deposits) + len(stuck_escrow),
+        },
+        "pending_deposits": pending_deposits,
+        "resubmitted_deposits": resubmitted_deposits,
+        "stuck_escrow": stuck_escrow,
+    }
+
+
+
+
+# =========================
 # DROPSHIP / IMPORT
 # =========================
 class ImportPayload(BaseModel):
