@@ -13,6 +13,7 @@ import ShippingTracker from "@/components/ShippingTracker";
 import DigestCard from "@/components/DigestCard";
 import EmailPreferences from "@/components/EmailPreferences";
 import AutoConfirmCountdown from "@/components/AutoConfirmCountdown";
+import PickupOrderDialog from "@/components/PickupOrderDialog";
 
 const BADGE_STEPS = [
   { key: "new", label: "New", threshold: { sales: 0, rating: 0 } },
@@ -501,6 +502,34 @@ const Profile = () => {
                     </div>
                   </div>
                   <ShippingTracker orderId={o.id} canPurchase canAdvance />
+                  {o.fulfillment_status === "pending_pickup" && (
+                    <div
+                      className="mt-3 flex items-center justify-between gap-3 flex-wrap bg-red-50 border border-red-200 rounded-lg px-3 py-2"
+                      data-testid={`pickup-cta-${o.id}`}
+                    >
+                      <div className="text-xs text-red-900">
+                        <span className="font-semibold">New order awaiting pickup.</span>{" "}
+                        Pay the source cost{" "}
+                        <span className="font-semibold">{formatPrice(o.reseller_wholesale_cost || 0)}</span>{" "}
+                        to start delivery. Auto-cancels if not accepted in time.
+                      </div>
+                      <PickupOrderDialog
+                        orderId={o.id}
+                        onPicked={() => {
+                          // Refresh sales after successful pickup
+                          api.get("/orders", { params: { role: "seller" } }).then((r) => setSales(r.data));
+                        }}
+                      />
+                    </div>
+                  )}
+                  {o.fulfillment_status === "auto_cancelled" && (
+                    <div
+                      className="mt-3 bg-neutral-50 border border-neutral-200 rounded-lg px-3 py-2 text-xs text-neutral-600"
+                      data-testid={`pickup-cancelled-${o.id}`}
+                    >
+                      This order was auto-cancelled because you didn&apos;t accept within the pickup window. The buyer has been refunded.
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

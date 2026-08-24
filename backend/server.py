@@ -293,6 +293,19 @@ class Order(BaseModel):
     reseller_paid_wholesale: bool = False
     reinvest_funded_amount: float = 0.0  # portion of wholesale funded via wallet Reinvest advance
     reinvest_funded_at: Optional[datetime] = None
+    # Seller-pickup flow (Feb 2026): after a buyer places an order, the
+    # seller must explicitly "pick and deliver" (which debits the wholesale
+    # cost from their wallet) before fulfillment can start. Auto-cancels
+    # after `pickup_deadline` if the seller never accepts.
+    fulfillment_status: Literal[
+        "pending_pickup", "picked", "shipped", "delivered",
+        "auto_cancelled", "cancelled"
+    ] = "pending_pickup"
+    pickup_deadline: Optional[datetime] = None
+    picked_up_at: Optional[datetime] = None
+    paid_from_available: float = 0.0    # portion of wholesale paid from user's available balance
+    paid_from_frozen: float = 0.0       # portion paid from frozen balance (max 75% of frozen usable)
+    auto_cancelled_at: Optional[datetime] = None
     # Storefront Push attribution — set when the buyer arrived via a shared link.
     share_ref: Optional[str] = None
     push_reward_amount: float = 0.0
@@ -1119,11 +1132,16 @@ async def create_order(payload: OrderCreate, user: dict = Depends(get_current_us
                 affiliate_user_id = affiliate_link["affiliate_user_id"]
 
     # Dropship / Reseller wholesale flow ---------------------------------
+    # NEW (Feb 2026 seller-pickup flow): compute wholesale cost for EVERY
+    # listing (not just imported ones) but DO NOT debit it here. The seller
+    # must explicitly "Pick and Deliver" — see POST /api/orders/{id}/pickup.
     dropship_source_seller_id = None
     dropship_source_earnings = 0.0
     reseller_wholesale_cost = 0.0
-    reseller_paid_wholesale = False
+    reseller_paid_wholesale = False  # flipped True by the pickup endpoint
+
     if listing.get("imported_from_id") and listing.get("base_price"):
+        # P2P dropship — Alice reselling Bob's listing.
         original = await db.listings.find_one({"id": listing["imported_from_id"]}, {"_id": 0, "seller_id": 1})
         if original and original.get("seller_id"):
             dropship_source_seller_id = original["seller_id"]
@@ -1133,31 +1151,30 @@ async def create_order(payload: OrderCreate, user: dict = Depends(get_current_us
                 badge = compute_seller_badge(reseller_user)
                 discounts = settings.get("resell_wholesale_discounts") or {"new": 0.0, "bronze": 5.0, "silver": 10.0, "gold": 15.0}
                 discount_pct = float(discounts.get(badge, 0.0))
-                wholesale_cost = round(retail_base * (1 - discount_pct / 100.0), 2)
-                # Route the wholesale charge through the unified ledger.
-                try:
-                    await ledger.apply_entry(
-                        db,
-                        user_id=listing["seller_id"],
-                        delta=-wholesale_cost,
-                        tx_type="wholesale_debit",
-                        description=f"Wholesale cost × {quantity}: {listing['title']}",
-                        related_id="pending",
-                        require_available=True,
-                    )
-                    reseller_paid_wholesale = True
-                    reseller_wholesale_cost = wholesale_cost
-                    dropship_source_earnings = wholesale_cost
-                except ledger.InsufficientFunds:
-                    dropship_source_earnings = retail_base
+                reseller_wholesale_cost = round(retail_base * (1 - discount_pct / 100.0), 2)
+                dropship_source_earnings = reseller_wholesale_cost
             else:
                 dropship_source_earnings = retail_base
+                reseller_wholesale_cost = retail_base
+    elif listing.get("source_url"):
+        # External-supplier listing (e.g. sourced from an Amazon catalog product).
+        # Cost = the catalog price when we can look it up, otherwise fall back
+        # to the listing's declared base_price if the seller stored one.
+        cat = None
+        if listing.get("imported_from_id"):
+            cat = await db.products.find_one({"id": listing["imported_from_id"]}, {"_id": 0, "price": 1})
+        if not cat:
+            cat = await db.products.find_one({"source_url": listing["source_url"]}, {"_id": 0, "price": 1})
+        if cat and cat.get("price"):
+            reseller_wholesale_cost = round(float(cat["price"]) * quantity, 2)
+        elif listing.get("base_price"):
+            reseller_wholesale_cost = round(float(listing["base_price"]) * quantity, 2)
+    # Pure P2P listings (seller's own inventory, no source_url, no import) →
+    # reseller_wholesale_cost stays 0 — seller still has to "pick" but no
+    # wallet debit occurs.
 
-    # Reseller earnings — if wholesale was pre-paid from wallet, they keep amount - fees.
-    if reseller_paid_wholesale:
-        seller_earnings = round(amount - platform_fee - affiliate_earnings, 2)
-    else:
-        seller_earnings = round(amount - platform_fee - affiliate_earnings - dropship_source_earnings, 2)
+    # Seller earnings: retail - fees - source_seller cut (if any).
+    seller_earnings = round(amount - platform_fee - affiliate_earnings - dropship_source_earnings, 2)
     if seller_earnings < 0:
         seller_earnings = 0.0
 
@@ -1202,6 +1219,8 @@ async def create_order(payload: OrderCreate, user: dict = Depends(get_current_us
         payment_method=method,
         payment_currency=(payload.payment_currency or None),
         estimated_delivery_at=datetime.now(timezone.utc) + timedelta(days=int(settings.get("delivery_days_estimate", 7))),
+        fulfillment_status="pending_pickup",
+        pickup_deadline=datetime.now(timezone.utc) + timedelta(hours=int(settings.get("pickup_deadline_hours", 48))),
     )
     await db.orders.insert_one(order.model_dump())
     await db.listings.update_one({"id": listing["id"]}, {"$set": {"status": "sold"}})
@@ -1237,9 +1256,18 @@ async def create_order(payload: OrderCreate, user: dict = Depends(get_current_us
 
     # Notifications
     eta_days = int(settings.get("delivery_days_estimate", 7))
-    await notify(listing["seller_id"], "sale", f"You sold {listing['title']}!",
-                 f"Earnings ${seller_earnings:.2f} are held until the buyer confirms delivery (est. {eta_days} days).",
-                 f"/listing/{listing['id']}")
+    pickup_hours = int(settings.get("pickup_deadline_hours", 48))
+    if reseller_wholesale_cost > 0:
+        seller_headline = f"New order — Pick & Deliver ${reseller_wholesale_cost:.2f}"
+        seller_body = (
+            f"You have {pickup_hours}h to accept and pay the source cost "
+            f"(${reseller_wholesale_cost:.2f}). Your profit: ${max(0.0, seller_earnings):.2f}."
+        )
+    else:
+        seller_headline = f"New order — please pick and deliver"
+        seller_body = f"{listing['title']}. Accept within {pickup_hours}h to keep the sale."
+    await notify(listing["seller_id"], "sale", seller_headline, seller_body,
+                 f"/profile?tab=orders&pickup={order.id}")
     await notify(user["id"], "order", f"Order placed: {listing['title']}",
                  f"You paid ${amount + shipping_fee:.2f} · arrives in ~{eta_days} days",
                  f"/profile?tab=orders")
@@ -1249,11 +1277,6 @@ async def create_order(payload: OrderCreate, user: dict = Depends(get_current_us
         await notify(dropship_source_seller_id, "sale",
                      f"Dropship sale: {listing['title']}",
                      f"Earnings ${dropship_source_earnings:.2f} are held until delivery is confirmed.", None)
-    if reseller_paid_wholesale and reseller_wholesale_cost > 0:
-        await notify(listing["seller_id"], "wallet",
-                     f"Wholesale ${reseller_wholesale_cost:.2f} debited",
-                     f"Auto-paid to the source seller for: {listing['title']}",
-                     "/wallet")
 
     # Storefront Push reward — first share-attributed sale ever for this seller earns a small bonus.
     if payload.share_ref == "push" and seller_earnings > 0:
@@ -1316,6 +1339,209 @@ async def nudge_buyer_confirm(order_id: str, user: dict = Depends(get_current_us
     )
     await notify(order["buyer_id"], "order", title, body, f"/profile?tab=orders")
     return {"ok": True, "nudged_at": now.isoformat()}
+
+
+# --- Seller Pick & Deliver flow ------------------------------------------
+# The Feb 2026 flow: after a buyer places an order, the seller must
+# explicitly accept it and pay the source cost from their wallet before
+# fulfillment starts. If they lack funds, they can top up the wallet or
+# tap into up to 75% of their frozen earnings.
+
+FROZEN_USABLE_PCT = 0.75  # sellers can reinvest at most 75% of frozen balance
+
+
+@api_router.get("/orders/{order_id}/pickup-quote")
+async def pickup_quote(order_id: str, user: dict = Depends(get_current_user)):
+    """Preview what accepting this order costs — used by the pickup modal.
+
+    Returns cost, seller profit, current wallet balances, how much of
+    frozen is reinvestable (75% cap), whether the seller can afford the
+    order with available-only, and how much they'd still need to deposit."""
+    order = await db.orders.find_one({"id": order_id}, {"_id": 0})
+    if not order:
+        raise HTTPException(404, "Order not found")
+    if order.get("seller_id") != user["id"] and user.get("role") != "admin":
+        raise HTTPException(403, "Only the seller can accept this order")
+
+    cost = float(order.get("reseller_wholesale_cost") or 0.0)
+    profit = float(order.get("seller_earnings") or 0.0)
+    seller_row = await db.users.find_one({"id": order["seller_id"]},
+                                         {"_id": 0, "wallet_balance": 1, "wallet_frozen_balance": 1})
+    available = round(float((seller_row or {}).get("wallet_balance") or 0.0), 2)
+    frozen = round(float((seller_row or {}).get("wallet_frozen_balance") or 0.0), 2)
+    frozen_usable = round(frozen * FROZEN_USABLE_PCT, 2)
+
+    now = datetime.now(timezone.utc)
+    deadline = order.get("pickup_deadline")
+    if isinstance(deadline, str):
+        try:
+            deadline = datetime.fromisoformat(deadline.replace("Z", "+00:00"))
+        except Exception:
+            deadline = None
+    if deadline and deadline.tzinfo is None:
+        deadline = deadline.replace(tzinfo=timezone.utc)
+    hours_left = max(0.0, round((deadline - now).total_seconds() / 3600, 1)) if deadline else None
+
+    max_pay = round(available + frozen_usable, 2)
+    return {
+        "order_id": order_id,
+        "listing_title": order.get("listing_title"),
+        "cost": cost,
+        "profit": profit,
+        "quantity": order.get("quantity", 1),
+        "wallet": {"available": available, "frozen": frozen, "frozen_usable": frozen_usable},
+        "affordable_from_available": available >= cost,
+        "affordable_with_frozen": max_pay >= cost,
+        "deposit_needed": max(0.0, round(cost - max_pay, 2)),
+        "fulfillment_status": order.get("fulfillment_status") or "pending_pickup",
+        "pickup_deadline": deadline.isoformat() if deadline else None,
+        "hours_left": hours_left,
+    }
+
+
+@api_router.post("/orders/{order_id}/pickup", response_model=Order)
+async def pickup_order(
+    order_id: str,
+    payload: dict = Body(default={}),
+    user: dict = Depends(get_current_user),
+):
+    """Seller accepts the order and pays the wholesale cost from their wallet.
+
+    Body: `{"use_frozen": bool}`. If use_frozen is true, we pull from frozen
+    first (up to 75% of the balance) and fall back to available for the
+    remainder. Otherwise we pull only from available. Insufficient funds →
+    HTTP 402 with `deposit_needed`.
+    """
+    order = await db.orders.find_one({"id": order_id}, {"_id": 0})
+    if not order:
+        raise HTTPException(404, "Order not found")
+    if order.get("seller_id") != user["id"] and user.get("role") != "admin":
+        raise HTTPException(403, "Only the seller can accept this order")
+    if order.get("fulfillment_status") not in (None, "pending_pickup"):
+        raise HTTPException(400, f"Order already {order.get('fulfillment_status')}")
+    if order.get("status") in ("cancelled",):
+        raise HTTPException(400, "Order has been cancelled")
+
+    now = datetime.now(timezone.utc)
+    deadline = order.get("pickup_deadline")
+    if isinstance(deadline, str):
+        try:
+            deadline = datetime.fromisoformat(deadline.replace("Z", "+00:00"))
+        except Exception:
+            deadline = None
+    if deadline and deadline.tzinfo is None:
+        deadline = deadline.replace(tzinfo=timezone.utc)
+    if deadline and deadline < now:
+        raise HTTPException(410, "Pickup window expired — order has been auto-cancelled")
+
+    cost = float(order.get("reseller_wholesale_cost") or 0.0)
+    use_frozen = bool(payload.get("use_frozen", False))
+
+    seller_row = await db.users.find_one(
+        {"id": order["seller_id"]},
+        {"_id": 0, "wallet_balance": 1, "wallet_frozen_balance": 1},
+    ) or {}
+    available = round(float(seller_row.get("wallet_balance") or 0.0), 2)
+    frozen = round(float(seller_row.get("wallet_frozen_balance") or 0.0), 2)
+    frozen_usable = round(frozen * FROZEN_USABLE_PCT, 2)
+
+    paid_frozen = 0.0
+    paid_available = 0.0
+    if cost > 0:
+        if use_frozen:
+            paid_frozen = round(min(frozen_usable, cost), 2)
+            paid_available = round(cost - paid_frozen, 2)
+        else:
+            paid_available = cost
+
+        if paid_available > available:
+            max_pay = available + (frozen_usable if use_frozen else 0.0)
+            raise HTTPException(
+                402,
+                detail={
+                    "code": "insufficient_funds",
+                    "cost": cost,
+                    "available": available,
+                    "frozen": frozen,
+                    "frozen_usable": frozen_usable,
+                    "used_frozen": use_frozen,
+                    "deposit_needed": round(cost - max_pay, 2),
+                    "message": "Deposit more or tick 'use frozen balance too' to fund this pickup.",
+                },
+            )
+
+        # Debit frozen first (if any), then available. Both use the ledger
+        # so wallet_txs stays reconciled.
+        if paid_frozen > 0:
+            await ledger.apply_entry(
+                db,
+                user_id=order["seller_id"],
+                delta=-paid_frozen,
+                tx_type="wholesale_debit",
+                description=f"Pick & Deliver (frozen reinvest): {order.get('listing_title','order')}",
+                related_id=order_id,
+                frozen=True,
+                require_available=True,
+            )
+        if paid_available > 0:
+            await ledger.apply_entry(
+                db,
+                user_id=order["seller_id"],
+                delta=-paid_available,
+                tx_type="wholesale_debit",
+                description=f"Pick & Deliver: {order.get('listing_title','order')}",
+                related_id=order_id,
+                require_available=True,
+            )
+
+    updates = {
+        "fulfillment_status": "picked",
+        "reseller_paid_wholesale": cost > 0,
+        "paid_from_available": paid_available,
+        "paid_from_frozen": paid_frozen,
+        "picked_up_at": now,
+    }
+    await db.orders.update_one({"id": order_id}, {"$set": updates})
+
+    # Notify buyer
+    await notify(
+        order["buyer_id"], "order",
+        f"Seller accepted your order",
+        f"{order.get('listing_title','Your order')} has been picked up for delivery.",
+        f"/profile?tab=orders",
+    )
+
+    updated = await db.orders.find_one({"id": order_id}, {"_id": 0})
+    return Order(**updated)
+
+
+@api_router.get("/seller/orders/pending-pickup")
+async def seller_pending_pickups(user: dict = Depends(get_current_user)):
+    """List all orders on this seller's account that still need pickup.
+
+    Used by the seller's dashboard "Pending pickup" widget."""
+    cursor = db.orders.find(
+        {"seller_id": user["id"], "fulfillment_status": "pending_pickup"},
+        {"_id": 0},
+    ).sort("created_at", 1)
+    rows = await cursor.to_list(length=200)
+    now = datetime.now(timezone.utc)
+    out = []
+    for r in rows:
+        d = r.get("pickup_deadline")
+        if isinstance(d, str):
+            try:
+                d = datetime.fromisoformat(d.replace("Z", "+00:00"))
+            except Exception:
+                d = None
+        if d and d.tzinfo is None:
+            d = d.replace(tzinfo=timezone.utc)
+        r["hours_left"] = max(0.0, round((d - now).total_seconds() / 3600, 1)) if d else None
+        out.append(r)
+    return {"orders": out, "count": len(out)}
+
+
+
 
 
 @api_router.post("/orders/{order_id}/confirm-delivery", response_model=Order)
@@ -5588,6 +5814,71 @@ async def shipping_progress_loop():
         await asyncio.sleep(30)
 
 
+async def pickup_expiry_loop():
+    """Auto-cancel orders whose `pickup_deadline` has elapsed without the
+    seller accepting. Refunds the buyer (the payment sat in escrow — since
+    the seller never picked, no wholesale was debited, so we simply mark
+    the order cancelled + refund the buyer). Runs every 10 minutes."""
+    await asyncio.sleep(20)
+    while True:
+        try:
+            now = datetime.now(timezone.utc)
+            cursor = db.orders.find(
+                {
+                    "fulfillment_status": "pending_pickup",
+                    "pickup_deadline": {"$lte": now},
+                },
+                {"_id": 0},
+            ).limit(50)
+            expired = await cursor.to_list(length=50)
+            for o in expired:
+                # Refund buyer (no wholesale to refund since seller never picked).
+                try:
+                    refund_amount = float(o.get("amount", 0.0)) + float(o.get("shipping_fee", 0.0))
+                    if refund_amount > 0:
+                        await credit_wallet(
+                            o["buyer_id"], refund_amount, "refund",
+                            f"Auto-refund: seller did not accept order in time — {o.get('listing_title','')}",
+                            o["id"],
+                        )
+                    await db.orders.update_one(
+                        {"id": o["id"]},
+                        {"$set": {
+                            "fulfillment_status": "auto_cancelled",
+                            "status": "cancelled",
+                            "auto_cancelled_at": now,
+                        }},
+                    )
+                    # Return the listing to "active" so someone else can buy it.
+                    if o.get("listing_id"):
+                        await db.listings.update_one(
+                            {"id": o["listing_id"], "status": "sold"},
+                            {"$set": {"status": "active"}},
+                        )
+                    # Notify all parties.
+                    await notify(o["buyer_id"], "order",
+                                 f"Refund issued: seller didn't accept",
+                                 f"Your ${refund_amount:.2f} for '{o.get('listing_title','')}' is back in your wallet.",
+                                 "/wallet")
+                    await notify(o["seller_id"], "sale",
+                                 f"Order auto-cancelled",
+                                 f"You didn't accept '{o.get('listing_title','')}' within the pickup window. The buyer was refunded.",
+                                 "/profile?tab=orders")
+                    # Alert admins so they can nudge the seller on the store page.
+                    admin_cursor = db.users.find({"role": "admin"}, {"_id": 0, "id": 1})
+                    async for admin_row in admin_cursor:
+                        await notify(admin_row["id"], "admin",
+                                     f"Order auto-cancelled — seller did not pick",
+                                     f"Order #{o['id'][:8]} was auto-cancelled. Consider urging seller {o.get('seller_name','?')} on their store page.",
+                                     f"/admin/users?q={o.get('seller_id','')}")
+                except Exception as e:
+                    logger.exception(f"pickup_expiry_loop: failed to expire order {o.get('id')}: {e}")
+        except Exception as e:
+            logger.exception(f"pickup_expiry_loop error: {e}")
+        await asyncio.sleep(int(os.environ.get("PICKUP_EXPIRY_INTERVAL_SEC", "600")))
+
+
+
 async def auto_confirm_delivery_loop():
     """Buyer Auto-Confirm — release escrow N days after tracking reports the
     parcel as delivered, if the buyer hasn't manually confirmed. Keeps seller
@@ -6948,6 +7239,7 @@ async def startup():
     asyncio.create_task(escrow_digest_loop())
     asyncio.create_task(auto_confirm_delivery_loop())
     asyncio.create_task(auto_confirm_nudge_loop())
+    asyncio.create_task(pickup_expiry_loop())
     asyncio.create_task(sitemap_ping_sweeper())
 
 

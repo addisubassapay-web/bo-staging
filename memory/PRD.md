@@ -24,6 +24,36 @@ Full-stack ecommerce marketplace **Merchari-global** — same color scheme (`#FF
 
 ---
 
+### Feb 2026 — Seller Pick & Deliver Flow (Manual Fulfillment Gate)
+**Product intent**: after a buyer orders, the seller must explicitly accept the order and pay the source cost from their wallet BEFORE fulfillment starts. Applies to every order/listing. Auto-cancels after 48h if the seller doesn't accept.
+
+**Order model additions** (`Order` in `server.py`):
+- `fulfillment_status`: `pending_pickup | picked | shipped | delivered | auto_cancelled | cancelled`
+- `pickup_deadline`: datetime — set to `created_at + 48h` (tunable via `settings.pickup_deadline_hours`)
+- `paid_from_available` / `paid_from_frozen`: which bucket the wholesale came from
+- `picked_up_at` / `auto_cancelled_at`
+
+**Checkout refactor** (`POST /api/orders`):
+- Wholesale cost is now computed for **every** listing (imported from catalog → `products.price`; P2P dropship → source listing's `base_price`; pure P2P → $0)
+- No more auto-debit at checkout — the wholesale sits pending until the seller picks up
+- Seller notification switched from "You sold X" to "New order — Pick & Deliver $X (48h)" with a deep link to the sales tab
+
+**New endpoints**:
+- `GET /api/orders/{id}/pickup-quote` → `{cost, profit, wallet:{available,frozen,frozen_usable}, affordable_from_available, affordable_with_frozen, deposit_needed, hours_left, pickup_deadline}`
+- `POST /api/orders/{id}/pickup` body `{use_frozen: bool}` → debits from wallet (75% frozen cap when `use_frozen=true`), flips `fulfillment_status=picked`, notifies the buyer. `HTTP 402` with `deposit_needed` if insufficient. `HTTP 410` if past deadline.
+- `GET /api/seller/orders/pending-pickup` → returns `{orders[], count}` with `hours_left` per row
+
+**Background sweep** (`pickup_expiry_loop`, every 10 min): finds orders with `pickup_deadline < now` still in `pending_pickup`, refunds buyer wallet (payment sat in escrow — wholesale was never debited), flips order to `auto_cancelled`, returns the listing to `active`, notifies buyer + seller + all admins.
+
+**Frontend** — new `/app/frontend/src/components/PickupOrderDialog.jsx`:
+- Trigger inside seller Sales tab (`Profile.jsx`) when `order.fulfillment_status === "pending_pickup"` — a red banner with "Pick & Deliver" button
+- Modal shows cost, profit, hours_left, wallet snapshot with 75% frozen cap, "Use frozen balance too" checkbox with clear copy explaining reinvest is delivery-only
+- Insufficient funds → amber banner + "Deposit into wallet →" link
+- Affordable → green banner and enabled "Confirm & pay $X" button
+
+**Verified end-to-end via curl + Playwright**: buy listing → order lands in `pending_pickup` with 48h deadline → seller sees red CTA → dialog opens with correct quote → `POST /pickup use_frozen:true` debits from frozen (`paid_from_frozen: $14.08`, `fulfillment_status: picked`, `reseller_paid_wholesale: true`). Re-picking already-picked order returns 400.
+
+
 ### Feb 2026 — Auto R2 Drain, Admin R2 Card, and Verified-Applicant Trust Boost
 **1. Auto R2 Drain (Apify sync cron)** — `apify_sync.import_from_apify` now spawns `_drain_r2_rehost(db)` via `asyncio.create_task` right after the products upsert completes. The detached task keeps calling the batch rehost (limit=25) until `remaining==0` or a 50-cycle safety cap. Sync endpoint still returns immediately; freshly imported product images stream to R2 in the background with zero admin intervention. Skips itself if `r2_enabled()` is false.
 
