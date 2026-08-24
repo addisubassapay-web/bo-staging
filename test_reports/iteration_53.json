@@ -1,0 +1,30 @@
+{
+  "summary": "Verified Apify webhook receiver behaves correctly after secret rotation. All 8 backend tests passed (3 negative auth, 3 positive auth via header/Bearer/query, idempotent import, /api/listings sanity). The old rotated secret is properly rejected (401) across all three delivery methods; the new secret is accepted; and the ingest is idempotent (2 created on first POST, 2 updated on repeat).",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_webhook_rotation.py",
+    "/app/test_reports/pytest/iteration_53.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "_authorize_webhook uses hmac.compare_digest correctly (constant-time) and fails closed when APIFY_WEBHOOK_SECRET is unset (503). Good.",
+    "products.py is 658 lines — consider splitting normalization helpers into a separate module if it grows further.",
+    "Idempotent upsert keyed on sku/source_url with $setOnInsert for id/created_at is correct — preserves original id + is_active on update."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100%", "frontend": "not tested (skipped per request)"},
+  "test_credentials": "APIFY_WEBHOOK_SECRET (current, valid) = mg-webhook-3613c7c4f62f62677c1eb77a1ef1b07d; OLD (rejected) = mg-webhook-4f9c2b8e13a04d76b8b7c9e5f2a1d8e6",
+  "seed_data_creation": "Two TEST_ prefixed products created via webhook using unique per-run ASINs (B00TEST<hex>A/B). These persist in products collection (permanent by design).",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Webhook secret rotation verified end-to-end. Test suite at /app/backend/tests/test_webhook_rotation.py can be re-run as a regression check any time. /api/listings returned 200 with a valid list. Idempotent import creates on first call and updates on second (asserted via created/updated counts).",
+  "rca of the issue": "N/A — no issues found. Rotation was implemented correctly and the old secret is rejected."
+}
