@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import api from "@/lib/api";
 import { Activity, TrendingUp, Timer, PackageCheck, ShieldAlert, Loader2 } from "lucide-react";
+import HealthSparkline from "@/components/HealthSparkline";
 
 const tierPalette = {
   excellent: { bg: "bg-emerald-50", border: "border-emerald-200", text: "text-emerald-700", label: "Excellent" },
@@ -58,6 +59,13 @@ const StoreHealthCard = () => {
           Faster pickups and higher acceptance = higher trust, more visibility, and fewer auto-cancels.
         </div>
       </div>
+
+      {/* 30-day sparkline */}
+      {Array.isArray(health.history) && health.history.length > 1 && (
+        <div className="pt-1">
+          <HealthSparkline data={health.history} />
+        </div>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div className="rounded-lg bg-white/70 border border-neutral-200 p-3">

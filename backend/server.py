@@ -1558,7 +1558,74 @@ async def seller_store_health(
     Returns response-time and on-time acceptance stats over the last N days.
     Only counts orders whose pickup window has already closed (picked,
     delivered, shipped, or auto_cancelled) so the numbers stay stable."""
-    return await _compute_store_health(user["id"], days=days)
+    health = await _compute_store_health(user["id"], days=days)
+    history = await _get_or_backfill_health_history(user["id"], days=min(days, 30))
+    health["history"] = history
+    return health
+
+
+async def _get_or_backfill_health_history(seller_id: str, *, days: int = 30) -> list[dict]:
+    """Return up to `days` daily entries of `{date, score, tier}`. Prefer
+    the array written by the nightly sweep; if fewer than 2 entries exist
+    we synthesise a per-day rolling 30-day score from orders so the
+    sparkline has something to draw on day one."""
+    row = await db.users.find_one({"id": seller_id}, {"_id": 0, "health_history": 1}) or {}
+    stored = list(row.get("health_history") or [])
+    if len(stored) >= 2:
+        # Trim to the last `days` entries. Stored entries look like
+        # {"date": "YYYY-MM-DD", "score": float, "tier": str}.
+        return stored[-days:]
+
+    # Backfill: for each of the last `days` days compute the trailing
+    # 30-day score based on orders resolved BEFORE that day. This is
+    # O(days) find calls — bounded and cheap (small collection per seller).
+    from asyncio import gather
+
+    now = datetime.now(timezone.utc)
+    async def _score_for_day(offset: int) -> dict:
+        anchor = now - timedelta(days=offset)
+        # Score using the trailing 30d window ending at `anchor`.
+        window_start = anchor - timedelta(days=30)
+        cursor = db.orders.find(
+            {
+                "seller_id": seller_id,
+                "created_at": {"$gte": window_start, "$lte": anchor},
+                "fulfillment_status": {"$in": ["picked", "shipped", "delivered", "auto_cancelled"]},
+            },
+            {"_id": 0, "picked_up_at": 1, "pickup_deadline": 1,
+             "fulfillment_status": 1},
+        )
+        rows = await cursor.to_list(length=5000)
+        total = len(rows)
+        picked = [r for r in rows if r.get("picked_up_at")]
+        on_time = 0
+        for r in picked:
+            pu = r.get("picked_up_at")
+            dl = r.get("pickup_deadline")
+            if isinstance(pu, str):
+                try: pu = datetime.fromisoformat(pu.replace("Z", "+00:00"))
+                except Exception: pu = None
+            if isinstance(dl, str):
+                try: dl = datetime.fromisoformat(dl.replace("Z", "+00:00"))
+                except Exception: dl = None
+            if pu and dl:
+                if pu.tzinfo is None: pu = pu.replace(tzinfo=timezone.utc)
+                if dl.tzinfo is None: dl = dl.replace(tzinfo=timezone.utc)
+                if pu <= dl: on_time += 1
+        if total == 0:
+            return {"date": anchor.date().isoformat(), "score": None, "tier": "no_data"}
+        acc = 100.0 * len(picked) / total
+        ot = (100.0 * on_time / len(picked)) if picked else acc
+        score = round(0.6 * acc + 0.4 * ot, 1)
+        if score >= 90: tier = "excellent"
+        elif score >= 75: tier = "good"
+        elif score >= 50: tier = "at_risk"
+        else: tier = "poor"
+        return {"date": anchor.date().isoformat(), "score": score, "tier": tier}
+
+    # Compute newest-last so the sparkline reads left→right chronologically.
+    results = await gather(*[_score_for_day(i) for i in range(days - 1, -1, -1)])
+    return results
 
 
 async def _compute_store_health(seller_id: str, *, days: int = 30) -> dict:
@@ -1668,6 +1735,12 @@ async def store_health_sweep_loop():
                     ) or {}
                     prev_streak = int(user_row.get("health_poor_streak_days") or 0)
                     tier = health.get("tier")
+                    # Common history entry pushed for both branches.
+                    history_entry = {
+                        "date": now.date().isoformat(),
+                        "score": health.get("score"),
+                        "tier": tier,
+                    }
                     if tier == "poor":
                         new_streak = prev_streak + 1
                         set_updates = {
@@ -1693,18 +1766,28 @@ async def store_health_sweep_loop():
                                 f"7 straight days of 'poor' store health triggered an automatic pause. Improve your acceptance rate and contact support to unpause.",
                                 "/profile?tab=sales",
                             )
-                        await db.users.update_one({"id": sid}, {"$set": set_updates})
+                        # Push history + cap array to last 30 entries.
+                        await db.users.update_one(
+                            {"id": sid},
+                            {
+                                "$set": set_updates,
+                                "$push": {"health_history": {"$each": [history_entry], "$slice": -30}},
+                            },
+                        )
                     else:
                         # Any better tier resets the streak.
                         await db.users.update_one(
                             {"id": sid},
-                            {"$set": {
-                                "health_poor_streak_days": 0,
-                                "health_poor_since": None,
-                                "health_score": health.get("score"),
-                                "health_tier": tier,
-                                "health_scored_at": now,
-                            }},
+                            {
+                                "$set": {
+                                    "health_poor_streak_days": 0,
+                                    "health_poor_since": None,
+                                    "health_score": health.get("score"),
+                                    "health_tier": tier,
+                                    "health_scored_at": now,
+                                },
+                                "$push": {"health_history": {"$each": [history_entry], "$slice": -30}},
+                            },
                         )
                 except Exception as e:
                     logger.warning(f"[health-sweep] failed for seller {sid}: {e}")

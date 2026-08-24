@@ -24,6 +24,14 @@ Full-stack ecommerce marketplace **Merchari-global** — same color scheme (`#FF
 
 ---
 
+### Feb 2026 — Store Health Sparkline
+- **Backend**: nightly `store_health_sweep_loop` now `$push`es a `{date, score, tier}` entry into a bounded `users.health_history[]` (`$slice: -30`), populated for both branches of the sweep (poor & non-poor).
+- **On-the-fly backfill** via new `_get_or_backfill_health_history(seller_id, days)` helper: when a seller has fewer than 2 stored entries, the endpoint runs 30 parallel O(days) trailing-window queries via `asyncio.gather` so the sparkline has data on day one. Days without any resolved orders return `{score: null, tier: "no_data"}` so gaps stay honest.
+- **Endpoint**: `GET /api/seller/store-health` now includes `history: [{date, score, tier}, ...]` in the response.
+- **Frontend `HealthSparkline.jsx`**: inline SVG polyline over 30 daily points, line colour set from the latest point's tier (emerald/blue/amber/red), baseline dashed gridlines at 50 and 80, a highlight dot at the current day. Legend shows current score, trend arrow (`improving`/`declining`/`steady` based on ±3-point delta between first and last non-null), and 30-day min/avg/max.
+- **Card integration**: `StoreHealthCard.jsx` renders the sparkline between the header and the 3-metric grid whenever `history.length > 1`. Verified live for a seed-loaded 30-day rising trajectory: `94 · improving · 30d · min 57.6 · avg 75 · max 94.9`, green line rising left→right with the current dot at the top right. Backfill produced 30 entries with 8 scored days from a real seller's 4 picked orders (score: `60 → 70` end-to-end verified).
+
+
 ### Feb 2026 — Reactivation Onboarding Checklist
 **Product intent**: keep re-suspensions from happening by forcing a 60-second read of the health-recovery guidance the moment a seller is unlocked.
 
