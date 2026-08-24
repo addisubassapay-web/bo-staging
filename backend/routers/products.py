@@ -17,6 +17,7 @@ from __future__ import annotations
 import hmac
 import logging
 import os
+import re
 import uuid
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
@@ -166,10 +167,14 @@ def _extract_sku(item: Dict[str, Any]) -> Optional[str]:
 
 
 def _extract_category(item: Dict[str, Any]) -> Optional[str]:
-    cat = _first(item.get("category"), item.get("categorySlug"), item.get("productCategory"))
-    if isinstance(cat, list) and cat:
-        return str(cat[0])
-    return cat if isinstance(cat, str) else None
+    """Best-effort category resolution.
+
+    Uses the dedicated classifier which prefers Apify's breadCrumbs chain
+    (Amazon's own taxonomy) over ad-hoc keyword matching. Falls back to
+    any existing `category` field, then to a title-keyword scorer.
+    """
+    from services.product_category import classify_product
+    return classify_product(item)
 
 
 def _normalize_product(item: Dict[str, Any]) -> Optional[Dict[str, Any]]:
@@ -208,6 +213,7 @@ def _normalize_product(item: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         "currency": _extract_currency(item),
         "images": _extract_images(item),
         "category": _extract_category(item),
+        "breadcrumbs": (str(item.get("breadCrumbs")) if item.get("breadCrumbs") else None),
         "sku": str(sku) if sku else None,
         "source_url": str(source_url) if source_url else None,
         "in_stock": in_stock,
@@ -425,7 +431,9 @@ async def list_products(
         # the field populated.
         filt["$or"] = [{"in_stock": True}, {"in_stock": {"$exists": False}}]
     if category:
-        filt["category"] = category
+        # Case-insensitive exact match so `?category=electronics` and
+        # `?category=Electronics` both hit the same bucket.
+        filt["category"] = {"$regex": f"^{re.escape(category)}$", "$options": "i"}
     if q:
         filt["title"] = {"$regex": q, "$options": "i"}
 
@@ -449,6 +457,45 @@ async def list_products(
     )
     docs = await cursor.to_list(length=page_size)
     return {"items": docs, "total": total, "page": page, "page_size": page_size}
+
+
+@router.get("/products/categories")
+async def product_category_counts(
+    active_only: bool = Query(default=True),
+    in_stock_only: bool = Query(default=False),
+):
+    """Counts of active products per canonical marketplace category.
+
+    Powers the chip row at the top of `/products` so shoppers see at a
+    glance how many tiles live in each bucket. Categories without any
+    matching product are still included (with count=0) so the row layout
+    stays stable across ingests.
+    """
+    from services.product_category import CANONICAL_CATEGORIES
+    db = get_db()
+    filt: Dict[str, Any] = {}
+    if active_only:
+        filt["is_active"] = True
+    if in_stock_only:
+        filt["$or"] = [{"in_stock": True}, {"in_stock": {"$exists": False}}]
+
+    pipeline = [
+        {"$match": filt},
+        {"$group": {"_id": "$category", "n": {"$sum": 1}}},
+    ]
+    rows = {r["_id"] or "": int(r["n"]) async for r in db.products.aggregate(pipeline)}
+
+    total = await db.products.count_documents(filt)
+    uncategorized = rows.get("", 0)
+    items = [
+        {"name": name, "slug": name.lower(), "count": rows.get(name, 0)}
+        for name in CANONICAL_CATEGORIES
+    ]
+    return {
+        "items": items,
+        "total": total,
+        "uncategorized": uncategorized,
+    }
 
 
 @router.get("/products/{product_id}", response_model=ProductOut)

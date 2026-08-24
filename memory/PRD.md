@@ -24,6 +24,25 @@ Full-stack ecommerce marketplace **Merchari-global** — same color scheme (`#FF
 
 ---
 
+### Feb 2026 — Category Chips + Automated Re-categorisation
+**Problem**: 4,541 of 4,568 permanent products had `category=null` — the marketplace nav promised 10 categories (Women, Men, Kids, Electronics, Home, Beauty, Sports, Toys, Books, Handmade) but shoppers landing on `/products` had no way to filter.
+
+**Fix**:
+- New service `services/product_category.py` — classifier with two signals:
+  1. Amazon's own `breadCrumbs` chain from Apify → 40+ regex rules mapping subtrees to our 10 canonical buckets (Books/Kindle → Books · Baby/Kids → Kids · Beauty & Personal Care → Beauty · Home & Kitchen/Grocery/Pet/Auto → Home · Sports & Outdoors → Sports · Toys & Games → Toys · etc.)
+  2. Title-keyword scorer as fallback (150+ tokens across 10 categories)
+- `_normalize_product` now stores both `category` and `breadcrumbs` on every ingest so future re-runs keep the taxonomy fresh.
+- Backfill script `scripts/categorize_products.py` re-fetched dataset `g5pLGd2OMRI0rm1gD`, joined by SKU/ASIN, and applied both passes. Ran with `--execute`.
+- New endpoint `GET /api/products/categories` → returns `{items: [{name, slug, count}], total, uncategorized}`. Case-insensitive `?category=` filter added so `electronics` and `Electronics` hit the same bucket.
+- Frontend `/products` now renders a scrollable chip row with live counts (**All 4,568 · Home 1,332 · Women 663 · Electronics 636 · Kids 531 · Men 488 · Beauty 394 · Books 187 · Toys 153 · Sports 95 · Handmade 35**) and 54 uncategorized. Tapping a chip filters instantly; tapping again clears. Chips with zero count are dimmed and disabled.
+
+**Results**:
+- **From 4,541 uncategorized → 54** (98.8% classification rate).
+- Products now surface in the right bucket end-to-end: `?category=Electronics` returns Kindle, Nintendo Switch controllers, keyboards, TVs, Kindle Paperwhite; `?category=Books` returns novels and hymnals only. No cross-bucket leaks in spot checks.
+- 6 new regression tests in `tests/test_product_categories.py` covering endpoint shape, count-sum invariant, case-insensitive filter, `in_stock_only` interaction, per-item category correctness, and an uncategorized-tail regression guard.
+
+
+
 ### Feb 2026 — OOS Badge + Storefront Sort Fix
 **Bug**: `/products` storefront advertised "4,568 products" but the first four pages were nothing but "Currently Unavailable" tiles. Root cause: the 93 newly-created out-of-stock items all shared the same freshly-minted `created_at`, so a default `sort by created_at DESC` clustered them at page 1. Shoppers walked away thinking the catalog was broken.
 

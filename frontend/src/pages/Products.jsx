@@ -96,6 +96,7 @@ const Products = () => {
   const [qDraft, setQDraft] = useState(q);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [categoryCounts, setCategoryCounts] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -120,6 +121,25 @@ const Products = () => {
   useEffect(() => {
     load();
   }, [load]);
+
+  // Fetch category counts once — refresh when the in-stock filter flips
+  // because the counts change with `in_stock_only`.
+  useEffect(() => {
+    api
+      .get("/products/categories", {
+        params: inStockOnly ? { in_stock_only: true } : {},
+      })
+      .then((r) => setCategoryCounts(r.data))
+      .catch(() => setCategoryCounts(null));
+  }, [inStockOnly]);
+
+  const setCategory = (next) => {
+    const nextParams = new URLSearchParams(params);
+    if (next) nextParams.set("category", next);
+    else nextParams.delete("category");
+    nextParams.set("page", "1");
+    setParams(nextParams);
+  };
 
   const submitSearch = (e) => {
     e.preventDefault();
@@ -186,6 +206,70 @@ const Products = () => {
           </Button>
         </form>
       </div>
+
+      {/* Category chips — one-tap filter with live counts */}
+      {categoryCounts?.items?.length ? (
+        <div
+          className="mb-6 -mx-1 overflow-x-auto scrollbar-hide"
+          data-testid="products-category-chips"
+        >
+          <div className="flex items-center gap-2 px-1 pb-1">
+            <button
+              type="button"
+              onClick={() => setCategory("")}
+              data-testid="products-chip-all"
+              className={`shrink-0 inline-flex items-center gap-2 rounded-full px-4 h-9 text-sm font-medium border transition ${
+                !category
+                  ? "bg-[#FF211F] text-white border-[#FF211F] shadow-sm"
+                  : "bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200 border-neutral-200 dark:border-neutral-800 hover:border-[#FF211F]/50"
+              }`}
+            >
+              All
+              <span
+                className={`text-[11px] tabular-nums rounded-full px-2 py-0.5 ${
+                  !category
+                    ? "bg-white/25 text-white"
+                    : "bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300"
+                }`}
+              >
+                {(categoryCounts.total ?? 0).toLocaleString()}
+              </span>
+            </button>
+            {categoryCounts.items.map((c) => {
+              const isActive =
+                category.toLowerCase() === c.slug ||
+                category === c.name;
+              return (
+                <button
+                  key={c.slug}
+                  type="button"
+                  onClick={() => setCategory(isActive ? "" : c.name)}
+                  data-testid={`products-chip-${c.slug}`}
+                  disabled={c.count === 0}
+                  className={`shrink-0 inline-flex items-center gap-2 rounded-full px-4 h-9 text-sm font-medium border transition ${
+                    isActive
+                      ? "bg-[#FF211F] text-white border-[#FF211F] shadow-sm"
+                      : c.count === 0
+                        ? "bg-neutral-50 dark:bg-neutral-900/40 text-neutral-400 border-neutral-200 dark:border-neutral-800 cursor-not-allowed"
+                        : "bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200 border-neutral-200 dark:border-neutral-800 hover:border-[#FF211F]/50"
+                  }`}
+                >
+                  {c.name}
+                  <span
+                    className={`text-[11px] tabular-nums rounded-full px-2 py-0.5 ${
+                      isActive
+                        ? "bg-white/25 text-white"
+                        : "bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300"
+                    }`}
+                  >
+                    {c.count.toLocaleString()}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
 
       {loading && !data ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
