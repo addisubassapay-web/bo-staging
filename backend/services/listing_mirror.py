@@ -80,11 +80,22 @@ def _shape(product: dict, seller: dict, cats: Dict[str, dict], now: datetime) ->
 
 
 async def mirror_products_to_listings(db) -> dict:
-    """Idempotent mirror. Returns {created, updated, removed}."""
+    """Idempotent mirror. Returns {created, updated, removed, skipped_peer}."""
     seller = await _ensure_merchari_seller(db)
     cats = await _category_lookup(db)
 
-    products = await db.products.find({"is_active": True}, {"_id": 0}).to_list(50_000)
+    # Exclude regression-test SKUs and titles — the same guardrail we apply
+    # at the public listings endpoint. Without this, running the test
+    # suite would mirror `Test Product 1` and `Async Bulk Item 204`
+    # straight to /search.
+    products = await db.products.find(
+        {
+            "is_active": True,
+            "sku": {"$not": {"$regex": r"^B00(TEST|SYNC|ASY|FORCE|BIG)"}},
+            "title": {"$not": {"$regex": r"^(Test Product|Async Bulk|Sync Test|Force queue|TEST_)"}},
+        },
+        {"_id": 0},
+    ).to_list(50_000)
 
     existing: Dict[str, dict] = {}
     async for d in db.listings.find(
@@ -95,14 +106,31 @@ async def mirror_products_to_listings(db) -> dict:
         if d.get("imported_from_id"):
             existing[d["imported_from_id"]] = d
 
+    # Titles already covered by a peer seller — the mirror never
+    # duplicates those, since peer-owned listings carry trust + variety.
+    peer_titles: set = set()
+    async for l in db.listings.find(
+        {"status": "active", "seller_id": {"$ne": seller["id"]}},
+        {"_id": 0, "title": 1},
+    ):
+        t = (l.get("title") or "").strip().lower()
+        if t:
+            peer_titles.add(t)
+
     now = datetime.now(timezone.utc)
     ops: List[UpdateOne] = []
     created = 0
     updated = 0
+    skipped_peer = 0
 
     for p in products:
         target = _shape(p, seller, cats, now)
         prev = existing.pop(p["id"], None)
+        title_norm = (p.get("title") or "").strip().lower()
+        # A peer seller already lists this — skip the mirror to avoid duplicates.
+        if title_norm and title_norm in peer_titles and not prev:
+            skipped_peer += 1
+            continue
         if prev:
             if (
                 prev.get("price") != target["price"]
@@ -140,4 +168,4 @@ async def mirror_products_to_listings(db) -> dict:
         for i in range(0, len(ops), 500):
             await db.listings.bulk_write(ops[i:i + 500], ordered=False)
 
-    return {"created": created, "updated": updated, "removed": removed}
+    return {"created": created, "updated": updated, "removed": removed, "skipped_peer": skipped_peer}

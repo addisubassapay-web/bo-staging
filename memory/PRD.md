@@ -24,6 +24,26 @@ Full-stack ecommerce marketplace **Merchari-global** — same color scheme (`#FF
 
 ---
 
+### Feb 2026 — Catalog Dedupe + Test-Data Guardrails on the Mirror
+
+**Bugs from screenshots**:
+1. **Repetitive Machu Picchu placeholders** with TEST_p52 titles at $40/$50/$60 on a store page (regression-test artefacts that had leaked past earlier guardrails).
+2. **Duplicate marketplace tiles** — BIODANCE Collagen 2×, Assassin's Creed 2×, NYX Brow Glue 3×. Root cause: (a) the `products` collection had duplicate rows for the same real product (59 collisions), (b) sellers had imported some products multiple times (752 same-seller duplicates), and (c) the mirror sync created a Merchari Store listing even when a peer seller already sold the item (195 cross-seller mirror dupes).
+
+**Fix**:
+- New `scripts/dedupe_products_and_listings.py` runs three passes:
+  1. `products`: group by `title`, keep newest, repoint every `listings.imported_from_id` to the survivor before deleting the rest.
+  2. `listings` (same-seller): group by `(title, seller_id)`, keep newest.
+  3. `listings` (cross-seller): if a peer seller already lists the title, soft-remove the Merchari Store mirror.
+- Updated `services/listing_mirror.py`:
+  - Filters out test SKUs (`^B00(TEST|SYNC|ASY|FORCE|BIG)`) AND test titles (`^(Test Product|Async Bulk|Sync Test|Force queue|TEST_)`) at query time, so running the regression suite never leaks fake products onto `/search`.
+  - Adds a `peer_titles` set — mirror sync now skips products whose titles already have a peer listing, preventing new cross-seller dupes on every future ingest.
+  - Returns a new `skipped_peer` counter for observability.
+
+**Verified**: `/search` header now shows "**Showing 1–24 of 4,716 items**", **0 test-data leaks** on the page, real inventory throughout (Clorox, Baby Einstein, Great Gatsby, Ray-Ban Meta), no visual duplicates. Dedupe removed **997 rows** total: 59 duplicate products, 752 same-seller listing dupes, 186 cross-seller mirror dupes.
+
+
+
 ### Feb 2026 — Full Catalog on Main Marketplace (Bug Fix)
 
 **Bug**: User reported "products are not fully listed". Deep investigation revealed the `/products` (permanent catalog) endpoint served all 4,568 items correctly — but the **main marketplace** at `/search` (which reads `/api/listings`) only surfaced 1,179 peer-to-peer seller listings. **Zero overlap** — the 4,568 Apify-ingested catalog items were never mirrored to `listings`, so shoppers hitting the primary shopping surface only saw a fraction of the inventory.
