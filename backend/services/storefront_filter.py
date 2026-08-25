@@ -25,7 +25,7 @@ from typing import Any, Dict
 LISTING_TEST_TITLE_RE = (
     r"^(TEST_|E2E |E2E_|Timeline test|Follow Notif Test|FOLLOW NOTIF TEST|"
     r"Stripe removal|Bump Test|PRODUCTS_FALLBACK_FIXTURE|SYNC_TEST_|"
-    r"e2e_)"
+    r"e2e_|Wallet-only order test|Order test |listing test |Test listing )"
 )
 
 # SKU prefixes we reserve for regression tests. Real Amazon ASINs never

@@ -1,0 +1,36 @@
+{
+  "summary": "Verified deploy-blocker fix for services/queue.py arq guard and REDIS_URL removal from backend/.env. Ran new pytest suite (9 tests) + full regression suite (test_products_fallback, test_pickup_30m_bump, test_url_safety, test_predeploy_readiness, test_storefront_filter_regression). 8/9 new tests pass; 50 passed + 1 skipped in regression. All import-guard, enqueue-RuntimeError, and API health checks pass. One minor issue: /api/listings?sort=newest&limit=20 leaks one legacy TEST_ title ('Wallet-only order test 1787606094') created by an earlier test run — pre-existing, unrelated to this iteration's fix.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {
+        "endpoint": "/api/listings?sort=newest&limit=20",
+        "issue": "Legacy test listing 'Wallet-only order test 1787606094' still visible in newest-sorted feed. Storefront-filter regression suite passes when run alone, but this record predates the current filter word-list. Not a deploy blocker. Consider adding 'test' to filter or db-cleanup of TEST_ listings."
+      }
+    ]
+  },
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_arq_import_guard.py",
+    "/app/test_reports/pytest/iter59_arq_guard.xml",
+    "/app/test_reports/pytest/iter59_regression.xml"
+  ],
+  "action_items": [
+    "Optional: purge legacy TEST_-prefixed listings from Mongo or extend shared_filter word list to include 'test' token — one such row currently leaks into /api/listings newest feed.",
+    "The 2 teardown 'Event loop is closed' errors in test_storefront_filter_regression.py only appear when combined with other suites (fixture scoping). Tests themselves PASS. Not urgent."
+  ],
+  "critical_code_review_comments": [
+    "services/queue.py: guards are clean; try/except around arq imports, _ARQ_AVAILABLE flag, and conditional WorkerSettings class definition are all correct. RuntimeError('Queue unavailable: ...') is raised as spec'd from enqueue_scrape/enqueue_category.",
+    "routers/products.py:325-345 does a lazy `from arq import create_pool` inside apify_webhook_import and wraps the pool creation in try/except — safe on deploy pods that lack arq.",
+    "REDIS_URL was removed from /app/backend/.env; _redis_settings() still defaults to redis://localhost:6379/0 in code so local dev is unaffected.",
+    "server.py imports cleanly; all sub-routers register."
+  ],
+  "updated_files": ["/app/backend/tests/test_arq_import_guard.py (new)"],
+  "success_rate": {"backend": "98%", "frontend": "n/a (skipped per request)"},
+  "test_credentials": "not required",
+  "seed_data_creation": "none",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Deploy blocker fix (iteration 59) verified. If Emergent still rejects deploy, check for any other module-top imports of arq/redis. New guard test at /app/backend/tests/test_arq_import_guard.py runs the queue module with arq stubbed out via meta_path — reuse pattern for other optional-dep modules. The single storefront leak is legacy data, safe to ignore or db-clean.",
+  "rca of the issue": "Emergent's deploy scanner rejected the app because (1) REDIS_URL=redis://localhost:6379/0 was literally present in backend/.env (Emergent flags any localhost redis URL as a leaked secret / misconfig), and (2) services/queue.py did `from arq.connections import RedisSettings` and `from arq import create_pool, cron` at module top, so any import chain that touched services.queue on a pod without arq would ImportError. Fix: wrap arq imports in try/except → _ARQ_AVAILABLE flag; conditionally define WorkerSettings; enqueue helpers raise RuntimeError; remove REDIS_URL from .env. Verified with subprocess-isolated pytest that stubs arq via sys.meta_path and confirms _ARQ_AVAILABLE=False and WorkerSettings not defined."
+}

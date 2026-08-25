@@ -5,6 +5,13 @@ Start the worker with:
 
 The worker uses the same MongoDB the API talks to, so job state is fully
 observable from `/api/scraper/jobs`.
+
+**Deployment note**: `arq` + `redis` are OPTIONAL dependencies. Emergent's
+managed deploy environment doesn't provide a Redis instance, so this
+module must be safe to *import* without those packages installed. All
+Redis-touching helpers below raise `RuntimeError("Queue unavailable")`
+at call time when the deps are missing — callers already handle this
+(see `routers/products.py::apify_webhook_import`).
 """
 from __future__ import annotations
 import logging
@@ -18,8 +25,17 @@ from dotenv import load_dotenv
 # Load backend/.env so the worker picks up MONGO_URL, DB_NAME, REDIS_URL, ZYTE_API_KEY, R2_*
 load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
-from arq.connections import RedisSettings
-from arq import create_pool
+# arq / redis are optional — the FastAPI API pod boots fine without them.
+try:
+    from arq.connections import RedisSettings  # type: ignore
+    from arq import create_pool, cron  # type: ignore
+    _ARQ_AVAILABLE = True
+except ImportError:  # pragma: no cover — exercised on Emergent deploy pods
+    RedisSettings = None  # type: ignore
+    create_pool = None  # type: ignore
+    cron = None  # type: ignore
+    _ARQ_AVAILABLE = False
+
 from motor.motor_asyncio import AsyncIOMotorClient
 
 from services.zyte import extract_product, extract_product_list, normalize_product, normalize_product_list_item, ZyteError
@@ -31,7 +47,12 @@ logger = logging.getLogger("scraper_queue")
 
 
 # --- Redis / DB ----------------------------------------------------------
-def _redis_settings() -> RedisSettings:
+def _redis_settings():
+    """Return arq RedisSettings, or raise if arq isn't installed."""
+    if not _ARQ_AVAILABLE:
+        raise RuntimeError(
+            "arq/redis not installed — background job queue is disabled in this environment."
+        )
     url = os.environ.get("REDIS_URL") or "redis://localhost:6379/0"
     return RedisSettings.from_dsn(url)
 
@@ -211,6 +232,8 @@ async def _publish_from_result(db, job: dict, listing: dict) -> None:
 
 # --- Enqueue helper ------------------------------------------------------
 async def enqueue_scrape(job_id: str) -> None:
+    if not _ARQ_AVAILABLE:
+        raise RuntimeError("Queue unavailable: arq/redis not installed in this environment.")
     pool = await create_pool(_redis_settings())
     try:
         await pool.enqueue_job("scrape_url_task", job_id, _job_id=f"scrape:{job_id}")
@@ -383,6 +406,8 @@ async def _maybe_notify_super_batch_complete(db, child_batch: dict) -> None:
 
 
 async def enqueue_category(super_batch_id: str) -> None:
+    if not _ARQ_AVAILABLE:
+        raise RuntimeError("Queue unavailable: arq/redis not installed in this environment.")
     pool = await create_pool(_redis_settings())
     try:
         await pool.enqueue_job("scrape_category_task", super_batch_id, _job_id=f"catlist:{super_batch_id}")
@@ -422,21 +447,24 @@ async def cron_refresh_search_vocab(ctx: dict) -> dict:
 
 
 # --- Worker settings -----------------------------------------------------
-from arq import cron
-
-
-class WorkerSettings:
-    functions = [scrape_url_task, scrape_category_task, webhook_ingest_task]
-    cron_jobs = [
-        # Daily at 09:00 UTC — hands-off catalog growth for every seller.
-        cron(cron_run_saved_seeds, hour=9, minute=0, run_at_startup=False),
-        # Weekly on Monday at 08:00 UTC — best sellers rotation / demotion.
-        cron(cron_best_sellers_rotation, weekday="mon", hour=8, minute=0, run_at_startup=False),
-        # Weekly on Sunday at 03:00 UTC — refresh search vocabulary from
-        # the past week's high-signal queries.
-        cron(cron_refresh_search_vocab, weekday="sun", hour=3, minute=0, run_at_startup=False),
-    ]
-    redis_settings = _redis_settings()
-    max_jobs = 5
-    job_timeout = 180
-    keep_result = 300
+# `arq` is optional. When it isn't installed (Emergent managed deploy),
+# defining WorkerSettings would raise NameError on `cron(...)` — so we
+# short-circuit the whole class definition to keep the module importable.
+if _ARQ_AVAILABLE:
+    class WorkerSettings:
+        functions = [scrape_url_task, scrape_category_task, webhook_ingest_task]
+        cron_jobs = [
+            # Daily at 09:00 UTC — hands-off catalog growth for every seller.
+            cron(cron_run_saved_seeds, hour=9, minute=0, run_at_startup=False),
+            # Weekly on Monday at 08:00 UTC — best sellers rotation / demotion.
+            cron(cron_best_sellers_rotation, weekday="mon", hour=8, minute=0, run_at_startup=False),
+            # Weekly on Sunday at 03:00 UTC — refresh search vocabulary from
+            # the past week's high-signal queries.
+            cron(cron_refresh_search_vocab, weekday="sun", hour=3, minute=0, run_at_startup=False),
+        ]
+        redis_settings = _redis_settings()
+        max_jobs = 5
+        job_timeout = 180
+        keep_result = 300
+else:  # pragma: no cover
+    logger.info("arq/redis not installed — WorkerSettings not defined; background queue is disabled.")

@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="2" failures="0" skipped="1" tests="53" time="9.366" timestamp="2026-08-25T06:05:17.783999+00:00" hostname="agent-env-78ca6a74-a3b0-471b-ac93-c3fdd8d9dd62"><testcase classname="tests.test_url_safety" name="test_unsafe_urls_are_rejected[http://127.0.0.1/anything]" time="0.001" /><testcase classname="tests.test_predeploy_readiness" name="test_health_root" time="0.122" /><testcase classname="tests.test_url_safety" name="test_unsafe_urls_are_rejected[http://127.0.0.1:8001/api/admin/users]" time="0.000" /><testcase classname="tests.test_url_safety" name="test_unsafe_urls_are_rejected[http://localhost/]" time="0.000" /><testcase classname="tests.test_url_safety" name="test_unsafe_urls_are_rejected[http://LOCALHOST:80/x]" time="0.000" /><testcase classname="tests.test_url_safety" name="test_unsafe_urls_are_rejected[http://0.0.0.0/]" time="0.000" /><testcase classname="tests.test_url_safety" name="test_unsafe_urls_are_rejected[http://10.0.0.5/etc/passwd]" time="0.000" /><testcase classname="tests.test_url_safety" name="test_unsafe_urls_are_rejected[http://172.16.0.10/]" time="0.000" /><testcase classname="tests.test_url_safety" name="test_unsafe_urls_are_rejected[http://192.168.1.1/router]" time="0.000" /><testcase classname="tests.test_url_safety" name="test_unsafe_urls_are_rejected[http://169.254.169.254/latest/meta-data/]" time="0.000" /><testcase classname="tests.test_url_safety" name="test_unsafe_urls_are_rejected[http://metadata.google.internal/]" time="0.000" /><testcase classname="tests.test_url_safety" name="test_unsafe_urls_are_rejected[http://user:pass@example.com/]" time="0.000" /><testcase classname="tests.test_url_safety" name="test_unsafe_urls_are_rejected[ftp://example.com/file.txt]" time="0.000" /><testcase classname="tests.test_url_safety" name="test_unsafe_urls_are_rejected[javascript:alert(1)]" time="0.000" /><testcase classname="tests.test_url_safety" name="test_unsafe_urls_are_rejected[file:///etc/passwd]" time="0.000" /><testcase classname="tests.test_url_safety" name="test_unsafe_urls_are_rejected[]" time="0.000" /><testcase classname="tests.test_url_safety" name="test_unsafe_urls_are_rejected[not a url]" time="0.000" /><testcase classname="tests.test_url_safety" name="test_unsafe_urls_are_rejected[http://]" time="0.000" /><testcase classname="tests.test_url_safety" name="test_unsafe_urls_are_rejected[http:///path]" time="0.000" /><testcase classname="tests.test_url_safety" name="test_unsafe_urls_are_rejected[http://foo.local/x]" time="0.000" /><testcase classname="tests.test_url_safety" name="test_unsafe_urls_are_rejected[http://svc.internal/]" time="0.000" /><testcase classname="tests.test_url_safety" name="test_public_urls_pass[https://www.amazon.com/s?k=headphones]" time="0.050" /><testcase classname="tests.test_url_safety" name="test_public_urls_pass[https://www.ebay.com/sch/i.html?_nkw=lego]" time="0.081" /><testcase classname="tests.test_predeploy_readiness" name="test_listings_no_test_leaks[newest]" time="0.334" /><testcase classname="tests.test_url_safety" name="test_public_urls_pass[http://example.com/]" time="0.031" /><testcase classname="tests.test_url_safety" name="test_public_urls_pass[https://example.com:8443/path?x=1]" time="0.002" /><testcase classname="tests.test_url_safety" name="test_extremely_long_url_rejected" time="0.000" /><testcase classname="tests.test_predeploy_readiness" name="test_listings_no_test_leaks[popular]" time="0.257" /><testcase classname="tests.test_predeploy_readiness" name="test_listings_no_test_leaks[trending]" time="0.296" /><testcase classname="tests.test_predeploy_readiness" name="test_flash_deals_no_leaks" time="0.189" /><testcase classname="tests.test_predeploy_readiness" name="test_products_total_and_no_leaks" time="0.333" /><testcase classname="tests.test_products_fallback" name="test_products_endpoint_returns_product_shape" time="1.716" /><testcase classname="tests.test_predeploy_readiness" name="test_products_fallback_short_circuit" time="0.236" /><testcase classname="tests.test_predeploy_readiness" name="test_stores_featured_no_leaks" time="1.685" /><testcase classname="tests.test_products_fallback" name="test_products_healthy_env_untouched" time="0.471" /><testcase classname="tests.test_products_fallback" name="test_store_listings_filter_hides_test_artifacts" time="0.205" /><testcase classname="tests.test_products_fallback" name="test_store_56555665_filters_stripe_removal_specifically" time="0.057"><skipped type="pytest.skip" message="No Stripe-removal seed listings on this store to filter">/app/backend/tests/test_products_fallback.py:98: No Stripe-removal seed listings on this store to filter</skipped></testcase><testcase classname="tests.test_products_fallback" name="test_products_fallback_helper_maps_listing_shape" time="0.000" /><testcase classname="tests.test_products_fallback" name="test_products_fallback_pagination_math" time="0.490" /><testcase classname="tests.test_predeploy_readiness" name="test_stores_valid_slugs" time="0.416" /><testcase classname="tests.test_storefront_filter_regression" name="test_bad_titles_are_hidden_from_listings_endpoint" time="0.033"><error message="failed on setup with &quot;RuntimeError: Event loop is closed&quot;">tests/test_storefront_filter_regression.py:34: in http
+    with TestClient(app) as c:
+/root/.venv/lib/python3.11/site-packages/starlette/testclient.py:787: in __enter__
+    portal.call(self.wait_startup)
+/root/.venv/lib/python3.11/site-packages/anyio/from_thread.py:338: in call
+    return cast(T_Retval, self.start_task_soon(func, *args).result())
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/concurrent/futures/_base.py:456: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/concurrent/futures/_base.py:401: in __get_result
+    raise self._exception
+/root/.venv/lib/python3.11/site-packages/anyio/from_thread.py:263: in _call_func
+    retval = await retval_or_awaitable
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/starlette/testclient.py:822: in wait_startup
+    await receive()
+/root/.venv/lib/python3.11/site-packages/starlette/testclient.py:813: in receive
+    self.task.result()
+/usr/local/lib/python3.11/concurrent/futures/_base.py:449: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/concurrent/futures/_base.py:401: in __get_result
+    raise self._exception
+/root/.venv/lib/python3.11/site-packages/anyio/from_thread.py:263: in _call_func
+    retval = await retval_or_awaitable
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/starlette/testclient.py:803: in lifespan
+    await self.app(scope, self.stream_receive.receive, self.stream_send.send)
+/root/.venv/lib/python3.11/site-packages/fastapi/applications.py:1054: in __call__
+    await super().__call__(scope, receive, send)
+/root/.venv/lib/python3.11/site-packages/starlette/applications.py:123: in __call__
+    await self.middleware_stack(scope, receive, send)
+/root/.venv/lib/python3.11/site-packages/starlette/middleware/errors.py:151: in __call__
+    await self.app(scope, receive, send)
+/root/.venv/lib/python3.11/site-packages/starlette/middleware/cors.py:77: in __call__
+    await self.app(scope, receive, send)
+/root/.venv/lib/python3.11/site-packages/starlette/middleware/exceptions.py:51: in __call__
+    await self.app(scope, receive, send)
+/root/.venv/lib/python3.11/site-packages/starlette/routing.py:756: in __call__
+    await self.middleware_stack(scope, receive, send)
+/root/.venv/lib/python3.11/site-packages/starlette/routing.py:765: in app
+    await self.lifespan(scope, receive, send)
+/root/.venv/lib/python3.11/site-packages/starlette/routing.py:732: in lifespan
+    async with self.lifespan_context(app) as maybe_state:
+/root/.venv/lib/python3.11/site-packages/starlette/routing.py:608: in __aenter__
+    await self._router.startup()
+/root/.venv/lib/python3.11/site-packages/starlette/routing.py:709: in startup
+    await handler()
+server.py:7353: in startup
+    await db.users.create_index("email", unique=True)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/motor/metaprogramming.py:74: in method
+    return framework.run_on_executor(
+/root/.venv/lib/python3.11/site-packages/motor/frameworks/asyncio/__init__.py:85: in run_on_executor
+    return loop.run_in_executor(_EXECUTOR, functools.partial(fn, *args, **kwargs))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/asyncio/base_events.py:817: in run_in_executor
+    self._check_closed()
+/usr/local/lib/python3.11/asyncio/base_events.py:520: in _check_closed
+    raise RuntimeError('Event loop is closed')
+E   RuntimeError: Event loop is closed</error></testcase><testcase classname="tests.test_storefront_filter_regression" name="test_bad_seller_names_are_hidden_from_listings_endpoint" time="0.000"><error message="failed on setup with &quot;RuntimeError: Event loop is closed&quot;">tests/test_storefront_filter_regression.py:34: in http
+    with TestClient(app) as c:
+/root/.venv/lib/python3.11/site-packages/starlette/testclient.py:787: in __enter__
+    portal.call(self.wait_startup)
+/root/.venv/lib/python3.11/site-packages/anyio/from_thread.py:338: in call
+    return cast(T_Retval, self.start_task_soon(func, *args).result())
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/concurrent/futures/_base.py:456: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/concurrent/futures/_base.py:401: in __get_result
+    raise self._exception
+/root/.venv/lib/python3.11/site-packages/anyio/from_thread.py:263: in _call_func
+    retval = await retval_or_awaitable
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/starlette/testclient.py:822: in wait_startup
+    await receive()
+/root/.venv/lib/python3.11/site-packages/starlette/testclient.py:813: in receive
+    self.task.result()
+/usr/local/lib/python3.11/concurrent/futures/_base.py:449: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/concurrent/futures/_base.py:401: in __get_result
+    raise self._exception
+/root/.venv/lib/python3.11/site-packages/anyio/from_thread.py:263: in _call_func
+    retval = await retval_or_awaitable
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/starlette/testclient.py:803: in lifespan
+    await self.app(scope, self.stream_receive.receive, self.stream_send.send)
+/root/.venv/lib/python3.11/site-packages/fastapi/applications.py:1054: in __call__
+    await super().__call__(scope, receive, send)
+/root/.venv/lib/python3.11/site-packages/starlette/applications.py:123: in __call__
+    await self.middleware_stack(scope, receive, send)
+/root/.venv/lib/python3.11/site-packages/starlette/middleware/errors.py:151: in __call__
+    await self.app(scope, receive, send)
+/root/.venv/lib/python3.11/site-packages/starlette/middleware/cors.py:77: in __call__
+    await self.app(scope, receive, send)
+/root/.venv/lib/python3.11/site-packages/starlette/middleware/exceptions.py:51: in __call__
+    await self.app(scope, receive, send)
+/root/.venv/lib/python3.11/site-packages/starlette/routing.py:756: in __call__
+    await self.middleware_stack(scope, receive, send)
+/root/.venv/lib/python3.11/site-packages/starlette/routing.py:765: in app
+    await self.lifespan(scope, receive, send)
+/root/.venv/lib/python3.11/site-packages/starlette/routing.py:732: in lifespan
+    async with self.lifespan_context(app) as maybe_state:
+/root/.venv/lib/python3.11/site-packages/starlette/routing.py:608: in __aenter__
+    await self._router.startup()
+/root/.venv/lib/python3.11/site-packages/starlette/routing.py:709: in startup
+    await handler()
+server.py:7353: in startup
+    await db.users.create_index("email", unique=True)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/motor/metaprogramming.py:74: in method
+    return framework.run_on_executor(
+/root/.venv/lib/python3.11/site-packages/motor/frameworks/asyncio/__init__.py:85: in run_on_executor
+    return loop.run_in_executor(_EXECUTOR, functools.partial(fn, *args, **kwargs))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/asyncio/base_events.py:817: in run_in_executor
+    self._check_closed()
+/usr/local/lib/python3.11/asyncio/base_events.py:520: in _check_closed
+    raise RuntimeError('Event loop is closed')
+E   RuntimeError: Event loop is closed</error></testcase><testcase classname="tests.test_storefront_filter_regression" name="test_shared_filter_module_is_source_of_truth" time="0.001" /><testcase classname="tests.test_predeploy_readiness" name="test_store_56555665_zero_listings" time="0.176" /><testcase classname="tests.test_pickup_30m_bump" name="test_bump_query_matches_within_window" time="0.496" /><testcase classname="tests.test_predeploy_readiness" name="test_store_eddy_boss_listings" time="0.188" /><testcase classname="tests.test_predeploy_readiness" name="test_send_pickup_email_skips_test_domains" time="0.819" /><testcase classname="tests.test_pickup_30m_bump" name="test_pickup_email_template_renders_reminder_30m" time="0.029" /><testcase classname="tests.test_url_safety" name="test_unsafe_urls_are_rejected[http://[::1]/]" time="0.001" /><testcase classname="tests.test_url_safety" name="test_unsafe_urls_are_rejected[http://[fc00::1]/]" time="0.387" /><testcase classname="tests.test_predeploy_readiness" name="test_stale_test_order_cleanup_count" time="0.365" /><testcase classname="tests.test_predeploy_readiness" name="test_supervisor_status" time="0.159" /><testcase classname="tests.test_predeploy_readiness" name="test_no_recent_e2e_smtp_failures" time="0.381" /></testsuite></testsuites>
