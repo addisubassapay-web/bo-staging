@@ -24,6 +24,16 @@ Full-stack ecommerce marketplace **Mercari-Global** — same color scheme (`#FF2
 
 ---
 
+### Feb 25 2026 — Deploy-Safe Storefront Fallback
+
+**Bug fix (P0)**: User reported "all products are not listed on the storefront after the deployment" — `mercariglobals.com/api/products` was returning `total=2` while preview returned `total=4512`. Deployed Mongo has a nearly-empty `products` collection (only 2 seed items) but ~611 real seller `listings`. Frontend `/products` page therefore showed 2 tiles with no pagination.
+
+**Fix**:
+- **`/api/products` runtime fallback** (`backend/routers/products.py`): when the permanent `products` collection has fewer than 100 active items overall (`FALLBACK_THRESHOLD`), the endpoint transparently tops-up its response with matching active seller `listings` mapped to product-shape via new `_listing_to_product_shape` + `_augment_with_listings` helpers. Filters (category / q / in_stock_only) apply to both sources; pagination reflects the merged total. On healthy environments (preview: 4,512 products) the fallback short-circuits immediately — verified NO-OP.
+- **`/api/stores/{slug}/listings` hygiene filter** (`backend/server.py` line ~2851): added `$nor` guard to hide legacy `Stripe removal…`, `TEST_…`, `Follow Notif Test` titles and `e2e_*` seller names from public store pages. Demo store `56555665` (which had 5 Stripe-removal test listings) now returns 0 items; real store `eddy-boss` unaffected (still returns 13 real listings).
+- 6 new pytest cases in `tests/test_products_fallback.py` verify: no-op on healthy env (drift < 200), listing→product shape mapping (in_stock=false when status=sold), pagination-math via the pure `_augment_with_listings` helper, and the store-page test-artifact filter.
+- Testing-agent verified: **backend 100%** pass, 0 critical / 0 minor issues in the fix itself (2 pre-existing deprecation warnings on unrelated lines).
+
 ### Feb 24 2026 — Pickup Deep-Link Auto-Open
 
 **Seller UX (P2)**:

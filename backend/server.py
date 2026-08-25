@@ -2853,7 +2853,20 @@ async def get_store_listings(slug: str):
     store = await db.stores.find_one({"slug": slug.lower()}, {"_id": 0})
     if not store:
         raise HTTPException(404, "Store not found")
-    docs = await db.listings.find({"store_id": store["id"], "status": "active"}, {"_id": 0}).sort("created_at", -1).to_list(500)
+    # Storefront hygiene: exclude testing artefacts and legacy QA titles
+    # (see routers/products.py `_augment_with_listings` for the shared
+    # exclusion pattern). Keeps the deployed pages looking clean without
+    # requiring a data-migration.
+    query: dict = {
+        "store_id": store["id"],
+        "status": "active",
+        "$nor": [
+            {"title": {"$regex": r"^(TEST_|Follow Notif Test|FOLLOW NOTIF TEST)"}},
+            {"title": {"$regex": r"^Stripe removal", "$options": "i"}},
+            {"seller_name": {"$regex": r"^e2e_"}},
+        ],
+    }
+    docs = await db.listings.find(query, {"_id": 0}).sort("created_at", -1).to_list(500)
     return [Listing(**d) for d in docs]
 
 

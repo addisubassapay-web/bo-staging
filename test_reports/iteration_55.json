@@ -1,0 +1,29 @@
+{
+  "summary": "Backend-only verification of the /api/products deploy-safe fallback + storefront listings test-artifact filter. All 6 pytest cases pass; live-endpoint spot checks confirm no regression on the healthy preview env (total=4512 unchanged, fallback short-circuits) and the store filter correctly hides Stripe-removal/TEST_/FollowNotifTest artifacts while preserving real listings.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "/api/products (list_products)", "issue": "Query(default=..., regex=...) triggers PendingDeprecationWarning under Pydantic v2 — use `pattern=` instead (routers/products.py:845)"},
+      {"endpoint": "server.py @app.on_event('startup'/'shutdown')", "issue": "FastAPI on_event deprecated — migrate to lifespan handlers"}
+    ]
+  },
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_products_fallback.py",
+    "/app/test_reports/pytest/iteration_55.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "The fallback uses count_documents({'is_active': True}) < 100 as trigger threshold — good defensive guard. Confirmed short-circuit on preview (4512 products) where the fallback path is never entered (test_products_healthy_env_untouched drift < 200).",
+    "_listing_to_product_shape correctly maps status='sold' → is_active=False + in_stock=False so the OOS badge renders when fallback surfaces sold items.",
+    "$nor filter on /api/stores/{slug}/listings uses case-insensitive regex for 'stripe removal', 'test_', 'follow notif test' — verified 56555665 now returns 0 items instead of leaking 5 Stripe-removal test titles."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100%", "frontend": "n/a (skipped per request)"},
+  "test_credentials": "n/a — public endpoints",
+  "seed_data_creation": "none",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Fallback in /api/products is a NO-OP on preview (products>=100). To exercise the augmentation path you must point MONGO_URL at a DB with <100 active products (e.g. mercariglobals deployed env) or temporarily flip the threshold. Live curl checks: preview total=4512, eddy-boss=13 listings, 56555665=0 (filter works).",
+  "rca of the issue": "Deployed backend (mercariglobals.com) is on a different Mongo DB than preview. Its `products` collection has ~2 items while `listings` has ~611. Fix (already applied by main agent): /api/products augments with active seller listings when active products < 100; and /api/stores/{slug}/listings excludes legacy Stripe-removal / TEST_ / FollowNotifTest test artifacts. Verified via 6 pytests + live curl on preview."
+}

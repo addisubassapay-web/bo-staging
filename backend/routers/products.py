@@ -471,7 +471,129 @@ async def list_products(
         .limit(page_size)
     )
     docs = await cursor.to_list(length=page_size)
+
+    # Deployment-safe fallback: freshly-deployed pods start with an empty
+    # `products` collection until the first Apify auto-sync completes
+    # (~60s startup delay). Rather than showing an empty storefront during
+    # that window — or forever if the deploy doesn't have Apify creds —
+    # top-up the response with matching active seller `listings`. This is
+    # a NO-OP on healthy environments (preview has 4.5k+ products, so the
+    # threshold check short-circuits immediately).
+    FALLBACK_THRESHOLD = 100
+    global_product_count = await db.products.count_documents({"is_active": True})
+    if global_product_count < FALLBACK_THRESHOLD:
+        merged_docs, merged_total = await _augment_with_listings(
+            db=db,
+            existing_docs=docs,
+            products_total=total,
+            page=page,
+            page_size=page_size,
+            category=category,
+            subcategory=subcategory,
+            q=q,
+            in_stock_only=in_stock_only,
+            sort=sort,
+        )
+        return {"items": merged_docs, "total": merged_total, "page": page, "page_size": page_size}
+
     return {"items": docs, "total": total, "page": page, "page_size": page_size}
+
+
+def _listing_to_product_shape(l: Dict[str, Any]) -> Dict[str, Any]:
+    """Map a `listings` document into the ProductOut shape so a listing
+    can be surfaced through the `/api/products` catalog endpoint without
+    the frontend needing to know about the two-collection architecture."""
+    return {
+        "id": l.get("id"),
+        "title": l.get("title", ""),
+        "description": l.get("description", "") or "",
+        "price": float(l.get("price") or 0.0),
+        "currency": "USD",
+        "images": l.get("images") or [],
+        "category": l.get("category_name"),
+        "sku": l.get("id"),  # listings don't have SKUs; reuse id
+        "source_url": l.get("source_url"),
+        "created_at": l.get("created_at"),
+        "updated_at": None,
+        "is_active": (l.get("status") == "active"),
+        "in_stock": (l.get("status") == "active"),
+    }
+
+
+async def _augment_with_listings(
+    *,
+    db,
+    existing_docs: List[Dict[str, Any]],
+    products_total: int,
+    page: int,
+    page_size: int,
+    category: Optional[str],
+    subcategory: Optional[str],
+    q: Optional[str],
+    in_stock_only: bool,
+    sort: str,
+) -> tuple[List[Dict[str, Any]], int]:
+    """Deploy-time fallback: top-up the `/api/products` result with matching
+    seller `listings` when the permanent products catalog is nearly-empty
+    (fresh deployment, Apify sync still pending). Returns the merged page
+    plus the merged total so pagination reflects both sources."""
+    from services.storefront_filter import listing_test_filter
+    listing_filter: Dict[str, Any] = dict(listing_test_filter())
+    listing_filter["status"] = "active"
+    # Guardrails already in server._build_listings_query — replicated here so
+    # the products endpoint stays consistent with /api/listings.
+    listing_filter["$nor"] = [
+        {"source_url": {"$regex": r"toscrape\.com", "$options": "i"}},
+        {"source_url": {"$regex": r"scrape\.me", "$options": "i"}},
+        {"source_url": {"$regex": r"quotes\.toscrape", "$options": "i"}},
+        {"title": {"$regex": r"^(TEST_|Follow Notif Test|FOLLOW NOTIF TEST)"}},
+        {"seller_name": {"$regex": r"^e2e_"}},
+        # Additional deploy-time hygiene: drop internal QA titles left over
+        # from earlier feature branches so the deployed storefront looks
+        # clean rather than filled with "Stripe removal reverification…"
+        # test artefacts.
+        {"title": {"$regex": r"^Stripe removal", "$options": "i"}},
+    ]
+    if category:
+        listing_filter["category_name"] = {"$regex": f"^{re.escape(category)}$", "$options": "i"}
+    if q:
+        listing_filter["title"] = {"$regex": q, "$options": "i"}
+
+    listing_sort = {
+        "newest": [("created_at", -1)],
+        "oldest": [("created_at", 1)],
+        "price_asc": [("price", 1)],
+        "price_desc": [("price", -1)],
+    }.get(sort, [("created_at", -1)])
+
+    listings_total = await db.listings.count_documents(listing_filter)
+    merged_total = products_total + listings_total
+
+    # Compute how many listings this page needs.
+    # Page slice [ (page-1)*page_size : page*page_size ] is filled first by
+    # products, then by listings.
+    slice_start = (page - 1) * page_size
+    slice_end = slice_start + page_size
+    # How many products would land on this page (regardless of what we
+    # already fetched): each page has `page_size` products until we run
+    # out at `products_total`.
+    products_on_this_page = max(0, min(page_size, products_total - slice_start))
+    listings_needed = page_size - len(existing_docs)
+
+    if listings_needed <= 0:
+        return existing_docs, merged_total
+
+    # Where in the listings stream to start: we skip listings that would
+    # have appeared on previous pages after products ran out.
+    listings_skip = max(0, slice_start - products_total + products_on_this_page)
+    cursor = (
+        db.listings.find(listing_filter, {"_id": 0})
+        .sort(listing_sort)
+        .skip(listings_skip)
+        .limit(listings_needed)
+    )
+    listing_docs = await cursor.to_list(length=listings_needed)
+    return existing_docs + [_listing_to_product_shape(l) for l in listing_docs], merged_total
 
 
 @router.get("/products/categories")
