@@ -6296,6 +6296,13 @@ async def _send_pickup_email(
         seller = await db.users.find_one({"id": seller_id}, {"_id": 0, "email": 1, "username": 1, "email_preferences": 1})
         if not seller or not seller.get("email"):
             return
+        email = (seller.get("email") or "").lower()
+        # Skip test-fixture / e2e emails so the reminder loop doesn't hammer
+        # the SMTP relay with rejected recipients (Hostinger returns 5.7.1
+        # for unknown mailboxes). Real deployments never hit these domains.
+        TEST_EMAIL_DOMAINS = ("@e2e.com", "@example.com", "@test.local", "@demo.local", "@localhost")
+        if email.startswith("e2e_") or any(email.endswith(d) for d in TEST_EMAIL_DOMAINS):
+            return
         # Respect opt-outs for the "sale" lane.
         prefs = seller.get("email_preferences") or {}
         if prefs.get("sale") is False:

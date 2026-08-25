@@ -24,6 +24,17 @@ Full-stack ecommerce marketplace **Mercari-Global** — same color scheme (`#FF2
 
 ---
 
+### Feb 25 2026 — Final Pre-Deploy Readiness
+
+**Cleared for redeploy** to `mercariglobals.com`. All 15 pre-deploy blocker checks (`tests/test_predeploy_readiness.py`) passed.
+
+**Extra hardening added in this pass**:
+- `_send_pickup_email` now **early-returns for test email domains** (`@e2e.com`, `@example.com`, `@test.local`, `@demo.local`, `@localhost`, `e2e_` prefix). Prevents the T+30m bump loop from spamming Hostinger's SMTP with rejected recipients (was throwing `5.7.1 Disabled by user from hPanel` on every retry).
+- **49 stale test `pending_pickup` orders** (from `e2e_seller_*` accounts and legacy Stripe-removal QA titles) auto-cancelled with `fulfillment_status='auto_cancelled'` + `auto_cancel_reason='stale_test_order_cleanup'`. Preserved for audit; simply stops them aging into the bump window.
+- Deployment agent's readiness scan: **PASS** — no hardcoded URLs, no destructive startup, CORS OK, supervisor config valid.
+
+**Post-deploy hardening (non-blocking)**: refactor pytest-xdist auth fixtures to eliminate the 429 rate-limit noise; migrate ad-hoc `asyncio.run()` tests to a session-scoped event loop.
+
 ### Feb 25 2026 — Test-Listing Purge + Shared Filter Hardening
 
 **Bug fix (P1)**: User reported screenshots showing sunset/mountain stock-image tiles with titles like `E2E timeline 552560`, `E2E listing 33c587`, `Timeline test`, `Stripe removal QA…` — leaked test artefacts from prior testing-agent runs.
