@@ -1,0 +1,42 @@
+{
+  "summary": "Frontend-only test of the seller pickup deep-link auto-open feature. Found TWO critical bugs blocking the feature and fixed both (small, deterministic code-ordering/URL-handling bugs). Re-verified all 5 requirements pass end-to-end.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "Profile.jsx",
+        "issue": "CRITICAL (FIXED): ReferenceError 'Cannot access sales before initialization' crashed the entire Profile page. The newly added scroll-into-view useEffect (lines 97-101) referenced `sales` in its dependency array, but the `sales` useState declaration was placed AFTER the effect (line 113) causing a TDZ error. Fix: moved the deep-link useEffects and clearPickupDeepLink callback below the useState declarations.",
+        "selector": "n/a - page-level crash",
+        "priority": "CRITICAL"
+      },
+      {
+        "component": "Profile.jsx clearPickupDeepLink",
+        "issue": "CRITICAL (FIXED): For old-format link /profile?tab=orders&pickup=<id>, the dialog opened for a millisecond and then immediately closed. Root cause: clearPickupDeepLink deleted only the `pickup` param, leaving `tab=orders`. The Profile component's tab was then recomputed from URL as 'orders' (Purchases), which unmounted the Sales tab (and the just-mounted PickupOrderDialog). Fix: clearPickupDeepLink now also forces `tab=sales` when stripping the pickup param, so the Sales tab (and dialog) stays mounted after URL cleanup.",
+        "selector": "[data-testid=\"pickup-dialog\"]",
+        "priority": "CRITICAL"
+      }
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Header / TrustStrip", "issues": ["Pre-existing React warning: 'Each child in a list should have a unique key prop' in TrustStrip — not related to this feature, but visible in every page load."]}
+    ]
+  },
+  "test_report_links": [],
+  "action_items": [
+    "Review the two fixes applied to /app/frontend/src/pages/Profile.jsx (state-declaration ordering and clearPickupDeepLink forcing tab=sales).",
+    "Consider adding an ESLint rule (e.g., @typescript-eslint/no-use-before-define or react-hooks/exhaustive-deps with a stricter setup) to catch the TDZ issue at author time.",
+    "Fix unrelated React 'unique key' warning in TrustStrip component."
+  ],
+  "critical_code_review_comments": [
+    "The auto-open flow depends on `onAutoOpenConsumed` firing exactly once. It relies on `autoOpen` becoming false after re-render (because parent clears pickupTargetId). If a future refactor causes autoOpen to remain truthy, the setOpen(true) effect will re-fire on every render. Consider using a `useRef` guard inside PickupOrderDialog.",
+    "The `sales` dependency in the scroll-into-view useEffect will retrigger every time sales list changes; harmless but a `useMemo`-derived boolean like `hasSales` would be cheaper.",
+    "Existing notifications in the DB still carry the legacy `/profile?tab=orders&pickup=<id>` URL. The deep-link handler now correctly upgrades them (via the forced tab=sales), so no backfill required — but worth documenting."
+  ],
+  "updated_files": ["/app/frontend/src/pages/Profile.jsx"],
+  "success_rate": {"backend": "n/a (skipped per request)", "frontend": "100% after fixes (0% before fixes — page crashed)"},
+  "seed_data_creation": "None. Used the 4 existing pending_pickup orders on sophia_style@demo.local.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Deep-link auto-open pickup modal feature verified. Both legacy (tab=orders&pickup=) and new (tab=sales&pickup=) URL formats now correctly force Sales tab, auto-open the PickupOrderDialog with cost/profit/wallet/timer/success banner, clean the URL so refresh doesn't reopen, and produce no console errors. Notification bell shows 'New order — please pick and deliver' items with href containing ?pickup=<id>. Two small ordering/URL bugs were fixed in Profile.jsx — verify commit before further work.",
+  "rca of the issue": "Bug 1 (page crash): E1 inserted two new useEffects that reference the `sales` state variable in their deps arrays BEFORE the `const [sales, setSales] = useState([])` declaration. In JS, `const` declarations are in the Temporal Dead Zone until executed, so the deps-array evaluation on the first render throws ReferenceError. Reproduce by visiting /profile with a logged-in seller. Fix: relocate the useEffects and callback below the state declarations. Bug 2 (dialog unmounts): `tab` in Profile is computed each render as `pickupOrderIdFromUrl ? 'sales' : (params.get('tab') || 'listings')`. When the dialog auto-opens and immediately calls onAutoOpenConsumed to strip the pickup param, the URL becomes `?tab=orders`, so tab flips to 'orders', Sales TabsContent unmounts, and the dialog dies. Fix: when stripping `pickup=`, also set `tab=sales` in the same setParams call so the Sales tab stays active."
+}

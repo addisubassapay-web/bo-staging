@@ -15,11 +15,23 @@ const fmt = (n) => `$${Number(n ?? 0).toFixed(2)}`;
  * Split logic (Feb 2026): frozen reinvest is AUTOMATIC and only when
  * available cannot cover cost — the backend decides. No opt-in checkbox.
  */
-const PickupOrderDialog = ({ orderId, trigger, onPicked }) => {
+const PickupOrderDialog = ({ orderId, trigger, onPicked, autoOpen = false, onAutoOpenConsumed }) => {
   const [open, setOpen] = useState(false);
   const [quote, setQuote] = useState(null);
   const [busy, setBusy] = useState(false);
   const { toast } = useToast();
+
+  // Deep-link auto-open: when the seller lands on
+  // /profile?tab=orders&pickup=<orderId> from a notification or email CTA,
+  // pop the matching order's pickup dialog automatically. We fire the
+  // consumed callback so the parent can strip the query param and avoid
+  // reopening the modal on every re-render.
+  useEffect(() => {
+    if (autoOpen) {
+      setOpen(true);
+      onAutoOpenConsumed?.();
+    }
+  }, [autoOpen, onAutoOpenConsumed]);
 
   const loadQuote = useCallback(async () => {
     try {

@@ -24,6 +24,14 @@ Full-stack ecommerce marketplace **Mercari-Global** — same color scheme (`#FF2
 
 ---
 
+### Feb 24 2026 — Pickup Deep-Link Auto-Open
+
+**Seller UX (P2)**:
+- The seller notification and pickup email already carried `?pickup=<orderId>`, but landing on the URL only surfaced the Sales tab — the seller still had to hunt for the row and click "Pick & Deliver".
+- New behaviour: `/profile?pickup=<orderId>` **auto-opens the PickupOrderDialog** for that order (any tab), scrolls the row into view, and strips the `pickup=` query param so a refresh doesn't reopen it. Both legacy (`tab=orders&pickup=…`) and new (`tab=sales&pickup=…`) links work — the frontend force-switches to the Sales tab whenever `pickup` is present.
+- Backend notification + email CTAs updated to emit the new `tab=sales&pickup=…` link (`server.py` `_send_pickup_email` and admin nudge email + the in-app notification).
+- Testing-agent verified: 5/5 e2e cases pass — dialog auto-opens with cost/profit/wallet/timer/success banner, URL cleaned, no console errors, and existing notifications with the legacy link format continue to work seamlessly.
+
 ### Feb 24 2026 — server.py Modular Split (Phase F)
 
 **Tech debt (P1)**:

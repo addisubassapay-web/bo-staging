@@ -79,7 +79,12 @@ const Profile = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [params, setParams] = useSearchParams();
-  const tab = params.get("tab") || "listings";
+  const pickupOrderIdFromUrl = params.get("pickup");
+  // If a pickup deep-link is present, force the Sales tab where the CTA
+  // renders (older notification/email links used tab=orders which hid it).
+  const tab = pickupOrderIdFromUrl ? "sales" : (params.get("tab") || "listings");
+  const [pickupTargetId, setPickupTargetId] = useState(null);
+
   const [listings, setListings] = useState([]);
   const [orders, setOrders] = useState([]);
   const [sales, setSales] = useState([]);
@@ -87,6 +92,34 @@ const Profile = () => {
   const [resellInfo, setResellInfo] = useState(null);
   const [pushStats, setPushStats] = useState(null);
   const [copied, setCopied] = useState(false);
+
+  // Deep-link: /profile?tab=orders&pickup=<orderId> auto-opens the pickup
+  // modal for that order. Notification/email CTAs land here.
+  useEffect(() => {
+    if (pickupOrderIdFromUrl) {
+      setPickupTargetId(pickupOrderIdFromUrl);
+    }
+  }, [pickupOrderIdFromUrl]);
+
+  // Scroll the target row into view once sales are loaded.
+  useEffect(() => {
+    if (!pickupTargetId || !sales?.length) return;
+    const el = document.querySelector(`[data-testid="pickup-cta-${pickupTargetId}"]`);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [pickupTargetId, sales]);
+
+  const clearPickupDeepLink = React.useCallback(() => {
+    // Strip ?pickup=... so refresh doesn't re-open the modal. Also force
+    // tab=sales because the deep-link may have arrived with the legacy
+    // tab=orders value (old notification/email link format) — if we let
+    // the URL fall back to that, the Sales tab (and the mounted dialog)
+    // would unmount right after auto-open.
+    const next = new URLSearchParams(params);
+    next.delete("pickup");
+    next.set("tab", "sales");
+    setParams(next, { replace: true });
+    setPickupTargetId(null);
+  }, [params, setParams]);
 
   useEffect(() => {
     if (authLoading) return;
@@ -524,6 +557,8 @@ const Profile = () => {
                       </div>
                       <PickupOrderDialog
                         orderId={o.id}
+                        autoOpen={pickupTargetId === o.id}
+                        onAutoOpenConsumed={clearPickupDeepLink}
                         onPicked={() => {
                           // Refresh sales after successful pickup
                           api.get("/orders", { params: { role: "seller" } }).then((r) => setSales(r.data));

@@ -1169,7 +1169,7 @@ async def create_order(payload: OrderCreate, user: dict = Depends(get_current_us
         seller_headline = f"New order — please pick and deliver"
         seller_body = f"{listing['title']}. Accept within {pickup_hours}h to keep the sale."
     await notify(listing["seller_id"], "sale", seller_headline, seller_body,
-                 f"/profile?tab=orders&pickup={order.id}")
+                 f"/profile?tab=sales&pickup={order.id}")
     # Fire the initial pickup email (fire-and-forget so checkout stays fast).
     try:
         asyncio.create_task(_send_pickup_email(
@@ -2059,7 +2059,7 @@ async def admin_nudge_seller(
         from services.email_templates import _shell, FRONTEND
         seller = await db.users.find_one({"id": seller_id}, {"_id": 0, "email": 1, "username": 1})
         if seller and seller.get("email"):
-            cta_url = f"{FRONTEND.rstrip('/')}/profile?tab=orders&pickup={order_id}"
+            cta_url = f"{FRONTEND.rstrip('/')}/profile?tab=sales&pickup={order_id}"
             html = _shell(seller.get("username") or "Seller", f"""
 <h1 style="margin:0 0 8px 0;font-size:22px;color:#111;">Admin nudge — accept your order now</h1>
 <p style="margin:0 0 12px 0;color:#333;">
@@ -6542,7 +6542,7 @@ async def _send_pickup_email(
             headline = "New order — please Pick & Deliver"
             urgency = f"You have {pickup_hours}h to accept and pay the source cost."
 
-        cta_url = f"{FRONTEND.rstrip('/')}/profile?tab=orders&pickup={order_id}"
+        cta_url = f"{FRONTEND.rstrip('/')}/profile?tab=sales&pickup={order_id}"
         cost_line = f"<div>Source cost: <b>${cost:.2f}</b></div>" if cost > 0 else "<div>Source cost: <b>$0.00</b></div>"
         body_html = f"""
 <h1 style="margin:0 0 8px 0;font-size:22px;color:#111;">{headline}</h1>
