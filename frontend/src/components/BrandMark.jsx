@@ -9,7 +9,7 @@ import React from "react";
  *      • default → orange→red gradient hex + white M + amber orb
  *      • mono    → white hex outline + white M (for dark hero backdrops)
  *      • outline → transparent fill + orange stroke (for footers / stamps)
- *  - showWordmark: boolean (default false) — renders "mercari-global" text next to the mark
+ *  - showWordmark: boolean (default false) — renders "mercarie-global" text next to the mark
  *  - wordmarkClassName: extra classes for the wordmark
  *  - className: extra classes on the wrapper
  *  - animated: boolean — adds a subtle draw/pulse on mount

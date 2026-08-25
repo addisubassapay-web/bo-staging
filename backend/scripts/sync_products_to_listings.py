@@ -38,7 +38,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from pymongo import UpdateOne
 
 MERCHARI_SELLER_USERNAME = "mercari_store"
-MERCHARI_SELLER_DISPLAY = "Mercari Store"
+MERCHARI_SELLER_DISPLAY = "Mercarie Store"
 
 # Canonical product category -> (category_id, category_name) tuples used
 # on listings. Category IDs are looked up dynamically so we tolerate any
