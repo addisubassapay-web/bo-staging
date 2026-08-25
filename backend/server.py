@@ -800,15 +800,15 @@ def _build_listings_query(
     # ZYTE REMOVAL — exclude any listing whose source_url was ingested by the
     # legacy Zyte scraper (books.toscrape.com, generic ebay/shopify sources, etc.).
     # Only Amazon-derived (or source-less demo) listings surface on the marketplace.
+    # Also exclude testing artefacts via the shared storefront filter — single
+    # source of truth for all test-listing exclusions.
+    from services.storefront_filter import LISTING_TEST_TITLE_RE, SELLER_TEST_USERNAME_RE
     query["$nor"] = [
         {"source_url": {"$regex": r"toscrape\.com", "$options": "i"}},
         {"source_url": {"$regex": r"scrape\.me", "$options": "i"}},
         {"source_url": {"$regex": r"quotes\.toscrape", "$options": "i"}},
-        # Storefront guardrail: regression-test artefacts. Testing agents
-        # re-create `e2e_seller_*` accounts with `TEST_p52 *` listings; we
-        # keep them out of every public listing feed unconditionally.
-        {"title": {"$regex": r"^(TEST_|Follow Notif Test|FOLLOW NOTIF TEST)"}},
-        {"seller_name": {"$regex": r"^e2e_"}},
+        {"title": {"$regex": LISTING_TEST_TITLE_RE, "$options": "i"}},
+        {"seller_name": {"$regex": SELLER_TEST_USERNAME_RE}},
     ]
     and_clauses: list = []
     if q:
@@ -2854,17 +2854,15 @@ async def get_store_listings(slug: str):
     store = await db.stores.find_one({"slug": slug.lower()}, {"_id": 0})
     if not store:
         raise HTTPException(404, "Store not found")
-    # Storefront hygiene: exclude testing artefacts and legacy QA titles
-    # (see routers/products.py `_augment_with_listings` for the shared
-    # exclusion pattern). Keeps the deployed pages looking clean without
-    # requiring a data-migration.
+    # Storefront hygiene: exclude testing artefacts via the shared filter
+    # (single source of truth in services/storefront_filter.py).
+    from services.storefront_filter import LISTING_TEST_TITLE_RE, SELLER_TEST_USERNAME_RE
     query: dict = {
         "store_id": store["id"],
         "status": "active",
         "$nor": [
-            {"title": {"$regex": r"^(TEST_|Follow Notif Test|FOLLOW NOTIF TEST)"}},
-            {"title": {"$regex": r"^Stripe removal", "$options": "i"}},
-            {"seller_name": {"$regex": r"^e2e_"}},
+            {"title": {"$regex": LISTING_TEST_TITLE_RE, "$options": "i"}},
+            {"seller_name": {"$regex": SELLER_TEST_USERNAME_RE}},
         ],
     }
     docs = await db.listings.find(query, {"_id": 0}).sort("created_at", -1).to_list(500)

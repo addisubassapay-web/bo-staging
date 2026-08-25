@@ -18,9 +18,15 @@ from __future__ import annotations
 
 from typing import Any, Dict
 
-# Titles that a testing agent creates. Matched as case-sensitive regex
+# Titles that a testing agent creates. Matched as case-insensitive regex
 # on `title` — real Amazon product titles never start with these.
-LISTING_TEST_TITLE_RE = r"^(TEST_|Follow Notif Test|FOLLOW NOTIF TEST)"
+# Kept in a single place (services/storefront_filter) so every route that
+# reads listings gets the same guardrail.
+LISTING_TEST_TITLE_RE = (
+    r"^(TEST_|E2E |E2E_|Timeline test|Follow Notif Test|FOLLOW NOTIF TEST|"
+    r"Stripe removal|Bump Test|PRODUCTS_FALLBACK_FIXTURE|SYNC_TEST_|"
+    r"e2e_)"
+)
 
 # SKU prefixes we reserve for regression tests. Real Amazon ASINs never
 # start with these because Amazon's product IDs don't have "TEST" /
@@ -32,10 +38,10 @@ SELLER_TEST_USERNAME_RE = r"^e2e_"
 
 
 def listing_test_filter() -> Dict[str, Any]:
-    """Mongo query fragment that excludes test listings."""
+    """Mongo query fragment that excludes test listings (case-insensitive)."""
     return {
         "$and": [
-            {"title": {"$not": {"$regex": LISTING_TEST_TITLE_RE}}},
+            {"title": {"$not": {"$regex": LISTING_TEST_TITLE_RE, "$options": "i"}}},
             {"seller_name": {"$not": {"$regex": SELLER_TEST_USERNAME_RE}}},
         ]
     }

@@ -537,22 +537,19 @@ async def _augment_with_listings(
     seller `listings` when the permanent products catalog is nearly-empty
     (fresh deployment, Apify sync still pending). Returns the merged page
     plus the merged total so pagination reflects both sources."""
-    from services.storefront_filter import listing_test_filter
+    from services.storefront_filter import listing_test_filter, LISTING_TEST_TITLE_RE, SELLER_TEST_USERNAME_RE
     listing_filter: Dict[str, Any] = dict(listing_test_filter())
     listing_filter["status"] = "active"
-    # Guardrails already in server._build_listings_query — replicated here so
-    # the products endpoint stays consistent with /api/listings.
+    # Additional Zyte-scraper URL blocks (guardrails owned by server._build_listings_query).
     listing_filter["$nor"] = [
         {"source_url": {"$regex": r"toscrape\.com", "$options": "i"}},
         {"source_url": {"$regex": r"scrape\.me", "$options": "i"}},
         {"source_url": {"$regex": r"quotes\.toscrape", "$options": "i"}},
-        {"title": {"$regex": r"^(TEST_|Follow Notif Test|FOLLOW NOTIF TEST)"}},
-        {"seller_name": {"$regex": r"^e2e_"}},
-        # Additional deploy-time hygiene: drop internal QA titles left over
-        # from earlier feature branches so the deployed storefront looks
-        # clean rather than filled with "Stripe removal reverification…"
-        # test artefacts.
-        {"title": {"$regex": r"^Stripe removal", "$options": "i"}},
+        # Belt-and-braces: re-apply the title/seller regex via `$nor` so a
+        # future refactor of `listing_test_filter()` can never drop the
+        # guard by accident.
+        {"title": {"$regex": LISTING_TEST_TITLE_RE, "$options": "i"}},
+        {"seller_name": {"$regex": SELLER_TEST_USERNAME_RE}},
     ]
     if category:
         listing_filter["category_name"] = {"$regex": f"^{re.escape(category)}$", "$options": "i"}

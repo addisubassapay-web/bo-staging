@@ -24,6 +24,17 @@ Full-stack ecommerce marketplace **Mercari-Global** — same color scheme (`#FF2
 
 ---
 
+### Feb 25 2026 — Test-Listing Purge + Shared Filter Hardening
+
+**Bug fix (P1)**: User reported screenshots showing sunset/mountain stock-image tiles with titles like `E2E timeline 552560`, `E2E listing 33c587`, `Timeline test`, `Stripe removal QA…` — leaked test artefacts from prior testing-agent runs.
+
+**Fix**:
+- **Hard-deleted 83 test listings** from MongoDB Atlas (with JSON backup at `/app/backend/cleanup_backups/20260825_052157_test_listings_purge/`). Cascade-cleaned any references in `favorites` and `cart_items`.
+- **Consolidated storefront filter** into `services/storefront_filter.py` as the single source of truth. `LISTING_TEST_TITLE_RE` expanded from `^(TEST_|Follow Notif Test|FOLLOW NOTIF TEST)` to also cover `E2E `, `E2E_`, `Timeline test`, `Stripe removal`, `Bump Test`, `PRODUCTS_FALLBACK_FIXTURE`, `SYNC_TEST_`, `e2e_`, with **case-insensitive** matching.
+- Refactored `server.py::_build_listings_query`, `server.py::get_store_listings`, and `routers/products.py::_augment_with_listings` to all import from the shared filter — future test-title additions only need to be added in one place.
+- 3 new pytests in `tests/test_storefront_filter_regression.py` seed bad titles/seller-names and assert they never appear on `/api/listings` — a permanent guardrail against regression.
+- Testing agent verified: **backend 100% pass** (56 existing + 3 new tests all green), 0 critical / 0 minor issues. `/api/listings/count`: 4,792 → **4,709** (83 fewer). `/api/products?total`: unchanged (4,512). Demo store `56555665` no longer surfaces its Stripe-removal seed items.
+
 ### Feb 25 2026 — T+30m Pickup Bump + Shipping Router Split
 
 **Seller UX (P1)**:
