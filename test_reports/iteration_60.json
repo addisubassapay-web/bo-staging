@@ -1,0 +1,22 @@
+{
+  "summary": "Verified SMTP mailbox switch from SupportTeam@mercariglobals.com to email@support.mercariglobals.com. All 6 targeted tests pass: env values correct, direct SSL SMTP login to smtp.hostinger.com:465 succeeds, backend process env picked up new SMTP_USER, services.mailer.send_email returns {ok: True, provider: 'hostinger'} on a self-send, POST /api/support/tickets returns email_sent=true, and no post-restart '5.7.1 Disabled by user from hPanel' occurrences in backend supervisor log tail. SMTP throttling fix confirmed effective.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_iteration60_smtp_new_mailbox.py",
+    "/app/test_reports/pytest/iter60_smtp.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "services/mailer.py correctly re-reads env via os.environ.get on every call (no caching) — the fix is genuinely env-only.",
+    "Unrelated pre-existing failures observed in test_iteration28_email_stripe.py (Stripe removed in iter 37); not caused by this change and out of scope."
+  ],
+  "updated_files": ["/app/backend/tests/test_iteration60_smtp_new_mailbox.py"],
+  "success_rate": {"backend": "100% (6/6 targeted)", "frontend": "not tested (backend-only request)"},
+  "test_credentials": "sophia_style@demo.local / demo1234 (from /app/memory/test_credentials.md)",
+  "seed_data_creation": "None. One self-send test email delivered to email@support.mercariglobals.com and one support ticket created via API (channel=email).",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "SMTP now flows through Hostinger mailbox email@support.mercariglobals.com. Any new '5.7.1 Disabled by user from hPanel' in logs after 2026-08-25 06:59 UTC would be a real regression. Reusable pytest at backend/tests/test_iteration60_smtp_new_mailbox.py covers env sanity, direct SSL login, backend proc env inspection, direct mailer call, and end-to-end support ticket send.",
+  "rca of the issue": "Root cause: Hostinger disabled the SupportTeam@mercariglobals.com mailbox (hPanel throttle → '554 5.7.1 Disabled by user from hPanel'). Mitigation: created new mailbox email@support.mercariglobals.com in Hostinger with password 8207@Bit; updated SMTP_USER, EMAIL_FROM_ADDRESS, SUPPORT_EMAIL in /app/backend/.env; restarted backend supervisor. Mailer service re-reads env each send, so no code change needed. Verified via direct smtplib.SMTP_SSL login (235 OK), aiosmtplib send via services.mailer.send_email returning {ok:true, provider:'hostinger'}, and POST /api/support/tickets returning email_sent=true."
+}

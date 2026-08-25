@@ -24,6 +24,21 @@ Full-stack ecommerce marketplace **Mercari-Global** — same color scheme (`#FF2
 
 ---
 
+### Feb 25 2026 — SMTP Relay Restored (New Mailbox)
+
+**Bug fix (P0)**: Hostinger disabled outbound sending on `SupportTeam@mercariglobals.com` (`5.7.1 Disabled by user from hPanel`) — every email in the app was failing. User created a new mailbox `email@support.mercariglobals.com` in hPanel with the same password.
+
+**Fix** (env-only change, no code):
+- Updated `/app/backend/.env`: `SMTP_USER`, `EMAIL_FROM_ADDRESS`, `SUPPORT_EMAIL` all switched to `email@support.mercariglobals.com`. `SMTP_PASSWORD` unchanged (`8207@Bit`). Host + port unchanged (`smtp.hostinger.com:465`).
+- No changes required in `services/mailer.py` — reads env via `os.environ.get()` on every call.
+- Restarted the backend so the FastAPI process picked up the new env.
+
+**Verified**:
+- Direct SSL SMTP login to `smtp.hostinger.com:465` succeeds with the new credentials.
+- `services.mailer.send_email()` returns `{'ok': True, 'provider': 'hostinger'}` on a live send.
+- POST `/api/support/tickets` returns `email_sent: true` — the app pipeline is fully wired to the new mailbox.
+- Testing agent: **6/6 targeted checks pass, 0 critical / 0 minor issues**. Zero `5.7.1` errors in backend log tail post-restart.
+
 ### Feb 25 2026 — Deploy-Blocker Fix: Redis Import Guard + REDIS_URL removal
 
 **Bug fix (P0 — deployment blocker)**: Emergent deploy pipeline failing on `mercariglobals.com` — all deploy steps reporting "not run: an earlier deploy step failed" (upstream failure). Deployment-agent scan flagged Redis as BLOCKER.
