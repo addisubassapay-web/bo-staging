@@ -7,7 +7,7 @@ import requests
 import sys
 import time
 
-BASE_URL = "https://seller-health-portal.preview.emergentagent.com/api"
+BASE_URL = "https://marketplace-dropship.preview.emergentagent.com/api"
 
 # Test credentials
 ADMIN_EMAIL = "admin@mercari.local"

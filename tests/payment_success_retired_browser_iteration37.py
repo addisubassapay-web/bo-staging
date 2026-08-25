@@ -14,7 +14,7 @@ try:
     page.on("request", lambda request: network_urls.append(request.url))
     page.on("console", lambda msg: console_errors.append(f"{msg.type}: {msg.text}") if msg.type in ["error", "warning"] else None)
 
-    await page.goto("https://seller-health-portal.preview.emergentagent.com/payment/success?session_id=cs_test_retired_stripe", wait_until="networkidle")
+    await page.goto("https://marketplace-dropship.preview.emergentagent.com/payment/success?session_id=cs_test_retired_stripe", wait_until="networkidle")
     await page.wait_for_timeout(1000)
 
     page_root = page.locator('[data-testid="payment-success-page"]')

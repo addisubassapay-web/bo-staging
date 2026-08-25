@@ -6,7 +6,7 @@ from pathlib import Path
 from playwright.async_api import async_playwright, TimeoutError as PlaywrightTimeoutError
 
 
-BASE_URL = "https://seller-health-portal.preview.emergentagent.com"
+BASE_URL = "https://marketplace-dropship.preview.emergentagent.com"
 OUT_PATH = Path("/app/test_reports/iteration_24_runtime_results.json")
 
 

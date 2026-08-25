@@ -116,11 +116,21 @@ def _extract_price(item: Dict[str, Any]) -> Optional[float]:
             return round(float(p.replace("$", "").replace(",", "").strip()), 2)
         except ValueError:
             return None
-    for k in ("current_price", "salePrice", "price_value"):
-        if item.get(k) is not None:
+    # Alternate keys used by some Apify Amazon scrapers (product_price is
+    # typically a formatted string like "$449.99").
+    for k in ("current_price", "salePrice", "price_value", "product_price"):
+        v = item.get(k)
+        if v is None:
+            continue
+        if isinstance(v, (int, float)):
             try:
-                return round(float(item[k]), 2)
+                return round(float(v), 2)
             except (TypeError, ValueError):
+                continue
+        if isinstance(v, str):
+            try:
+                return round(float(v.replace("$", "").replace(",", "").strip()), 2)
+            except ValueError:
                 continue
     return None
 
@@ -144,7 +154,9 @@ def _extract_images(item: Dict[str, Any]) -> List[str]:
         v = item.get(k)
         if isinstance(v, list):
             imgs.extend([u for u in v if isinstance(u, str) and u.startswith("http")])
-    for k in ("thumbnailImage", "image", "main_image"):
+    # Single-image alternate keys — `product_photo` is used by Apify's Amazon
+    # Rainforest-style actor.
+    for k in ("thumbnailImage", "image", "main_image", "product_photo"):
         v = item.get(k)
         if isinstance(v, str) and v.startswith("http"):
             imgs.append(v)
@@ -159,7 +171,10 @@ def _extract_images(item: Dict[str, Any]) -> List[str]:
 
 
 def _extract_source_url(item: Dict[str, Any]) -> Optional[str]:
-    return _first(item.get("url"), item.get("source_url"), item.get("productUrl"), item.get("link"))
+    return _first(
+        item.get("url"), item.get("source_url"), item.get("productUrl"),
+        item.get("product_url"), item.get("link"),
+    )
 
 
 def _extract_sku(item: Dict[str, Any]) -> Optional[str]:
@@ -185,7 +200,7 @@ def _normalize_product(item: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     they don't leak onto the storefront. When Apify re-scrapes them with a
     real price, the ingest loop will flip them back to active.
     """
-    title = _first(item.get("title"), item.get("name"), item.get("productTitle"))
+    title = _first(item.get("title"), item.get("name"), item.get("productTitle"), item.get("product_title"))
     price = _extract_price(item)
     sku = _extract_sku(item)
     source_url = _extract_source_url(item)

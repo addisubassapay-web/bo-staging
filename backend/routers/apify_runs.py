@@ -149,6 +149,108 @@ async def get_dataset_items(
     )
 
 
+@router.post("/runs/{run_id}/import")
+async def import_run_to_catalog(
+    run_id: str,
+    category: str = Query(..., min_length=1, max_length=60,
+                          description="Canonical category to force on every imported item (e.g. 'Computer')"),
+    subcategory: Optional[str] = Query(None, min_length=1, max_length=60,
+                                       description="Subcategory chip (e.g. 'Laptop') — stored as the second breadcrumb segment"),
+    max_items: int = Query(5000, ge=1, le=20000,
+                           description="Safety cap on how many dataset items to pull"),
+    _admin: dict = Depends(require_admin),
+):
+    """Permanently import every item from an Apify actor run into the
+    `products` catalog under the caller-supplied `category` / `subcategory`.
+
+    Why this exists: Apify's monthly quota only counts NEW runs, not reads
+    from an already-finished dataset. This lets us pull a run's output
+    long after the actor stopped and label it under whatever taxonomy the
+    admin picks — regardless of what Amazon's own breadcrumbs said.
+
+    De-dupe: reuses the standard webhook upsert (`sku` first, then
+    `source_url`). Re-running is safe.
+    """
+    from routers.deps import get_db
+    from routers.products import _normalize_product
+    from services.webhook_ingest import _upsert_chunk, CHUNK
+
+    # 1) resolve the run's default dataset id.
+    run = await _apify_request("GET", f"/actor-runs/{run_id}")
+    run_data = run.get("data", run) if isinstance(run, dict) else {}
+    dataset_id = run_data.get("defaultDatasetId")
+    if not dataset_id:
+        raise HTTPException(404, "Run has no default dataset id")
+
+    # 2) paginate the dataset (Apify caps at ~1000 items per request).
+    all_items: List[Dict[str, Any]] = []
+    page_size = 1000
+    offset = 0
+    while len(all_items) < max_items:
+        take = min(page_size, max_items - len(all_items))
+        page = await _apify_request(
+            "GET",
+            f"/datasets/{dataset_id}/items",
+            params={"limit": take, "offset": offset, "clean": "true", "format": "json"},
+        )
+        if not isinstance(page, list) or not page:
+            break
+        all_items.extend(page)
+        if len(page) < take:
+            break
+        offset += take
+
+    # 3) normalize + force the caller's category/breadcrumbs onto every doc.
+    override_bc = f"{category} > {subcategory}" if subcategory else category
+    normalized: List[Dict[str, Any]] = []
+    skipped = 0
+    for raw in all_items:
+        norm = _normalize_product(raw)
+        if not norm:
+            skipped += 1
+            continue
+        norm["category"] = category
+        norm["breadcrumbs"] = override_bc
+        normalized.append(norm)
+
+    # 4) chunked upsert (reuses the webhook ingest path).
+    db = get_db()
+    created = 0
+    updated = 0
+    reactivated = 0
+    for i in range(0, len(normalized), CHUNK):
+        counts = await _upsert_chunk(db, normalized[i:i + CHUNK])
+        created += counts["created"]
+        updated += counts["updated"]
+        reactivated += counts.get("reactivated", 0)
+
+    # 5) mirror into `listings` so the /search page picks it up too.
+    mirror_stats = None
+    try:
+        from services.listing_mirror import mirror_products_to_listings
+        mirror_stats = await mirror_products_to_listings(db)
+    except Exception as e:  # noqa: BLE001
+        logger.warning(f"[apify-import] mirror step failed (non-fatal): {e}")
+
+    logger.info(
+        f"[apify-import] run={run_id} dataset={dataset_id} received={len(all_items)} "
+        f"created={created} updated={updated} skipped={skipped} category={category!r}"
+    )
+    return {
+        "run_id": run_id,
+        "dataset_id": dataset_id,
+        "category": category,
+        "subcategory": subcategory,
+        "breadcrumbs": override_bc,
+        "received": len(all_items),
+        "skipped": skipped,
+        "created": created,
+        "updated": updated,
+        "reactivated": reactivated,
+        "mirror": mirror_stats,
+    }
+
+
 @router.post("/runs/{run_id}/abort")
 async def abort_run(run_id: str, _admin: dict = Depends(require_admin)):
     """Abort a currently-running actor run."""

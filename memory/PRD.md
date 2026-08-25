@@ -24,6 +24,25 @@ Full-stack ecommerce marketplace **Mercari-Global** — same color scheme (`#FF2
 
 ---
 
+### Feb 25 2026 — New "Computer" Category + Manual Apify Run Import
+
+**Feature (P1)**: Admin can now permanently import any completed Apify run's dataset into the `products` catalog under an arbitrary category/subcategory — even after the account's monthly Apify quota is exhausted (finished-dataset reads don't consume quota).
+
+**What shipped**:
+- Added `Computer` as the 11th canonical category (`services/product_category.py` → `CANONICAL_CATEGORIES`).
+- Inserted `Computer` (slug=`computer`, icon=`cpu`) into the `categories` collection so it appears in the storefront ribbon; front-end icon/accent registered in `components/Header.jsx`.
+- New endpoint: **`POST /api/admin/apify/runs/{run_id}/import?category=…&subcategory=…&max_items=…`** (`routers/apify_runs.py`) — paginates the run's default dataset, normalises each item, force-overrides `category` and `breadcrumbs` (`{category} > {subcategory}`), and upserts through the existing webhook `_upsert_chunk` de-dupe path. Also fires the `mirror_products_to_listings` pass at the end.
+- Extended `_extract_price`, `_extract_source_url`, `_extract_images`, and the title lookup in `_normalize_product` to also recognise the `product_*` prefixed schema used by Amazon-Rainforest-style Apify actors (`product_title`, `product_price`, `product_url`, `product_photo`).
+
+**First real import** (run `DweU04ABYUVj7ooKx`, dataset `NV2yuIogqSGwTSQb2`):
+- 306 laptop items received → 303 created + 3 updated + 299 mirrored into `listings`; storefront chip `Computer` now shows 301 in-stock tiles (5 OOS/inactive).
+- Rollback of a prior mislabelled test import (733 jp.mercari.com Nintendo Switch items) done in the same session — Computer bucket started clean before the real import.
+
+**Tests**: `tests/test_apify_product_import.py` — 10 unit tests covering the new schema + override behaviour; existing canonical-ten count tests updated.
+
+---
+
+
 ### Feb 25 2026 — SMTP Relay Restored (New Mailbox)
 
 **Bug fix (P0)**: Hostinger disabled outbound sending on `SupportTeam@mercariglobals.com` (`5.7.1 Disabled by user from hPanel`) — every email in the app was failing. User created a new mailbox `email@support.mercariglobals.com` in hPanel with the same password.

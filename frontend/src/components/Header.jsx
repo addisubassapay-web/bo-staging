@@ -34,6 +34,7 @@ const CATEGORY_ICONS = {
   toys: Puzzle,
   books: BookOpen,
   handmade: HandHeart,
+  computer: Cpu,
   default: Sparkles,
 };
 const CATEGORY_ACCENTS = {
@@ -47,6 +48,7 @@ const CATEGORY_ACCENTS = {
   toys: "text-purple-500",
   books: "text-indigo-500",
   handmade: "text-teal-500",
+  computer: "text-cyan-600",
   default: "text-neutral-500",
 };
 import GlobalNavMenu from "@/components/GlobalNavMenu";

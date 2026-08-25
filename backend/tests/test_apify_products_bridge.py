@@ -11,7 +11,7 @@ import os
 import pytest
 import requests
 
-BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://seller-health-portal.preview.emergentagent.com").rstrip("/")
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://marketplace-dropship.preview.emergentagent.com").rstrip("/")
 API = f"{BASE_URL}/api"
 
 ADMIN_EMAIL = "admin@mercari.local"
@@ -21,7 +21,8 @@ USER_PASSWORD = "demo1234"
 WEBHOOK_SECRET = "mg-webhook-4f9c2b8e13a04d76b8b7c9e5f2a1d8e6"
 
 CANONICAL_CATEGORIES = {"women", "men", "kids", "electronics", "home",
-                        "beauty", "sports", "toys", "books", "handmade"}
+                        "beauty", "sports", "toys", "books", "handmade",
+                        "computer"}
 
 
 # ---------- Fixtures ----------

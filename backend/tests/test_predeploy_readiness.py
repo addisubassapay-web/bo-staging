@@ -10,7 +10,7 @@ import asyncio
 import requests
 import pytest
 
-BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://seller-health-portal.preview.emergentagent.com").rstrip("/")
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://marketplace-dropship.preview.emergentagent.com").rstrip("/")
 
 TEST_TITLE_RE = re.compile(
     r"(?i)^(E2E |E2E_|TEST_|Timeline test|Follow Notif Test|Stripe removal|Bump Test|PRODUCTS_FALLBACK_FIXTURE|SYNC_TEST_|e2e_)"

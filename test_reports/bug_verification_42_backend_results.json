@@ -1,6 +1,6 @@
 {
   "started_at": "2026-08-20T15:58:21.191286+00:00",
-  "base_url": "https://seller-health-portal.preview.emergentagent.com",
+  "base_url": "https://marketplace-dropship.preview.emergentagent.com",
   "checks": [
     {
       "name": "scraper_stub_all_paths_methods_410_no_redirect",

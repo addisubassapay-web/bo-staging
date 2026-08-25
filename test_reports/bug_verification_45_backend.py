@@ -16,7 +16,7 @@ from typing import Any, Dict, List, Tuple
 import requests
 
 
-BASE_URL = os.environ.get("TEST_BASE_URL", "https://seller-health-portal.preview.emergentagent.com").rstrip("/")
+BASE_URL = os.environ.get("TEST_BASE_URL", "https://marketplace-dropship.preview.emergentagent.com").rstrip("/")
 OUT_PATH = "/app/test_reports/bug_verification_45_runtime_results.json"
 
 ADMIN_EMAIL = "admin@mercari.local"

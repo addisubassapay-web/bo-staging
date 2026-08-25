@@ -10,7 +10,7 @@ import string
 from typing import Dict, Optional
 
 # Base URL from frontend/.env
-BASE_URL = "https://seller-health-portal.preview.emergentagent.com/api"
+BASE_URL = "https://marketplace-dropship.preview.emergentagent.com/api"
 
 # Test credentials from seed data
 ADMIN_EMAIL = "admin@mercari.local"

@@ -12,7 +12,7 @@ import pytest
 import requests
 
 BACKEND_DIR = Path(__file__).resolve().parent.parent
-BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://seller-health-portal.preview.emergentagent.com").rstrip("/")
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://marketplace-dropship.preview.emergentagent.com").rstrip("/")
 
 
 def _run(code: str):

@@ -1,6 +1,6 @@
 {
   "verdict": "not_fixed",
-  "base_url": "https://seller-health-portal.preview.emergentagent.com",
+  "base_url": "https://marketplace-dropship.preview.emergentagent.com",
   "skill_lookup": "No relevant testing skill found.",
   "setup": {
     "buyer": "sophia_style@demo.local",

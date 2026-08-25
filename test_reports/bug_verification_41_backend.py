@@ -8,7 +8,7 @@ from pathlib import Path
 import requests
 
 
-API_BASE = os.environ.get("TEST_API_BASE", "https://seller-health-portal.preview.emergentagent.com/api").rstrip("/")
+API_BASE = os.environ.get("TEST_API_BASE", "https://marketplace-dropship.preview.emergentagent.com/api").rstrip("/")
 
 
 def record(results, name, ok, detail):

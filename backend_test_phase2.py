@@ -7,7 +7,7 @@ import requests
 import json
 from datetime import datetime
 
-BASE_URL = "https://seller-health-portal.preview.emergentagent.com/api"
+BASE_URL = "https://marketplace-dropship.preview.emergentagent.com/api"
 
 # Test credentials
 ADMIN_EMAIL = "admin@mercari.local"

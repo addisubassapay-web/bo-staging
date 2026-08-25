@@ -1,5 +1,5 @@
 {
-  "frontend_url": "https://seller-health-portal.preview.emergentagent.com",
+  "frontend_url": "https://marketplace-dropship.preview.emergentagent.com",
   "admin_login": "admin@mercari.local",
   "rebalance_button_selector": "[data-testid=apify-ticker-rebalance-btn]",
   "rebalance_result_selector": "[data-testid=apify-ticker-rebalance-result]",

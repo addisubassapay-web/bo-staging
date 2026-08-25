@@ -23,7 +23,7 @@ if not BASE_URL:
 
 ADMIN = {"email": "admin@mercari.local", "password": "admin123"}
 CANONICAL_SLUGS = {"women", "men", "kids", "electronics", "home", "beauty",
-                   "sports", "toys", "books", "handmade"}
+                   "sports", "toys", "books", "handmade", "computer"}
 
 sys.path.insert(0, "/app/backend")
 
@@ -44,7 +44,11 @@ class TestApifyConfig:
     def test_each_canonical_slug_at_least_3_urls(self):
         import apify_sync
         counts = Counter(slug for slug, _url in apify_sync.CATEGORY_URLS)
-        for slug in CANONICAL_SLUGS:
+        # `computer` is a manual-import-only bucket (populated via
+        # POST /admin/apify/runs/{id}/import), never auto-sync'd — so it
+        # legitimately has 0 seed URLs.
+        auto_synced = CANONICAL_SLUGS - {"computer"}
+        for slug in auto_synced:
             assert counts.get(slug, 0) >= 3, \
                 f"Slug '{slug}' has only {counts.get(slug, 0)} URLs (<3)"
 
