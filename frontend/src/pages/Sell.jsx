@@ -308,7 +308,7 @@ const Sell = () => {
           <div className="rounded-2xl border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/40 p-6 text-center" data-testid="import-deprecated-notice">
             <div className="text-2xl font-extrabold text-amber-900 dark:text-amber-100">Direct URL imports have moved</div>
             <p className="mt-2 text-sm text-amber-800 dark:text-amber-200 max-w-md mx-auto">
-              Mercari-Global now sources every catalog listing from the curated Apify Amazon feed. Use the <b>Resell from catalog</b> tab to publish inventory to your storefront — new items refresh automatically as the platform-wide sync runs.
+              Mercarie-Global now sources every catalog listing from the curated Apify Amazon feed. Use the <b>Resell from catalog</b> tab to publish inventory to your storefront — new items refresh automatically as the platform-wide sync runs.
             </p>
             <button
               type="button"

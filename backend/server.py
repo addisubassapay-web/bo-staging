@@ -74,7 +74,7 @@ _storage_key: Optional[str] = None
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 security = HTTPBearer(auto_error=False)
 
-app = FastAPI(title="Mercari-Global Clone API")
+app = FastAPI(title="Mercarie-Global Clone API")
 api_router = APIRouter(prefix="/api")
 
 # Static mount for scraper/local media uploads — served at /api/uploads/*
@@ -702,7 +702,7 @@ async def notify(user_id: str, ntype: str, title: str, body: str = "", link: Opt
         from services.email_templates import _shell, FRONTEND
         cta_url = f"{FRONTEND}{link}" if link and link.startswith("/") else (link or FRONTEND)
         subject = f"{title}"
-        html = _shell(title, f"<p>Hi {user.get('username','')},</p><p>{body}</p>", cta_url, "Open Mercari-Global")
+        html = _shell(title, f"<p>Hi {user.get('username','')},</p><p>{body}</p>", cta_url, "Open Mercarie-Global")
         result = await mailer.send_email(to=user["email"], subject=subject, html=html, tags=[f"notify:{ntype}"])
         await db.email_log.insert_one({
             "kind": ntype, "to": user["email"], "user_id": user_id,
@@ -970,7 +970,7 @@ async def create_order(payload: OrderCreate, user: dict = Depends(get_current_us
     # Flat shipping (one shipment covers the whole bulk order).
     shipping_fee = 0.0 if listing.get("shipping_paid_by") == "seller" else 5.99
 
-    # Payment method — Mercari-Global orders are wallet-only. Users top up
+    # Payment method — Mercarie-Global orders are wallet-only. Users top up
     # the wallet via crypto or bank first (see /api/wallet/deposit/pending),
     # then pay from wallet balance here. This keeps the escrow ledger single-
     # source and lets admins gate every real-money inflow via one review queue.
@@ -2079,7 +2079,7 @@ async def admin_nudge_seller(
 """.strip())
             await send_email(
                 to=seller["email"],
-                subject="[Mercari-Global] Admin nudge — accept your order now",
+                subject="[Mercarie-Global] Admin nudge — accept your order now",
                 html=html,
                 tags=["pickup", "admin_nudge"],
             )
@@ -5099,7 +5099,7 @@ async def admin_review_seller_app(app_id: str, updates: dict, admin: dict = Depe
     if new_status == "approved":
         await ensure_store_for_user(doc["user_id"])
         await notify(doc["user_id"], "system", "Seller application approved",
-                     "You can now sell on Mercari-Global. Connect your payout method.", "/verify")
+                     "You can now sell on Mercarie-Global. Connect your payout method.", "/verify")
     else:
         await notify(doc["user_id"], "system", "Seller application rejected",
                      notes or "See admin notes.", "/profile")
@@ -5141,7 +5141,7 @@ async def admin_bulk_review_seller_apps(payload: dict, admin: dict = Depends(req
             await ensure_store_for_user(doc["user_id"])
         if new_status == "approved":
             await notify(doc["user_id"], "system", "Seller application approved",
-                         "You can now sell on Mercari-Global. Connect your payout method.", "/verify")
+                         "You can now sell on Mercarie-Global. Connect your payout method.", "/verify")
         else:
             await notify(doc["user_id"], "system", "Seller application rejected",
                          notes or "See admin notes.", "/profile")
@@ -5351,7 +5351,7 @@ async def ai_listing_suggest(payload: AIListingSuggestRequest, user: dict = Depe
     cat_list = ", ".join([f"{c['slug']} ({c['name']})" for c in categories])
 
     system_msg = (
-        "You are an expert Mercari-Global listing assistant. Analyze the product photo and return "
+        "You are an expert Mercarie-Global listing assistant. Analyze the product photo and return "
         "STRICT JSON only (no prose, no code fences) with keys: "
         "title (string, max 60 chars, catchy), "
         "description (string, 3-5 short lines, buyer-friendly, up to 400 chars), "
@@ -5558,7 +5558,7 @@ async def search_vibe(payload: VibeSearchRequest, request: Request):
     cat_list = ", ".join(cat_slugs)
 
     system_msg = (
-        "You translate free-form shopping 'vibes' into concrete Mercari-Global filters. "
+        "You translate free-form shopping 'vibes' into concrete Mercarie-Global filters. "
         "Return STRICT JSON only (no prose, no code fences) with keys: "
         "keywords (array of 2-5 BROAD single-word or 2-word search terms that commonly appear in product titles for this vibe — favor generic words like 'watch', 'sweater', 'lamp' over niche phrases), "
         f"category_slugs (array of 1-3 slugs from this exact list: {cat_list}), "
@@ -5847,7 +5847,7 @@ async def wishlist_digest_loop():
                 continue
                 subject = f"Weekly wishlist digest: {len(drops)} price drop(s) on your favourites"
                 lines = [f"- {d['title']}: ${d['previous_price']:.2f} -> ${d['price']:.2f}" for d in drops[:20]]
-                body = "Hi " + user.get("username", "there") + ",\n\n" + "\n".join(lines) + "\n\nShop now on Mercari-Global!"
+                body = "Hi " + user.get("username", "there") + ",\n\n" + "\n".join(lines) + "\n\nShop now on Mercarie-Global!"
                 logger.info(f"[MOCK Resend] to={user['email']} subject={subject!r}")
                 await db.email_log.insert_one({
                     "id": str(uuid.uuid4()),
@@ -5891,7 +5891,7 @@ async def newsletter_digest_loop():
                 subject_bits.append(f"{len(drops)} price drop(s)")
             if top_listings:
                 subject_bits.append(f"{len(top_listings)} trending pick(s)")
-            subject = "Weekly Mercari-Global digest: " + " · ".join(subject_bits)
+            subject = "Weekly Mercarie-Global digest: " + " · ".join(subject_bits)
 
             body_lines = ["Hi there,", ""]
             if drops:
@@ -5900,11 +5900,11 @@ async def newsletter_digest_loop():
                     body_lines.append(f"  - {d['title']}: ${d['previous_price']:.2f} → ${d['price']:.2f}")
                 body_lines.append("")
             if top_listings:
-                body_lines.append("✨ Trending on Mercari-Global:")
+                body_lines.append("✨ Trending on Mercarie-Global:")
                 for t in top_listings:
                     body_lines.append(f"  - {t['title']} — ${t['price']:.2f}")
                 body_lines.append("")
-            body_lines.append("Shop everything at Mercari-Global.")
+            body_lines.append("Shop everything at Mercarie-Global.")
             body_lines.append("To unsubscribe, POST /api/newsletter/unsubscribe with your email.")
             body = "\n".join(body_lines)
 
@@ -6341,7 +6341,7 @@ async def _send_pickup_email(
         html = _shell(seller.get("username") or "Seller", body_html)
         await send_email(
             to=seller["email"],
-            subject=f"[Mercari-Global] {headline}",
+            subject=f"[Mercarie-Global] {headline}",
             html=html,
             tags=["pickup", kind],
         )
@@ -6873,7 +6873,7 @@ async def seed_data():
 
 @api_router.get("/")
 async def root():
-    return {"message": "Mercari-Global Clone API", "status": "ok"}
+    return {"message": "Mercarie-Global Clone API", "status": "ok"}
 
 
 # =========================

@@ -107,7 +107,7 @@ export const BrandMark = ({
           className={`font-bold tracking-tight ${wordmarkClassName}`}
           style={{ fontSize: typeof size === "number" ? size * 0.5 : "1rem" }}
         >
-          mercari-global
+          mercarie-global
         </span>
       )}
     </span>

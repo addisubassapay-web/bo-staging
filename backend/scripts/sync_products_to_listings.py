@@ -73,7 +73,7 @@ async def ensure_merchari_seller(db) -> dict:
         "seller_status": "active",
         "email_verified": True,
         "avatar": None,
-        "bio": "The official Mercari-Global catalog.",
+        "bio": "The official Mercarie-Global catalog.",
         "wallet_balance": 0.0,
         "wallet_frozen_balance": 0.0,
         "created_at": now,

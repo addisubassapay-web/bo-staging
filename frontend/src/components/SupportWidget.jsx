@@ -197,7 +197,7 @@ const SupportWidget = () => {
                   </button>
                 )}
                 <div>
-                  <div className="text-[10px] uppercase tracking-[0.2em] font-semibold opacity-90">Mercari-Global support</div>
+                  <div className="text-[10px] uppercase tracking-[0.2em] font-semibold opacity-90">Mercarie-Global support</div>
                   <div className="text-lg font-extrabold leading-tight">
                     {view === "home" && "How can we help?"}
                     {view === "chat-list" && "Your conversations"}
