@@ -1,0 +1,35 @@
+{
+  "summary": "Backend-only verification of the T+30m pickup bump reminder + the extraction of 4 shipping routes into routers/shipping.py. Ran full requested pytest slice (57 tests) — all pass. Verified all 4 shipping endpoints are registered in the FastAPI schema (via /openapi.json) and return HTTP 401 unauthenticated through the public preview URL. Inspected pickup_reminder_loop Mongo filter and _send_pickup_email reminder_30m branch — both match spec.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_pickup_30m_bump.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "verifications": {
+    "pytest_run": "57 passed, 0 failed in 63.69s across test_pickup_30m_bump.py, test_products_fallback.py, test_wallet_only_orders.py, test_wallet_timeline_and_resubmit.py, test_admin_payment_reviews.py, test_admin_deposits_bulk.py, test_url_safety.py",
+    "pickup_reminder_loop_filter": "Confirmed at server.py L6362-6408 — filter uses fulfillment_status=pending_pickup + created_at in [now-60m, now-30m] + pickup_bump_30m_sent_at $exists:false. Idempotent set of pickup_bump_30m_sent_at + push to pickup_events. Correctly excludes <30m, >60m, already-bumped, and non-pending orders (matches test_bump_query_matches_within_window assertions).",
+    "send_pickup_email_reminder_30m": "server.py L6306-6308 renders headline 'You have a new order waiting' + urgency 'You haven't opened the pickup yet — accept now to lock in your profit.' as specified.",
+    "shipping_router_extraction": "routers/shipping.py exists (~330 lines), imported at server.py L50 and mounted at L7332 with prefix=/api. All 4 target paths present in /openapi.json: POST /api/orders/{order_id}/shipping-label, GET /api/orders/{order_id}/label.svg, GET /api/orders/{order_id}/tracking, POST /api/orders/{order_id}/shipping-advance.",
+    "auth_enforcement": "All 4 shipping endpoints return HTTP 401 to unauthenticated curl against the public preview URL (REACT_APP_BACKEND_URL). label.svg supports the ?auth= query fallback per source.",
+    "server_py_size": "server.py = 7581 lines (was ~7822 before split), consistent with the described trim."
+  },
+  "action_items": [],
+  "critical_code_review_comments": [
+    "server.py is still 7581 lines — well above the 700-line guideline. Continued modular splits (pickup loops, wallet/orders background workers) recommended in future iterations.",
+    "Two deprecation warnings surface during tests but are non-blocking: FastAPI on_event startup/shutdown (server.py L7346, L7578) should migrate to lifespan handlers; routers/products.py L845 uses `regex=` which should be `pattern=`."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100%", "frontend": "not tested (backend-only request)"},
+  "seed_data_creation": "None — pickup bump tests seed + delete synthetic orders inside their own fixtures.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Frontend deep-link `/profile?tab=sales&pickup=<orderId>` was intentionally skipped per review_request (backend-only). If frontend regression testing is later needed, log in as sophia_style@demo.local/demo1234, fetch a fresh pending_pickup order via GET /api/orders?role=seller, and hit the URL — the PickupOrderDialog should auto-open."
+}

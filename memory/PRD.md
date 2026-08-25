@@ -24,6 +24,18 @@ Full-stack ecommerce marketplace **Mercari-Global** — same color scheme (`#FF2
 
 ---
 
+### Feb 25 2026 — T+30m Pickup Bump + Shipping Router Split
+
+**Seller UX (P1)**:
+- Added T+30-minute "you have a new order waiting" bump inside the existing `pickup_reminder_loop`. If a seller hasn't accepted a `pending_pickup` order within 30-60 min of the buyer paying, the loop fires (a) a `reminder_30m` email with the new headline "You have a new order waiting", and (b) an in-app notification deep-linking straight to the pickup modal.
+- Idempotent — the `pickup_bump_30m_sent_at` flag on the order doc prevents duplicate sends.
+- 2 new pytests in `tests/test_pickup_30m_bump.py` verify the trigger window (30-60m), skip conditions (already bumped / already picked / out-of-window), and the new email-template branch.
+
+**Tech debt (P1)**:
+- Extracted the 4 shipping routes into `backend/routers/shipping.py`: `POST /orders/{id}/shipping-label`, `GET /orders/{id}/label.svg` (JWT-auth via header or `?auth=`), `GET /orders/{id}/tracking`, `POST /orders/{id}/shipping-advance`. Also moved the `ShippingLabelResponse` + `AdvanceShippingRequest` models and the `_render_label_svg` printable-label helper.
+- server.py dropped from **7,822 → 7,578 lines** (-244). `shipping_progress_loop` background task remains in server.py since it uses the app-lifetime `db` handle.
+- Testing agent verified: **backend 100% pass** (57/57), 0 critical / 0 minor. All 4 shipping endpoints registered in OpenAPI and correctly gated with HTTP 401 when unauthenticated.
+
 ### Feb 25 2026 — Deploy-Safe Storefront Fallback
 
 **Bug fix (P0)**: User reported "all products are not listed on the storefront after the deployment" — `mercariglobals.com/api/products` was returning `total=2` while preview returned `total=4512`. Deployed Mongo has a nearly-empty `products` collection (only 2 seed items) but ~611 real seller `listings`. Frontend `/products` page therefore showed 2 tiles with no pagination.
