@@ -43,12 +43,33 @@ class ProductOut(BaseModel):
     category: Optional[str] = None
     sku: Optional[str] = None
     source_url: Optional[str] = None
+    # ISO 3166-1 alpha-2 — origin country derived from `source_url`.
+    # Rendered as a flag next to the "Ships from" line on every tile.
+    seller_country: Optional[str] = None
     created_at: datetime
     updated_at: Optional[datetime] = None
     is_active: bool = True
     # True until Apify sees the source listing become unavailable. Products
     # with in_stock=False remain on the storefront but render an OOS badge.
     in_stock: bool = True
+
+
+def _seller_country_from_url(url: Optional[str]) -> Optional[str]:
+    """Best-effort country guess for a scraper source URL. Keeps the same
+    mapping as `services.listing_mirror._country_from_source_url` so the
+    listings and products storefronts render consistent flags."""
+    if not url:
+        return None
+    u = url.lower()
+    if "amazon.co.uk" in u: return "GB"
+    if "amazon.de" in u:    return "DE"
+    if "amazon.co.jp" in u: return "JP"
+    if "amazon.fr" in u:    return "FR"
+    if "amazon.ca" in u:    return "CA"
+    if "amazon.com.au" in u:return "AU"
+    if "jp.mercari" in u:   return "JP"
+    if "amazon.com" in u:   return "US"
+    return None
 
 
 class ProductListResponse(BaseModel):
@@ -486,6 +507,11 @@ async def list_products(
         .limit(page_size)
     )
     docs = await cursor.to_list(length=page_size)
+    # Attach seller_country derived from source_url so the storefront can
+    # render a flag next to every tile without a schema migration.
+    for d in docs:
+        if not d.get("seller_country"):
+            d["seller_country"] = _seller_country_from_url(d.get("source_url"))
 
     # Deployment-safe fallback: freshly-deployed pods start with an empty
     # `products` collection until the first Apify auto-sync completes
@@ -528,6 +554,7 @@ def _listing_to_product_shape(l: Dict[str, Any]) -> Dict[str, Any]:
         "category": l.get("category_name"),
         "sku": l.get("id"),  # listings don't have SKUs; reuse id
         "source_url": l.get("source_url"),
+        "seller_country": l.get("seller_country") or _seller_country_from_url(l.get("source_url")),
         "created_at": l.get("created_at"),
         "updated_at": None,
         "is_active": (l.get("status") == "active"),

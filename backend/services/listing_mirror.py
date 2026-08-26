@@ -52,6 +52,26 @@ async def _category_lookup(db) -> Dict[str, dict]:
     return out
 
 
+def _country_from_source_url(url: str) -> str:
+    """Best-effort ISO-2 country guess from an Apify source URL host.
+
+    Amazon US and jp.mercari.com are our two current supplier surfaces; extend
+    the mapping as new suppliers come online.
+    """
+    if not url:
+        return "US"
+    u = url.lower()
+    if "amazon.co.uk" in u: return "GB"
+    if "amazon.de" in u:    return "DE"
+    if "amazon.co.jp" in u: return "JP"
+    if "amazon.fr" in u:    return "FR"
+    if "amazon.ca" in u:    return "CA"
+    if "amazon.com.au" in u:return "AU"
+    if "jp.mercari" in u:   return "JP"
+    if "amazon.com" in u:   return "US"
+    return "US"
+
+
 def _shape(product: dict, seller: dict, cats: Dict[str, dict], now: datetime) -> dict:
     cat_name = product.get("category") or "Home"
     slug = cat_name.lower()
@@ -60,6 +80,8 @@ def _shape(product: dict, seller: dict, cats: Dict[str, dict], now: datetime) ->
     return {
         "seller_id": seller["id"],
         "seller_name": seller["display_name"],
+        # ISO-3166 alpha-2; renders as a flag on the storefront tile.
+        "seller_country": _country_from_source_url(product.get("source_url") or ""),
         "title": product.get("title", ""),
         "description": product.get("description", ""),
         "price": float(product.get("price") or 0),

@@ -190,6 +190,9 @@ class Listing(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     seller_id: str
     seller_name: str
+    # ISO 3166-1 alpha-2 (e.g. "US", "JP"). Rendered as a flag next to the
+    # seller name on product tiles / storefront so buyers see origin instantly.
+    seller_country: Optional[str] = None
     title: str
     description: str
     price: float

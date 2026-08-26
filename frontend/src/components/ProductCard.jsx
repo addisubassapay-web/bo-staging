@@ -5,6 +5,7 @@ import api from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { useCurrency } from "@/context/CurrencyContext";
 import { useToast } from "@/hooks/use-toast";
+import { flagEmoji, countryName } from "@/constants/countries";
 
 const ProductCard = ({ listing, isFavorite = false, onFavoriteChange }) => {
   const { user } = useAuth();
@@ -156,6 +157,17 @@ const ProductCard = ({ listing, isFavorite = false, onFavoriteChange }) => {
             </span>
           )}
         </div>
+        {/* Seller origin — flag + country name; hidden when server omits the field */}
+        {listing.seller_country && flagEmoji(listing.seller_country) && (
+          <div
+            className="mt-1 flex items-center gap-1 text-[11px] text-neutral-500 dark:text-neutral-400"
+            title={`Ships from ${countryName(listing.seller_country)}`}
+            data-testid={`seller-origin-${listing.id}`}
+          >
+            <span aria-hidden="true" className="leading-none text-sm">{flagEmoji(listing.seller_country)}</span>
+            <span className="truncate">Ships from {countryName(listing.seller_country)}</span>
+          </div>
+        )}
       </div>
     </Link>
   );

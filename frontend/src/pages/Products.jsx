@@ -4,6 +4,7 @@ import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Package, ChevronLeft, ChevronRight } from "lucide-react";
 import ProductSearchAutocomplete from "@/components/ProductSearchAutocomplete";
+import { flagEmoji, countryName } from "@/constants/countries";
 
 const PAGE_SIZE = 24;
 
@@ -127,6 +128,16 @@ const ProductCardMini = ({ p }) => {
             </span>
           ) : null}
         </div>
+        {p.seller_country && flagEmoji(p.seller_country) && (
+          <div
+            className="mt-1.5 flex items-center gap-1 text-[11px] text-neutral-500 dark:text-neutral-400"
+            title={`Ships from ${countryName(p.seller_country)}`}
+            data-testid={`product-origin-${p.id}`}
+          >
+            <span aria-hidden="true" className="leading-none text-sm">{flagEmoji(p.seller_country)}</span>
+            <span className="truncate">Ships from {countryName(p.seller_country)}</span>
+          </div>
+        )}
       </div>
     </Link>
   );

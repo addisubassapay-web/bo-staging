@@ -26,6 +26,37 @@ Full-stack ecommerce marketplace **Mercari-Global** — same color scheme (`#FF2
 
 
 
+
+### Feb 26 2026 — Country Flags Everywhere Sellers Appear
+
+**Goal**: Surface a seller's country of origin visually (flag emoji + name) on every storefront surface, plus confirm language & currency pickers already carry flags.
+
+**What shipped**:
+- **Backend**:
+  - New `_seller_country_from_url()` helper in `services/listing_mirror.py` — maps Amazon `.com/.co.uk/.de/.co.jp/.fr/.ca/.com.au` + `jp.mercari.com` hostnames to ISO-2 codes. Injected into every mirrored `listings` document at `seller_country`.
+  - Extended `models.Listing` (server.py) with `seller_country: Optional[str]` so the field surfaces through every listing API response.
+  - Added the same helper + `seller_country` column to `ProductOut` in `routers/products.py`; every product record now has the country derived at query time from `source_url` (no schema migration needed for the 4,810-row `products` collection).
+  - Bulk-backfilled 6,505 existing `listings` documents with `seller_country=US` (only Amazon-US dropship data present today).
+  - Fixed a rebrand miss: system seller `display_name` was still "Mercari Store"; renamed it and swept 59 leftover listings to "Mercarie Store".
+- **Frontend**:
+  - Reused the existing `constants/countries.js` (`flagEmoji()` + `countryName()`) instead of duplicating — 57 countries covered.
+  - `ProductCard.jsx` (search-results tile): renders `🇺🇸 Ships from United States` under the price row when `listing.seller_country` is set. `data-testid="seller-origin-{id}"`.
+  - `Products.jsx :: ProductTile` (catalog storefront): same badge, `data-testid="product-origin-{id}"`.
+  - `ListingDetail.jsx :: SellerBlock`: new inline flag pill next to the seller name in the seller block, `data-testid="seller-country-badge"`.
+  - `StoresMarketplace.jsx`: store-card row now shows a small `🇺🇸 United States` pill next to the `by @owner` handle, `data-testid="store-country-{slug}"`.
+  - `StorePage.jsx`: already renders flag via `flagEmoji(store.country)` — verified compliant.
+  - Removed a redundant `lib/countryFlags.js` I authored before spotting the pre-existing `constants/countries.js`.
+- **Already had flags (verified compliant)**:
+  - `LanguagePicker.jsx` — `{active.flag} {code}` in the button + full menu.
+  - `CurrencyPicker.jsx` — `{meta.flag}` next to symbol + code, full flag column in menu.
+
+**Verified live at 390px viewport on `/products?category=Computer&subcategory=Laptop`**:
+- 24 tiles rendered, all 24 show `🇺🇸 Ships from United States` badge under the price/category row.
+- API `GET /api/products?category=Computer&limit=2` returns `seller_country: "US"` for both HP Stream and HP Essential Chromebook.
+- No horizontal overflow at 390px; badge wraps to a single ellipsized line if the country name is long.
+
+---
+
 ### Feb 26 2026 — Font-Size Selector (S/M/L) + Product Tile Clamping
 
 **Goal**: Let mobile users pick a smaller UI density so all desktop features fit on-screen, and guarantee every product tile shows at most 2 lines of title.

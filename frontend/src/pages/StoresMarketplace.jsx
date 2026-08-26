@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
+import { flagEmoji, countryName } from "@/constants/countries";
 
 const TIER_STYLES = {
   gold: "from-amber-400 to-amber-600 text-white",
@@ -77,9 +78,21 @@ const StoreCard = ({ store, categoryMap = {}, currentCategoryId }) => {
           )}
         </div>
         <div className="font-semibold text-neutral-900 dark:text-neutral-100 line-clamp-1 group-hover:text-[#2563EB] transition">{store.name}</div>
-        {store.owner_username && (
-          <div className="text-[11px] text-neutral-400 dark:text-neutral-500 mt-0.5">by @{store.owner_username}</div>
-        )}
+        <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+          {store.owner_username && (
+            <span className="text-[11px] text-neutral-400 dark:text-neutral-500">by @{store.owner_username}</span>
+          )}
+          {store.country && flagEmoji(store.country) && (
+            <span
+              className="inline-flex items-center gap-1 rounded-full bg-neutral-100 dark:bg-neutral-800 px-1.5 py-0.5 text-[10px] font-medium text-neutral-600 dark:text-neutral-300"
+              title={`Based in ${countryName(store.country)}`}
+              data-testid={`store-country-${store.slug}`}
+            >
+              <span aria-hidden="true">{flagEmoji(store.country)}</span>
+              {countryName(store.country)}
+            </span>
+          )}
+        </div>
         {store.tagline && (
           <div className="text-xs text-neutral-500 dark:text-neutral-400 line-clamp-1 mt-0.5">{store.tagline}</div>
         )}

@@ -11,17 +11,22 @@ import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { ListingReviews } from "@/components/Reviews";
 import { VerificationBadges } from "@/components/VerificationBadges";
+import { flagEmoji, countryName } from "@/constants/countries";
 import ProductCard from "@/components/ProductCard";
 import SimilarItems from "@/components/SimilarItems";
 import StorefrontShareButton from "@/components/StorefrontShare";
 import { useLang } from "@/context/LanguageContext";
 
-const SellerBlock = ({ sellerId, sellerName, views }) => {
+const SellerBlock = ({ sellerId, sellerName, sellerCountry, views }) => {
   const [seller, setSeller] = useState(null);
   useEffect(() => {
     if (!sellerId) return;
     api.get(`/users/${sellerId}/public`).then((r) => setSeller(r.data)).catch(() => {});
   }, [sellerId]);
+  // Fall back to the listing's own country when the fresher public-user
+  // record doesn't carry one; on the storefront this covers Mercarie
+  // Store dropship items (seller country lives on the listing, not the user).
+  const country = seller?.country || sellerCountry;
   return (
     <div className="flex items-start gap-3" data-testid="seller-block">
       <div className="h-11 w-11 rounded-full bg-gradient-to-br from-[#FF7A18] to-[#FF211F] text-white grid place-items-center font-bold shadow-sm shrink-0">
@@ -30,6 +35,16 @@ const SellerBlock = ({ sellerId, sellerName, views }) => {
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
           <span className="font-semibold text-neutral-900 dark:text-neutral-100">{sellerName}</span>
+          {country && flagEmoji(country) && (
+            <span
+              className="inline-flex items-center gap-1 rounded-full bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 text-[11px] font-medium text-neutral-700 dark:text-neutral-200"
+              title={`Ships from ${countryName(country)}`}
+              data-testid="seller-country-badge"
+            >
+              <span aria-hidden="true">{flagEmoji(country)}</span>
+              {countryName(country)}
+            </span>
+          )}
           {seller && <VerificationBadges user={seller} showLabels={false} />}
         </div>
         <div className="text-xs text-neutral-500 dark:text-neutral-400 flex items-center gap-2 mt-0.5">
@@ -461,7 +476,7 @@ const ListingDetail = () => {
           </div>
 
           <div className="mt-6 rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
-            <SellerBlock sellerId={listing.seller_id} sellerName={listing.seller_name} views={listing.views_count} />
+            <SellerBlock sellerId={listing.seller_id} sellerName={listing.seller_name} sellerCountry={listing.seller_country} views={listing.views_count} />
           </div>
 
           <ListingReviews listingId={listing.id} />
