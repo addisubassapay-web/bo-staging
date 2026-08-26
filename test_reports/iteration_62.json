@@ -1,0 +1,37 @@
+{
+  "summary": "Iteration 62 — Auth end-to-end regression on PREVIEW after MongoDB Atlas password rotation and UI rebrand/mobile refactor. Backend: admin login, /auth/me, seller login (with non-null store_id), stores-featured listing, /api/stores/sophia_style all HTTP 200. Frontend: /login form submit works at both 1280x900 (desktop) and 390x844 (mobile) — POST /api/auth/login → 200, localStorage 'mercari-global_token' set, redirect to / and Logout button visible. Rate-limiter accepts unknown-email requests without 500. Preview auth is fully functional; the user's report is consistent with the PROD deployment still pointing MONGO_URL at the dead '8207@Bit' password.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Homepage TrustStrip", "issues": ["React console warning: 'Each child in a list should have a unique key prop' from TrustStrip render — non-blocking but should be fixed."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration62_auth_regression.py",
+    "/app/test_reports/pytest/iter62_auth.xml"
+  ],
+  "action_items": [
+    "PROD FIX: Update the Emergent Deploy dashboard env var MONGO_URL for the prod pod to the new Atlas connection string (password CMQzpnM7NOs8HXXD). Current prod value still uses the rotated-out '8207@Bit' password → every Mongo-backed endpoint (including /api/auth/login) will fail there. Preview is already updated in /app/backend/.env and verified working.",
+    "Optional cleanup: fix missing React 'key' prop warning in TrustStrip component."
+  ],
+  "critical_code_review_comments": [
+    "Confirmed backend/.env MONGO_URL matches /app/memory/test_credentials.md rotated password — preview OK.",
+    "No GET /api/stores listing endpoint exists (only /api/stores/{slug}, /api/stores-featured, /api/admin/stores). The task description assumed one; consider adding a paginated public GET /api/stores?limit=N if the frontend needs it, or update docs.",
+    "JWT_SECRET in backend/.env is the placeholder 'mercari-clone-jwt-secret-key-change-in-production-2025' — must be rotated before prod launch."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration62_auth_regression.py"
+  ],
+  "success_rate": {"backend": "100% (6/6)", "frontend": "100% (2/2 viewports)"},
+  "test_credentials": "admin@mercari.local/admin123 and sophia_style@demo.local/demo1234 both confirmed working on preview.",
+  "seed_data_creation": "None. Reset failed_login_attempts+locked_until for admin and sophia_style via direct Mongo before tests.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Preview auth is healthy after Atlas password rotation. If the user still cannot log in, the issue is on the PROD deployment env-var side, not the codebase. Direct them to update MONGO_URL in Emergent Deploy dashboard and redeploy.",
+  "rca of the issue": "User reported login failures against the deployed (prod) URL. Preview /login works end-to-end with HTTP 200 and JWT persistence at both desktop and mobile viewports. Preview backend/.env carries the new Atlas password. The dead password '8207@Bit' is still baked into the prod pod's MONGO_URL env var per /app/memory/test_credentials.md checklist — that pod cannot open a Mongo connection, so every /api/auth/login (and any other DB-backed endpoint) fails there. Mitigation: update prod MONGO_URL env var in Emergent Deploy dashboard to the new connection string and redeploy."
+}
