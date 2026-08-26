@@ -169,7 +169,8 @@ const AdminStoreBoosts = () => {
 
       <div className="rounded-2xl border border-neutral-200 bg-white overflow-hidden">
         <div className="p-4 border-b border-neutral-100 text-sm font-semibold">Active boosts ({rows.length})</div>
-        <table className="w-full text-sm">
+        <div className="overflow-x-auto">
+        <table className="w-full text-sm min-w-[720px]">
           <thead className="bg-neutral-50 text-xs uppercase tracking-wider text-neutral-500">
             <tr>
               <th className="text-left px-4 py-2.5">Store</th>
@@ -206,6 +207,7 @@ const AdminStoreBoosts = () => {
             ))}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );

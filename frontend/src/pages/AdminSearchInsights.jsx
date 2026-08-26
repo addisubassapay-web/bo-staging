@@ -106,6 +106,7 @@ export default function AdminSearchInsights() {
               Top queries
             </div>
           </header>
+          <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="text-xs text-neutral-500">
               <tr className="text-left">
@@ -133,6 +134,7 @@ export default function AdminSearchInsights() {
               )}
             </tbody>
           </table>
+          </div>
         </section>
 
         {/* Zero-result queries */}
@@ -146,6 +148,7 @@ export default function AdminSearchInsights() {
               Gaps to stock or vocabulary to grow
             </span>
           </header>
+          <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="text-xs text-neutral-500">
               <tr className="text-left">
@@ -178,6 +181,7 @@ export default function AdminSearchInsights() {
               )}
             </tbody>
           </table>
+          </div>
         </section>
       </div>
     </div>

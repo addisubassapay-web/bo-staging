@@ -475,7 +475,8 @@ const AdminProducts = () => {
             </div>
           </div>
         )}
-        <div className="overflow-x-auto">
+        {/* Desktop table — md+ */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-sm" data-testid="admin-products-table">
             <thead className="bg-neutral-50 dark:bg-neutral-800/60 text-left text-neutral-500 text-xs uppercase tracking-wide">
               <tr>
@@ -607,6 +608,110 @@ const AdminProducts = () => {
               )}
             </tbody>
           </table>
+        </div>
+        {/* Mobile card grid — <md */}
+        <div className="md:hidden divide-y divide-neutral-100 dark:divide-neutral-800" data-testid="admin-products-mobile-list">
+          {loading && !data ? (
+            <div className="p-8 text-center text-neutral-500">Loading…</div>
+          ) : data?.items.length ? (
+            data.items.map((p) => (
+              <div
+                key={p.id}
+                className={`p-4 space-y-3 ${selectedIds.has(p.id) ? "bg-orange-50/60 dark:bg-orange-950/20" : ""}`}
+                data-testid={`admin-product-card-${p.id}`}
+              >
+                <div className="flex items-start gap-3">
+                  <Checkbox
+                    checked={selectedIds.has(p.id)}
+                    onCheckedChange={(v) => toggleOne(p.id, !!v)}
+                    aria-label={`Select ${p.title}`}
+                    className="mt-1"
+                    data-testid={`admin-product-select-${p.id}`}
+                  />
+                  <div className="h-14 w-14 rounded-lg bg-neutral-100 dark:bg-neutral-800 overflow-hidden grid place-items-center shrink-0">
+                    {p.images?.[0] ? (
+                      <img src={p.images[0]} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      <Package className="h-5 w-5 text-neutral-400" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-neutral-900 dark:text-neutral-100 line-clamp-2 text-sm">
+                      {p.title}
+                    </div>
+                    <div className="mt-1 flex items-center gap-2 text-[11px] text-neutral-500">
+                      <span className="rounded-full bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5">
+                        {p.category || "uncategorized"}
+                      </span>
+                      {p.source_url ? (
+                        <a
+                          href={p.source_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-neutral-400 hover:text-[#FF211F] inline-flex items-center gap-1"
+                        >
+                          source <ExternalLink className="h-3 w-3" />
+                        </a>
+                      ) : null}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between gap-3 pl-[3.75rem]">
+                  <div>
+                    <div className="text-[10px] uppercase font-semibold text-neutral-400 tracking-wider">Price</div>
+                    <div className="text-sm font-semibold tabular-nums">
+                      {p.in_stock === false ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 px-2 py-0.5 text-[10px] font-semibold" data-testid={`admin-product-oos-${p.id}`}>
+                          <span className="h-1.5 w-1.5 rounded-full bg-amber-500" /> OOS
+                        </span>
+                      ) : (
+                        money(p.price, p.currency)
+                      )}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-[10px] uppercase font-semibold text-neutral-400 tracking-wider">SKU</div>
+                    <div className="text-xs font-mono text-neutral-500 truncate max-w-[120px]">{p.sku || "—"}</div>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between gap-2 pl-[3.75rem]">
+                  <label className="flex items-center gap-2 text-xs text-neutral-600 dark:text-neutral-300 min-h-[44px]">
+                    <Switch
+                      checked={!!p.is_active}
+                      onCheckedChange={(v) => toggleActive(p, v)}
+                      data-testid={`admin-product-active-toggle-${p.id}`}
+                    />
+                    <span>{p.is_active ? "Active" : "Hidden"}</span>
+                  </label>
+                  <div className="flex gap-1">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setEditing(p)}
+                      className="min-h-[44px] min-w-[44px] gap-1.5"
+                      data-testid={`admin-product-edit-btn-${p.id}`}
+                    >
+                      <Pencil className="h-4 w-4" /> Edit
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => removeProduct(p)}
+                      className="min-h-[44px] min-w-[44px] text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30"
+                      data-testid={`admin-product-delete-btn-${p.id}`}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="p-8 text-center">
+              <Package className="h-8 w-8 text-neutral-300 mx-auto mb-2" />
+              <p className="text-neutral-500">No products match your filters</p>
+            </div>
+          )}
         </div>
 
         {data && totalPages > 1 ? (

@@ -91,7 +91,8 @@ const AdminQuotas = () => {
           <div className="text-sm font-semibold">Usage this month</div>
           <div className="text-xs text-neutral-500 tabular-nums">Total: <span className="font-semibold text-neutral-900">{totalUsed}</span> credits burned</div>
         </div>
-        <table className="w-full text-sm">
+        <div className="overflow-x-auto">
+        <table className="w-full text-sm min-w-[720px]">
           <thead className="bg-neutral-50 text-xs uppercase tracking-wider text-neutral-500">
             <tr>
               <th className="text-left px-4 py-2.5">User</th>
@@ -151,6 +152,7 @@ const AdminQuotas = () => {
             })}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );

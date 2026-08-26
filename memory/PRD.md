@@ -24,6 +24,27 @@ Full-stack ecommerce marketplace **Mercari-Global** — same color scheme (`#FF2
 
 ---
 
+
+### Feb 26 2026 — Mobile Responsive Sweep, Round 2
+
+**Follow-up to the first responsive refactor**: extended the pattern to the remaining high-traffic admin surfaces so the "product ingestion queue" specifically mentioned by the user renders as native cards on mobile.
+
+**What shipped**:
+- **AdminProducts.jsx** (the actual product ingestion catalog manager): raw `<table>` now hidden on `<md`; injected a mobile card grid with product thumbnail (56×56 rounded), 2-line title, category chip, source-URL micro-link, Price / SKU 2-col grid, active-toggle label, and Edit / Delete buttons each `min-h-[44px] min-w-[44px]`. Preserves all data-testids (`admin-product-card-{id}`, `admin-product-select-{id}`, edit/delete/toggle testids).
+- **AdminStoreBoosts.jsx** + **AdminQuotas.jsx**: wrapped raw tables in `overflow-x-auto` + `min-w-[720px]` on the `<table>` so cells don't crush — horizontal-scroll fallback for these lower-traffic admin views.
+- **AdminSearchInsights.jsx**: both tables wrapped in `overflow-x-auto`.
+- **Admin.jsx :: CategoriesMgr**: swapped `overflow-hidden` → `overflow-x-auto` on the table wrapper so it scrolls cleanly on mobile.
+
+**Verified live @ 390px viewport with admin auth**:
+- `scrollWidth === clientWidth` (zero horizontal overflow) on `/admin/products`.
+- Mobile card grid `admin-products-mobile-list` renders — screenshot shows HP Everyday Slim Laptop and HP Laptop 2026 tiles with thumb-sized action buttons.
+- Hamburger `admin-drawer-open` visible in the top bar; opening it slides in the full 21-item sidebar as a `Sheet`, current route highlighted, Support badge counter working.
+- Rebrand + Computer/Laptop import both confirmed on the same screen.
+
+**Backlog** (lower-traffic; will convert only if user asks): `UsersMgr` / `OrdersMgr` / `WithdrawalsMgr` / `ListingsMgr` / `AdminEmailLog` / `AdminScraper` — all currently use `overflow-x-auto` (functional on mobile, just not native-card polished).
+
+---
+
 ### Feb 26 2026 — Mobile-First Responsive Refactor
 
 **Goal**: Every route usable from 320px (iPhone SE 1) to 4K without horizontal scroll; data tables collapse to card grids on `<md` (768px); modals never exceed viewport; admin sidebar collapses into a hamburger-triggered drawer.
