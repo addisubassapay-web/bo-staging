@@ -5,6 +5,7 @@ import { AuthProvider } from "@/context/AuthContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { CurrencyProvider } from "@/context/CurrencyContext";
 import { LanguageProvider } from "@/context/LanguageContext";
+import { FontSizeProvider } from "@/context/FontSizeContext";
 import { Toaster } from "@/components/ui/toaster";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -51,6 +52,7 @@ import SupportWidget from "@/components/SupportWidget";
 function App() {
   return (
     <ThemeProvider>
+      <FontSizeProvider>
       <LanguageProvider>
         <CurrencyProvider>
           <div className="App min-h-screen w-full max-w-full overflow-x-hidden flex flex-col bg-white text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100 transition-colors">
@@ -110,6 +112,7 @@ function App() {
           </div>
         </CurrencyProvider>
       </LanguageProvider>
+      </FontSizeProvider>
     </ThemeProvider>
   );
 }

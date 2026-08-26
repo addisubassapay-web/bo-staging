@@ -25,6 +25,31 @@ Full-stack ecommerce marketplace **Mercari-Global** — same color scheme (`#FF2
 ---
 
 
+
+### Feb 26 2026 — Font-Size Selector (S/M/L) + Product Tile Clamping
+
+**Goal**: Let mobile users pick a smaller UI density so all desktop features fit on-screen, and guarantee every product tile shows at most 2 lines of title.
+
+**What shipped**:
+- **New `FontSizeContext.jsx`** (`/app/frontend/src/context/FontSizeContext.jsx`) — provider with `{ size, setSize }` (values: `"sm"` | `"md"` | `"lg"`). Under the hood it sets `document.documentElement.style.fontSize` to `14px | 16px | 18px`. Because every Tailwind size class uses `rem`, the *entire* UI scales in one line — no per-component overrides needed.
+- **New `FontSizePicker.jsx`** — tri-toggle rendered inside the Header as a rounded-pill of three "A" buttons (small / medium / large). Uses `min-h-[32px] min-w-[32px]` touch targets; `data-testid="font-size-picker"` + `font-size-sm|md|lg`. Active state shown via inverted pill.
+- **Wired into `/app/frontend/src/App.js`**: `FontSizeProvider` wraps everything inside `ThemeProvider` so both survive theme/lang changes.
+- **Persistence**: localStorage key `mercarie-global_fontsize`. Reads on mount before first paint.
+- **Product tile titles**: audited every card component — `ProductCard.jsx`, `Home.jsx`, `Products.jsx`, `Cart.jsx`, `Checkout.jsx`, `StoreAnalytics.jsx`, `AdminProducts.jsx` mobile card grid — all use `line-clamp-2`. Remaining `line-clamp-1` occurrences are inside dense admin/wallet/order-row lists where single-line is intentional.
+
+**Verified live @ 390px viewport**:
+| Setting | Root `font-size` | localStorage | Visual delta |
+|---|---|---|---|
+| Small | **14px** | `mercarie-global_fontsize=sm` | +2 chips visible per header row; tighter tiles |
+| Medium | 16px | `md` (default) | Standard density |
+| Large | **18px** | `lg` | Bigger targets; catalogue heading wraps 3 lines |
+
+- ✅ Setting survives page reload
+- ✅ Applies across every route (root-level provider)
+- ✅ Picker visible in the Header top bar on all screens
+
+---
+
 ### Feb 26 2026 — Mobile Responsive Sweep, Round 2
 
 **Follow-up to the first responsive refactor**: extended the pattern to the remaining high-traffic admin surfaces so the "product ingestion queue" specifically mentioned by the user renders as native cards on mobile.

@@ -18,6 +18,7 @@ import SearchAutocomplete from "@/components/SearchAutocomplete";
 import CategoryMegaMenu from "@/components/CategoryMegaMenu";
 import CurrencyPicker from "@/components/CurrencyPicker";
 import LanguagePicker from "@/components/LanguagePicker";
+import { FontSizePicker } from "@/components/FontSizePicker";
 import MiniCart from "@/components/MiniCart";
 
 // Icon + accent color mapping for the 10 Apify-native categories shown in
@@ -238,6 +239,9 @@ const Header = () => {
             </Link>
 
             <ThemeToggle />
+
+            {/* Text size — helps fit more desktop content on smaller screens */}
+            <FontSizePicker />
 
             {/* Currency + Language pickers — prominent variant, hidden on small phones */}
             <div className="hidden md:flex items-center gap-1">
