@@ -24,6 +24,33 @@ Full-stack ecommerce marketplace **Mercari-Global** — same color scheme (`#FF2
 
 ---
 
+### Feb 26 2026 — Mobile-First Responsive Refactor
+
+**Goal**: Every route usable from 320px (iPhone SE 1) to 4K without horizontal scroll; data tables collapse to card grids on `<md` (768px); modals never exceed viewport; admin sidebar collapses into a hamburger-triggered drawer.
+
+**What shipped**:
+- **AdminLedgerAudit.jsx**: raw `<table>` now hidden on `<md`; injected a card grid with one card per drifted wallet — user identity, drift chip, current/expected balances in a 2-col mini-grid, and a full-width `min-h-[44px]` Reconcile button. `data-testid="ledger-audit-mobile-list"` + `ledger-card-{user_id}` for QA.
+- **Admin.jsx**: refactored to `AdminShell` component with a `Sheet`-based mobile drawer. New `AdminSidebarNav` component is rendered inline on desktop (`hidden md:block aside`) and inside a `SheetContent` drawer on mobile. Route change auto-closes the drawer. `data-testid="admin-drawer-open"` on the hamburger, `admin-drawer-nav` inside the sheet.
+- **components/ui/dialog.jsx**: `DialogContent` now uses `w-[calc(100%-2rem)]`, `max-h-[calc(100dvh-2rem)]`, `overflow-y-auto`, and `p-4 sm:p-6` — modals scale fluidly and scroll internally when taller than the viewport (fixes the "modal-clipped-off-screen" bug on short phones).
+- **ProductSearchAutocomplete.jsx**: header search input `w-72` → `w-full sm:w-72` — no longer overflows on <320px phones.
+- **Wallet.jsx**: already had a `hidden sm:block` desktop table + `sm:hidden` mobile card list; verified compliant, no change needed.
+- Verified `Header.jsx` category ribbon uses `overflow-x-auto` (horizontal-scroll chips = the correct mobile pattern) and the main nav already has a hamburger via `CategoryMegaMenu`.
+
+**Verified (Playwright at 320px & 375px viewports)**:
+- `scrollWidth === clientWidth` (zero horizontal overflow) on `/`, `/login`, `/products?category=Computer&subcategory=Laptop`.
+- Login page wordmark, form, and top nav all fit at 320px.
+- Products grid renders as clean 2-col at 375px.
+- Header "Mercarie-Global" wordmark visible with orange split.
+- Touch targets: all mutation buttons use `min-h-[44px]` per Apple HIG.
+
+**Not user-visible / intentionally left alone**:
+- localStorage keys (`mercari-global_token` etc.) — renaming would log users out.
+- Decorative blur orbs with `h-64 w-64` etc. — parent containers have `overflow-hidden`.
+- Product carousel `w-64` cards on Home — horizontal snap-scroll, intentional fixed width.
+
+---
+
+
 ### Feb 25 2026 — New "Computer" Category + Manual Apify Run Import
 
 **Feature (P1)**: Admin can now permanently import any completed Apify run's dataset into the `products` catalog under an arbitrary category/subcategory — even after the account's monthly Apify quota is exhausted (finished-dataset reads don't consume quota).

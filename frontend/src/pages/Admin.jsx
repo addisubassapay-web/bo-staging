@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { NavLink, Route, Routes, Navigate, useNavigate } from "react-router-dom";
+import { NavLink, Route, Routes, Navigate, useNavigate, useLocation } from "react-router-dom";
 import api, { formatPrice } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,9 +8,10 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { LayoutDashboard, Users, Package, ShoppingBag, FolderTree, Trash2, Star, Plus, Settings as SettingsIcon, Wallet, Store as StoreIcon, Save, Check, X as XIcon, Database, IdCard, LayoutGrid, GripVertical, AlertCircle, ShieldAlert, CheckCircle2, XCircle, Clock, MessageCircle, ChevronDown, ChevronUp, Bitcoin, CheckSquare, Square as SquareIcon, Ticket, Mail, Zap } from "lucide-react";
+import { LayoutDashboard, Users, Package, ShoppingBag, FolderTree, Trash2, Star, Plus, Settings as SettingsIcon, Wallet, Store as StoreIcon, Save, Check, X as XIcon, Database, IdCard, LayoutGrid, GripVertical, AlertCircle, ShieldAlert, CheckCircle2, XCircle, Clock, MessageCircle, ChevronDown, ChevronUp, Bitcoin, CheckSquare, Square as SquareIcon, Ticket, Mail, Zap, Menu } from "lucide-react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import AdminShelves from "@/pages/AdminShelves";
 import ApifySync from "@/pages/AdminApifySync";
@@ -1615,58 +1616,92 @@ const Admin = () => {
   if (loading || !user) return <div className="p-8">Loading…</div>;
   if (user.role !== "admin") return <Navigate to="/" />;
 
+  return <AdminShell />;
+};
+
+const AdminSidebarNav = ({ compact = false }) => (
+  <nav className={compact ? "space-y-1 p-4" : "space-y-1"} data-testid={compact ? "admin-drawer-nav" : "admin-sidebar-nav"}>
+    <div className="px-3 py-2 mb-2">
+      <div className="text-xs text-neutral-500 uppercase tracking-wider">Admin panel</div>
+    </div>
+    <SidebarLink to="/admin" icon={LayoutDashboard}>Dashboard</SidebarLink>
+    <SidebarLink to="/admin/users" icon={Users}>Users</SidebarLink>
+    <SidebarLink to="/admin/stores" icon={StoreIcon}>Stores</SidebarLink>
+    <SidebarLink to="/admin/listings" icon={Package}>Listings</SidebarLink>
+    <SidebarLink to="/admin/products" icon={Package}>Products (catalog)</SidebarLink>
+    <SidebarLink to="/admin/search-insights" icon={Package}>Search insights</SidebarLink>
+    <SidebarLink to="/admin/orders" icon={ShoppingBag}>Orders</SidebarLink>
+    <SidebarLink to="/admin/categories" icon={FolderTree}>Categories</SidebarLink>
+    <SidebarLink to="/admin/withdrawals" icon={Wallet}>Withdrawals</SidebarLink>
+    <SidebarLink to="/admin/payment-reviews" icon={ShieldAlert}>Payment reviews</SidebarLink>
+    <SidebarLink to="/admin/ledger-audit" icon={Wallet}>Ledger audit</SidebarLink>
+    <SidebarLink to="/admin/payment-methods" icon={Bitcoin}>Payment methods</SidebarLink>
+    <SidebarLink to="/admin/coupons" icon={Ticket}>Coupons</SidebarLink>
+    <SidebarLink to="/admin/disputes" icon={AlertCircle}>Disputes</SidebarLink>
+    <SidebarLink to="/admin/seller-applications" icon={IdCard}>Seller applications</SidebarLink>
+    <SidebarLink to="/admin/shelves" icon={LayoutGrid}>Homepage shelves</SidebarLink>
+    <SidebarLink to="/admin/apify-sync" icon={Database}>Apify sync</SidebarLink>
+    <SidebarLink to="/admin/store-boosts" icon={StoreIcon}>Store boosts</SidebarLink>
+    <SidebarSupportLink />
+    <SidebarLink to="/admin/email-log" icon={Mail}>Email log</SidebarLink>
+    <SidebarLink to="/admin/settings" icon={SettingsIcon}>Settings</SidebarLink>
+  </nav>
+);
+
+const AdminShell = () => {
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const location = useLocation();
+
+  // Close drawer whenever route changes so tapping a link on mobile dismisses it.
+  useEffect(() => { setDrawerOpen(false); }, [location.pathname]);
+
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8 grid md:grid-cols-[220px_1fr] gap-8">
-      <aside className="space-y-1">
-        <div className="px-3 py-2 mb-2">
-          <div className="text-xs text-neutral-500 uppercase tracking-wider">Admin panel</div>
-        </div>
-        <SidebarLink to="/admin" icon={LayoutDashboard}>Dashboard</SidebarLink>
-        <SidebarLink to="/admin/users" icon={Users}>Users</SidebarLink>
-        <SidebarLink to="/admin/stores" icon={StoreIcon}>Stores</SidebarLink>
-        <SidebarLink to="/admin/listings" icon={Package}>Listings</SidebarLink>
-        <SidebarLink to="/admin/products" icon={Package}>Products (catalog)</SidebarLink>
-        <SidebarLink to="/admin/search-insights" icon={Package}>Search insights</SidebarLink>
-        <SidebarLink to="/admin/orders" icon={ShoppingBag}>Orders</SidebarLink>
-        <SidebarLink to="/admin/categories" icon={FolderTree}>Categories</SidebarLink>
-        <SidebarLink to="/admin/withdrawals" icon={Wallet}>Withdrawals</SidebarLink>
-        <SidebarLink to="/admin/payment-reviews" icon={ShieldAlert}>Payment reviews</SidebarLink>
-        <SidebarLink to="/admin/ledger-audit" icon={Wallet}>Ledger audit</SidebarLink>
-        <SidebarLink to="/admin/payment-methods" icon={Bitcoin}>Payment methods</SidebarLink>
-        <SidebarLink to="/admin/coupons" icon={Ticket}>Coupons</SidebarLink>
-        <SidebarLink to="/admin/disputes" icon={AlertCircle}>Disputes</SidebarLink>
-        <SidebarLink to="/admin/seller-applications" icon={IdCard}>Seller applications</SidebarLink>
-        <SidebarLink to="/admin/shelves" icon={LayoutGrid}>Homepage shelves</SidebarLink>
-        <SidebarLink to="/admin/apify-sync" icon={Database}>Apify sync</SidebarLink>
-        <SidebarLink to="/admin/store-boosts" icon={StoreIcon}>Store boosts</SidebarLink>
-        <SidebarSupportLink />
-        <SidebarLink to="/admin/email-log" icon={Mail}>Email log</SidebarLink>
-        <SidebarLink to="/admin/settings" icon={SettingsIcon}>Settings</SidebarLink>
-      </aside>
-      <main>
-        <Routes>
-          <Route index element={<Dashboard />} />
-          <Route path="users" element={<UsersMgr />} />
-          <Route path="stores" element={<StoresMgr />} />
-          <Route path="listings" element={<ListingsMgr />} />
-          <Route path="products" element={<AdminProducts />} />
-          <Route path="search-insights" element={<AdminSearchInsights />} />
-          <Route path="orders" element={<OrdersMgr />} />
-          <Route path="categories" element={<CategoriesMgr />} />
-          <Route path="withdrawals" element={<WithdrawalsMgr />} />
-          <Route path="payment-reviews" element={<AdminPaymentReviews />} />
-          <Route path="ledger-audit" element={<AdminLedgerAudit />} />
-          <Route path="payment-methods" element={<AdminPaymentMethods />} />
-          <Route path="disputes" element={<DisputesMgr />} />
-          <Route path="seller-applications" element={<SellerApplicationsMgr />} />
-          <Route path="shelves" element={<AdminShelves />} />
-          <Route path="apify-sync" element={<ApifySync />} />
-          <Route path="store-boosts" element={<AdminStoreBoosts />} />
-          <Route path="support-tickets" element={<AdminSupport />} />
-          <Route path="email-log" element={<AdminEmailLog />} />
-          <Route path="settings" element={<SettingsMgr />} />
-        </Routes>
-      </main>
+    <div className="max-w-7xl mx-auto px-4 py-4 md:py-8">
+      {/* Mobile top bar with hamburger — visible only <768px */}
+      <div className="md:hidden flex items-center justify-between mb-4">
+        <div className="text-xs text-neutral-500 uppercase tracking-wider font-semibold">Admin</div>
+        <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
+          <SheetTrigger asChild>
+            <Button variant="outline" size="sm" className="gap-1.5 min-h-[44px]" data-testid="admin-drawer-open">
+              <Menu className="h-4 w-4" /> Menu
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left" className="p-0 w-[280px] overflow-y-auto">
+            <SheetTitle className="sr-only">Admin navigation</SheetTitle>
+            <AdminSidebarNav compact />
+          </SheetContent>
+        </Sheet>
+      </div>
+      <div className="grid md:grid-cols-[220px_1fr] gap-4 md:gap-8">
+        {/* Desktop sidebar — hidden <768px */}
+        <aside className="hidden md:block">
+          <AdminSidebarNav />
+        </aside>
+        <main className="min-w-0">
+          <Routes>
+            <Route index element={<Dashboard />} />
+            <Route path="users" element={<UsersMgr />} />
+            <Route path="stores" element={<StoresMgr />} />
+            <Route path="listings" element={<ListingsMgr />} />
+            <Route path="products" element={<AdminProducts />} />
+            <Route path="search-insights" element={<AdminSearchInsights />} />
+            <Route path="orders" element={<OrdersMgr />} />
+            <Route path="categories" element={<CategoriesMgr />} />
+            <Route path="withdrawals" element={<WithdrawalsMgr />} />
+            <Route path="payment-reviews" element={<AdminPaymentReviews />} />
+            <Route path="ledger-audit" element={<AdminLedgerAudit />} />
+            <Route path="payment-methods" element={<AdminPaymentMethods />} />
+            <Route path="disputes" element={<DisputesMgr />} />
+            <Route path="seller-applications" element={<SellerApplicationsMgr />} />
+            <Route path="shelves" element={<AdminShelves />} />
+            <Route path="apify-sync" element={<ApifySync />} />
+            <Route path="store-boosts" element={<AdminStoreBoosts />} />
+            <Route path="support-tickets" element={<AdminSupport />} />
+            <Route path="email-log" element={<AdminEmailLog />} />
+            <Route path="settings" element={<SettingsMgr />} />
+          </Routes>
+        </main>
+      </div>
     </div>
   );
 };

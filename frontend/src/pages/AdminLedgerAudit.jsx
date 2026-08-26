@@ -123,7 +123,8 @@ const AdminLedgerAudit = () => {
         </div>
       ) : (
         <div className="rounded-xl border border-neutral-200 bg-white overflow-hidden">
-          <div className="overflow-x-auto">
+          {/* Desktop table */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-neutral-50 text-neutral-500 text-xs uppercase tracking-wider">
                 <tr>
@@ -160,6 +161,42 @@ const AdminLedgerAudit = () => {
                 ))}
               </tbody>
             </table>
+          </div>
+          {/* Mobile card grid — <768px */}
+          <div className="md:hidden divide-y divide-neutral-100" data-testid="ledger-audit-mobile-list">
+            {filtered.map((r) => (
+              <div key={r.user_id} className="p-4 space-y-3" data-testid={`ledger-card-${r.user_id}`}>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="font-semibold text-neutral-900 truncate">{r.username || r.user_id}</div>
+                    <div className="text-xs text-neutral-500 truncate">{r.email}</div>
+                  </div>
+                  <div className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-mono font-bold tabular-nums ${r.drift > 0 ? "bg-amber-50 text-amber-700" : "bg-red-50 text-red-700"}`}>
+                    {fmt(r.drift)}
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div>
+                    <div className="text-neutral-400 uppercase tracking-wider font-semibold text-[10px]">Current</div>
+                    <div className="font-mono tabular-nums text-neutral-900">${r.current_balance.toFixed(2)}</div>
+                  </div>
+                  <div>
+                    <div className="text-neutral-400 uppercase tracking-wider font-semibold text-[10px]">Expected</div>
+                    <div className="font-mono tabular-nums text-neutral-500">${r.expected_balance.toFixed(2)}</div>
+                  </div>
+                </div>
+                <Button
+                  size="sm"
+                  onClick={() => reconcile(r.user_id, r.username)}
+                  disabled={reconciling[r.user_id]}
+                  className="w-full min-h-[44px] gap-1.5 bg-gradient-to-r from-[#7DD3FC] to-[#2563EB] hover:brightness-110"
+                  data-testid={`reconcile-btn-${r.user_id}`}
+                >
+                  <RefreshCw className={`h-4 w-4 ${reconciling[r.user_id] ? "animate-spin" : ""}`} />
+                  {reconciling[r.user_id] ? "Reconciling…" : "Reconcile"}
+                </Button>
+              </div>
+            ))}
           </div>
         </div>
       )}

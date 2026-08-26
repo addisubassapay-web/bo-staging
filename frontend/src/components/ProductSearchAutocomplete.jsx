@@ -181,7 +181,7 @@ export default function ProductSearchAutocomplete({
         onFocus={() => setOpen(true)}
         onKeyDown={onKey}
         placeholder={placeholder}
-        className="pl-9 pr-9 h-10 w-72 rounded-full border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-sm outline-none focus:border-[#FF211F] focus:ring-2 focus:ring-[#FF211F]/30 transition"
+        className="pl-9 pr-9 h-10 w-full sm:w-72 rounded-full border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-sm outline-none focus:border-[#FF211F] focus:ring-2 focus:ring-[#FF211F]/30 transition"
         data-testid="products-search-input"
         autoComplete="off"
       />
