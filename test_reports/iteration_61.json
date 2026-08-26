@@ -1,0 +1,25 @@
+{
+  "summary": "Deployment readiness verification for iteration 61 bundle (rebrand, Atlas password rotation, seller_country field, Computer>Laptop category import, new admin apify import endpoint, mobile refactor, font-size picker, country flag badges). Backend: 10/10 pytest tests pass. Frontend: all mobile flows at 390px and desktop 1440px verified against the preview URL. No blockers found; deployment can proceed.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_iteration61_regression.py",
+    "/app/test_reports/pytest/iter61.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Admin apify import endpoint correctly rejects non-admin JWT with 403 and returns 404 for unknown run_id.",
+    "Products/listings ProductOut and Listing models correctly include seller_country; backfilled to 'US' for amazon.com sourced items.",
+    "FontSizeContext localStorage key 'mercarie-global_fontsize' with sm/md/lg -> 14/16/18px works, aria-pressed toggles correctly on the picker.",
+    "Mobile refactor: admin-drawer-open, admin-drawer-nav, admin-products-mobile-list, admin-product-card-{id}, and ledger-audit-mobile-list all render on <md; desktop tables are hidden md:block correctly.",
+    "Rebrand fully applied to index.html <title> and /manifest.json."
+  ],
+  "updated_files": ["/app/backend/tests/test_iteration61_regression.py"],
+  "success_rate": {"backend": "100% (10/10)", "frontend": "100% (all requested checks pass)"},
+  "test_credentials": "admin@mercari.local / admin123 (still valid post-Atlas-password-rotation)",
+  "seed_data_creation": "None. No data mutated; all reads plus invalid-run 404 probe against admin apify import endpoint.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Regression suite is /app/backend/tests/test_iteration61_regression.py — covers rebrand HTML/manifest, admin login (Atlas rotation regression), categories/subcategories with Computer/Laptop, seller_country on products+listings, and admin apify import endpoint (403/404/401). Frontend verified: font-size-{sm|md|lg} data-testids on header, admin-drawer-open+admin-drawer-nav, admin-products-mobile-list with admin-product-card-{id}, ledger-audit-mobile-list, product-origin-{id} tiles with flag emoji. Preview URL https://marketplace-dropship.preview.emergentagent.com is green for deploy.",
+  "rca of the issue": "N/A — verification only, no bugs found."
+}
