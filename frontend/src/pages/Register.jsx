@@ -131,7 +131,7 @@ const Register = () => {
             </ul>
           </div>
 
-          <div className="text-xs text-white/60">© {new Date().getFullYear()} Mercarie-Global · All rights reserved.</div>
+          <div className="text-xs text-white/60">© {new Date().getFullYear()} Mercari-Smarthub · All rights reserved.</div>
         </div>
 
         {/* Right — form pane */}
@@ -162,7 +162,7 @@ const Register = () => {
               <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
                 {inviteOnly
                   ? "Enter the invitation code shared by an existing member to join."
-                  : "Join Mercarie-Global and get your storefront in seconds."}
+                  : "Join Mercari-Smarthub and get your storefront in seconds."}
               </p>
 
               <form onSubmit={submit} className="mt-6 space-y-4" data-testid="register-form">
@@ -282,7 +282,7 @@ const Register = () => {
                   </div>
                   {inviteOnly && !inviteLoading && (
                     <p className="mt-1 text-[11px] text-neutral-500 dark:text-neutral-400 inline-flex items-center gap-1">
-                      <Sparkles className="h-3 w-3 text-amber-500" /> New signups need a valid invitation from a Mercarie-Global member.
+                      <Sparkles className="h-3 w-3 text-amber-500" /> New signups need a valid invitation from a Mercari-Smarthub member.
                     </p>
                   )}
                 </div>
@@ -296,7 +296,7 @@ const Register = () => {
                     data-testid="register-accept"
                   />
                   <span>
-                    I agree to Mercarie-Global&apos;s{" "}
+                    I agree to Mercari-Smarthub&apos;s{" "}
                     <a href="/terms" className="text-[#2563EB] dark:text-[#7DD3FC] hover:underline">Terms</a> and{" "}
                     <a href="/privacy" className="text-[#2563EB] dark:text-[#7DD3FC] hover:underline">Privacy Policy</a>.
                   </span>

@@ -1,4 +1,4 @@
-"""Pre-deploy readiness verification for Mercarie-Global (iteration 58).
+"""Pre-deploy readiness verification for Mercari-Smarthub (iteration 58).
 
 Verifies: no test-title leaks in public feeds, product count healthy, health endpoint,
 per-store listings clean, stale test-order cleanup applied, and _send_pickup_email

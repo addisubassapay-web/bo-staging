@@ -68,9 +68,9 @@ const GlobalNavMenu = () => {
       >
         <div className="flex items-center justify-between px-4 h-16 border-b border-neutral-200 dark:border-neutral-800 shrink-0">
           <div className="flex items-center gap-2">
-            <img src="/logo-mark.png" alt="Mercarie-Global" className="h-9 w-9 shrink-0" />
+            <img src="/logo-mark.png" alt="Mercari-Smarthub" className="h-9 w-9 shrink-0" />
             <div className="leading-tight">
-              <div className="text-base font-bold text-neutral-900 dark:text-neutral-100">Mercarie-<span className="text-[#FF7A18]">Global</span></div>
+              <div className="text-base font-bold text-neutral-900 dark:text-neutral-100">Mercari-<span className="text-[#FF7A18]">Smarthub</span></div>
               <div className="text-[10px] text-neutral-500 dark:text-neutral-400 -mt-0.5">{t("menu.mainPages")}</div>
             </div>
           </div>

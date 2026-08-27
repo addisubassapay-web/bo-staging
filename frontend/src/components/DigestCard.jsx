@@ -43,7 +43,7 @@ const DigestCard = () => {
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl" onClick={(e) => e.stopPropagation()} data-testid="digest-preview-modal">
             <div className="flex items-start justify-between">
               <div>
-                <div className="text-xs uppercase tracking-wider text-[#FF7A18] font-semibold">Preview · Mercarie-Global</div>
+                <div className="text-xs uppercase tracking-wider text-[#FF7A18] font-semibold">Preview · Mercari-Smarthub</div>
                 <h3 className="text-xl font-bold mt-1">Price drops on your wishlist</h3>
                 <p className="text-sm text-neutral-500">Sent to <span className="font-mono">{data.email}</span></p>
               </div>

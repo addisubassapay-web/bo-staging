@@ -1,5 +1,5 @@
 """Iteration 61 regression tests:
-- Rebrand (Mercari-Global -> Mercarie-Global)
+- Rebrand (Mercari-Global -> Mercari-Smarthub)
 - MongoDB Atlas password rotation (admin login still works)
 - New seller_country field on products + listings
 - New categories/subcategories (Computer > Laptop)
@@ -50,20 +50,20 @@ def test_rebrand_index_html():
     r = requests.get(f"{BASE_URL}/", timeout=30)
     assert r.status_code == 200
     html = r.text
-    # <title> should include Mercarie-Global and NOT Mercari-Global (with hyphen but no "e")
+    # <title> should include Mercari-Smarthub and NOT Mercari-Global (with hyphen but no "e")
     m = re.search(r"<title>(.*?)</title>", html, re.IGNORECASE | re.DOTALL)
     assert m, "no <title> tag"
     title = m.group(1)
-    assert "Mercarie-Global" in title, f"Expected 'Mercarie-Global' in title: {title!r}"
+    assert "Mercari-Smarthub" in title, f"Expected 'Mercari-Smarthub' in title: {title!r}"
     # ensure the old brand hyphenated form isn't there
-    assert "Mercari-Global" not in title.replace("Mercarie-Global", ""), f"Old brand still in title: {title!r}"
+    assert "Mercari-Global" not in title.replace("Mercari-Smarthub", ""), f"Old brand still in title: {title!r}"
 
 
 def test_rebrand_manifest():
     r = requests.get(f"{BASE_URL}/manifest.json", timeout=30)
     assert r.status_code == 200
     body = r.text
-    assert "Mercarie-Global" in body, f"manifest.json missing new brand: {body[:300]}"
+    assert "Mercari-Smarthub" in body, f"manifest.json missing new brand: {body[:300]}"
 
 
 # --- Admin auth (post rotation) ---

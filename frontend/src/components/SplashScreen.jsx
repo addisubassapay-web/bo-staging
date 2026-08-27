@@ -40,7 +40,7 @@ const SplashScreen = () => {
       };
     }
     return {
-      headline: "Welcome to Mercarie-Global",
+      headline: "Welcome to Mercari-Smarthub",
       sub: "Millions of items · Verified sellers · Buyer protection",
       isReturning: false,
     };

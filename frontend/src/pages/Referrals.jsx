@@ -33,7 +33,7 @@ const Referrals = () => {
         <Users className="h-6 w-6 text-[#FF211F]" />
         <h1 className="text-3xl font-bold">Referral program</h1>
       </div>
-      <p className="text-neutral-600 mb-6">Invite friends to Mercarie-Global and earn from their activity across 3 levels of your network.</p>
+      <p className="text-neutral-600 mb-6">Invite friends to Mercari-Smarthub and earn from their activity across 3 levels of your network.</p>
 
       <div className="bg-gradient-to-br from-[#FF211F] to-[#c81816] text-white rounded-xl p-6 mb-8">
         <div className="text-sm opacity-90">Your referral code</div>

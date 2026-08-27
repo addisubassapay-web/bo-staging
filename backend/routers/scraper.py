@@ -422,7 +422,7 @@ async def scraper_status(_admin: dict = Depends(require_admin)):
 
 
 # =========================================================================
-# Paginated seed scraper — Amazon + Mercarie-Global at scale
+# Paginated seed scraper — Amazon + Mercari-Smarthub at scale
 # =========================================================================
 _SEED_TEMPLATES = {
     "amazon_search":  "https://www.amazon.com/s?k={q}&page={p}",

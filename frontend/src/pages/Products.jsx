@@ -263,7 +263,7 @@ const Products = () => {
               className="font-serif text-4xl sm:text-5xl lg:text-6xl leading-[1.05] tracking-tight text-neutral-900 dark:text-neutral-50"
               style={{ fontFamily: "'Playfair Display', 'DM Serif Display', Georgia, serif" }}
             >
-              The <em className="italic text-[#B85C38]">Mercarie-Global</em> catalogue
+              The <em className="italic text-[#B85C38]">Mercari-Smarthub</em> catalogue
             </h1>
             <p className="mt-3 text-neutral-700 dark:text-neutral-300 max-w-xl leading-relaxed">
               Every category, every drop — curated from real supply.{" "}

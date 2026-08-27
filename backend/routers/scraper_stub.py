@@ -9,7 +9,7 @@ from fastapi import APIRouter, HTTPException
 router = APIRouter(prefix="/scraper", tags=["scraper-deprecated"])
 
 _MSG = (
-    "Zyte scraper endpoints have been removed. Mercarie-Global now imports "
+    "Zyte scraper endpoints have been removed. Mercari-Smarthub now imports "
     "products only via the Apify Amazon crawler — see /api/admin/sync/apify."
 )
 

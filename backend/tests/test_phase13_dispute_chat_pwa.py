@@ -225,7 +225,7 @@ class TestPWA:
         data = r.json()
         assert data.get("theme_color") == "#FF211F"
         assert data.get("display") == "standalone"
-        assert "Mercarie-Global" in (data.get("name") or "")
+        assert "Mercari-Smarthub" in (data.get("name") or "")
 
     def test_service_worker_ok(self):
         r = requests.get(f"{BASE_URL}/service-worker.js")

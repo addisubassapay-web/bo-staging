@@ -1,4 +1,4 @@
-"""Order payment rules — Mercarie-Global Feb 2026.
+"""Order payment rules — Mercari-Smarthub Feb 2026.
 
 * Only `payment_method="wallet"` is accepted (or omitted → defaults to wallet).
 * `crypto` and `bank` are rejected at the schema level (HTTP 422).
