@@ -152,45 +152,47 @@ async def get_dataset_items(
 @router.post("/runs/{run_id}/import")
 async def import_run_to_catalog(
     run_id: str,
-    category: str = Query(..., min_length=1, max_length=60,
-                          description="Canonical category to force on every imported item (e.g. 'Computer')"),
-    subcategory: Optional[str] = Query(None, min_length=1, max_length=60,
-                                       description="Subcategory chip (e.g. 'Laptop') — stored as the second breadcrumb segment"),
-    max_items: int = Query(5000, ge=1, le=20000,
-                           description="Safety cap on how many dataset items to pull"),
+    category: str = Query(..., min_length=1, max_length=60),
+    subcategory: Optional[str] = Query(None, min_length=1, max_length=60),
+    max_items: int = Query(5000, ge=1, le=20000),
     _admin: dict = Depends(require_admin),
 ):
-    """Permanently import every item from an Apify actor run into the
-    `products` catalog under the caller-supplied `category` / `subcategory`.
-
-    Why this exists: Apify's monthly quota only counts NEW runs, not reads
-    from an already-finished dataset. This lets us pull a run's output
-    long after the actor stopped and label it under whatever taxonomy the
-    admin picks — regardless of what Amazon's own breadcrumbs said.
-
-    De-dupe: reuses the standard webhook upsert (`sku` first, then
-    `source_url`). Re-running is safe.
-    """
-    from routers.deps import get_db
-    from routers.products import _normalize_product
-    from services.webhook_ingest import _upsert_chunk, CHUNK
-
-    # 1) resolve the run's default dataset id.
+    """Import a completed Apify run's dataset under the caller-supplied
+    `category` / `subcategory`. See `_import_dataset()` for details."""
     run = await _apify_request("GET", f"/actor-runs/{run_id}")
     run_data = run.get("data", run) if isinstance(run, dict) else {}
     dataset_id = run_data.get("defaultDatasetId")
     if not dataset_id:
         raise HTTPException(404, "Run has no default dataset id")
+    return await _import_dataset(dataset_id, category, subcategory, max_items, run_id=run_id)
 
-    # 2) paginate the dataset (Apify caps at ~1000 items per request).
+
+@router.post("/datasets/{dataset_id}/import")
+async def import_dataset_to_catalog(
+    dataset_id: str,
+    category: str = Query(..., min_length=1, max_length=60),
+    subcategory: Optional[str] = Query(None, min_length=1, max_length=60),
+    max_items: int = Query(5000, ge=1, le=20000),
+    _admin: dict = Depends(require_admin),
+):
+    """Same as the run-import endpoint but takes a dataset id directly.
+    Useful when the admin already has the dataset ID (visible in the
+    Apify console dataset header) and doesn't want to resolve the run."""
+    return await _import_dataset(dataset_id, category, subcategory, max_items, run_id=None)
+
+
+async def _import_dataset(dataset_id: str, category: str, subcategory: Optional[str], max_items: int, run_id: Optional[str] = None):
+    from routers.deps import get_db
+    from routers.products import _normalize_product
+    from services.webhook_ingest import _upsert_chunk, CHUNK
+
     all_items: List[Dict[str, Any]] = []
     page_size = 1000
     offset = 0
     while len(all_items) < max_items:
         take = min(page_size, max_items - len(all_items))
         page = await _apify_request(
-            "GET",
-            f"/datasets/{dataset_id}/items",
+            "GET", f"/datasets/{dataset_id}/items",
             params={"limit": take, "offset": offset, "clean": "true", "format": "json"},
         )
         if not isinstance(page, list) or not page:
@@ -200,7 +202,6 @@ async def import_run_to_catalog(
             break
         offset += take
 
-    # 3) normalize + force the caller's category/breadcrumbs onto every doc.
     override_bc = f"{category} > {subcategory}" if subcategory else category
     normalized: List[Dict[str, Any]] = []
     skipped = 0
@@ -213,18 +214,14 @@ async def import_run_to_catalog(
         norm["breadcrumbs"] = override_bc
         normalized.append(norm)
 
-    # 4) chunked upsert (reuses the webhook ingest path).
     db = get_db()
-    created = 0
-    updated = 0
-    reactivated = 0
+    created = updated = reactivated = 0
     for i in range(0, len(normalized), CHUNK):
         counts = await _upsert_chunk(db, normalized[i:i + CHUNK])
         created += counts["created"]
         updated += counts["updated"]
         reactivated += counts.get("reactivated", 0)
 
-    # 5) mirror into `listings` so the /search page picks it up too.
     mirror_stats = None
     try:
         from services.listing_mirror import mirror_products_to_listings
@@ -232,21 +229,12 @@ async def import_run_to_catalog(
     except Exception as e:  # noqa: BLE001
         logger.warning(f"[apify-import] mirror step failed (non-fatal): {e}")
 
-    logger.info(
-        f"[apify-import] run={run_id} dataset={dataset_id} received={len(all_items)} "
-        f"created={created} updated={updated} skipped={skipped} category={category!r}"
-    )
+    logger.info(f"[apify-import] run={run_id} dataset={dataset_id} received={len(all_items)} created={created} updated={updated} skipped={skipped} category={category!r}")
     return {
-        "run_id": run_id,
-        "dataset_id": dataset_id,
-        "category": category,
-        "subcategory": subcategory,
-        "breadcrumbs": override_bc,
-        "received": len(all_items),
-        "skipped": skipped,
-        "created": created,
-        "updated": updated,
-        "reactivated": reactivated,
+        "run_id": run_id, "dataset_id": dataset_id,
+        "category": category, "subcategory": subcategory, "breadcrumbs": override_bc,
+        "received": len(all_items), "skipped": skipped,
+        "created": created, "updated": updated, "reactivated": reactivated,
         "mirror": mirror_stats,
     }
 
