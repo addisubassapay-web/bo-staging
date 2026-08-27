@@ -11,6 +11,27 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// If the backend enforces the "must change password" gate we get a 403
+// with detail.password_change_required=true — hand the user over to the
+// /change-password page instead of surfacing a scary error toast.
+api.interceptors.response.use(
+  (r) => r,
+  (err) => {
+    const detail = err?.response?.data?.detail;
+    if (
+      err?.response?.status === 403 &&
+      detail &&
+      typeof detail === "object" &&
+      detail.password_change_required
+    ) {
+      if (typeof window !== "undefined" && window.location?.pathname !== "/change-password") {
+        window.location.assign("/change-password");
+      }
+    }
+    return Promise.reject(err);
+  }
+);
+
 export default api;
 
 // --- Currency-aware price formatter (used by non-context call sites) ---

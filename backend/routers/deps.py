@@ -12,7 +12,7 @@ from datetime import datetime, timezone
 from typing import Optional
 
 import jwt
-from fastapi import Depends, HTTPException
+from fastapi import Depends, HTTPException, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from motor.motor_asyncio import AsyncIOMotorClient
 
@@ -35,7 +35,19 @@ def _jwt_secret() -> str:
 
 security = HTTPBearer(auto_error=False)
 
-async def get_current_user(credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)):
+# Same allow-list as server.py::get_current_user — must stay in sync with it.
+_PWD_CHANGE_ALLOWED_PATHS = frozenset({
+    "/api/auth/change-password",
+    "/api/auth/me",
+    "/api/auth/logout",
+    "/api/health",
+})
+
+
+async def get_current_user(
+    request: Request,
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
+):
     if not credentials:
         raise HTTPException(401, "Not authenticated")
     try:
@@ -46,6 +58,17 @@ async def get_current_user(credentials: Optional[HTTPAuthorizationCredentials] =
     user = await db.users.find_one({"id": payload.get("sub")}, {"_id": 0})
     if not user:
         raise HTTPException(401, "User not found")
+    # Server-side "must change password" gate.
+    if user.get("must_change_password"):
+        path = request.url.path.rstrip("/") or "/"
+        if path not in _PWD_CHANGE_ALLOWED_PATHS:
+            raise HTTPException(
+                status_code=403,
+                detail={
+                    "message": "Password change required before continuing.",
+                    "password_change_required": True,
+                },
+            )
     return user
 
 async def require_admin(user: dict = Depends(get_current_user)):

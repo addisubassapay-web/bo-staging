@@ -591,7 +591,20 @@ def create_token(user_id: str, role: str) -> str:
     }
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALG)
 
-async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)) -> dict:
+# Endpoints a `must_change_password` user is still allowed to hit while the
+# flag is set. Everything else must go through the change-password flow first.
+_PWD_CHANGE_ALLOWED_PATHS = frozenset({
+    "/api/auth/change-password",
+    "/api/auth/me",
+    "/api/auth/logout",
+    "/api/health",
+})
+
+
+async def get_current_user(
+    request: Request,
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+) -> dict:
     if not credentials:
         raise HTTPException(status_code=401, detail="Not authenticated")
     try:
@@ -604,7 +617,21 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
         raise HTTPException(status_code=401, detail="User not found")
     if not user.get("is_active", True):
         raise HTTPException(status_code=403, detail="Account disabled")
+    # Server-side enforcement of the "must change password" flag. When set,
+    # only a tiny whitelist of endpoints is reachable so a malicious client
+    # can't bypass the frontend redirect and use its JWT normally.
+    if user.get("must_change_password"):
+        path = request.url.path.rstrip("/") or "/"
+        if path not in _PWD_CHANGE_ALLOWED_PATHS:
+            raise HTTPException(
+                status_code=403,
+                detail={
+                    "message": "Password change required before continuing.",
+                    "password_change_required": True,
+                },
+            )
     return user
+
 
 async def get_current_user_optional(credentials: HTTPAuthorizationCredentials = Depends(security)) -> Optional[dict]:
     if not credentials:
