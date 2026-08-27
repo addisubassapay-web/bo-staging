@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogT
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { LayoutDashboard, Users, Package, ShoppingBag, FolderTree, Trash2, Star, Plus, Settings as SettingsIcon, Wallet, Store as StoreIcon, Save, Check, X as XIcon, Database, IdCard, LayoutGrid, GripVertical, AlertCircle, ShieldAlert, CheckCircle2, XCircle, Clock, MessageCircle, ChevronDown, ChevronUp, Bitcoin, CheckSquare, Square as SquareIcon, Ticket, Mail, Zap, Menu } from "lucide-react";
+import { LayoutDashboard, Users, Package, ShoppingBag, FolderTree, Trash2, Star, Plus, Settings as SettingsIcon, Wallet, Store as StoreIcon, Save, Check, X as XIcon, Database, IdCard, LayoutGrid, GripVertical, AlertCircle, ShieldAlert, CheckCircle2, XCircle, Clock, MessageCircle, ChevronDown, ChevronUp, Bitcoin, CheckSquare, Square as SquareIcon, Ticket, Mail, Zap, Menu, KeyRound } from "lucide-react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import AdminShelves from "@/pages/AdminShelves";
 import ApifySync from "@/pages/AdminApifySync";
@@ -22,6 +22,7 @@ import SuspendedSellersCard from "@/components/SuspendedSellersCard";
 import AdminPaymentMethods from "@/pages/AdminPaymentMethods";
 import AdminLedgerAudit from "@/pages/AdminLedgerAudit";
 import AdminEmailLog from "@/pages/AdminEmailLog";
+import AdminLegacyBypassLog from "@/pages/AdminLegacyBypassLog";
 import AdminStoreBoosts from "@/pages/AdminStoreBoosts";
 import AdminSupport from "@/pages/AdminSupport";
 import AdminProducts from "@/pages/AdminProducts";
@@ -1713,6 +1714,7 @@ const AdminSidebarNav = ({ compact = false }) => (
     <SidebarLink to="/admin/store-boosts" icon={StoreIcon}>Store boosts</SidebarLink>
     <SidebarSupportLink />
     <SidebarLink to="/admin/email-log" icon={Mail}>Email log</SidebarLink>
+    <SidebarLink to="/admin/legacy-bypass" icon={KeyRound}>Legacy bypass</SidebarLink>
     <SidebarLink to="/admin/settings" icon={SettingsIcon}>Settings</SidebarLink>
   </nav>
 );
@@ -1767,6 +1769,7 @@ const AdminShell = () => {
             <Route path="store-boosts" element={<AdminStoreBoosts />} />
             <Route path="support-tickets" element={<AdminSupport />} />
             <Route path="email-log" element={<AdminEmailLog />} />
+            <Route path="legacy-bypass" element={<AdminLegacyBypassLog />} />
             <Route path="settings" element={<SettingsMgr />} />
           </Routes>
         </main>

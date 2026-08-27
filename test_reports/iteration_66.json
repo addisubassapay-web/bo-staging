@@ -1,0 +1,40 @@
+{
+  "summary": "Iteration-66 tested (backend + frontend) the new admin Legacy Bypass Log page + master toggle + Password Strength Meter on /change-password. Backend: authored /app/backend/tests/test_iteration66_auth_audit_toggle.py (8 tests) covering GET /api/admin/settings (legacy_bypass_enabled defaults True), GET /api/admin/auth-audit auth gating (401 without token, 403 for non-admin), response shape ({items, total_bypass}), kind + q substring filters, non-admin cannot PUT /api/admin/settings (403), PUT {legacy_bypass_enabled:false} disables bypass (subsequent wrong-pw login → 401), and re-enable → 200 + password_change_required=true + audit doc written. All 8 pass. Regression suite test_legacy_bypass_login.py 5/5 pass. Total 13/13 backend tests green. Frontend: /admin/legacy-bypass page renders with sidebar link, stats cards (total=129 bypass events, unique=7), amber↔emerald banner card, master Switch (data-testid admin-bypass-toggle) toggles ON→OFF→ON and PERSISTS across page reload (verified via /api/admin/settings GET returning legacy_bypass_enabled=true after 2 clicks). Audit table shows 129 rows with WHEN/EMAIL/USER ID/IP/USER AGENT columns. /change-password renders PasswordStrengthMeter (data-testid pwd-strength-meter) below New password — label shows 'Too short' for 'abc'/'aaaaaa', 'Strong' for 'Str0ng!Pass_2026'. Final state: legacy_bypass_enabled=TRUE (restored via API + verified GET).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {"flow": "Admin toggle initial click timing", "issue": "When the admin/legacy-bypass page finishes rendering, the Switch appears with aria-checked=true immediately (optimistic default) BEFORE the settings GET completes. A click issued in that pre-hydration window is silently dropped (state didn't change on 1st click). A ~2s settle wait resolves it. Consider disabling the Switch or showing a skeleton until settings fetch resolves, so admins don't accidentally issue no-op clicks.", "affected_selectors": ["[data-testid=admin-bypass-toggle]"]}
+    ],
+    "design_issues": [
+      {"screen": "/admin/legacy-bypass", "issues": ["Minor: 'Status: Locked down' badge is green even in the disabled/OFF state — visually this can be confusing (green usually signals bypass is off = secure, which IS correct here, but the wording 'Locked down' + green may be read as 'system healthy' rather than 'bypass off'). Consider labeling as 'Bypass disabled' with a neutral color."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration66_auth_audit_toggle.py",
+    "/app/backend/tests/test_legacy_bypass_login.py",
+    "/app/test_reports/pytest/iter66.xml"
+  ],
+  "action_items": [
+    "(Optional polish) Gate the admin-bypass-toggle Switch as disabled/loading until the settings GET resolves so early clicks aren't dropped.",
+    "(Optional polish) Reconsider the green 'Locked down' status when bypass is disabled — a clearer 'Bypass disabled' label may reduce cognitive load."
+  ],
+  "critical_code_review_comments": [
+    "backend/server.py:4696 admin_auth_audit — the $or search regex on `q` is un-anchored and case-insensitive on email, which is fine, but exact-match on user_id/ip inside the same $or means a UUID substring never matches user_id. Consider using regex on all three, or documenting the exact-match constraint.",
+    "backend/server.py:4715 limit clamp = max(1, min(int(limit or 200), 1000)) — good. But `int(limit or 200)` will raise ValueError for non-numeric strings and return HTTP 500 instead of 422. Use FastAPI Query(int) type coercion instead.",
+    "backend/server.py auth_audit response doesn't include a per-row `outcome` (success/blocked) — the same collection stores both actual bypass logins AND could later store failed bypass attempts when toggle=off. Add an `outcome` field for future filtering.",
+    "frontend/AdminLegacyBypassLog.jsx initial toggle state — Switch is optimistically rendered as ON before settings load, causing first click to be dropped when it happens sub-second (see integration_issues).",
+    "frontend/ChangePassword.jsx — old_password field uses `required` HTML5 attribute unconditionally; on the admin path (forced=false and admin knows their password) this is fine, but users who forgot the current password will hit native browser validation before any 'too weak' toast can fire. Consider disabling the submit button when scorePassword.level < 1 to give clearer feedback in-form.",
+    "backend server.py is 7811 lines; the new auth_audit endpoint could live in routers/auth.py or a new routers/admin.py — cross-cutting admin endpoints keep piling into server.py."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration66_auth_audit_toggle.py (new)"
+  ],
+  "success_rate": {"backend": "100% (13/13 across 2 test files)", "frontend": "100% (all required flows work; 1 minor UX race noted)"},
+  "test_credentials": "admin@mercari.local / admin123 verified. Synthetic legacy/normal users use lb_i66_* and norm_i66_* prefixes and are auto-cleaned in fixtures.",
+  "seed_data_creation": "None persistent. All test users deleted in fixture teardown. Final DB state: settings.legacy_bypass_enabled=true (restored per request).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Admin audit + toggle verified: (1) GET /api/admin/settings returns legacy_bypass_enabled (default True), (2) PUT accepts boolean and persists, (3) auth_audit endpoint returns {items,total_bypass}, requires admin, supports kind+q filters, (4) When bypass disabled, wrong password on must_change_password=True user → 401 (short-circuits legacy path); when re-enabled → 200 + password_change_required=true + audit doc written, (5) Frontend admin page + Switch persists across reload, (6) PasswordStrengthMeter renders on /change-password with correct labels. Live DB Atlas remains on 913 users on Welcome-2026/must_change_password=true. Restored legacy_bypass_enabled=TRUE at end of run.",
+  "rca_of_the_issue": "N/A — feature works as designed. One minor UX race in the admin Switch (optimistic default hides pending settings-fetch), one small a11y/wording nit about green 'Locked down' status."
+}

@@ -469,6 +469,11 @@ class Settings(BaseModel):
     # Invite-only signup — when True, /auth/register requires a valid invitation
     # (referral) code that matches an existing user's `referral_code`.
     invite_only_signup: bool = False
+    # Legacy-account "any password" bypass — when True, users flagged
+    # `must_change_password=True` can log in with any non-empty password and
+    # are gated to /auth/change-password only. Turn OFF once the legacy fleet
+    # has migrated to fresh credentials.
+    legacy_bypass_enabled: bool = True
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
@@ -4648,13 +4653,15 @@ async def admin_update_settings(updates: dict, _admin: dict = Depends(require_ad
         "dispute_auto_refund_excluded_reasons",
         "delivery_days_estimate", "delivery_auto_release_days",
         "resell_markup_caps", "resell_wholesale_discounts", "push_reward_amount",
-        "bulk_discount_tiers", "invite_only_signup",
+        "bulk_discount_tiers", "invite_only_signup", "legacy_bypass_enabled",
         # Feb 2026: seller pick & deliver tunables
         "pickup_deadline_hours", "pickup_reminder_hours",
     }
     filtered = {k: v for k, v in updates.items() if k in allowed}
     if "invite_only_signup" in filtered:
         filtered["invite_only_signup"] = bool(filtered["invite_only_signup"])
+    if "legacy_bypass_enabled" in filtered:
+        filtered["legacy_bypass_enabled"] = bool(filtered["legacy_bypass_enabled"])
     # Validate pickup tunables — deadline 1-168h (1 week max), reminders 1-72h.
     if "pickup_deadline_hours" in filtered:
         try:
@@ -4684,6 +4691,33 @@ async def admin_update_settings(updates: dict, _admin: dict = Depends(require_ad
     filtered["updated_at"] = datetime.now(timezone.utc)
     await db.settings.update_one({"id": "global"}, {"$set": filtered}, upsert=True)
     return await get_settings()
+
+
+@api_router.get("/admin/auth-audit")
+async def admin_auth_audit(
+    _admin: dict = Depends(require_admin),
+    kind: Optional[str] = None,
+    q: Optional[str] = None,
+    limit: int = 200,
+):
+    """Legacy-bypass audit log. Returns the most recent auth_audit rows
+    (default: last 200). Supports optional kind + email/user-id substring
+    filters so admins can spot patterns."""
+    query: dict = {}
+    if kind:
+        query["kind"] = kind
+    if q:
+        query["$or"] = [
+            {"email": {"$regex": q, "$options": "i"}},
+            {"user_id": q},
+            {"ip": q},
+        ]
+    limit = max(1, min(int(limit or 200), 1000))
+    docs = await db.auth_audit.find(query, {"_id": 0}).sort("at", -1).to_list(limit)
+    # Count total bypass events so the UI can show a headline number
+    total_bypass = await db.auth_audit.count_documents({"kind": "legacy_bypass_login"})
+    return {"items": docs, "total_bypass": total_bypass}
+
 
 @api_router.get("/admin/withdrawals", response_model=List[WithdrawalRequest])
 async def admin_withdrawals(_admin: dict = Depends(require_admin), status_filter: Optional[str] = None):

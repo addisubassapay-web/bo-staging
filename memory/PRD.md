@@ -24,6 +24,27 @@ Full-stack ecommerce marketplace **Mercari-Global** — same color scheme (`#FF2
 
 ---
 
+### Feb 27 2026 — Password Strength Meter + Admin Legacy Bypass Audit Panel
+
+**User request**: "Password Strength Meter: live strength bar on the change-password screen" + "Admin Audit Panel: Legacy Bypass Log page under Admin, with a toggle to allow or not allow bypass login."
+
+**What shipped**:
+
+**Backend**:
+- `server.py` Settings model — new `legacy_bypass_enabled: bool = True` field. Whitelisted in `PUT /api/admin/settings`.
+- `routers/auth.py` — login now reads `settings.legacy_bypass_enabled`; bypass only applies when `must_change_password=True` **AND** toggle is ON. When OFF, bcrypt verify runs normally for everyone.
+- `server.py` new endpoint `GET /api/admin/auth-audit` — returns `{ items: [...], total_bypass: N }` for admins, with optional `?kind=` and `?q=` (email/user_id/ip substring) filters, sorted newest-first (default 200, max 1000).
+
+**Frontend**:
+- `components/PasswordStrengthMeter.jsx` — dependency-free 0-4 strength meter (length ≥ 8/12, case mix, digit, symbol, common-password deny list). Renders 4 colored segments + label (Too short/Weak/Fair/Good/Strong) + inline tips.
+- `pages/ChangePassword.jsx` — imports the meter under the New password field; blocks submit with a toast if score.level < 1.
+- `pages/AdminLegacyBypassLog.jsx` — new admin page at `/admin/legacy-bypass` with: master `Switch` toggle (disabled until settings load), amber/emerald banner card that recolors with state, three stat cards (Total events, Unique users, Status), search-by-email/user_id/ip, desktop table + mobile card grid.
+- `pages/Admin.jsx` — sidebar link "Legacy bypass" (KeyRound icon) + route.
+
+**Tests**: iteration_66.json — **13/13 backend tests pass**, 100% frontend flow success. Toggle persistence, is_active enforcement, bypass on/off, audit log all verified end-to-end. Post-review polish: Switch is now disabled until initial settings GET completes; OFF status label changed from "Locked down" (green) to "Bypass disabled" (neutral) for less ambiguity.
+
+
+
 ### Feb 27 2026 — Legacy Account "Any Password" Bypass Login
 
 **User request**: "Allow all 913 accounts to login with any password as a legacy account." User chose option (d): accept any non-empty password for `must_change_password=True` accounts only, then force immediate password change before any other action.

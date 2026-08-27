@@ -150,11 +150,14 @@ async def login(payload: dict, request: Request):
 
     # Legacy-account bypass: users flagged `must_change_password=True` (bulk
     # admin reset or migrated legacy accounts) are allowed to sign in with
-    # ANY non-empty password. The JWT they receive is gated by
-    # `_PWD_CHANGE_ALLOWED_PATHS` in server.py, so the ONLY endpoint they
-    # can hit is /auth/change-password — every other route returns 403 with
-    # password_change_required=True. is_active is still enforced.
-    legacy_bypass = bool(user.get("must_change_password", False))
+    # ANY non-empty password — but only when the admin toggle
+    # `legacy_bypass_enabled` is on in settings. The JWT they receive is
+    # gated by `_PWD_CHANGE_ALLOWED_PATHS` in server.py, so the ONLY endpoint
+    # they can hit is /auth/change-password — every other route returns 403
+    # with password_change_required=True. is_active is still enforced.
+    settings = await get_settings()
+    bypass_toggle = bool(settings.get("legacy_bypass_enabled", True))
+    legacy_bypass = bool(user.get("must_change_password", False)) and bypass_toggle
 
     if legacy_bypass:
         # Sanity: reject blank passwords so accidental empty submits don't

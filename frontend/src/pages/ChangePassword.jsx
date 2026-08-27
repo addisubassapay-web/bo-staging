@@ -7,6 +7,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import api from "@/lib/api";
 import { ShieldAlert, Lock, ArrowRight } from "lucide-react";
+import PasswordStrengthMeter, { scorePassword } from "@/components/PasswordStrengthMeter";
 
 /**
  * ChangePassword page — reached in two ways:
@@ -33,6 +34,10 @@ const ChangePassword = () => {
     e.preventDefault();
     if (newPassword.length < 6) {
       toast({ title: "Password too short", description: "Use at least 6 characters.", variant: "destructive" });
+      return;
+    }
+    if (scorePassword(newPassword).level < 1) {
+      toast({ title: "Password too weak", description: "Pick something a little stronger.", variant: "destructive" });
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -109,6 +114,7 @@ const ChangePassword = () => {
                 data-testid="cp-new-input"
               />
             </div>
+            <PasswordStrengthMeter password={newPassword} />
           </div>
           <div>
             <Label htmlFor="cp-confirm">Confirm new password</Label>
