@@ -34,8 +34,11 @@ export const AuthProvider = ({ children }) => {
     const { data } = await api.post("/auth/login", { email, password });
     localStorage.setItem("mercari-global_token", data.token);
     try { localStorage.setItem("mercari-global_username", data.user?.username || ""); } catch { /* ignore */ }
-    setUser(data.user);
-    return data.user;
+    // Carry the server-issued must-change flag onto the client user so
+    // downstream components can gate on `user.must_change_password`.
+    const merged = { ...data.user, must_change_password: !!data.password_change_required };
+    setUser(merged);
+    return merged;
   };
 
   const register = async (email, username, password) => {

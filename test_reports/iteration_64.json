@@ -1,0 +1,32 @@
+{
+  "summary": "Verified iteration-64 bulk-password-reset + force-change-password flow end-to-end. Backend: 16/16 pytest cases pass — legacy 3 (hansenayda, stmobilest2027, maham89706) all log in with Welcome-2026 and receive password_change_required=true; sophia_style demo1234 correctly rejected (401); admin untouched (password_change_required=false); /auth/me exposes must_change_password; /auth/change-password works without old_password when flag set, requires+validates old_password otherwise, rejects <6 char with 400, rejects missing JWT with 401; /admin/users/bulk-password-reset temp mode affects 913 users, non-admin JWT gets 403, unknown mode gets 400, only_missing_hash mode succeeds. Frontend: (a) legacy user login force-redirects to /change-password with amber 'temporary one' banner visible, old-password field hidden, new+confirm+submit rendered — submit redirects to /. (b) Admin > /admin/users renders 'Bulk reset (legacy)' button with data-testid=users-bulk-reset-btn (count=1, visible). (c) 390px mobile flow works: no horizontal overflow, inputs are 44px tall, force-redirect to /change-password succeeds. Live state restored via bulk-reset with temp='Welcome-2026' — 913 users on Welcome-2026, all 3 legacy verified logging in with password_change_required=true, sophia_style verified on Welcome-2026.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Homepage (post-login) TrustStrip", "issues": ["React console warning: 'Each child in a list should have a unique key prop' from TrustStrip — pre-existing, unrelated to this iteration but worth cleaning up"]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration64_bulk_reset_change_pwd.py",
+    "/app/test_reports/pytest/iter64.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "server.py still 7750 lines. New endpoints admin_reset_user_password + admin_bulk_password_reset ideal candidates to move into routers/admin_users.py.",
+    "bulk-password-reset uses to_list(20000) which is a hard cap — if user count ever exceeds this, silent partial reset. Consider iterating with paginated cursor or documenting the cap.",
+    "must_change_password enforcement is client-side only (Login.jsx redirect + ChangePassword page). A user could bypass by not calling /auth/me / not honoring the flag and hit other endpoints with their JWT while flagged. Consider server-side middleware that 403s non-/auth/change-password /auth/me requests when the flag is set — depending on threat model.",
+    "TrustStrip on homepage triggers React key warning (pre-existing) — surfaced in console during this run."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration64_bulk_reset_change_pwd.py (new)"
+  ],
+  "success_rate": {"backend": "100% (16/16)", "frontend": "100% (desktop force-redirect+submit, admin bulk button, mobile flow all verified)"},
+  "test_credentials": "admin@mercari.local / admin123 (unchanged); all non-admin users on Welcome-2026 with must_change_password=true (live migration state restored at end of testing)",
+  "seed_data_creation": "None. State restored at end via /admin/users/bulk-password-reset {mode:'temp', all_non_admin:true, temp_password:'Welcome-2026'} — 913 users affected, sophia + 3 legacy users verified logging in with password_change_required=true.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Login response uses key 'token' + top-level 'password_change_required'; /auth/me returns 'must_change_password' on the user payload. Live state: 913 non-admin users all on password 'Welcome-2026' with must_change_password=true. Admin admin@mercari.local/admin123 is untouched. Endpoint POST /api/admin/users/bulk-password-reset accepts modes 'temp'/'email' and filters all_non_admin/only_missing_hash/user_ids. /auth/change-password: when JWT-user has must_change_password=true, old_password is not required; otherwise it is. Frontend Login.jsx redirects to /change-password on must_change_password. Admin > Users page has 'Bulk reset (legacy)' button (data-testid=users-bulk-reset-btn).",
+  "rca_of_the_issue": "N/A — feature verified working as designed. Original legacy 3 users' 401 was root-caused in iteration 63 (empty password_hash + UnknownHashError) and fixed via bulk-password-reset seeding all non-admin users with Welcome-2026 + must_change_password=true."
+}

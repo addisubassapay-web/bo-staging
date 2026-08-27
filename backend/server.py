@@ -165,11 +165,19 @@ class UserPublic(BaseModel):
     stripe_status: str = "none"
     weekly_earnings_goal: float = 0.0
     email_prefs: Optional[dict] = None
+    # When True, the next successful login must be immediately followed by a
+    # password change. Set by admin-side resets and by the "legacy user"
+    # migration so users who forgot their credentials are forced to pick a
+    # fresh one on first sign-in.
+    must_change_password: bool = False
     created_at: datetime
 
 class AuthResponse(BaseModel):
     token: str
     user: UserPublic
+    # Frontend uses this to route the user through /change-password before
+    # they can access the rest of the app.
+    password_change_required: bool = False
 
 class Category(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -2698,6 +2706,8 @@ async def admin_reset_user_password(
             "locked_until": None,
             "password_updated_at": datetime.now(timezone.utc),
             "password_reset_by_admin_id": _admin["id"],
+            # Force the user to pick their own password on next login.
+            "must_change_password": True,
         }},
     )
     return {
@@ -2705,7 +2715,112 @@ async def admin_reset_user_password(
         "user_id": user_id,
         "email": exists.get("email"),
         "username": exists.get("username"),
+        "must_change_password": True,
     }
+
+
+@api_router.post("/admin/users/bulk-password-reset")
+async def admin_bulk_password_reset(
+    payload: dict,
+    _admin: dict = Depends(require_admin),
+):
+    """Bulk password recovery for legacy accounts. Two modes:
+
+    - `mode="temp"` (default): overwrite the target users' password with the
+      supplied `temp_password` (min 6 chars) and set `must_change_password=True`.
+      Returns the count of affected accounts and the temp credential so the
+      admin can share it.
+    - `mode="email"`: create a fresh `/auth/reset-password` token per target
+      user and dispatch the standard password-reset email. Users click the
+      link to pick their own new credential. Returns { emailed, skipped }.
+
+    Target filter (JSON body):
+      - `all_non_admin`: bool — every non-admin account
+      - `only_missing_hash`: bool — only accounts with no password_hash yet
+      - `user_ids`: list[str] — explicit id list (takes precedence over flags)
+    """
+    import secrets, os, logging
+    mode = (payload.get("mode") or "temp").strip().lower()
+    if mode not in ("temp", "email"):
+        raise HTTPException(400, "mode must be 'temp' or 'email'")
+
+    # Build the target filter.
+    if payload.get("user_ids"):
+        filt = {"id": {"$in": list(payload["user_ids"])}}
+    elif payload.get("only_missing_hash"):
+        filt = {"$or": [
+            {"password_hash": {"$exists": False}},
+            {"password_hash": None},
+            {"password_hash": ""},
+        ], "role": {"$ne": "admin"}}
+    elif payload.get("all_non_admin"):
+        filt = {"role": {"$ne": "admin"}}
+    else:
+        raise HTTPException(400, "Specify user_ids, only_missing_hash, or all_non_admin")
+
+    targets = await db.users.find(filt, {"_id": 0, "id": 1, "email": 1, "username": 1}).to_list(20000)
+    if not targets:
+        return {"ok": True, "mode": mode, "affected": 0, "targets": []}
+
+    if mode == "temp":
+        temp = (payload.get("temp_password") or "").strip()
+        if len(temp) < 6:
+            raise HTTPException(400, "temp_password must be at least 6 characters")
+        hashed = hash_password(temp)
+        ids = [t["id"] for t in targets]
+        await db.users.update_many(
+            {"id": {"$in": ids}},
+            {"$set": {
+                "password_hash": hashed,
+                "failed_login_attempts": 0,
+                "locked_until": None,
+                "password_updated_at": datetime.now(timezone.utc),
+                "password_reset_by_admin_id": _admin["id"],
+                "must_change_password": True,
+            }},
+        )
+        return {
+            "ok": True,
+            "mode": "temp",
+            "affected": len(ids),
+            "temp_password": temp,
+            "note": "Share this temp password with the users. They must change it on first login.",
+            "sample": [t["email"] for t in targets[:10]],
+        }
+
+    # mode == "email" — dispatch per-user reset links via existing template.
+    try:
+        from services import mailer
+        from services.email_templates import password_reset as tpl
+    except Exception as e:
+        raise HTTPException(500, f"Mailer templates unavailable: {e}")
+
+    frontend = os.environ.get("FRONTEND_ORIGIN", "").rstrip("/")
+    if not frontend:
+        raise HTTPException(500, "FRONTEND_ORIGIN env var not set")
+
+    emailed = 0
+    skipped = 0
+    now = datetime.now(timezone.utc)
+    for t in targets:
+        try:
+            token = secrets.token_urlsafe(32)
+            await db.password_resets.insert_one({
+                "token": token,
+                "user_id": t["id"],
+                "email": t.get("email"),
+                "created_at": now,
+                "expires_at": now + timedelta(hours=24),
+                "used_at": None,
+                "created_by_admin_id": _admin["id"],
+            })
+            subject, html = tpl(f"{frontend}/reset-password?token={token}", username=t.get("username"))
+            await mailer.send_email(to=t["email"], subject=subject, html=html, tags=["password_reset", "bulk"])
+            emailed += 1
+        except Exception as e:  # noqa: BLE001
+            skipped += 1
+            logging.getLogger("email").warning(f"bulk_reset skip {t.get('email')}: {e}")
+    return {"ok": True, "mode": "email", "affected": len(targets), "emailed": emailed, "skipped": skipped}
 
 
 @api_router.delete("/admin/users/{user_id}")

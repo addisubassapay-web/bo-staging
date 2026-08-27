@@ -28,6 +28,38 @@ Full-stack ecommerce marketplace **Mercari-Global** — same color scheme (`#FF2
 
 
 
+
+### Feb 26 2026 — Legacy-User Bulk Reset + Force-Change-On-First-Login
+
+**User request**: "Reset legacy users, make ALL previously created users into legacy users, force change on first login, add bulk reset."
+
+**What shipped**:
+
+**Backend**:
+- Added `must_change_password: bool = False` to the `UserPublic` model in `server.py`.
+- Added `password_change_required: bool = False` to `AuthResponse`.
+- `auth.login()`: returns the new `password_change_required` flag whenever the user record has `must_change_password=True`.
+- Admin reset endpoint (`POST /admin/users/{id}/reset-password`) now sets `must_change_password: True` — every admin-issued password forces the user to pick a new one on next login.
+- **New `POST /auth/change-password`** — required for users flagged `must_change_password`; skips the `old_password` check when the flag is set (they proved possession via the JWT). Clears the flag + resets any lockout state on success.
+- **New `POST /admin/users/bulk-password-reset`** — supports two modes:
+  - `temp` mode (used now): overwrite `password_hash` with the supplied `temp_password` on every account matching a target filter, flag `must_change_password: True`.
+  - `email` mode: dispatch per-user password-reset emails using the existing mailer + template.
+  - Target filter accepts `user_ids: []`, `only_missing_hash: true`, or `all_non_admin: true`.
+
+**Frontend**:
+- **New `/change-password` route + `ChangePassword.jsx` page** — hides the "current password" field when the user is forced there, shows an amber "For your security" banner in force mode. All fields use `min-h-[44px]` for mobile.
+- `Login.jsx`: if `user.must_change_password` is true, redirect to `/change-password` instead of the intended destination.
+- `AuthContext.login()`: merges the server's `password_change_required` flag onto `user.must_change_password` so downstream components can gate on it.
+- **Admin > Users**: new "Bulk reset (legacy)" pill button next to the All/Locked filters. Prompts admin for a temp password (default `Welcome-2026`), confirms, calls the new bulk endpoint, then shows the admin the count + temp password to share. `data-testid="users-bulk-reset-btn"`.
+
+**Data migration executed live**: All 913 non-admin users on Atlas now have `password_hash = bcrypt("Welcome-2026")` + `must_change_password: True`. Verified: the 3 previously-broken legacy accounts (hansenayda@, stmobilest2027@, maham89706@) all log in successfully and receive `password_change_required: true` in the response.
+
+**Handoff**:
+- Any legacy user visits `/login`, enters their email + `Welcome-2026` → auto-redirected to `/change-password` → picks their own → app flows normally.
+- Admin can also do one-off resets via the row-level "Reset password" button (same force-change flow).
+
+---
+
 ### Feb 26 2026 — Admin Password-Reset Escape Hatch (Auth Recovery)
 
 **Bug reported**: "All accounts unable to log in. Many accounts need to login but could not."

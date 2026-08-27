@@ -40,8 +40,12 @@ const Login = () => {
     try {
       const u = await login(email, password, { remember });
       toast({ title: `Welcome back, ${u.username}!` });
-      const next = location.state?.from || "/";
-      navigate(next);
+      if (u.must_change_password) {
+        navigate("/change-password");
+      } else {
+        const next = location.state?.from || "/";
+        navigate(next);
+      }
     } catch (err) {
       const detail = err.response?.data?.detail;
       const retryAfter = err.response?.data?.retry_after;

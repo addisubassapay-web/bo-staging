@@ -298,6 +298,35 @@ const UsersMgr = () => {
       toast({ title: "Reset failed", description: e?.response?.data?.detail || "Try again", variant: "destructive" });
     }
   };
+  const bulkResetLegacy = async () => {
+    const temp = window.prompt(
+      "BULK RESET — every non-admin account will get this temporary password and be forced to change it on their next login.\n\nType a temp password (min 6 chars):",
+      "Welcome-2026"
+    );
+    if (temp === null) return;
+    if (temp.length < 6) {
+      toast({ title: "Password too short", description: "Must be at least 6 characters.", variant: "destructive" });
+      return;
+    }
+    if (!window.confirm(`This will overwrite the password on EVERY non-admin account (~${users.length - 1} users). Continue?`)) return;
+    try {
+      const { data } = await api.post("/admin/users/bulk-password-reset", {
+        mode: "temp",
+        all_non_admin: true,
+        temp_password: temp,
+      });
+      window.alert(
+        `Bulk reset complete.\n\n` +
+        `Accounts updated: ${data.affected}\n` +
+        `Temporary password: ${data.temp_password}\n\n` +
+        `Share this with your users — they will be forced to pick a new password on their next login.`
+      );
+      toast({ title: `Bulk reset done`, description: `${data.affected} accounts now use the temp password.` });
+      load();
+    } catch (e) {
+      toast({ title: "Bulk reset failed", description: e?.response?.data?.detail || "Try again", variant: "destructive" });
+    }
+  };
   const isLocked = (u) => {
     if (!u.locked_until) return false;
     return new Date(u.locked_until).getTime() > Date.now();
@@ -311,7 +340,7 @@ const UsersMgr = () => {
     <div>
       <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
         <h2 className="text-2xl font-bold">Users</h2>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <button
             type="button"
             onClick={() => setLockedOnly(false)}
@@ -324,6 +353,13 @@ const UsersMgr = () => {
             className={`h-8 px-3 rounded-full text-xs font-semibold transition border inline-flex items-center gap-1 ${lockedOnly ? "bg-red-600 text-white border-transparent" : "bg-white text-red-700 border-red-200 hover:bg-red-50"}`}
             data-testid="users-filter-locked"
           >🔒 Locked only ({users.filter(isLocked).length})</button>
+          <button
+            type="button"
+            onClick={bulkResetLegacy}
+            className="h-8 px-3 rounded-full text-xs font-semibold transition border bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100 dark:bg-amber-950/30 dark:text-amber-200 dark:border-amber-900/40"
+            title="Reset every non-admin account to a shared temporary password and force each user to pick a new one on their next login."
+            data-testid="users-bulk-reset-btn"
+          >Bulk reset (legacy)</button>
         </div>
       </div>
       <div className="bg-white border border-neutral-200 rounded-lg overflow-x-auto">

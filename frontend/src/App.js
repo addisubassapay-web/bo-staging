@@ -17,6 +17,7 @@ import ProductDetail from "@/pages/ProductDetail";
 import Sell from "@/pages/Sell";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
+import ChangePassword from "@/pages/ChangePassword";
 import ForgotPassword from "@/pages/ForgotPassword";
 import ResetPassword from "@/pages/ResetPassword";
 import Cart from "@/pages/Cart";
@@ -73,6 +74,7 @@ function App() {
                     <Route path="/sell" element={<Sell />} />
                     <Route path="/dashboard/list-product" element={<Sell />} />
                     <Route path="/login" element={<Login />} />
+                    <Route path="/change-password" element={<ChangePassword />} />
                     <Route path="/register" element={<Register />} />
                     <Route path="/forgot" element={<ForgotPassword />} />
                     <Route path="/reset-password" element={<ResetPassword />} />

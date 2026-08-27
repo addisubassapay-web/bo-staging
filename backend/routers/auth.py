@@ -166,7 +166,11 @@ async def login(payload: dict, request: Request):
 
     await _clear_failed(db, user["id"])
     token = create_token(user["id"], user["role"])
-    return AuthResponse(token=token, user=UserPublic(**to_public_user(user)))
+    return AuthResponse(
+        token=token,
+        user=UserPublic(**to_public_user(user)),
+        password_change_required=bool(user.get("must_change_password", False)),
+    )
 
 
 @router.get("/auth/me")
@@ -253,7 +257,44 @@ async def reset_password(payload: dict):
             "failed_login_attempts": 0,
             "locked_until": None,
             "password_updated_at": _now(),
+            # Clear any admin-imposed "must change" flag — the user has now
+            # picked their own credential via the emailed reset link.
+            "must_change_password": False,
         }},
     )
     await db.password_resets.update_one({"token": token}, {"$set": {"used_at": _now()}})
     return {"ok": True, "message": "Password updated. You can now sign in."}
+
+
+@router.post("/auth/change-password")
+async def change_password(payload: dict, user: dict = Depends(get_current_user)):
+    """Change your own password. Required for users flagged
+    `must_change_password` (admin reset or legacy migration); optional
+    otherwise. `old_password` is required unless the flag is set, so an
+    admin-reset user can pick a new one without knowing the temp password
+    (they already proved possession via the JWT they got from login).
+    """
+    new_password = (payload.get("new_password") or "").strip()
+    if len(new_password) < 6:
+        raise HTTPException(400, "New password must be at least 6 characters")
+    db = get_db()
+    fresh = await db.users.find_one({"id": user["id"]})
+    if not fresh:
+        raise HTTPException(404, "User not found")
+    must_change = bool(fresh.get("must_change_password", False))
+    if not must_change:
+        # Standard flow — require old password proof.
+        old_password = payload.get("old_password") or ""
+        if not old_password or not verify_password(old_password, fresh.get("password_hash", "")):
+            raise HTTPException(401, "Current password is incorrect")
+    await db.users.update_one(
+        {"id": user["id"]},
+        {"$set": {
+            "password_hash": hash_password(new_password),
+            "must_change_password": False,
+            "password_updated_at": _now(),
+            "failed_login_attempts": 0,
+            "locked_until": None,
+        }},
+    )
+    return {"ok": True, "message": "Password updated."}
