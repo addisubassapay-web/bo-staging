@@ -1,0 +1,33 @@
+{
+  "summary": "Verified iteration-63 admin password-reset escape hatch end-to-end. New backend endpoint POST /api/admin/users/{user_id}/reset-password works for all cases: valid reset (200 + immediate login), <6 char (400), unknown user (404), non-admin JWT (403), missing/invalid JWT (401). Confirmed counters cleared post-reset. Admin login and sophia login (after restore) still work. Frontend Admin > Users page renders 916 user-reset-pwd-btn-* buttons; cancel does NOT fire API; accept POSTs the reset and displays a confirmation alert containing email + password. Found one real backend bug: login endpoint returned HTTP 500 (not 401) for the 3 users with empty/malformed password_hash because pwd_context.verify() raised UnknownHashError. Patched server.verify_password() to return False on empty/malformed hash so /auth/login now returns 401 cleanly. After patch, all 11 pytest cases pass. Sophia restored to demo1234. hansenayda@gmail.com restored to empty password_hash so review baseline is preserved.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration63_admin_password_reset.py",
+    "/app/test_reports/pytest/iteration63.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "verify_password() previously raised on empty/malformed hashes causing 500 on /api/auth/login for legacy users; now hardened to return False. Consider a one-time migration to set password_hash='' -> require_reset flag so admins see these accounts flagged in the users table.",
+    "server.py is 7629 lines — well past the 700-line guideline. Recommend splitting auth+admin+catalog into router modules (some progress already in routers/).",
+    "Login endpoint returns key 'token' not 'access_token' — inconsistent with common OAuth naming. Fine as-is but document it (regression tests broke because previous suites assumed access_token)."
+  ],
+  "updated_files": [
+    "/app/backend/server.py (verify_password hardened against empty/unknown hash)",
+    "/app/backend/tests/test_iteration63_admin_password_reset.py (new)"
+  ],
+  "success_rate": {"backend": "100% (11/11)", "frontend": "100% (cancel, accept, alert, API wiring all verified)"},
+  "test_credentials": "admin@mercari.local / admin123; sophia_style@demo.local / demo1234 (restored)",
+  "seed_data_creation": "None. Modified state during test then restored: sophia_style password back to demo1234; hansenayda@gmail.com password_hash restored to empty string via direct Mongo update.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Login response uses key 'token' (not 'access_token'). Endpoint POST /api/admin/users/{id}/reset-password is admin-only, min 6 chars, clears failed_login_attempts + locked_until. UI: Admin > Users has data-testid='user-reset-pwd-btn-{id}'; uses window.prompt then window.alert. verify_password() now safely handles empty/malformed hashes returning 401 instead of 500. 3 legacy users still have empty password_hash (hansenayda@gmail.com, stmobilest2027@gmail.com, maham89706@gmail.com) — admin must reset them before they can log in.",
+  "rca_of_the_issue": "Login 500 for legacy users root-caused to passlib.CryptContext.verify() raising UnknownHashError when password_hash is empty string (3 users in DB). server.verify_password() did not catch this. Fix: guard with `if not hashed: return False` + try/except. Reproduction: POST /api/auth/login {email: hansenayda@gmail.com, password: any} -> 500 before fix, 401 after. Mitigation applied inline; verified via test_empty_hash_users_return_401."
+}

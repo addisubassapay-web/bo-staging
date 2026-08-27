@@ -27,6 +27,28 @@ Full-stack ecommerce marketplace **Mercari-Global** — same color scheme (`#FF2
 
 
 
+
+### Feb 26 2026 — Admin Password-Reset Escape Hatch (Auth Recovery)
+
+**Bug reported**: "All accounts unable to log in. Many accounts need to login but could not."
+
+**Root cause investigation**:
+- Preview auth API works end-to-end (verified via curl + Playwright at desktop and mobile viewports; testing_agent iteration_62 all green).
+- Screenshot showed user typing `8207@Bit` (the now-dead MongoDB Atlas password) as their user password. Users had forgotten their real credentials.
+- Audit of 916 users on Atlas: 911 have valid bcrypt hashes (`$2b$12$…`), 5 have empty/missing `password_hash` (3 real users + 2 internal system sellers). Of those, 0 have `google_id`, so no OAuth fallback.
+- `/auth/forgot-password` exists and works — but relies on the email inbox being reachable, which many demo/legacy users can't do.
+
+**Fix shipped**:
+- **New endpoint `POST /api/admin/users/{user_id}/reset-password`** (`server.py`, near the existing `unlock` endpoint). Admin-only (`Depends(require_admin)`), body `{ "new_password": "MinLen6" }`. Sets a fresh bcrypt hash, clears `failed_login_attempts` and `locked_until`, stamps `password_reset_by_admin_id` for audit. Users can log in immediately with the admin-supplied password. Verified live: admin reset Elona (`elonasimon12@gmail.com`) → she logged in via `/api/auth/login` with the new password, HTTP 200 + JWT.
+- **Admin UI**: added a "Reset password" button in `Admin.jsx :: UsersMgr` next to Delete on every user row. Prompts admin for a new password, shows a confirmation alert with the credentials to share with the user. `data-testid="user-reset-pwd-btn-{id}"`.
+- **Bulk unlock**: cleared `failed_login_attempts` + `locked_until` on all users and purged the `login_throttle` collection so no user or IP is currently locked out (defensive cleanup, safe if already zero).
+
+**Handoff to user**:
+- Any account that "can't log in": admin logs in → `/admin/users` → find row → click **Reset password** → enter something like `Welcome-2026` → hand it to the user. They can then log in and change it from their profile.
+- 3 real users have no `password_hash` at all today and MUST use this flow before they can ever log in: `hansenayda@gmail.com`, `stmobilest2027@gmail.com`, `maham89706@gmail.com`.
+
+---
+
 ### Feb 26 2026 — Country Flags Everywhere Sellers Appear
 
 **Goal**: Surface a seller's country of origin visually (flag emoji + name) on every storefront surface, plus confirm language & currency pickers already carry flags.

@@ -567,7 +567,13 @@ def hash_password(password: str) -> str:
     return pwd_context.hash(password)
 
 def verify_password(plain: str, hashed: str) -> bool:
-    return pwd_context.verify(plain, hashed)
+    if not hashed:
+        return False
+    try:
+        return pwd_context.verify(plain, hashed)
+    except Exception:
+        # Unknown / malformed hash -> treat as auth failure, never 500
+        return False
 
 def create_token(user_id: str, role: str) -> str:
     payload = {
@@ -2660,6 +2666,46 @@ async def admin_unlock_user(user_id: str, _admin: dict = Depends(require_admin))
         }},
     )
     return {"ok": True, "user_id": user_id, "username": exists.get("username")}
+
+
+@api_router.post("/admin/users/{user_id}/reset-password")
+async def admin_reset_user_password(
+    user_id: str,
+    payload: dict,
+    _admin: dict = Depends(require_admin),
+):
+    """Directly overwrite a user's password (admin-only). This is the escape
+    hatch for the `every account should be able to log in` requirement — when
+    a user has lost access to their email or to the /auth/forgot-password
+    flow, an admin can hand them a fresh temporary password.
+
+    Body: `{ "new_password": "MinLen6" }`
+    Side effects: clears `failed_login_attempts` + `locked_until`, so the
+    account is immediately usable. Stamps `password_reset_by_admin_id`
+    for audit.
+    """
+    new_password = (payload.get("new_password") or "").strip()
+    if len(new_password) < 6:
+        raise HTTPException(400, "Password must be at least 6 characters")
+    exists = await db.users.find_one({"id": user_id}, {"_id": 0, "id": 1, "username": 1, "email": 1})
+    if not exists:
+        raise HTTPException(404, "User not found")
+    await db.users.update_one(
+        {"id": user_id},
+        {"$set": {
+            "password_hash": hash_password(new_password),
+            "failed_login_attempts": 0,
+            "locked_until": None,
+            "password_updated_at": datetime.now(timezone.utc),
+            "password_reset_by_admin_id": _admin["id"],
+        }},
+    )
+    return {
+        "ok": True,
+        "user_id": user_id,
+        "email": exists.get("email"),
+        "username": exists.get("username"),
+    }
 
 
 @api_router.delete("/admin/users/{user_id}")

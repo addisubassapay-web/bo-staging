@@ -277,6 +277,27 @@ const UsersMgr = () => {
       toast({ title: "Unlock failed", description: e?.response?.data?.detail || "Try again", variant: "destructive" });
     }
   };
+  const resetPassword = async (u) => {
+    const pwd = window.prompt(
+      `Set a new password for ${u.username} (${u.email}).\n\nMinimum 6 characters. The user can log in with this password immediately, then change it in their profile.`,
+      ""
+    );
+    if (pwd === null) return; // cancelled
+    if (pwd.length < 6) {
+      toast({ title: "Password too short", description: "Must be at least 6 characters.", variant: "destructive" });
+      return;
+    }
+    try {
+      await api.post(`/admin/users/${u.id}/reset-password`, { new_password: pwd });
+      // Show the new password back so the admin can hand it off. We
+      // intentionally use a plain alert so the value isn't lost to a fade.
+      window.alert(`Password reset. Share these credentials with ${u.username}:\n\nEmail: ${u.email}\nPassword: ${pwd}`);
+      toast({ title: `Password reset for ${u.username}` });
+      load();
+    } catch (e) {
+      toast({ title: "Reset failed", description: e?.response?.data?.detail || "Try again", variant: "destructive" });
+    }
+  };
   const isLocked = (u) => {
     if (!u.locked_until) return false;
     return new Date(u.locked_until).getTime() > Date.now();
@@ -419,7 +440,19 @@ const UsersMgr = () => {
                   )}
                 </td>
                 <td className="p-3 text-right">
-                  <Button variant="ghost" size="sm" onClick={() => del(u)}><Trash2 className="h-4 w-4 text-neutral-500" /></Button>
+                  <div className="flex justify-end gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => resetPassword(u)}
+                      title="Set a new password for this user"
+                      className="h-8 px-2 text-xs text-neutral-500 hover:text-[#2563EB]"
+                      data-testid={`user-reset-pwd-btn-${u.id}`}
+                    >
+                      Reset password
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => del(u)} data-testid={`user-delete-btn-${u.id}`}><Trash2 className="h-4 w-4 text-neutral-500" /></Button>
+                  </div>
                 </td>
               </tr>
             ))}
