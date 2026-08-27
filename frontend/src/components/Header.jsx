@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
   ShoppingCart, User, LogOut, Package, Settings, Store, Wallet, Link as LinkIcon,
   Users, MessageSquare, BarChart3, ShieldCheck, Heart, Sun, Moon, AlertCircle, Command, ShoppingBag,
   Sparkles, Shirt, Baby, Cpu, Home as HomeIcon, Palette, Dumbbell, Puzzle, BookOpen, HandHeart,
+  ChevronLeft, ChevronRight,
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
@@ -118,6 +119,24 @@ const Header = () => {
   const [categories, setCategories] = useState([]);
   const [compact, setCompact] = useState(false);
   const [cpOpen, setCpOpen] = useState(false);
+
+  // Category ribbon scroll state — drives the edge-fade + chevron visibility.
+  const ribbonRef = useRef(null);
+  const [ribbonAtStart, setRibbonAtStart] = useState(true);
+  const [ribbonAtEnd, setRibbonAtEnd] = useState(false);
+  const updateRibbonEdges = useCallback(() => {
+    const el = ribbonRef.current;
+    if (!el) return;
+    setRibbonAtStart(el.scrollLeft <= 2);
+    setRibbonAtEnd(el.scrollLeft + el.clientWidth >= el.scrollWidth - 2);
+  }, []);
+  // Recompute when the category list is populated / on resize.
+  useEffect(() => {
+    updateRibbonEdges();
+    const onResize = () => updateRibbonEdges();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [categories, updateRibbonEdges]);
 
   useCommandPaletteShortcut(setCpOpen);
 
@@ -348,31 +367,64 @@ const Header = () => {
         </div>
       </div>
 
-      {/* Category ribbon (hidden when compact) */}
-      <div className={`overflow-hidden transition-[max-height,opacity] duration-300 border-b border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 ${compact ? "max-h-0 opacity-0 border-b-0" : "max-h-16 opacity-100"}`}>
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 py-2 sm:py-2.5 flex items-center gap-2 overflow-x-auto scrollbar-hide min-w-0">
-          <Link to="/search" data-testid="cat-pill-all">
-            <button className="whitespace-nowrap px-4 sm:px-5 h-8 sm:h-9 rounded-full bg-gradient-to-r from-[#FF7A18] to-[#FF211F] text-white font-semibold text-xs sm:text-sm flex items-center gap-1.5 shrink-0 shadow-sm">
-              <span className="text-base leading-none">▦</span> All Products
-            </button>
-          </Link>
-          <Link to="/marketplace/stores" data-testid="cat-pill-stores">
-            <button className="whitespace-nowrap px-4 sm:px-5 h-8 sm:h-9 rounded-full bg-gradient-to-r from-[#7DD3FC] to-[#2563EB] text-white font-semibold text-xs sm:text-sm flex items-center gap-1.5 shrink-0 shadow-sm hover:brightness-110 transition">
-              <Store className="h-3.5 w-3.5" /> Stores
-            </button>
-          </Link>
-          {categories.map((c) => {
-            const Icon = CATEGORY_ICONS[c.slug] || CATEGORY_ICONS.default;
-            const accent = CATEGORY_ACCENTS[c.slug] || CATEGORY_ACCENTS.default;
-            return (
-              <Link key={c.id} to={`/search?category=${c.id}`} data-testid={`cat-pill-${c.slug}`}>
-                <button className={`whitespace-nowrap px-3 sm:px-4 h-8 sm:h-9 rounded-full bg-neutral-100 hover:bg-white dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200 font-medium text-xs sm:text-sm shrink-0 transition-all border border-transparent hover:border-neutral-200 dark:hover:border-neutral-600 hover:shadow-sm flex items-center gap-1.5 group`}>
-                  <Icon className={`h-3.5 w-3.5 ${accent} transition-transform group-hover:scale-110`} strokeWidth={2.25} />
-                  {c.name}
-                </button>
-              </Link>
-            );
-          })}
+      {/* Category ribbon (hidden when compact). Horizontally scrollable
+          with edge-fade gradients + chevron buttons that appear once the
+          content overflows the viewport. */}
+      <div className={`transition-[max-height,opacity] duration-300 border-b border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 ${compact ? "max-h-0 opacity-0 border-b-0 overflow-hidden" : "max-h-16 opacity-100"}`}>
+        <div className="max-w-7xl mx-auto relative">
+          {/* Left fade + arrow — visible only when we've scrolled right */}
+          <button
+            type="button"
+            aria-label="Scroll categories left"
+            onClick={() => ribbonRef.current?.scrollBy({ left: -240, behavior: "smooth" })}
+            className={`hidden md:grid absolute left-1 top-1/2 -translate-y-1/2 z-10 h-8 w-8 place-items-center rounded-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 shadow-sm hover:border-[#FF7A18] transition-opacity ${ribbonAtStart ? "opacity-0 pointer-events-none" : "opacity-100"}`}
+            data-testid="cat-ribbon-prev"
+          >
+            <ChevronLeft className="h-4 w-4 text-neutral-600 dark:text-neutral-300" />
+          </button>
+          <div className={`pointer-events-none absolute left-0 top-0 h-full w-8 bg-gradient-to-r from-white dark:from-neutral-950 to-transparent transition-opacity ${ribbonAtStart ? "opacity-0" : "opacity-100"}`} />
+
+          <div
+            ref={ribbonRef}
+            onScroll={updateRibbonEdges}
+            className="px-3 sm:px-4 py-2 sm:py-2.5 flex items-center gap-2 overflow-x-auto scrollbar-hide scroll-smooth"
+            data-testid="cat-ribbon-scroll"
+          >
+            <Link to="/search" data-testid="cat-pill-all">
+              <button className="whitespace-nowrap px-4 sm:px-5 h-8 sm:h-9 rounded-full bg-gradient-to-r from-[#FF7A18] to-[#FF211F] text-white font-semibold text-xs sm:text-sm flex items-center gap-1.5 shrink-0 shadow-sm">
+                <span className="text-base leading-none">▦</span> All Products
+              </button>
+            </Link>
+            <Link to="/marketplace/stores" data-testid="cat-pill-stores">
+              <button className="whitespace-nowrap px-4 sm:px-5 h-8 sm:h-9 rounded-full bg-gradient-to-r from-[#7DD3FC] to-[#2563EB] text-white font-semibold text-xs sm:text-sm flex items-center gap-1.5 shrink-0 shadow-sm hover:brightness-110 transition">
+                <Store className="h-3.5 w-3.5" /> Stores
+              </button>
+            </Link>
+            {categories.map((c) => {
+              const Icon = CATEGORY_ICONS[c.slug] || CATEGORY_ICONS.default;
+              const accent = CATEGORY_ACCENTS[c.slug] || CATEGORY_ACCENTS.default;
+              return (
+                <Link key={c.id} to={`/search?category=${c.id}`} data-testid={`cat-pill-${c.slug}`}>
+                  <button className={`whitespace-nowrap px-3 sm:px-4 h-8 sm:h-9 rounded-full bg-neutral-100 hover:bg-white dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200 font-medium text-xs sm:text-sm shrink-0 transition-all border border-transparent hover:border-neutral-200 dark:hover:border-neutral-600 hover:shadow-sm flex items-center gap-1.5 group`}>
+                    <Icon className={`h-3.5 w-3.5 ${accent} transition-transform group-hover:scale-110`} strokeWidth={2.25} />
+                    {c.name}
+                  </button>
+                </Link>
+              );
+            })}
+          </div>
+
+          {/* Right fade + arrow — visible when there's more to scroll to */}
+          <div className={`pointer-events-none absolute right-0 top-0 h-full w-8 bg-gradient-to-l from-white dark:from-neutral-950 to-transparent transition-opacity ${ribbonAtEnd ? "opacity-0" : "opacity-100"}`} />
+          <button
+            type="button"
+            aria-label="Scroll categories right"
+            onClick={() => ribbonRef.current?.scrollBy({ left: 240, behavior: "smooth" })}
+            className={`hidden md:grid absolute right-1 top-1/2 -translate-y-1/2 z-10 h-8 w-8 place-items-center rounded-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 shadow-sm hover:border-[#FF7A18] transition-opacity ${ribbonAtEnd ? "opacity-0 pointer-events-none" : "opacity-100"}`}
+            data-testid="cat-ribbon-next"
+          >
+            <ChevronRight className="h-4 w-4 text-neutral-600 dark:text-neutral-300" />
+          </button>
         </div>
       </div>
 
