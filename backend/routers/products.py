@@ -213,6 +213,88 @@ def _extract_category(item: Dict[str, Any]) -> Optional[str]:
     return classify_product(item)
 
 
+def _flatten_shopsy_item(item: Dict[str, Any]) -> Dict[str, Any]:
+    """Adapter for Flipkart/Shopsy `ProductSummaryValue` dataset items.
+
+    These come with nested `titles.title`, `pricing.final_price`,
+    `media.images[]` (with `{@width}` placeholders), `smart_url`, etc.
+    We flatten the relevant fields into keys the generic normalizer already
+    understands so the rest of the pipeline stays untouched.
+
+    Returns the input unchanged when the item is NOT a Shopsy shape.
+    """
+    if not isinstance(item, dict):
+        return item
+    is_shopsy = (
+        item.get("type") == "ProductSummaryValue"
+        or isinstance(item.get("titles"), dict)
+        and isinstance(item.get("pricing"), dict)
+    )
+    if not is_shopsy:
+        return item
+
+    flat = dict(item)
+    titles = item.get("titles") or {}
+    if isinstance(titles, dict) and titles.get("title"):
+        flat.setdefault("title", titles.get("title"))
+        subtitle = titles.get("co_subtitle")
+        brand = item.get("product_brand")
+        desc_bits = [b for b in (brand, subtitle) if b]
+        if desc_bits and not flat.get("description"):
+            flat["description"] = " · ".join(desc_bits)
+
+    pricing = item.get("pricing") or {}
+    fp = pricing.get("final_price") if isinstance(pricing, dict) else None
+    if isinstance(fp, dict):
+        v = fp.get("value")
+        if v is None:
+            try:
+                v = float(fp.get("decimal_value") or 0)
+            except (TypeError, ValueError):
+                v = None
+        flat.setdefault("price", v)
+        cur = fp.get("currency")
+        if cur:
+            flat.setdefault("currency", cur)
+
+    media = item.get("media") or {}
+    imgs_raw = media.get("images") if isinstance(media, dict) else None
+    if isinstance(imgs_raw, list):
+        urls: List[str] = []
+        for img in imgs_raw:
+            if isinstance(img, dict):
+                u = img.get("url")
+            elif isinstance(img, str):
+                u = img
+            else:
+                u = None
+            if not isinstance(u, str):
+                continue
+            u = (
+                u.replace("{@width}", "800")
+                 .replace("{@height}", "800")
+                 .replace("{@quality}", "90")
+            )
+            if u.startswith("//"):
+                u = "https:" + u
+            elif u.startswith("http://"):
+                u = "https://" + u[len("http://"):]
+            urls.append(u)
+        if urls:
+            flat.setdefault("images", urls)
+
+    if not flat.get("url") and item.get("smart_url"):
+        smart = item["smart_url"]
+        if smart.startswith("http://"):
+            smart = "https://" + smart[len("http://"):]
+        flat["url"] = smart
+
+    if not flat.get("sku"):
+        flat["sku"] = item.get("id") or item.get("item_id") or item.get("listing_id")
+
+    return flat
+
+
 def _normalize_product(item: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     """Convert a raw Apify item to a `products` document. Returns None if unusable.
 
@@ -221,6 +303,7 @@ def _normalize_product(item: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     they don't leak onto the storefront. When Apify re-scrapes them with a
     real price, the ingest loop will flip them back to active.
     """
+    item = _flatten_shopsy_item(item)
     title = _first(item.get("title"), item.get("name"), item.get("productTitle"), item.get("product_title"))
     price = _extract_price(item)
     sku = _extract_sku(item)
