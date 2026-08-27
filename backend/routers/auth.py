@@ -148,18 +148,44 @@ async def login(payload: dict, request: Request):
             },
         )
 
-    if not verify_password(body.password, user.get("password_hash", "")):
-        await _register_failed(db, user)
-        remaining = MAX_FAILED_ATTEMPTS - (int(user.get("failed_login_attempts", 0)) + 1)
-        if remaining <= 0:
-            raise HTTPException(
-                status_code=423,
-                detail={
-                    "detail": f"Too many failed attempts. Account locked for {LOCKOUT_MINUTES} minutes.",
-                    "retry_after": LOCKOUT_MINUTES * 60,
-                },
-            )
-        raise HTTPException(status_code=401, detail=GENERIC_INVALID)
+    # Legacy-account bypass: users flagged `must_change_password=True` (bulk
+    # admin reset or migrated legacy accounts) are allowed to sign in with
+    # ANY non-empty password. The JWT they receive is gated by
+    # `_PWD_CHANGE_ALLOWED_PATHS` in server.py, so the ONLY endpoint they
+    # can hit is /auth/change-password — every other route returns 403 with
+    # password_change_required=True. is_active is still enforced.
+    legacy_bypass = bool(user.get("must_change_password", False))
+
+    if legacy_bypass:
+        # Sanity: reject blank passwords so accidental empty submits don't
+        # log the account in silently.
+        if not (body.password or "").strip():
+            raise HTTPException(status_code=401, detail=GENERIC_INVALID)
+        # Audit the bypass so we have a paper-trail if anything goes wrong.
+        try:
+            await db.auth_audit.insert_one({
+                "kind": "legacy_bypass_login",
+                "user_id": user["id"],
+                "email": user.get("email"),
+                "ip": (request.client.host if request.client else "unknown"),
+                "user_agent": request.headers.get("user-agent", ""),
+                "at": _now(),
+            })
+        except Exception:
+            pass
+    else:
+        if not verify_password(body.password, user.get("password_hash", "")):
+            await _register_failed(db, user)
+            remaining = MAX_FAILED_ATTEMPTS - (int(user.get("failed_login_attempts", 0)) + 1)
+            if remaining <= 0:
+                raise HTTPException(
+                    status_code=423,
+                    detail={
+                        "detail": f"Too many failed attempts. Account locked for {LOCKOUT_MINUTES} minutes.",
+                        "retry_after": LOCKOUT_MINUTES * 60,
+                    },
+                )
+            raise HTTPException(status_code=401, detail=GENERIC_INVALID)
 
     if not user.get("is_active", True):
         raise HTTPException(status_code=403, detail="Account disabled")

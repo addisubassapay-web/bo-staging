@@ -1,0 +1,29 @@
+{
+  "summary": "Iteration-65 backend-only verification of the legacy-account login-bypass (must_change_password=True → accept ANY non-empty password, JWT gated to /auth/change-password + /auth/me only). Ran the pre-existing suite (test_legacy_bypass_login.py, 5/5 pass) AND authored a supplementary suite (test_legacy_bypass_supplementary.py, 6/6 pass) covering: (a) auth_audit collection receives a legacy_bypass_login doc with user_id/email/ip on each bypass, (b) is_active=false accounts CANNOT bypass — endpoint returns 403 'Account disabled' even with must_change_password=True, (c) whitespace-only password rejected 401 for legacy users, (d) admin@mercari.local/admin123 regression — logs in 200 with password_change_required=false, (e) brute-force lockout after 5 failures still triggers 423 for non-bypass users, (f) legacy JWT is also blocked on /api/orders with 403 + detail.password_change_required=true (second protected route beyond /api/wallet already covered). Total 11/11 backend tests pass. No fixes needed. Live production seed state (913 users on Welcome-2026 + must_change_password=true) preserved — every synthetic test user is isolated with unique uuid emails and cleaned up in fixtures.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_legacy_bypass_login.py",
+    "/app/backend/tests/test_legacy_bypass_supplementary.py",
+    "/app/test_reports/pytest/iter65_legacy_bypass.xml",
+    "/app/test_reports/pytest/iter65_supplementary.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "auth.py login endpoint: after `legacy_bypass=True` sets, if user.is_active=False the code STILL writes the auth_audit entry before returning 403. Not a bug (audit is desirable) but note that an audit entry does not imply a successful login. Consider adding an 'outcome' field.",
+    "The bcrypt.hashpw / verify_password branch is skipped entirely on bypass — timing side-channel: a legacy bypass response is measurably faster than a real password verify. Not a real-world risk given the bypass is intentional, but worth noting.",
+    "server.py _PWD_CHANGE_ALLOWED_PATHS whitelist is what enforces containment. Verified /api/wallet + /api/orders both return 403 with detail.password_change_required=true. Any new sensitive endpoint added later must be validated it is NOT in the whitelist (default behavior is safe — must be explicitly allowlisted).",
+    "GENERIC_INVALID used for both empty-password-on-legacy and wrong-password-on-normal — good, no enumeration leak.",
+    "Pre-existing: server.py still 7750+ lines; auth.py already extracted but a few auth-adjacent flows remain in server.py."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_legacy_bypass_supplementary.py (new)"
+  ],
+  "success_rate": {"backend": "100% (11/11 across 2 test files)", "frontend": "N/A (skipped per request)"},
+  "test_credentials": "admin@mercari.local / admin123 verified. All synthetic test users created+destroyed inside fixtures with lb_active_*, lb_inactive_*, lb_normal_*, legacy_bypass_test_*, normal_test_* prefixes (auto-cleanup).",
+  "seed_data_creation": "None persistent. Every test-created user is deleted in fixture teardown along with its auth_audit and login_throttle rows.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Legacy-bypass invariants verified: (1) must_change_password=True + non-empty password → 200+token+password_change_required=true, (2) JWT is contained by _PWD_CHANGE_ALLOWED_PATHS whitelist in server.py — /auth/me and /auth/change-password work; every other route returns 403 with detail.password_change_required=true, (3) POST /auth/change-password clears the flag and after that the bypass is gone (wrong pw = 401, new pw = 200), (4) is_active=false → 403 'Account disabled' (bypass does NOT unlock disabled accounts), (5) empty/whitespace password rejected 401, (6) audit_audit.legacy_bypass_login entries recorded per bypass, (7) normal-user brute-force lockout still triggers 423 after 5 failed attempts, (8) admin admin@mercari.local/admin123 unaffected. Live prod-mirror state on Atlas: 913 non-admin users on Welcome-2026 + must_change_password=true.",
+  "rca_of_the_issue": "N/A — feature verified working exactly as designed."
+}

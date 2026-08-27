@@ -24,6 +24,22 @@ Full-stack ecommerce marketplace **Mercari-Global** — same color scheme (`#FF2
 
 ---
 
+### Feb 27 2026 — Legacy Account "Any Password" Bypass Login
+
+**User request**: "Allow all 913 accounts to login with any password as a legacy account." User chose option (d): accept any non-empty password for `must_change_password=True` accounts only, then force immediate password change before any other action.
+
+**What shipped (backend)**:
+- `/app/backend/routers/auth.py` — `/api/auth/login` now branches on `must_change_password`:
+  - If flag is TRUE → skip `verify_password` entirely, accept ANY non-empty password, still enforce `is_active`. Writes `auth_audit` doc `{kind: "legacy_bypass_login", user_id, email, ip, user_agent, at}`.
+  - If flag is FALSE → existing bcrypt verify + 5-strike lockout unchanged.
+  - Blank/whitespace password always rejected (401 GENERIC_INVALID).
+- Containment guaranteed by pre-existing `_PWD_CHANGE_ALLOWED_PATHS` middleware in `server.py` (lines 594-633): legacy-bypass JWTs can ONLY reach `/auth/change-password`, `/auth/me`, `/auth/logout`, `/health`. Everything else → 403 `password_change_required=true`.
+- After `/auth/change-password` succeeds, `must_change_password` flips to False and normal bcrypt verification resumes.
+
+**Tests**: `/app/backend/tests/test_legacy_bypass_login.py` (5 tests) + testing-agent supplementary suite (6 tests) — **11/11 passing** (iteration_65.json). Covers audit-log write, is_active enforcement, empty-password rejection, admin regression, and lockout still-triggers for non-bypass users.
+
+
+
 
 
 
