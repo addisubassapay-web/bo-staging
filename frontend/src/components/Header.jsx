@@ -19,6 +19,8 @@ import CategoryMegaMenu from "@/components/CategoryMegaMenu";
 import CurrencyPicker from "@/components/CurrencyPicker";
 import LanguagePicker from "@/components/LanguagePicker";
 import { FontSizePicker } from "@/components/FontSizePicker";
+import HeaderSettingsMenu from "@/components/HeaderSettingsMenu";
+import ThemeToggle from "@/components/ThemeToggle";
 import MiniCart from "@/components/MiniCart";
 
 // Icon + accent color mapping for the 10 Apify-native categories shown in
@@ -88,23 +90,6 @@ const TopStrip = ({ user, onLogout }) => {
         </div>
       </div>
     </div>
-  );
-};
-
-const ThemeToggle = () => {
-  const { theme, toggleTheme } = useTheme();
-  const isDark = theme === "dark";
-  return (
-    <button
-      onClick={toggleTheme}
-      aria-label="Toggle theme"
-      title={isDark ? "Switch to light mode" : "Switch to dark mode"}
-      className="h-10 w-10 sm:h-11 sm:w-11 rounded-full border border-neutral-200 hover:border-[#FF7A18] grid place-items-center transition-colors relative overflow-hidden dark:border-neutral-700 dark:hover:border-[#FF7A18]"
-      data-testid="theme-toggle"
-    >
-      <Sun className={`h-5 w-5 text-neutral-700 absolute transition-all duration-300 ${isDark ? "opacity-0 rotate-90 scale-50" : "opacity-100 rotate-0 scale-100"}`} />
-      <Moon className={`h-5 w-5 text-[#FF7A18] absolute transition-all duration-300 ${isDark ? "opacity-100 rotate-0 scale-100" : "opacity-0 -rotate-90 scale-50"}`} />
-    </button>
   );
 };
 
@@ -238,17 +223,8 @@ const Header = () => {
               </button>
             </Link>
 
-            <ThemeToggle />
-
-            {/* Text size — helps fit more desktop content on smaller screens */}
-            <FontSizePicker />
-
-            {/* Currency + Language pickers — prominent variant, hidden on small phones */}
-            <div className="hidden md:flex items-center gap-1">
-              <CurrencyPicker variant="prominent" />
-              <LanguagePicker variant="prominent" />
-              <span className="mx-1 h-6 w-px bg-neutral-200 dark:bg-neutral-700" />
-            </div>
+            {/* All user preferences (theme, text size, currency, language) live inside one gear-icon popover to save header space. */}
+            <HeaderSettingsMenu />
 
             <IconButton to="/favorites" label="Favorites" testid="header-fav-btn">
               <Heart className="h-5 w-5" />
@@ -361,7 +337,7 @@ const Header = () => {
           </div>
 
           <div className="md:hidden flex items-center gap-1 shrink-0">
-            <ThemeToggle />
+            <HeaderSettingsMenu />
             <Link to="/cart" aria-label="Cart" className="h-10 w-10 rounded-full grid place-items-center relative text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition" data-testid="header-cart-btn-mobile">
               <ShoppingCart className="h-5 w-5" />
               {cartCount > 0 && (
