@@ -19,7 +19,7 @@ from typing import Dict, List, Optional, Tuple
 CANONICAL_CATEGORIES = [
     "Women", "Men", "Kids", "Electronics", "Home",
     "Beauty", "Sports", "Toys", "Books", "Handmade",
-    "Computer",
+    "Computer", "Phones",
 ]
 
 # ---------------------------------------------------------------------------
