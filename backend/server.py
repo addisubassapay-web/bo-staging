@@ -2265,6 +2265,87 @@ async def confirm_delivery(order_id: str, user: dict = Depends(get_current_user)
     return Order(**fresh)
 
 
+class BulkConfirmDeliveryRequest(BaseModel):
+    order_ids: List[str]
+
+
+@api_router.post("/admin/orders/bulk-confirm-delivery")
+async def bulk_confirm_delivery(
+    payload: BulkConfirmDeliveryRequest,
+    _admin: dict = Depends(require_admin),
+):
+    """Admin-only. Force-release escrow on many orders at once by treating
+    each as if the buyer confirmed delivery. Idempotent per order — orders
+    that already have `funds_released=True` are counted as skipped."""
+    ids = [i for i in (payload.order_ids or []) if isinstance(i, str) and i]
+    if not ids:
+        raise HTTPException(400, "No order ids provided")
+    if len(ids) > 500:
+        raise HTTPException(400, "Max 500 orders per call")
+
+    results: List[dict] = []
+    for oid in ids:
+        order = await db.orders.find_one({"id": oid}, {"_id": 0})
+        if not order:
+            results.append({"order_id": oid, "ok": False, "message": "not found", "skipped": True})
+            continue
+        if order.get("funds_released"):
+            results.append({"order_id": oid, "ok": True, "message": "already released", "skipped": True})
+            continue
+
+        try:
+            now = datetime.now(timezone.utc)
+            await db.orders.update_one(
+                {"id": oid, "funds_released": {"$ne": True}},
+                {"$set": {
+                    "delivery_confirmed_at": now.isoformat(),
+                    "funds_released": True,
+                    "status": "delivered",
+                    "shipping_status": "delivered",
+                }},
+            )
+            seller_amt = float(order.get("seller_earnings") or 0.0)
+            if seller_amt > 0:
+                await release_frozen(
+                    order["seller_id"], seller_amt,
+                    f"Released: {order.get('listing_title','sale')}",
+                    oid, tx_type="sale_released",
+                )
+                await notify(
+                    order["seller_id"], "wallet",
+                    f"Funds released: {order.get('listing_title','')}",
+                    f"${seller_amt:.2f} moved from frozen to available.",
+                    "/wallet",
+                )
+            drop_amt = float(order.get("dropship_source_earnings") or 0.0)
+            if order.get("dropship_source_seller_id") and drop_amt > 0:
+                await release_frozen(
+                    order["dropship_source_seller_id"], drop_amt,
+                    f"Dropship released: {order.get('listing_title','sale')}",
+                    oid, tx_type="dropship_released",
+                )
+                await notify(
+                    order["dropship_source_seller_id"], "wallet",
+                    f"Dropship funds released: {order.get('listing_title','')}",
+                    f"${drop_amt:.2f} moved from frozen to available.",
+                    "/wallet",
+                )
+            await notify(
+                order["buyer_id"], "order",
+                f"Delivery confirmed: {order.get('listing_title','')}",
+                "An admin confirmed delivery on this order — your seller has been paid out.",
+                "/profile?tab=orders",
+            )
+            results.append({"order_id": oid, "ok": True, "message": f"released ${seller_amt + drop_amt:.2f}"})
+        except Exception as e:
+            results.append({"order_id": oid, "ok": False, "message": str(e)[:120]})
+
+    succeeded = sum(1 for r in results if r.get("ok") and not r.get("skipped"))
+    skipped = sum(1 for r in results if r.get("skipped"))
+    failed = sum(1 for r in results if not r.get("ok") and not r.get("skipped"))
+    return {"results": results, "succeeded": succeeded, "skipped": skipped, "failed": failed}
+
+
 # =========================
 # Messages
 # =========================

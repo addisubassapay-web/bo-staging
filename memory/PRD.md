@@ -24,6 +24,26 @@ Full-stack ecommerce marketplace **Mercari-Global** — same color scheme (`#FF2
 
 ---
 
+### Feb 27 2026 — Bulk Confirm Delivery on /admin/orders
+
+**User request**: "Add a 'Force confirm delivery' bulk action so admin can release escrow on delivered orders in one click."
+
+**Backend** (`server.py`):
+- New endpoint `POST /api/admin/orders/bulk-confirm-delivery` (admin-only, cap 500 ids/call).
+- Reuses the existing single-order release logic: sets `funds_released=true`, `status=delivered`, `shipping_status=delivered`; calls `release_frozen(seller, seller_earnings)` and (if applicable) the dropship source seller; fires wallet/order notifications to seller, dropship source, and buyer.
+- Idempotent — orders already released show up as `skipped` with `"already released"` message. Uses conditional `update_one({funds_released: {$ne: true}})` to prevent races with the auto-confirm loop.
+- Returns `{ results: [{order_id, ok, message, skipped}], succeeded, skipped, failed }`.
+
+**Frontend** (`pages/Admin.jsx` `OrdersMgr`):
+- Added blue "Confirm delivery" button (with `CheckCircle2` icon) to the sticky bulk bar next to "Advance selected". Tooltip explains: "Force-confirm delivery — releases seller's frozen earnings on every selected order".
+- `runBulk` handler generalised to a `verbMap` — same UX (confirm dialog, toast with succeeded/skipped/failed, refresh) for all three actions (`buy_label`, `advance`, `confirm_delivery`).
+
+**Verification**:
+- curl: 3 pending orders → `succeeded=3 skipped=0 failed=0`, wallet totals released ($50/$200/$40); re-run → `skipped=3` (idempotent); non-admin → 401.
+- Live UI screenshot confirms the button renders, and the confirmed rows immediately flip to "Delivered" in the new Ship-stage column. The app's live cash-out ticker across the top also reflects the released amounts.
+
+
+
 ### Feb 27 2026 — Bulk Advance Delivery on /admin/orders
 
 **User request**: "Add a checkbox column on /admin/orders so admins can advance a dozen orders' shipping status in one click."

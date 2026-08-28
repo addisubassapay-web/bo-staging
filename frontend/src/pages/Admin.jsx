@@ -632,13 +632,27 @@ const OrdersMgr = () => {
 
   const runBulk = async (action) => {
     if (!someSelected) return;
-    const verb = action === "buy_label" ? "buy labels for" : "advance shipping on";
+    const verbMap = {
+      buy_label: "buy labels for",
+      advance: "advance shipping on",
+      confirm_delivery: "force-confirm delivery on",
+    };
+    const verb = verbMap[action] || "run action on";
     if (!window.confirm(`${verb.charAt(0).toUpperCase() + verb.slice(1)} ${selected.size} order${selected.size === 1 ? "" : "s"}?`)) return;
     setBusy(true);
     try {
-      const body = { order_ids: Array.from(selected), action };
-      if (action === "advance" && target !== "next") body.to_status = target;
-      const { data } = await api.post("/admin/orders/bulk-shipping-action", body);
+      let data;
+      if (action === "confirm_delivery") {
+        const resp = await api.post("/admin/orders/bulk-confirm-delivery", {
+          order_ids: Array.from(selected),
+        });
+        data = resp.data;
+      } else {
+        const body = { order_ids: Array.from(selected), action };
+        if (action === "advance" && target !== "next") body.to_status = target;
+        const resp = await api.post("/admin/orders/bulk-shipping-action", body);
+        data = resp.data;
+      }
       toast({
         title: `${data.succeeded} succeeded`,
         description:
@@ -647,7 +661,7 @@ const OrdersMgr = () => {
       });
       if (data.failed > 0) {
         // eslint-disable-next-line no-console
-        console.warn("[bulk-shipping] failures:", data.results.filter((r) => !r.ok && !r.skipped));
+        console.warn(`[bulk-${action}] failures:`, data.results.filter((r) => !r.ok && !r.skipped));
       }
       setSelected(new Set());
       load();
@@ -706,6 +720,16 @@ const OrdersMgr = () => {
               data-testid="orders-bulk-advance"
             >
               <Truck className="h-4 w-4 mr-1" /> {busy ? "Working…" : "Advance selected"}
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => runBulk("confirm_delivery")}
+              disabled={busy}
+              className="min-h-[40px] bg-blue-600 hover:bg-blue-700"
+              title="Force-confirm delivery — releases seller's frozen earnings on every selected order"
+              data-testid="orders-bulk-confirm"
+            >
+              <CheckCircle2 className="h-4 w-4 mr-1" /> Confirm delivery
             </Button>
             <Button
               size="sm"
