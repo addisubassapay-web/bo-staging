@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import api from "@/lib/api";
+import api, { errorText } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -54,7 +54,7 @@ const SellerApply = () => {
       setForm((f) => ({ ...f, id_document_file_id: data.id }));
       toast({ title: "ID document uploaded", description: file.name });
     } catch (err) {
-      toast({ title: "Upload failed", description: err.response?.data?.detail || "Try a smaller file", variant: "destructive" });
+      toast({ title: "Upload failed", description: errorText(err, "Try a smaller file"), variant: "destructive" });
     } finally {
       setUploading(false);
     }
@@ -104,7 +104,7 @@ const SellerApply = () => {
       toast({ title: "Application submitted", description: "Our team will review it shortly." });
       await refresh();
     } catch (err) {
-      toast({ title: "Submission failed", description: err.response?.data?.detail || "Try again", variant: "destructive" });
+      toast({ title: "Submission failed", description: errorText(err, "Try again"), variant: "destructive" });
     } finally {
       setSubmitting(false);
     }

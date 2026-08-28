@@ -34,6 +34,28 @@ api.interceptors.response.use(
 
 export default api;
 
+/**
+ * Turn any thrown request error into a human-readable string, never an
+ * object. Prevents "Objects are not valid as a React child" crashes when a
+ * FastAPI endpoint returns `HTTPException(detail={...})`.
+ */
+export const errorText = (err, fallback = "Something went wrong. Please try again.") => {
+  if (!err) return fallback;
+  const d = err?.response?.data?.detail;
+  if (typeof d === "string" && d.trim()) return d;
+  if (d && typeof d === "object") {
+    if (typeof d.message === "string") return d.message;
+    if (typeof d.detail === "string") return d.detail;
+    if (Array.isArray(d)) {
+      // Pydantic v2 style: [{loc, msg, type}, ...]
+      const first = d.find((x) => x && typeof x === "object" && typeof x.msg === "string");
+      if (first) return first.msg;
+    }
+  }
+  if (typeof err?.message === "string" && err.message) return err.message;
+  return fallback;
+};
+
 // --- Currency-aware price formatter (used by non-context call sites) ---
 // Fallback rates match CurrencyContext.FALLBACK_RATES. Live rates fetched
 // by CurrencyContext are cached to `mercari-global_rates` in localStorage and

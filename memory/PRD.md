@@ -24,6 +24,34 @@ Full-stack ecommerce marketplace **Mercari-Global** — same color scheme (`#FF2
 
 ---
 
+### Feb 27 2026 — React Child Crash on Seller Apply (fixed)
+
+**Bug**: Submitting the seller application crashed the page with
+`Objects are not valid as a React child (found: object with keys {message, password_change_required})`.
+
+**Root cause**: The FastAPI `_pwd_change_gate` middleware returns
+`HTTPException(detail={"message": ..., "password_change_required": true})`
+for users flagged `must_change_password=true`. Toasts were rendering
+`err.response.data.detail` **directly** — when `detail` was an object,
+React tried to render it and crashed.
+
+**Fix**:
+- New helper `errorText(err, fallback)` in `lib/api.js`. Always returns a
+  string: extracts `detail` if string, `detail.message`/`detail.detail` if
+  object, first `msg` from pydantic v2 arrays, else `err.message`, else
+  fallback.
+- Replaced every rendered `err.response?.data?.detail` in the seller-apply
+  flow (`SellerApplyQuick.jsx`, `SellerApply.jsx`) with `errorText(err)`.
+- The existing axios response interceptor already redirects the user to
+  `/change-password` on 403+`password_change_required` — that behaviour
+  stays; the toast is now safe if it fires before the redirect completes.
+
+**Regression test**: `lib/errorText.test.js` — 6 Jest tests covering the
+exact crash case + string / array / object / missing-detail / null-input
+paths. **All 6 pass**.
+
+
+
 ### Feb 27 2026 — Store Approved Modal + Streamlined /apply-seller
 
 **User request**: (1) Build `/components/ui/StoreApprovedModal` that renders when store status flips to APPROVED, with a summary card and CTAs to `/dashboard/seller`. (2) Refactor `/apply-seller` for single-step Modern Storefront setup, client-side validation, streamlined fields.
