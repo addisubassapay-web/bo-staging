@@ -1101,19 +1101,25 @@ async def create_order(payload: OrderCreate, user: dict = Depends(get_current_us
             else:
                 dropship_source_earnings = retail_base
                 reseller_wholesale_cost = retail_base
-    elif listing.get("source_url"):
-        # External-supplier listing (e.g. sourced from an Amazon catalog product).
-        # Cost = the catalog price when we can look it up, otherwise fall back
-        # to the listing's declared base_price if the seller stored one.
+    elif listing.get("source_url") or listing.get("imported_from_id"):
+        # External-supplier listing (e.g. sourced from an Amazon/Apify catalog
+        # product) — try the catalog first, then base_price, then finally
+        # fall back to the listing's retail price so the seller ALWAYS pays
+        # a real source cost at pickup (never $0.00).
         cat = None
         if listing.get("imported_from_id"):
             cat = await db.products.find_one({"id": listing["imported_from_id"]}, {"_id": 0, "price": 1})
-        if not cat:
+        if not cat and listing.get("source_url"):
             cat = await db.products.find_one({"source_url": listing["source_url"]}, {"_id": 0, "price": 1})
         if cat and cat.get("price"):
             reseller_wholesale_cost = round(float(cat["price"]) * quantity, 2)
         elif listing.get("base_price"):
             reseller_wholesale_cost = round(float(listing["base_price"]) * quantity, 2)
+        else:
+            # Last-resort fallback — mirror the retail price so seller pays
+            # the real source cost. Better UX than presenting a $0 pickup
+            # and helps admins spot listings missing base_price data.
+            reseller_wholesale_cost = round(float(listing["price"]) * quantity, 2)
     # Pure P2P listings (seller's own inventory, no source_url, no import) →
     # reseller_wholesale_cost stays 0 — seller still has to "pick" but no
     # wallet debit occurs.

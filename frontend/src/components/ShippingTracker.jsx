@@ -41,7 +41,7 @@ const ShippingTracker = ({ orderId, canPurchase = false, canAdvance = false }) =
     setBuying(true);
     try {
       await api.post(`/orders/${orderId}/shipping-label`);
-      toast({ title: "Label created", description: "Tracking info generated (mocked)" });
+      toast({ title: "Label created", description: "Tracking info generated" });
       await load();
     } catch (err) {
       toast({ title: "Could not create label", description: err.response?.data?.detail || "Try again", variant: "destructive" });
@@ -72,7 +72,7 @@ const ShippingTracker = ({ orderId, canPurchase = false, canAdvance = false }) =
             <Truck className="h-4 w-4" /> No shipping label yet
           </div>
           <Button size="sm" variant="outline" onClick={buyLabel} disabled={buying} data-testid={`buy-label-${orderId}`}>
-            {buying ? "Creating…" : "Buy label (mock)"}
+            {buying ? "Creating…" : "Buy label"}
           </Button>
         </div>
       );

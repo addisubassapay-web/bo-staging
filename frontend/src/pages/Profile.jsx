@@ -542,7 +542,7 @@ const Profile = () => {
                       <div className="text-xs text-neutral-500 font-mono">#{o.id.slice(0, 8)}</div>
                     </div>
                   </div>
-                  <ShippingTracker orderId={o.id} canPurchase canAdvance />
+                  <ShippingTracker orderId={o.id} />
                   <OrderWalletTimeline orderId={o.id} />
                   {o.fulfillment_status === "pending_pickup" && (
                     <div

@@ -452,7 +452,7 @@ const WithdrawDialog = ({ open, onOpenChange, methods, onSubmitted }) => {
             </div>
           )}
 
-          <p className="text-[11px] text-neutral-500">Withdrawals are processed by admin. Mocked payout — no real money is transferred.</p>
+          <p className="text-[11px] text-neutral-500">Withdrawals are processed by admin.</p>
         </div>
 
         <DialogFooter className="gap-2 flex-col sm:flex-row">

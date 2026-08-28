@@ -24,6 +24,7 @@ import AdminPaymentMethods from "@/pages/AdminPaymentMethods";
 import AdminLedgerAudit from "@/pages/AdminLedgerAudit";
 import AdminEmailLog from "@/pages/AdminEmailLog";
 import AdminLegacyBypassLog from "@/pages/AdminLegacyBypassLog";
+import ShippingTracker from "@/components/ShippingTracker";
 import AdminStoreBoosts from "@/pages/AdminStoreBoosts";
 import AdminSupport from "@/pages/AdminSupport";
 import AdminProducts from "@/pages/AdminProducts";
@@ -606,10 +607,15 @@ const ListingsMgr = () => {
 
 const OrdersMgr = () => {
   const [orders, setOrders] = useState([]);
+  const [expanded, setExpanded] = useState(null);
   useEffect(() => { api.get("/admin/orders").then((r) => setOrders(r.data)); }, []);
   return (
     <div>
       <h2 className="text-2xl font-bold mb-4">Orders</h2>
+      <p className="text-sm text-neutral-500 mb-3">
+        Click any row to expand and take over shipping — buy the label and
+        advance the delivery status all the way to delivered.
+      </p>
       <div className="bg-white border border-neutral-200 rounded-lg overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-neutral-50 text-left">
@@ -624,17 +630,36 @@ const OrdersMgr = () => {
             </tr>
           </thead>
           <tbody>
-            {orders.map((o) => (
-              <tr key={o.id} className="border-t border-neutral-100">
-                <td className="p-3 font-mono text-xs">#{o.id.slice(0, 8)}</td>
-                <td className="p-3 max-w-xs"><div className="line-clamp-1">{o.listing_title}</div></td>
-                <td className="p-3">{o.buyer_name}</td>
-                <td className="p-3">{o.seller_name}</td>
-                <td className="p-3 font-medium">{formatPrice(o.amount + o.shipping_fee)}</td>
-                <td className="p-3"><Badge variant="secondary" className="capitalize">{o.status}</Badge></td>
-                <td className="p-3 text-neutral-500 text-xs">{new Date(o.created_at).toLocaleString()}</td>
-              </tr>
-            ))}
+            {orders.map((o) => {
+              const isOpen = expanded === o.id;
+              return (
+                <React.Fragment key={o.id}>
+                  <tr
+                    className="border-t border-neutral-100 cursor-pointer hover:bg-neutral-50"
+                    onClick={() => setExpanded(isOpen ? null : o.id)}
+                    data-testid={`admin-order-row-${o.id}`}
+                  >
+                    <td className="p-3 font-mono text-xs">#{o.id.slice(0, 8)}</td>
+                    <td className="p-3 max-w-xs"><div className="line-clamp-1">{o.listing_title}</div></td>
+                    <td className="p-3">{o.buyer_name}</td>
+                    <td className="p-3">{o.seller_name}</td>
+                    <td className="p-3 font-medium">{formatPrice(o.amount + o.shipping_fee)}</td>
+                    <td className="p-3"><Badge variant="secondary" className="capitalize">{o.status}</Badge></td>
+                    <td className="p-3 text-neutral-500 text-xs">{new Date(o.created_at).toLocaleString()}</td>
+                  </tr>
+                  {isOpen && (
+                    <tr className="bg-neutral-50/50" data-testid={`admin-order-expanded-${o.id}`}>
+                      <td colSpan={7} className="p-4">
+                        <div className="text-xs uppercase tracking-wider text-neutral-500 font-semibold mb-2">
+                          Shipping — admin controls
+                        </div>
+                        <ShippingTracker orderId={o.id} canPurchase canAdvance />
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
+              );
+            })}
           </tbody>
         </table>
       </div>

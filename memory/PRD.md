@@ -24,6 +24,26 @@ Full-stack ecommerce marketplace **Mercari-Global** — same color scheme (`#FF2
 
 ---
 
+### Feb 27 2026 — Admin-Controlled Shipping + Real Source Cost + De-mocked Labels
+
+**User request**: (1) After a seller Picks & Delivers, admin (not seller) should handle Buy label + delivery advancement. (2) Seller must pay the real source price of the product at pickup (currently $0.00 for many orders). (3) Remove any "mock"/"demo" labels shown in the wallet.
+
+**What shipped**:
+
+**Backend** (`server.py` `create_order`):
+- Added a final fallback in the wholesale-cost computation so `reseller_wholesale_cost` is NEVER $0.00 for a dropship-style listing (has `source_url` OR `imported_from_id`). Order of preference: catalog product price → listing's `base_price` → **listing.price × quantity** (last-resort fallback). Pure P2P listings (no source signal) still keep $0.
+- Also broadened the branch trigger from just `source_url` to `source_url OR imported_from_id` so imports without a `base_price` still pick a real number.
+
+**Frontend**:
+- `components/ShippingTracker.jsx` — removed "(mock)" from the Buy label button and from the toast that fires after label creation. Same component now shows plain "Buy label" / "Tracking info generated".
+- `pages/Profile.jsx` — removed `canPurchase canAdvance` from the seller's Sales-tab ShippingTracker. Sellers can now only *view* shipping progress; buying the label + advancing stages is admin-only.
+- `pages/Admin.jsx` — `OrdersMgr` is now an expandable table: clicking any row reveals a "Shipping — admin controls" panel with the full ShippingTracker (`canPurchase canAdvance`). Admin can Buy label + Mark next stage all the way to delivered. Helper header explains the flow.
+- `pages/Wallet.jsx` — removed "Mocked payout — no real money is transferred." from the withdraw-dialog footer. Now reads simply "Withdrawals are processed by admin."
+
+**Verification**: Unit-level test of the wholesale fallback (`source_url + no catalog + no base_price` → $23.96 for a $11.98 × 2 order; pure P2P still $0). Admin Orders page screenshot confirms expand-to-control UX renders. Backend admin-role check already existed on `/orders/{id}/shipping-label` and `/orders/{id}/shipping-advance`.
+
+
+
 ### Feb 27 2026 — Currency Auto-Convert + Bulk Dataset Import UI
 
 **User request**: (1) Convert imported non-USD prices to USD on display; (2) Admin panel with "paste dataset ID + pick category" form so future imports don't need curl.
