@@ -24,6 +24,27 @@ Full-stack ecommerce marketplace **Mercari-Global** — same color scheme (`#FF2
 
 ---
 
+### Feb 27 2026 — Bulk Advance Delivery on /admin/orders
+
+**User request**: "Add a checkbox column on /admin/orders so admins can advance a dozen orders' shipping status in one click."
+
+**Backend** (`routers/shipping.py`):
+- New endpoint `POST /api/admin/orders/bulk-shipping-action` (admin-only, cap 500 order_ids/call).
+- Two actions: `buy_label` (creates a label for every selected order missing one) and `advance` (advances every selected order to next stage OR the optional `to_status`).
+- Skips orders that already had labels / are delivered / are past the target stage with a clear per-row `message`.
+- Returns `{ results: [{order_id, ok, message, skipped}], succeeded, skipped, failed }` for a per-row summary the UI can toast.
+
+**Frontend** (`pages/Admin.jsx` `OrdersMgr`):
+- Added a checkbox column + master "select all" header checkbox with red-tinted selected rows.
+- Sticky bulk bar (shown when 1+ selected): count · **Buy labels** · **Advance one stage** dropdown (→ picked up / in transit / out for delivery / delivered) · **Advance selected** · **Clear**.
+- New "Ship stage" column shows the current shipping status per row.
+- Click-to-expand still opens the per-order admin ShippingTracker; checkbox click doesn't trigger expand.
+- Failures logged to `console.warn` so an admin can debug in one place.
+
+**Verification**: curl smoke — `buy_label` on 3 orders → 3 succeeded (UPS / USPS mock labels); `advance` on same 3 → all moved to "picked up". Non-admin blocked (401/403). Screenshot confirms the bulk bar, red-highlighted selected rows, and Ship-stage column ("Picked Up") render correctly.
+
+
+
 ### Feb 27 2026 — Admin-Controlled Shipping + Real Source Cost + De-mocked Labels
 
 **User request**: (1) After a seller Picks & Delivers, admin (not seller) should handle Buy label + delivery advancement. (2) Seller must pay the real source price of the product at pickup (currently $0.00 for many orders). (3) Remove any "mock"/"demo" labels shown in the wallet.

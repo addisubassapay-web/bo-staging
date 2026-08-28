@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogT
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { LayoutDashboard, Users, Package, ShoppingBag, FolderTree, Trash2, Star, Plus, Settings as SettingsIcon, Wallet, Store as StoreIcon, Save, Check, X as XIcon, Database, IdCard, LayoutGrid, GripVertical, AlertCircle, ShieldAlert, CheckCircle2, XCircle, Clock, MessageCircle, ChevronDown, ChevronUp, Bitcoin, CheckSquare, Square as SquareIcon, Ticket, Mail, Zap, Menu, KeyRound, Download } from "lucide-react";
+import { LayoutDashboard, Users, Package, ShoppingBag, FolderTree, Trash2, Star, Plus, Settings as SettingsIcon, Wallet, Store as StoreIcon, Save, Check, X as XIcon, Database, IdCard, LayoutGrid, GripVertical, AlertCircle, ShieldAlert, CheckCircle2, XCircle, Clock, MessageCircle, ChevronDown, ChevronUp, Bitcoin, CheckSquare, Square as SquareIcon, Ticket, Mail, Zap, Menu, KeyRound, Download, Truck } from "lucide-react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import AdminShelves from "@/pages/AdminShelves";
 import AdminApifySync from "@/pages/AdminApifySync";
@@ -608,23 +608,138 @@ const ListingsMgr = () => {
 const OrdersMgr = () => {
   const [orders, setOrders] = useState([]);
   const [expanded, setExpanded] = useState(null);
-  useEffect(() => { api.get("/admin/orders").then((r) => setOrders(r.data)); }, []);
+  const [selected, setSelected] = useState(new Set());
+  const [busy, setBusy] = useState(false);
+  const [target, setTarget] = useState("next"); // "next" or one of the stages
+  const { toast } = useToast();
+
+  const load = () => api.get("/admin/orders").then((r) => setOrders(r.data));
+  useEffect(() => { load(); }, []);
+
+  const toggleOne = (id) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+  const allSelected = orders.length > 0 && selected.size === orders.length;
+  const someSelected = selected.size > 0;
+  const toggleAll = () => {
+    if (allSelected) setSelected(new Set());
+    else setSelected(new Set(orders.map((o) => o.id)));
+  };
+
+  const runBulk = async (action) => {
+    if (!someSelected) return;
+    const verb = action === "buy_label" ? "buy labels for" : "advance shipping on";
+    if (!window.confirm(`${verb.charAt(0).toUpperCase() + verb.slice(1)} ${selected.size} order${selected.size === 1 ? "" : "s"}?`)) return;
+    setBusy(true);
+    try {
+      const body = { order_ids: Array.from(selected), action };
+      if (action === "advance" && target !== "next") body.to_status = target;
+      const { data } = await api.post("/admin/orders/bulk-shipping-action", body);
+      toast({
+        title: `${data.succeeded} succeeded`,
+        description:
+          `${data.skipped} skipped · ${data.failed} failed` +
+          (data.failed > 0 ? " — check the console for details" : ""),
+      });
+      if (data.failed > 0) {
+        // eslint-disable-next-line no-console
+        console.warn("[bulk-shipping] failures:", data.results.filter((r) => !r.ok && !r.skipped));
+      }
+      setSelected(new Set());
+      load();
+    } catch (e) {
+      toast({
+        title: "Bulk action failed",
+        description: e?.response?.data?.detail || "Try again",
+        variant: "destructive",
+      });
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
-    <div>
-      <h2 className="text-2xl font-bold mb-4">Orders</h2>
+    <div data-testid="admin-orders-page">
+      <h2 className="text-2xl font-bold mb-2">Orders</h2>
       <p className="text-sm text-neutral-500 mb-3">
-        Click any row to expand and take over shipping — buy the label and
-        advance the delivery status all the way to delivered.
+        Click any row to expand and take over shipping — or select many and use the bulk bar to buy labels or advance delivery in one click.
       </p>
+
+      {someSelected && (
+        <div
+          className="mb-3 sticky top-2 z-10 rounded-xl border border-neutral-200 bg-white/95 backdrop-blur p-3 flex flex-col sm:flex-row sm:items-center gap-2 shadow-sm"
+          data-testid="orders-bulk-bar"
+        >
+          <span className="text-sm font-semibold text-neutral-700 flex-1" data-testid="orders-bulk-count">
+            {selected.size} order{selected.size === 1 ? "" : "s"} selected
+          </span>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => runBulk("buy_label")}
+              disabled={busy}
+              className="min-h-[40px]"
+              data-testid="orders-bulk-buy"
+            >
+              <Ticket className="h-4 w-4 mr-1" /> Buy labels
+            </Button>
+            <Select value={target} onValueChange={setTarget}>
+              <SelectTrigger className="h-10 w-[180px]" data-testid="orders-bulk-target"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="next">Advance one stage</SelectItem>
+                <SelectItem value="picked_up">→ Picked up</SelectItem>
+                <SelectItem value="in_transit">→ In transit</SelectItem>
+                <SelectItem value="out_for_delivery">→ Out for delivery</SelectItem>
+                <SelectItem value="delivered">→ Delivered</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button
+              size="sm"
+              onClick={() => runBulk("advance")}
+              disabled={busy}
+              className="min-h-[40px] bg-emerald-600 hover:bg-emerald-700"
+              data-testid="orders-bulk-advance"
+            >
+              <Truck className="h-4 w-4 mr-1" /> {busy ? "Working…" : "Advance selected"}
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setSelected(new Set())}
+              disabled={busy}
+              data-testid="orders-bulk-clear"
+            >
+              Clear
+            </Button>
+          </div>
+        </div>
+      )}
+
       <div className="bg-white border border-neutral-200 rounded-lg overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-neutral-50 text-left">
             <tr>
+              <th className="p-3 w-10">
+                <input
+                  type="checkbox"
+                  checked={allSelected}
+                  onChange={toggleAll}
+                  className="h-4 w-4 rounded border-neutral-300 accent-[#FF211F] cursor-pointer"
+                  aria-label="Select all orders"
+                  data-testid="orders-select-all"
+                />
+              </th>
               <th className="p-3">Order</th>
               <th className="p-3">Item</th>
               <th className="p-3">Buyer</th>
               <th className="p-3">Seller</th>
               <th className="p-3">Amount</th>
+              <th className="p-3">Ship stage</th>
               <th className="p-3">Status</th>
               <th className="p-3">Date</th>
             </tr>
@@ -632,24 +747,43 @@ const OrdersMgr = () => {
           <tbody>
             {orders.map((o) => {
               const isOpen = expanded === o.id;
+              const isSel = selected.has(o.id);
+              const shipStage = o.shipping_status
+                ? o.shipping_status.replace(/_/g, " ")
+                : (o.tracking_number ? "label created" : "no label");
               return (
                 <React.Fragment key={o.id}>
                   <tr
-                    className="border-t border-neutral-100 cursor-pointer hover:bg-neutral-50"
-                    onClick={() => setExpanded(isOpen ? null : o.id)}
+                    className={`border-t border-neutral-100 hover:bg-neutral-50 ${isSel ? "bg-red-50/40" : ""}`}
                     data-testid={`admin-order-row-${o.id}`}
                   >
-                    <td className="p-3 font-mono text-xs">#{o.id.slice(0, 8)}</td>
-                    <td className="p-3 max-w-xs"><div className="line-clamp-1">{o.listing_title}</div></td>
+                    <td className="p-3">
+                      <input
+                        type="checkbox"
+                        checked={isSel}
+                        onChange={(e) => { e.stopPropagation(); toggleOne(o.id); }}
+                        onClick={(e) => e.stopPropagation()}
+                        className="h-4 w-4 rounded border-neutral-300 accent-[#FF211F] cursor-pointer"
+                        aria-label={`Select order ${o.id.slice(0,8)}`}
+                        data-testid={`orders-select-${o.id}`}
+                      />
+                    </td>
+                    <td className="p-3 font-mono text-xs cursor-pointer" onClick={() => setExpanded(isOpen ? null : o.id)}>#{o.id.slice(0, 8)}</td>
+                    <td className="p-3 max-w-xs cursor-pointer" onClick={() => setExpanded(isOpen ? null : o.id)}>
+                      <div className="line-clamp-1">{o.listing_title}</div>
+                    </td>
                     <td className="p-3">{o.buyer_name}</td>
                     <td className="p-3">{o.seller_name}</td>
                     <td className="p-3 font-medium">{formatPrice(o.amount + o.shipping_fee)}</td>
+                    <td className="p-3 capitalize text-xs text-neutral-600" data-testid={`orders-ship-stage-${o.id}`}>
+                      {shipStage}
+                    </td>
                     <td className="p-3"><Badge variant="secondary" className="capitalize">{o.status}</Badge></td>
                     <td className="p-3 text-neutral-500 text-xs">{new Date(o.created_at).toLocaleString()}</td>
                   </tr>
                   {isOpen && (
                     <tr className="bg-neutral-50/50" data-testid={`admin-order-expanded-${o.id}`}>
-                      <td colSpan={7} className="p-4">
+                      <td colSpan={9} className="p-4">
                         <div className="text-xs uppercase tracking-wider text-neutral-500 font-semibold mb-2">
                           Shipping — admin controls
                         </div>

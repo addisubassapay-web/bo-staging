@@ -49,6 +49,12 @@ class AdvanceShippingRequest(BaseModel):
     to_status: Optional[str] = None  # optional target; if omitted advance by one stage
 
 
+class BulkShippingActionRequest(BaseModel):
+    order_ids: list[str]
+    action: str  # "buy_label" | "advance"
+    to_status: Optional[str] = None  # for advance: target stage (omit = next stage)
+
+
 def _now_utc() -> datetime:
     return datetime.now(timezone.utc)
 
@@ -303,3 +309,109 @@ async def advance_shipping(order_id: str, payload: AdvanceShippingRequest, user:
         ev["description"], f"/order/{order_id}",
     )
     return {"ok": True, "current_status": next_status, "event": ev}
+
+
+@router.post("/admin/orders/bulk-shipping-action")
+async def bulk_shipping_action(
+    payload: BulkShippingActionRequest,
+    user: dict = Depends(get_current_user),
+):
+    """Admin-only bulk shipping action.
+
+    action="buy_label"  → create a shipping label for every order in the list
+    that doesn't already have one.
+    action="advance"    → advance every order that already has a label by one
+    stage (or to `to_status` when supplied). Orders without a label are
+    skipped with an explanatory message.
+
+    Returns `{ results: [{order_id, ok, message}], succeeded, failed, skipped }`
+    so the UI can render a per-row summary.
+    """
+    if user.get("role") != "admin":
+        raise HTTPException(403, "Admin access required")
+    action = (payload.action or "").strip().lower()
+    if action not in ("buy_label", "advance"):
+        raise HTTPException(400, "Invalid action")
+    ids = [i for i in (payload.order_ids or []) if isinstance(i, str) and i]
+    if not ids:
+        raise HTTPException(400, "No order ids provided")
+    if len(ids) > 500:
+        raise HTTPException(400, "Max 500 orders per call")
+
+    db = get_db()
+    stages = ["label_created", "picked_up", "in_transit", "out_for_delivery", "delivered"]
+    if payload.to_status and payload.to_status not in stages:
+        raise HTTPException(400, "Invalid to_status")
+
+    results: list[dict] = []
+    for oid in ids:
+        order = await db.orders.find_one({"id": oid}, {"_id": 0})
+        if not order:
+            results.append({"order_id": oid, "ok": False, "message": "not found", "skipped": True})
+            continue
+
+        if action == "buy_label":
+            if order.get("tracking_number"):
+                results.append({"order_id": oid, "ok": True, "message": "already had a label", "skipped": True})
+                continue
+            try:
+                provider = get_shipping_provider()
+                label = provider.create_label(order)
+                initial_event = event_details("label_created", label.carrier)
+                await db.orders.update_one(
+                    {"id": oid},
+                    {"$set": {
+                        "tracking_number": label.tracking_number,
+                        "carrier": label.carrier,
+                        "label_url": f"/api/orders/{oid}/label.svg",
+                        "shipping_status": "label_created",
+                        "shipping_provider": label.provider,
+                        "estimated_delivery": label.estimated_delivery,
+                        "shipping_events": [initial_event],
+                        "label_created_at": _now_utc(),
+                    }},
+                )
+                await notify(
+                    order["buyer_id"], "order", "Shipping label created",
+                    f"Tracking: {label.tracking_number} via {label.carrier}",
+                    f"/order/{oid}",
+                )
+                results.append({"order_id": oid, "ok": True, "message": f"{label.carrier} {label.tracking_number}"})
+            except Exception as e:
+                results.append({"order_id": oid, "ok": False, "message": str(e)[:120]})
+            continue
+
+        # action == "advance"
+        if not order.get("tracking_number"):
+            results.append({"order_id": oid, "ok": False, "message": "no shipping label yet", "skipped": True})
+            continue
+        current = order.get("shipping_status", "label_created")
+        if current == "delivered":
+            results.append({"order_id": oid, "ok": True, "message": "already delivered", "skipped": True})
+            continue
+        try:
+            if payload.to_status:
+                if stages.index(payload.to_status) <= stages.index(current):
+                    results.append({"order_id": oid, "ok": False, "message": f"already at or past {payload.to_status}", "skipped": True})
+                    continue
+                next_status = payload.to_status
+            else:
+                next_status = stages[stages.index(current) + 1]
+            ev = event_details(next_status, order.get("carrier", "Carrier"))
+            await db.orders.update_one(
+                {"id": oid},
+                {"$set": {"shipping_status": next_status}, "$push": {"shipping_events": ev}},
+            )
+            await notify(
+                order["buyer_id"], "order",
+                f"Shipping update: {next_status.replace('_',' ').title()}",
+                ev["description"], f"/order/{oid}",
+            )
+            results.append({"order_id": oid, "ok": True, "message": f"→ {next_status.replace('_',' ')}"})
+        except Exception as e:
+            results.append({"order_id": oid, "ok": False, "message": str(e)[:120]})
+
+    succeeded = sum(1 for r in results if r.get("ok") and not r.get("skipped"))
+    skipped = sum(1 for r in results if r.get("skipped"))
+    failed = sum(1 for r in results if not r.get("ok") and not r.get("skipped"))
+    return {"results": results, "succeeded": succeeded, "skipped": skipped, "failed": failed}
