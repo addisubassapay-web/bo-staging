@@ -48,8 +48,11 @@ def test_normalize_product_accepts_shopsy_shape():
     doc = _normalize_product(SAMPLE_SHOPSY)
     assert doc is not None, "Shopsy item was rejected by normalizer"
     assert doc["title"] == "HOKER Loose Fit Men Dark Grey Jeans"
-    assert doc["price"] == 466.0
-    assert doc["currency"] == "INR"
+    # Price is now normalized to USD via 83.2 static INR rate.
+    assert 5.5 < doc["price"] < 5.7
+    assert doc["currency"] == "USD"
+    assert doc["original_price"] == 466
+    assert doc["original_currency"] == "INR"
     assert doc["sku"] == "XJNHKGKCUGEBC35D"
     assert doc["source_url"].startswith("https://dl.flipkart.com/")
     assert doc["in_stock"] is True

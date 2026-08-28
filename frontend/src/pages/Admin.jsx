@@ -11,10 +11,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogT
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { LayoutDashboard, Users, Package, ShoppingBag, FolderTree, Trash2, Star, Plus, Settings as SettingsIcon, Wallet, Store as StoreIcon, Save, Check, X as XIcon, Database, IdCard, LayoutGrid, GripVertical, AlertCircle, ShieldAlert, CheckCircle2, XCircle, Clock, MessageCircle, ChevronDown, ChevronUp, Bitcoin, CheckSquare, Square as SquareIcon, Ticket, Mail, Zap, Menu, KeyRound } from "lucide-react";
+import { LayoutDashboard, Users, Package, ShoppingBag, FolderTree, Trash2, Star, Plus, Settings as SettingsIcon, Wallet, Store as StoreIcon, Save, Check, X as XIcon, Database, IdCard, LayoutGrid, GripVertical, AlertCircle, ShieldAlert, CheckCircle2, XCircle, Clock, MessageCircle, ChevronDown, ChevronUp, Bitcoin, CheckSquare, Square as SquareIcon, Ticket, Mail, Zap, Menu, KeyRound, Download } from "lucide-react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import AdminShelves from "@/pages/AdminShelves";
-import ApifySync from "@/pages/AdminApifySync";
+import AdminApifySync from "@/pages/AdminApifySync";
+import AdminApifyDatasetImport from "@/pages/AdminApifyDatasetImport";
 import ApifySyncTicker from "@/components/ApifySyncTicker";
 import R2StorageTicker from "@/components/R2StorageTicker";
 import PickupTimingTuner from "@/components/PickupTimingTuner";
@@ -1711,6 +1712,7 @@ const AdminSidebarNav = ({ compact = false }) => (
     <SidebarLink to="/admin/seller-applications" icon={IdCard}>Seller applications</SidebarLink>
     <SidebarLink to="/admin/shelves" icon={LayoutGrid}>Homepage shelves</SidebarLink>
     <SidebarLink to="/admin/apify-sync" icon={Database}>Apify sync</SidebarLink>
+    <SidebarLink to="/admin/apify-import" icon={Download}>Dataset import</SidebarLink>
     <SidebarLink to="/admin/store-boosts" icon={StoreIcon}>Store boosts</SidebarLink>
     <SidebarSupportLink />
     <SidebarLink to="/admin/email-log" icon={Mail}>Email log</SidebarLink>
@@ -1765,7 +1767,8 @@ const AdminShell = () => {
             <Route path="disputes" element={<DisputesMgr />} />
             <Route path="seller-applications" element={<SellerApplicationsMgr />} />
             <Route path="shelves" element={<AdminShelves />} />
-            <Route path="apify-sync" element={<ApifySync />} />
+            <Route path="apify-sync" element={<AdminApifySync />} />
+            <Route path="apify-import" element={<AdminApifyDatasetImport />} />
             <Route path="store-boosts" element={<AdminStoreBoosts />} />
             <Route path="support-tickets" element={<AdminSupport />} />
             <Route path="email-log" element={<AdminEmailLog />} />

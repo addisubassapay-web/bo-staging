@@ -24,6 +24,28 @@ Full-stack ecommerce marketplace **Mercari-Global** — same color scheme (`#FF2
 
 ---
 
+### Feb 27 2026 — Currency Auto-Convert + Bulk Dataset Import UI
+
+**User request**: (1) Convert imported non-USD prices to USD on display; (2) Admin panel with "paste dataset ID + pick category" form so future imports don't need curl.
+
+**What shipped**:
+
+**Backend** (`routers/products.py`):
+- New helper `_normalize_currency_to_usd(price, currency)` — static rate table matching the frontend's `STATIC_RATES` (INR 83.2, EUR 0.92, GBP 0.78, JPY 155, CAD 1.36, AUD 1.52, BRL 5.05, MXN 17.1, CNY 7.18, KRW 1345, SGD 1.34, AED 3.673). Unknown currencies pass through untouched so we never corrupt data.
+- `_normalize_product` now runs prices through the converter and stashes the source amount as `original_price` + `original_currency` on the document for audit.
+- Re-ran the Men > Jeans import: all 20 products now store USD (was INR, e.g. HOKER jeans ₹466 → $5.60).
+
+**Frontend** (new page `pages/AdminApifyDatasetImport.jsx`):
+- Route `/admin/apify-import`, sidebar link "Dataset import" (Download icon).
+- Form: dataset ID input, category `<Select>` (auto-populated from `/api/categories`, falls back to free-form input), optional subcategory, max items, big red Import button.
+- Live result card: Received / Created / Updated / Skipped stats + category breadcrumb + skipped-shape warning when ingest yields 0.
+
+**Tests**: `tests/test_currency_normalize.py` (4 tests) + updated `tests/test_shopsy_shape_adapter.py` — **7/7 passing**.
+
+**Blocked**: "Leather wallet + Shirts + Shoes + Outerwear" imports — user provided `XJNHKGKCUGEBC35D` which is a Flipkart product SKU, not an Apify dataset ID (Apify returned 404). Real dataset IDs pending.
+
+
+
 ### Feb 27 2026 — Password Strength Meter + Admin Legacy Bypass Audit Panel
 
 **User request**: "Password Strength Meter: live strength bar on the change-password screen" + "Admin Audit Panel: Legacy Bypass Log page under Admin, with a toggle to allow or not allow bypass login."

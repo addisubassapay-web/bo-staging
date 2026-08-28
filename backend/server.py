@@ -664,7 +664,7 @@ async def get_settings() -> dict:
     doc = await db.settings.find_one({"id": "global"}, {"_id": 0})
     defaults = Settings().model_dump()
     if not doc:
-        await db.settings.insert_one(defaults)
+        await db.settings.insert_one({**defaults})
         return defaults
     # Merge defaults for any newly introduced fields so callers never see None
     return {**defaults, **doc}

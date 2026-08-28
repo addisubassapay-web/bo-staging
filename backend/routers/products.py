@@ -213,6 +213,31 @@ def _extract_category(item: Dict[str, Any]) -> Optional[str]:
     return classify_product(item)
 
 
+def _normalize_currency_to_usd(price: Optional[float], currency: str) -> tuple[Optional[float], str, Optional[float], Optional[str]]:
+    """Return (usd_price, "USD", original_price, original_currency) — or the
+    input untouched (with original_* None) if it is already USD / unknown.
+
+    Keeps the same static rate table as the frontend's `api.js` fallback so
+    the two views stay consistent when the live-rate fetch has never run.
+    """
+    if price is None:
+        return None, currency or "USD", None, None
+    cur = (currency or "USD").upper()
+    if cur == "USD":
+        return price, "USD", None, None
+    # 1 USD = X foreign — must match STATIC_RATES in /app/frontend/src/lib/api.js
+    RATES = {
+        "USD": 1.0, "EUR": 0.92, "GBP": 0.78, "JPY": 155.0, "INR": 83.2,
+        "CAD": 1.36, "AUD": 1.52, "BRL": 5.05, "MXN": 17.1, "CNY": 7.18,
+        "KRW": 1345.0, "SGD": 1.34, "AED": 3.673,
+    }
+    rate = RATES.get(cur)
+    if not rate:
+        # Unknown currency — keep price+currency as-is so we don't corrupt data.
+        return price, cur, None, None
+    return round(price / rate, 2), "USD", price, cur
+
+
 def _flatten_shopsy_item(item: Dict[str, Any]) -> Dict[str, Any]:
     """Adapter for Flipkart/Shopsy `ProductSummaryValue` dataset items.
 
@@ -325,11 +350,14 @@ def _normalize_product(item: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     if isinstance(raw_stock, bool):
         in_stock = in_stock and raw_stock
 
-    return {
+    raw_currency = _extract_currency(item)
+    usd_price, usd_currency, orig_price, orig_currency = _normalize_currency_to_usd(price, raw_currency)
+
+    doc = {
         "title": str(title).strip()[:500],
         "description": description,
-        "price": price if price is not None else 0.0,
-        "currency": _extract_currency(item),
+        "price": usd_price if usd_price is not None else 0.0,
+        "currency": usd_currency,
         "images": _extract_images(item),
         "category": _extract_category(item),
         "breadcrumbs": (str(item.get("breadCrumbs")) if item.get("breadCrumbs") else None),
@@ -337,6 +365,10 @@ def _normalize_product(item: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         "source_url": str(source_url) if source_url else None,
         "in_stock": in_stock,
     }
+    if orig_price is not None:
+        doc["original_price"] = orig_price
+        doc["original_currency"] = orig_currency
+    return doc
 
 
 def _iter_apify_items(payload: Any) -> List[Dict[str, Any]]:
