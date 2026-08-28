@@ -24,6 +24,28 @@ Full-stack ecommerce marketplace **Mercari-Global** — same color scheme (`#FF2
 
 ---
 
+### Feb 27 2026 — Seller Apply Bug + Multi-Payment + Real OTP Verification
+
+**User request**: Fix the "Missing OTP token" submission error, add 5 payout methods, use production-grade OTP.
+
+**Bug**: `/api/seller/apply` guards submissions with `consume_token(purpose="seller_apply")` requiring an `x-otp-token` header. The streamlined SellerApplyQuick page was posting without it → 403 with detail "Missing OTP token…" surfaced as a toast. Also a secondary Pydantic 500 when `payload.phone=""` fell through to `user.phone=None`.
+
+**Fix — production email OTP flow (already using Hostinger SMTP, not mock)**:
+- Rebuilt `pages/SellerApplyQuick.jsx` with an inline OTP verification block. Flow: user fills 4 fields → picks payout → clicks "Send verification code" → `POST /otp/request` fires (real email via Hostinger `email@support.mercariglobals.com`) → 6-digit input appears with a **live 10-min mm:ss countdown** and a Resend link → `POST /otp/verify` returns an `otp_token` → the form auto-posts to `/seller/apply` with `x-otp-token` header. Verified state shown as an emerald pill.
+- Fixed the `phone=None` crash in `create_application`: `phone=payload.phone or fresh_user.get("phone") or ""`.
+
+**Multi-Payment — 5 payout methods**:
+- Widened `SellerApplication.payout_method` and `SellerApplicationCreate.payout_method` Literals from `["bank_transfer"]` to **`["crypto", "bank_transfer", "card", "paypal", "crypto_alt"]`**, default `"crypto"`.
+- New picker tile grid: **Crypto** (with green "RECOMMENDED" badge — instant BTC), **Bank transfer** (1-3 days), **Credit/Debit** (same-day card), **PayPal** (instant to PayPal, 200+ countries), **SOL/ETH/USDT** (alt-networks). Selected tile gets red border + red-tinted background + inline check icon.
+
+**Regression tests** (`tests/test_apply_otp_and_payouts.py`, **6 passing**):
+- Parametrised over all 5 payout methods — each accepts and round-trips.
+- `test_missing_otp_token_returns_400_not_crash` — locks in that `detail` stays a plain **string** (never object) so no React child crash can regress.
+
+**Verified live**: E2E test registered a fresh user, requested OTP, verified, applied with `payout_method="paypal"` → 200 with correct payout_method echoed. UI screenshot confirms the 5-tile picker + OTP block + live countdown + "Code sent" toast.
+
+
+
 ### Feb 27 2026 — React Child Crash on Seller Apply (fixed)
 
 **Bug**: Submitting the seller application crashed the page with

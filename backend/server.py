@@ -534,7 +534,7 @@ class SellerApplication(BaseModel):
     state: str = ""
     postal_code: str = ""
     phone: str = ""
-    payout_method: Literal["bank_transfer"] = "bank_transfer"
+    payout_method: Literal["crypto", "bank_transfer", "card", "paypal", "crypto_alt"] = "crypto"
     id_document_note: Optional[str] = ""  # placeholder; real flow would upload
     id_document_file_id: Optional[str] = None  # points to /api/files/{id}
     status: Literal["pending", "approved", "rejected"] = "pending"
@@ -555,7 +555,7 @@ class SellerApplicationCreate(BaseModel):
     state: str = ""
     postal_code: str = ""
     phone: str = ""
-    payout_method: Literal["bank_transfer"] = "bank_transfer"
+    payout_method: Literal["crypto", "bank_transfer", "card", "paypal", "crypto_alt"] = "crypto"
     id_document_note: Optional[str] = ""
     id_document_file_id: Optional[str] = None
 
@@ -5467,7 +5467,7 @@ async def seller_apply(
         city=payload.city,
         state=payload.state,
         postal_code=payload.postal_code,
-        phone=payload.phone or fresh_user.get("phone", ""),
+        phone=payload.phone or fresh_user.get("phone") or "",
         payout_method=payload.payout_method,  # type: ignore
         id_document_note=payload.id_document_note or "",
         id_document_file_id=payload.id_document_file_id,
