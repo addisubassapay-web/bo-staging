@@ -24,6 +24,30 @@ Full-stack ecommerce marketplace **Mercari-Global** — same color scheme (`#FF2
 
 ---
 
+### Feb 27 2026 — Store Approved Modal + Streamlined /apply-seller
+
+**User request**: (1) Build `/components/ui/StoreApprovedModal` that renders when store status flips to APPROVED, with a summary card and CTAs to `/dashboard/seller`. (2) Refactor `/apply-seller` for single-step Modern Storefront setup, client-side validation, streamlined fields.
+
+**What shipped**:
+
+**Frontend components**:
+- `components/ui/StoreApprovedModal.jsx` — celebratory modal with aurora orange/pink/red gradient header + falling CSS-only confetti (24 particles, staggered) + party-popper icon. Store summary card (name, `mercariglobals.com/store/<slug>` URL, `trusted` badge) that hangs over the header. Three quick-facts tiles (Theme · Fee 10% · Payouts weekly). Two CTAs: primary "Manage storefront →" → `/dashboard/seller`, secondary "View public page ↗" → `/store/<slug>`. Full data-testids on every interactive.
+- `components/StoreApprovalWatcher.jsx` — mounted once at App root. Watches `useAuth().user.seller_status`; when it flips to `"approved"` mid-session OR the page loads while approved but the "shown" flag isn't set in localStorage (`mercari-global_store_approved_shown_<uid>`), it fetches `/api/my/store` and pops the modal exactly once.
+- `App.js` — new route `/apply-seller → SellerApplyQuick`, alias `/dashboard/seller → StoreManage`, `<StoreApprovalWatcher />` inside `<AuthProvider>`.
+
+**Streamlined application (`pages/SellerApplyQuick.jsx`)**:
+- Trimmed from **12 fields → 4** (Legal name · City · Postal · Country 2-letter). Everything else is auto-defaulted: `business_type=individual`, `payout_method=bank_transfer`, `storefront_theme="Modern Storefront"`.
+- Client-side validation via a `REQUIRED_RULES` map — inline red error text under each field, `aria-invalid` for a11y, error appears on blur or when submit is attempted. Submit button stays disabled until every rule passes.
+- Header explains "Quick apply · 60 seconds" with the Modern Storefront preview card (editorial hero / category ribbon / mobile-first) + three perks (Instant · Weekly · Escrow).
+- Auto-detects existing applications: shows a status card + "Go to storefront" button once approved.
+- Escape hatch: footer link "Need more control? Use the advanced application →" points to the classic `/seller/apply`.
+
+**Verification**:
+- Screenshot of the modal: aurora banner, store card ("qa_892425"), Trusted tier badge, Modern Storefront theme tile, "Manage storefront" + "View public page" CTAs — all rendered in-app via the watcher after flipping a test user's status to approved.
+- Screenshot of `/apply-seller` form with inline validation active.
+
+
+
 ### Feb 27 2026 — Undo Bulk Confirm Delivery (30-min window)
 
 **User request**: "Add a 'Rollback last bulk confirm' button that reverses the escrow release for accidental confirms within 30 minutes."

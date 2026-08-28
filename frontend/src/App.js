@@ -36,6 +36,8 @@ import StoreAnalytics from "@/pages/StoreAnalytics";
 import PayoutDashboard from "@/pages/PayoutDashboard";
 import Verification from "@/pages/Verification";
 import SellerApply from "@/pages/SellerApply";
+import SellerApplyQuick from "@/pages/SellerApplyQuick";
+import StoreApprovalWatcher from "@/components/StoreApprovalWatcher";
 import EditListing from "@/pages/EditListing";
 import BuyerProgressToast from "@/components/BuyerProgressToast";
 import Disputes from "@/pages/Disputes";
@@ -96,6 +98,8 @@ function App() {
                     <Route path="/chat/:listingId/:otherId" element={<ChatRoom />} />
                     <Route path="/verify" element={<Verification />} />
                     <Route path="/seller/apply" element={<SellerApply />} />
+                    <Route path="/apply-seller" element={<SellerApplyQuick />} />
+                    <Route path="/dashboard/seller" element={<StoreManage />} />
                     <Route path="/listing/:id/edit" element={<EditListing />} />
                     <Route path="/disputes" element={<Disputes />} />
                     <Route path="/r/:code" element={<AffiliateRedirect />} />
@@ -109,6 +113,7 @@ function App() {
                 <GlobalWalletToaster />
                 <PWAInstallPrompt />
                 <SupportWidget />
+                <StoreApprovalWatcher />
               </AuthProvider>
             </BrowserRouter>
           </div>
