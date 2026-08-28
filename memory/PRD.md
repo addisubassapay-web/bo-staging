@@ -24,6 +24,30 @@ Full-stack ecommerce marketplace **Mercari-Global** — same color scheme (`#FF2
 
 ---
 
+### Feb 27 2026 — Undo Bulk Confirm Delivery (30-min window)
+
+**User request**: "Add a 'Rollback last bulk confirm' button that reverses the escrow release for accidental confirms within 30 minutes."
+
+**Backend** (`server.py`):
+- Bulk-confirm-delivery now records each batch to a new `bulk_confirm_batches` collection: `{id, admin_id, admin_username, created_at, rolled_back_at, releases: [{order_id, seller_id, seller_amt, source_seller_id, source_amt, title}]}`. Response now includes `batch_id`.
+- New endpoint `GET /api/admin/orders/last-bulk-confirm-batch` — returns the most recent non-rolled-back batch inside the 30-minute window (`ROLLBACK_WINDOW_MIN=30`) with `order_count`, `total_amount`, and remaining metadata.
+- New endpoint `POST /api/admin/orders/bulk-confirm-rollback` — accepts `{batch_id}`, validates window + not-yet-rolled-back state, then for each released order: flips `funds_released=False` / `status=paid` / `delivery_confirmed_at=null` (guarded by `funds_released: True` to avoid fighting a manual re-confirm), zeros out the seller's `available` credit and re-credits the same amount to `frozen`, same for the dropship source. Fires "escrow re-frozen" wallet notifications. Marks the batch `rolled_back_at` + `rolled_back_by`.
+- Both endpoints admin-only, capped at 500 ids/batch.
+
+**Frontend** (`pages/Admin.jsx` `OrdersMgr`):
+- On mount, and after every bulk confirm, fetch `/admin/orders/last-bulk-confirm-batch`.
+- When a batch is eligible, an amber banner appears above the orders table showing: "Last bulk confirm: {n} orders released ${amount} to sellers. Undo window: 29m 56s left" with a live 1-second countdown and an "Undo release" button. Banner disappears when window expires OR after successful rollback.
+- Rollback button opens a confirm dialog with the count + amount before firing.
+
+**Verification (end-to-end)**:
+- Confirm 2 orders → batch_id returned, banner shows $80.00 total, 30-min countdown live.
+- Rollback returns `succeeded=2 failed=0`, each order back to `funds_released=False, status=paid`.
+- Second rollback of same batch → 400 "already rolled back".
+- After rollback, `last-bulk-confirm-batch` returns `null` and the banner hides.
+- Screenshot confirms UI + amber styling.
+
+
+
 ### Feb 27 2026 — Bulk Confirm Delivery on /admin/orders
 
 **User request**: "Add a 'Force confirm delivery' bulk action so admin can release escrow on delivered orders in one click."

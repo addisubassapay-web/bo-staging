@@ -611,10 +611,33 @@ const OrdersMgr = () => {
   const [selected, setSelected] = useState(new Set());
   const [busy, setBusy] = useState(false);
   const [target, setTarget] = useState("next"); // "next" or one of the stages
+  const [undoBatch, setUndoBatch] = useState(null);
+  const [undoBusy, setUndoBusy] = useState(false);
+  const [undoSecondsLeft, setUndoSecondsLeft] = useState(0);
   const { toast } = useToast();
 
   const load = () => api.get("/admin/orders").then((r) => setOrders(r.data));
-  useEffect(() => { load(); }, []);
+  const loadUndo = () => {
+    api.get("/admin/orders/last-bulk-confirm-batch").then((r) => {
+      setUndoBatch(r.data?.batch || null);
+    }).catch(() => setUndoBatch(null));
+  };
+  useEffect(() => { load(); loadUndo(); }, []);
+
+  // Live countdown to undo-window expiry
+  useEffect(() => {
+    if (!undoBatch?.created_at) { setUndoSecondsLeft(0); return; }
+    const windowMs = 30 * 60 * 1000;
+    const tick = () => {
+      const elapsed = Date.now() - new Date(undoBatch.created_at).getTime();
+      const left = Math.max(0, Math.floor((windowMs - elapsed) / 1000));
+      setUndoSecondsLeft(left);
+      if (left === 0) setUndoBatch(null);
+    };
+    tick();
+    const t = setInterval(tick, 1000);
+    return () => clearInterval(t);
+  }, [undoBatch]);
 
   const toggleOne = (id) => {
     setSelected((prev) => {
@@ -665,6 +688,7 @@ const OrdersMgr = () => {
       }
       setSelected(new Set());
       load();
+      if (action === "confirm_delivery") loadUndo();
     } catch (e) {
       toast({
         title: "Bulk action failed",
@@ -676,12 +700,65 @@ const OrdersMgr = () => {
     }
   };
 
+  const rollbackLast = async () => {
+    if (!undoBatch) return;
+    if (!window.confirm(
+      `Roll back the last bulk confirm?\n\n${undoBatch.order_count} order${undoBatch.order_count === 1 ? "" : "s"} · $${(undoBatch.total_amount || 0).toFixed(2)} moved back to escrow.`
+    )) return;
+    setUndoBusy(true);
+    try {
+      const { data } = await api.post("/admin/orders/bulk-confirm-rollback", {
+        batch_id: undoBatch.id,
+      });
+      toast({
+        title: `Reversed ${data.succeeded} order${data.succeeded === 1 ? "" : "s"}`,
+        description: data.failed > 0 ? `${data.failed} failed — check the console` : "Escrow re-frozen on every affected wallet.",
+      });
+      setUndoBatch(null);
+      load();
+    } catch (e) {
+      toast({
+        title: "Rollback failed",
+        description: e?.response?.data?.detail || "Try again",
+        variant: "destructive",
+      });
+    } finally {
+      setUndoBusy(false);
+    }
+  };
+
   return (
     <div data-testid="admin-orders-page">
       <h2 className="text-2xl font-bold mb-2">Orders</h2>
       <p className="text-sm text-neutral-500 mb-3">
         Click any row to expand and take over shipping — or select many and use the bulk bar to buy labels or advance delivery in one click.
       </p>
+
+      {undoBatch && undoSecondsLeft > 0 && (
+        <div
+          className="mb-3 rounded-xl border border-amber-300 bg-amber-50 dark:border-amber-900/50 dark:bg-amber-950/30 p-3 flex items-center gap-3 flex-wrap"
+          data-testid="orders-undo-banner"
+        >
+          <span className="text-lg">↩︎</span>
+          <div className="flex-1 min-w-0 text-sm text-amber-900 dark:text-amber-100">
+            <b>Last bulk confirm:</b> {undoBatch.order_count} order{undoBatch.order_count === 1 ? "" : "s"} released{" "}
+            <b className="tabular-nums">${(undoBatch.total_amount || 0).toFixed(2)}</b> to sellers.
+            <span className="ml-2 text-xs text-amber-700 dark:text-amber-300 tabular-nums">
+              Undo window: {Math.floor(undoSecondsLeft / 60)}m {String(undoSecondsLeft % 60).padStart(2,"0")}s left
+            </span>
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={rollbackLast}
+            disabled={undoBusy}
+            className="min-h-[40px] border-amber-400 text-amber-900 hover:bg-amber-100"
+            data-testid="orders-undo-btn"
+          >
+            {undoBusy ? "Rolling back…" : "Undo release"}
+          </Button>
+        </div>
+      )}
 
       {someSelected && (
         <div

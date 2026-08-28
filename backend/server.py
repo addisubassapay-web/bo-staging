@@ -2336,14 +2336,150 @@ async def bulk_confirm_delivery(
                 "An admin confirmed delivery on this order — your seller has been paid out.",
                 "/profile?tab=orders",
             )
-            results.append({"order_id": oid, "ok": True, "message": f"released ${seller_amt + drop_amt:.2f}"})
+            results.append({
+                "order_id": oid, "ok": True,
+                "message": f"released ${seller_amt + drop_amt:.2f}",
+                "_releases": {
+                    "order_id": oid,
+                    "seller_id": order.get("seller_id"),
+                    "seller_amt": seller_amt,
+                    "source_seller_id": order.get("dropship_source_seller_id"),
+                    "source_amt": drop_amt,
+                    "title": order.get("listing_title", ""),
+                },
+            })
         except Exception as e:
             results.append({"order_id": oid, "ok": False, "message": str(e)[:120]})
 
     succeeded = sum(1 for r in results if r.get("ok") and not r.get("skipped"))
     skipped = sum(1 for r in results if r.get("skipped"))
     failed = sum(1 for r in results if not r.get("ok") and not r.get("skipped"))
-    return {"results": results, "succeeded": succeeded, "skipped": skipped, "failed": failed}
+
+    # Record the batch so admins can roll it back within a short window
+    # (defence-in-depth for accidental confirms). Only orders that were
+    # actually released (ok=True, skipped=False) are eligible for rollback.
+    releases = [
+        r for r in results
+        if r.get("ok") and not r.get("skipped") and r.get("_releases")
+    ]
+    batch_id: Optional[str] = None
+    if releases:
+        batch_id = str(uuid.uuid4())
+        await db.bulk_confirm_batches.insert_one({
+            "id": batch_id,
+            "admin_id": _admin["id"],
+            "admin_username": _admin.get("username"),
+            "created_at": datetime.now(timezone.utc),
+            "rolled_back_at": None,
+            "releases": [r["_releases"] for r in releases],
+        })
+    # Strip the internal `_releases` key before returning to the client
+    for r in results:
+        r.pop("_releases", None)
+    return {
+        "results": results, "succeeded": succeeded, "skipped": skipped,
+        "failed": failed, "batch_id": batch_id,
+    }
+
+
+ROLLBACK_WINDOW_MIN = 30
+
+
+@api_router.get("/admin/orders/last-bulk-confirm-batch")
+async def last_bulk_confirm_batch(_admin: dict = Depends(require_admin)):
+    """Return the most recent non-rolled-back batch inside the rollback
+    window. UI uses this to decide whether to show the Undo button."""
+    cutoff = datetime.now(timezone.utc) - timedelta(minutes=ROLLBACK_WINDOW_MIN)
+    doc = await db.bulk_confirm_batches.find_one(
+        {"rolled_back_at": None, "created_at": {"$gte": cutoff}},
+        {"_id": 0},
+        sort=[("created_at", -1)],
+    )
+    if not doc:
+        return {"batch": None}
+    # Convert datetime for JSON
+    doc["created_at"] = doc["created_at"].isoformat() if hasattr(doc["created_at"], "isoformat") else doc["created_at"]
+    doc["order_count"] = len(doc.get("releases") or [])
+    doc["total_amount"] = round(
+        sum(float(r.get("seller_amt", 0) or 0) + float(r.get("source_amt", 0) or 0)
+            for r in (doc.get("releases") or [])), 2,
+    )
+    # Strip the full releases array from the wire — UI just needs the summary
+    doc.pop("releases", None)
+    return {"batch": doc, "window_min": ROLLBACK_WINDOW_MIN}
+
+
+class BulkConfirmRollbackRequest(BaseModel):
+    batch_id: str
+
+
+@api_router.post("/admin/orders/bulk-confirm-rollback")
+async def bulk_confirm_rollback(
+    payload: BulkConfirmRollbackRequest,
+    _admin: dict = Depends(require_admin),
+):
+    """Reverse a bulk-confirm-delivery batch: re-freeze each released amount
+    and flip funds_released back to False on every order in the batch. Only
+    works within ROLLBACK_WINDOW_MIN minutes of the original batch."""
+    batch = await db.bulk_confirm_batches.find_one({"id": payload.batch_id}, {"_id": 0})
+    if not batch:
+        raise HTTPException(404, "Batch not found")
+    if batch.get("rolled_back_at"):
+        raise HTTPException(400, "Batch already rolled back")
+    created = batch.get("created_at")
+    if isinstance(created, str):
+        try:
+            created = datetime.fromisoformat(created.replace("Z", "+00:00"))
+        except Exception:
+            created = None
+    if created and created.tzinfo is None:
+        created = created.replace(tzinfo=timezone.utc)
+    if not created or (datetime.now(timezone.utc) - created) > timedelta(minutes=ROLLBACK_WINDOW_MIN):
+        raise HTTPException(400, f"Rollback window ({ROLLBACK_WINDOW_MIN} min) expired")
+
+    reversed_orders: List[dict] = []
+    for rel in (batch.get("releases") or []):
+        oid = rel.get("order_id")
+        if not oid:
+            continue
+        # Flip order back — only if it's still marked released (someone might
+        # have manually altered it since; we don't want to fight admin actions).
+        upd = await db.orders.update_one(
+            {"id": oid, "funds_released": True},
+            {"$set": {"funds_released": False, "status": "paid",
+                      "delivery_confirmed_at": None}},
+        )
+        if upd.modified_count == 0:
+            reversed_orders.append({"order_id": oid, "ok": False, "message": "order no longer released"})
+            continue
+        # Reverse seller side
+        seller_amt = float(rel.get("seller_amt") or 0)
+        if seller_amt > 0 and rel.get("seller_id"):
+            await credit_wallet(rel["seller_id"], -seller_amt, "sale_frozen",
+                                f"Bulk confirm rolled back: {rel.get('title','')}", oid)
+            await credit_wallet(rel["seller_id"], seller_amt, "sale_frozen",
+                                f"Re-frozen after rollback: {rel.get('title','')}", oid, frozen=True)
+            await notify(rel["seller_id"], "wallet",
+                         f"Escrow re-frozen: {rel.get('title','')}",
+                         f"An admin rolled back the delivery confirm. ${seller_amt:.2f} moved back to frozen.",
+                         "/wallet")
+        source_amt = float(rel.get("source_amt") or 0)
+        if source_amt > 0 and rel.get("source_seller_id"):
+            await credit_wallet(rel["source_seller_id"], -source_amt, "dropship_frozen",
+                                f"Bulk confirm rolled back: {rel.get('title','')}", oid)
+            await credit_wallet(rel["source_seller_id"], source_amt, "dropship_frozen",
+                                f"Re-frozen after rollback: {rel.get('title','')}", oid, frozen=True)
+        reversed_orders.append({"order_id": oid, "ok": True,
+                                "message": f"reversed ${seller_amt + source_amt:.2f}"})
+
+    await db.bulk_confirm_batches.update_one(
+        {"id": payload.batch_id},
+        {"$set": {"rolled_back_at": datetime.now(timezone.utc),
+                  "rolled_back_by": _admin["id"]}},
+    )
+    succeeded = sum(1 for r in reversed_orders if r.get("ok"))
+    failed = len(reversed_orders) - succeeded
+    return {"results": reversed_orders, "succeeded": succeeded, "failed": failed}
 
 
 # =========================
