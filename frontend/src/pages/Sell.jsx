@@ -509,7 +509,7 @@ const Sell = () => {
             </div>
             <div className="grid grid-cols-4 gap-2 mt-4">
               {images.slice(0, 4).map((src, i) => (
-                <img key={i} src={src} alt="" className="aspect-square rounded-lg object-cover bg-neutral-100" />
+                <img key={src} src={src} alt="" className="aspect-square rounded-lg object-cover bg-neutral-100" />
               ))}
             </div>
             <div className="flex gap-2 mt-6">

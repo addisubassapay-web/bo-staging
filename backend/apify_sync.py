@@ -3,7 +3,7 @@ Uses junglee/amazon-crawler to scrape live Amazon.com products across
 bestseller categories and imports them as marketplace listings.
 """
 import os
-import random
+import secrets
 import asyncio
 import logging
 from datetime import datetime, timezone, timedelta
@@ -224,14 +224,14 @@ def _build_listing(
         "shipping_paid_by": "seller",
         "shipping_method": "Standard",
         "status": "active",
-        "likes_count": random.randint(0, 60),
-        "views_count": random.randint(20, 1200),
+        "likes_count": secrets.randbelow(61),
+        "views_count": 20 + secrets.randbelow(1181),
         "featured": False,
         "store_id": None,
         "imported_from_id": None,
         "base_price": None,
         "translated": True,  # already English
-        "created_at": now - timedelta(minutes=random.randint(0, 60 * 24 * 30)),
+        "created_at": now - timedelta(minutes=secrets.randbelow(60 * 24 * 30 + 1)),
         "apify_asin": item.get("asin"),
         "apify_url": item.get("url"),
         "rating": item.get("stars"),
@@ -425,7 +425,7 @@ async def import_from_apify(
 
     if to_insert:
         # feature ~40 items
-        for f in random.sample(to_insert, min(40, len(to_insert))):
+        for f in secrets.SystemRandom().sample(to_insert, min(40, len(to_insert))):
             f["featured"] = True
         for i in range(0, len(to_insert), 1000):
             await db.listings.insert_many(to_insert[i : i + 1000])
@@ -593,7 +593,7 @@ async def simulate_live_update(db) -> Dict:
     for doc in view_sample:
         await db.listings.update_one(
             {"id": doc["id"]},
-            {"$inc": {"views_count": random.randint(1, 8), "likes_count": random.randint(0, 2)}},
+            {"$inc": {"views_count": 1 + secrets.randbelow(8), "likes_count": secrets.randbelow(3)}},
         )
     changes["views_bumped"] = len(view_sample)
 

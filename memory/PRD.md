@@ -24,6 +24,30 @@ Full-stack ecommerce marketplace **Mercari-Global** — same color scheme (`#FF2
 
 ---
 
+### Feb 27 2026 — Code Review Bucket A (safe wins) applied
+
+**Insecure random → cryptographic `secrets`** (7 instances, all flagged by the security lint sweep):
+- `shipping_providers.py:55,58` — `random.choice(CARRIERS)` → `secrets.choice(...)`; `random.randint(2,5)` → `2 + secrets.randbelow(4)`.
+- `apify_sync.py:227,228,234,428,596` — `random.randint/sample` → `secrets.randbelow` + `secrets.SystemRandom().sample`.
+- Verified: `grep random.` returns 0 hits, `secrets.` used 8× across both files, `python -c "import shipping_providers, apify_sync"` OK.
+
+**Array-index → stable keys** on the components where a natural stable ID exists:
+- `Disputes.jsx:298` — evidence-image link now keyed by `url` instead of loop index.
+- `Sell.jsx:512` — preview thumbnail keyed by `src`.
+- (Skipped `Search:266` + `Admin:1212,1256` because those are skeleton-loader arrays whose order never changes; swapping them adds no value.)
+
+**Deliberately kept as-is** (already safe, wrongly flagged):
+- Empty catches in `Wallet.jsx:66` (clipboard fallback), `StorePage.jsx:86-88` (share/clipboard cancellation), `Register.jsx:42,47,91` (private-mode localStorage) — every one already has an explanatory comment (`/* ignored */`, `/* cancelled */`, `/* ignore */`) and the caller has a graceful alternative path.
+
+**Deferred to their own session** (Bucket B/C — genuinely risky without a testing pass):
+- Missing hook dependencies (227 flagged; most are false positives — need careful triage).
+- Component splits (ResellFromCatalog / AdminProducts / Checkout / SearchAutocomplete).
+- Complexity refactor of `import_from_apify` + `seller_dashboard`.
+- Circular import chain (`deps.py` ↔ `server.py` ↔ `google_auth.py`).
+- `localStorage` JWT → httpOnly cookies migration (mandatory `integration_playbook_expert_v2` call).
+
+
+
 ### Feb 27 2026 — Seller Apply Bug + Multi-Payment + Real OTP Verification
 
 **User request**: Fix the "Missing OTP token" submission error, add 5 payout methods, use production-grade OTP.

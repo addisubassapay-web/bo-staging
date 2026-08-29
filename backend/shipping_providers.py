@@ -7,7 +7,7 @@ until the user supplies API keys — see /app/memory/PRD.md.
 """
 from __future__ import annotations
 import os
-import random
+import secrets
 import uuid
 from datetime import datetime, timezone, timedelta
 from typing import Optional
@@ -52,10 +52,12 @@ class MockShippingProvider(ShippingProvider):
     CARRIERS = ["USPS", "UPS", "FedEx"]
 
     def create_label(self, order: dict) -> ShippingLabel:
-        carrier = random.choice(self.CARRIERS)
+        # secrets.* keeps randomness cryptographically strong even though this
+        # is only a mock — flagged by the security lint sweep.
+        carrier = secrets.choice(self.CARRIERS)
         tracking = f"MOCK{uuid.uuid4().hex[:12].upper()}"
         label_url = f"/mock-shipping/label/{tracking}.pdf"
-        est = (datetime.now(timezone.utc) + timedelta(days=random.randint(2, 5))).strftime("%A, %b %d")
+        est = (datetime.now(timezone.utc) + timedelta(days=2 + secrets.randbelow(4))).strftime("%A, %b %d")
         cost = float(order.get("shipping_fee", 0))
         return ShippingLabel(
             tracking_number=tracking, carrier=carrier, label_url=label_url,

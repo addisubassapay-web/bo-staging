@@ -295,7 +295,7 @@ const DisputeChat = ({ disputeId, currentUserId, currentUserRole, closed }) => {
                 {m.photos?.length > 0 && (
                   <div className="mt-2 grid grid-cols-2 gap-1.5">
                     {m.photos.map((url, i) => (
-                      <a key={i} href={fileUrl(url)} target="_blank" rel="noreferrer" className="block aspect-square rounded-lg overflow-hidden bg-black/10">
+                <a key={url} href={fileUrl(url)} target="_blank" rel="noreferrer" className="block aspect-square rounded-lg overflow-hidden bg-black/10">
                         <img src={fileUrl(url)} alt="" className="h-full w-full object-cover" />
                       </a>
                     ))}
