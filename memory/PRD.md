@@ -24,6 +24,22 @@ Full-stack ecommerce marketplace **Mercari-Global** — same color scheme (`#FF2
 
 ---
 
+### Feb 27 2026 — Legal Pages + SMTP Status + Preview Domain Audit
+
+**What shipped**:
+- `pages/Legal.jsx` — new component with a `mode` prop rendering either Terms of Service or Privacy Policy from a data-driven section array. 10 sections each, plain-English, references the new domain + `support@mercarismarthub.com`. Includes a "Last updated Feb 27, 2026" stamp, gradient shield icon, and back-to-marketplace link.
+- `App.js` — new routes `/terms` → `Terms`, `/privacy` → `Privacy` (both from the same `Legal.jsx` file).
+- Screenshot verified — Terms page renders in-brand end-to-end.
+
+**SMTP status (checked live)**:
+- `POST /api/otp/request` still returns 200 (queues the send), but the mailer log shows `535 5.7.8 authentication failed` — new mailbox `support@mercarismarthub.com` not provisioned yet in Hostinger. Earlier logs also show the OLD mailbox is `Disabled by user from hPanel`. **Every outbound email is failing silently.** No code change fixes this; user must complete Hostinger + MX steps.
+
+**Preview domain audit**:
+- The URL `marketplace-dropship.preview.emergentagent.com` only lives in `backend/.env` (`BACKEND_PUBLIC_URL`, `FRONTEND_ORIGIN`) and `frontend/.env` (`REACT_APP_BACKEND_URL`). All other refs come indirectly via env var reads.
+- The preview URL itself is assigned by Emergent — only their platform can change it. If a branded preview is desired, user must attach a custom domain (like `app.mercarismarthub.com`) via Emergent's Custom Domain UI, then swap the three `.env` values.
+
+
+
 ### Feb 27 2026 — Branding sweep: rebrand to `mercarismarthub.com`
 
 **User request**: Migrate off `mercariglobals.com` (being shut down) to the new domain `mercarismarthub.com` + support mailbox `support@mercarismarthub.com`.

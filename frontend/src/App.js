@@ -37,6 +37,7 @@ import PayoutDashboard from "@/pages/PayoutDashboard";
 import Verification from "@/pages/Verification";
 import SellerApply from "@/pages/SellerApply";
 import SellerApplyQuick from "@/pages/SellerApplyQuick";
+import { Terms, Privacy } from "@/pages/Legal";
 import StoreApprovalWatcher from "@/components/StoreApprovalWatcher";
 import EditListing from "@/pages/EditListing";
 import BuyerProgressToast from "@/components/BuyerProgressToast";
@@ -99,6 +100,8 @@ function App() {
                     <Route path="/verify" element={<Verification />} />
                     <Route path="/seller/apply" element={<SellerApply />} />
                     <Route path="/apply-seller" element={<SellerApplyQuick />} />
+                    <Route path="/terms" element={<Terms />} />
+                    <Route path="/privacy" element={<Privacy />} />
                     <Route path="/dashboard/seller" element={<StoreManage />} />
                     <Route path="/listing/:id/edit" element={<EditListing />} />
                     <Route path="/disputes" element={<Disputes />} />
