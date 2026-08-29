@@ -24,6 +24,24 @@ Full-stack ecommerce marketplace **Mercari-Global** — same color scheme (`#FF2
 
 ---
 
+### Feb 27 2026 — Branding sweep: rebrand to `mercarismarthub.com`
+
+**User request**: Migrate off `mercariglobals.com` (being shut down) to the new domain `mercarismarthub.com` + support mailbox `support@mercarismarthub.com`.
+
+**What changed**:
+- `backend/.env` — `SMTP_USER`, `EMAIL_FROM_ADDRESS`, `SUPPORT_EMAIL` all pointed at `support@mercarismarthub.com`. `SMTP_PASSWORD` kept as-is; must be rotated once the new Hostinger mailbox is provisioned.
+- `components/ui/StoreApprovedModal.jsx` — store URL preview now shows `mercarismarthub.com/store/<slug>`.
+- `pages/AdminApifyDatasetImport.jsx` — supported-shape banner no longer says the word "Mercari" (potential trademark), reads "Amazon / P2P marketplace / Flipkart-Shopsy" instead.
+- `memory/test_credentials.md` — SMTP section rewritten with the new mailbox + a bold HUMAN ACTION REQUIRED reminder to provision the mailbox on Hostinger and point MX records before shutting `mercariglobals.com` down.
+- Grep verified: 0 remaining `mercariglobals.com` references in prod code.
+
+**Not-yet-done / requires user action**:
+- Provision `support@mercarismarthub.com` in Hostinger cPanel.
+- Point `mercarismarthub.com` MX records at Hostinger.
+- Then rotate `SMTP_PASSWORD` in `backend/.env` to the new mailbox's password. Until this is done, all outbound email (OTPs, password resets, order updates, seller-approved notifications) will fail silently.
+
+
+
 ### Feb 27 2026 — Code Review Bucket A (safe wins) applied
 
 **Insecure random → cryptographic `secrets`** (7 instances, all flagged by the security lint sweep):

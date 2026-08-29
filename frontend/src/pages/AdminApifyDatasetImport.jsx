@@ -103,7 +103,7 @@ const AdminApifyDatasetImport = () => {
       <div className="rounded-xl border border-sky-200 bg-sky-50 dark:border-sky-900/50 dark:bg-sky-950/30 p-3 flex gap-2">
         <Info className="h-5 w-5 text-sky-600 dark:text-sky-400 shrink-0 mt-0.5" />
         <div className="text-sm text-sky-800 dark:text-sky-200">
-          Supported source shapes: Amazon / Mercari / Flipkart-Shopsy
+          Supported source shapes: Amazon / P2P marketplace / Flipkart-Shopsy
           <code className="text-[11px] bg-white/60 dark:bg-black/30 px-1 rounded mx-1">
             ProductSummaryValue
           </code>

@@ -108,7 +108,7 @@ export const StoreApprovedModal = ({
                   {storeName}
                 </div>
                 <div className="text-xs text-neutral-500 truncate font-mono">
-                  mercariglobals.com/store/{storeSlug || "your-slug"}
+                  mercarismarthub.com/store/{storeSlug || "your-slug"}
                 </div>
               </div>
               <Badge
