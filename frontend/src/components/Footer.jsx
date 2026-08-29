@@ -101,7 +101,8 @@ const Footer = () => (
           <li><Link to="/" className="hover:text-[#FF7A18]">Company Info</Link></li>
           <li><Link to="/" className="hover:text-[#FF7A18]">Careers</Link></li>
           <li><Link to="/" className="hover:text-[#FF7A18]">Press &amp; News</Link></li>
-          <li><Link to="/" className="hover:text-[#FF7A18]">Terms &amp; Privacy</Link></li>
+          <li><Link to="/terms" className="hover:text-[#FF7A18]" data-testid="footer-terms-link">Terms of Service</Link></li>
+          <li><Link to="/privacy" className="hover:text-[#FF7A18]" data-testid="footer-privacy-link">Privacy Policy</Link></li>
         </ul>
       </div>
       <div>
@@ -117,7 +118,13 @@ const Footer = () => (
     <div className="border-t border-neutral-800">
       <div className="max-w-7xl mx-auto px-4 py-5 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-neutral-500">
         <span>© {new Date().getFullYear()} Mercari-Smarthub. All rights reserved.</span>
-        <span>Secure checkout · Global shipping · Buyer protection</span>
+        <div className="flex items-center gap-3">
+          <Link to="/terms" className="hover:text-[#FF7A18]" data-testid="footer-bottom-terms">Terms</Link>
+          <span aria-hidden>·</span>
+          <Link to="/privacy" className="hover:text-[#FF7A18]" data-testid="footer-bottom-privacy">Privacy</Link>
+          <span aria-hidden className="hidden sm:inline">·</span>
+          <span className="hidden sm:inline">Secure checkout · Global shipping · Buyer protection</span>
+        </div>
       </div>
     </div>
   </footer>

@@ -24,6 +24,21 @@ Full-stack ecommerce marketplace **Mercari-Global** — same color scheme (`#FF2
 
 ---
 
+### Feb 27 2026 — Footer Legal Links + SMTP Mock-Fallback Discovery
+
+**What shipped** (`components/Footer.jsx`):
+- About-Us column: single "Terms & Privacy" bullet split into "**Terms of Service**" → `/terms` and "**Privacy Policy**" → `/privacy` (with `data-testid` on each).
+- Copyright bar: added a right-aligned "Terms · Privacy · Secure checkout · Global shipping · Buyer protection" strip so links are reachable from every page even without scrolling into the tall footer.
+- Screenshot verified — links visible in both spots.
+
+**⚠️ SMTP status (retest today)**:
+- Direct `mailer.send_email()` call now returns `{ok: True, provider: 'mock', mocked: True}`. **The mailer silently degrades to a mock provider when Hostinger auth fails.**
+- Consequence: since we swapped `SMTP_USER` to `support@mercarismarthub.com` without a working mailbox, every OTP + password-reset "success" toast on the UI is a lie — the email never leaves the server.
+- Latest queue-worker logs still show `535 5.7.8 authentication failed` from before the swap (the escrow reminder cron ran with the old creds).
+- **User action required** (unchanged): provision mailbox → point MX → rotate password → I'll retest.
+
+
+
 ### Feb 27 2026 — Legal Pages + SMTP Status + Preview Domain Audit
 
 **What shipped**:
