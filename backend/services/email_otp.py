@@ -126,6 +126,13 @@ async def request_otp(db, user: dict, purpose: str) -> dict:
             await db.email_otps.update_one({"id": otp_doc["id"]}, {"$set": {"superseded": True, "used_at": now}})
         except Exception:
             pass
+        # Also invalidate the in-app inbox row we optimistically wrote —
+        # otherwise the user would see a plaintext code in /inbox that
+        # no longer verifies at /otp/verify.
+        try:
+            await db.otp_inbox.delete_one({"id": otp_doc["id"]})
+        except Exception:
+            pass
         raise RuntimeError(f"Could not send the verification email: {e}") from e
     return {
         "ok": True,

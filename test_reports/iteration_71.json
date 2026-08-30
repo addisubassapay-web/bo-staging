@@ -1,0 +1,25 @@
+{
+  "summary": "Iteration 71 backend testing: verified P0 seller-apply email_verified bug fix + new OTP inbox feature. Wrote 5 targeted tests covering the full e2e chain (register → otp/request → otp/inbox → otp/verify → seller/apply → 200) plus auth regression. ALL 5 new tests pass and ALL 19 previously-passing auth deep-investigation tests still pass. The stale 'Please verify your email before applying' 400 is confirmed GONE for the new-user OTP flow; after /otp/verify the /auth/me endpoint correctly reports email_verified=true (backfill working). /otp/inbox returns per-user codes with all documented fields and correctly 401s without a Bearer token.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_iteration71_seller_apply_otp_bug.py",
+    "/app/test_reports/pytest/iter71_results.xml",
+    "/app/test_reports/pytest/iter71_auth_regression.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "email_otp.request_otp: otp_inbox row is NOT deleted/superseded when the mailer raises RuntimeError — only the email_otps row is marked superseded (line 126). The inbox will still show a valid plaintext code even though the email_otps hash was invalidated. Users could see a code that no longer verifies. Consider deleting or flagging the otp_inbox row inside the except block.",
+    "routers/otp.py:otp_inbox_endpoint marks all unread codes as read on EVERY GET. This makes the unread badge count in OtpInboxBell (which polls every 15s) effectively always zero after the very first poll. If the bell relies on `read=false` for the badge, the badge will never appear except on the initial page load. Consider a separate 'mark-read' endpoint or return unread before mutating."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration71_seller_apply_otp_bug.py (new)"
+  ],
+  "success_rate": {"backend": "100% (5/5 new + 19/19 regression)", "frontend": "not tested (backend-only run per request)"},
+  "test_credentials": "admin@mercari.local / admin123 (from /app/memory/test_credentials.md). New users created dynamically with TEST_iter71_<uuid>@example.com prefix.",
+  "seed_data_creation": "Two TEST_iter71_* users created per pytest run for e2e + negative-path checks. No cleanup fixture; users persist with TEST_ prefix for easy manual purge.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Bug fix for /seller/apply email_verified stale check is verified end-to-end. Frontend redirect from /seller/apply → /apply-seller was NOT verified (backend-only run per request). If UI regression needed, test SellerApplyQuick.jsx via Playwright by navigating to /seller/apply and asserting URL becomes /apply-seller, plus check OtpInboxBell polls inbox and shows badge on new codes. Note the code-review comment about the inbox marking-read logic — it may cause the badge count to be stuck at 0.",
+  "rca of the issue": "Root cause was correctly identified by main agent: legacy /seller/apply route rendered SellerApply.jsx which read stale AuthContext.user.email_verified from cached login state and blocked submission before hitting the backend, while the newer /apply-seller flow uses SellerApplyQuick.jsx + real OTP. Fix (App.js line 101 Navigate redirect + SellerApplyQuick refresh() on mount + verify_otp backfilling email_verified=true) is correct — confirmed by the new e2e test: register → otp/request → otp/inbox → otp/verify → GET /auth/me shows email_verified=true → POST /seller/apply returns 200 with status 'pending' and NO 'verify your email' message anywhere in the response body."
+}

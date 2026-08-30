@@ -1,6 +1,6 @@
 import React from "react";
 import "./App.css";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/context/AuthContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { CurrencyProvider } from "@/context/CurrencyContext";
@@ -98,7 +98,10 @@ function App() {
                     <Route path="/chat" element={<ChatThreads />} />
                     <Route path="/chat/:listingId/:otherId" element={<ChatRoom />} />
                     <Route path="/verify" element={<Verification />} />
-                    <Route path="/seller/apply" element={<SellerApply />} />
+                    {/* Old /seller/apply diverged from the OTP-based flow —
+                        redirect anyone landing here (bookmarks, legacy links)
+                        to the canonical quick-apply page. */}
+                    <Route path="/seller/apply" element={<Navigate to="/apply-seller" replace />} />
                     <Route path="/apply-seller" element={<SellerApplyQuick />} />
                     <Route path="/terms" element={<Terms />} />
                     <Route path="/privacy" element={<Privacy />} />

@@ -2194,3 +2194,23 @@ See `/app/memory/test_credentials.md`.
    - Frontend continues to read the token from local/sessionStorage (backwards compatible); a future frontend pass can drop the Authorization header entirely once the get_current_user dep also parses `bo_token` cookie.
 
 **Service worker** bumped `v9-onboarding-inbox` for cache purge.
+
+### Feb 30 2026 — Bug: seller-apply "verify your email" + OTP Inbox Bell shipped
+
+**Bug reported**: submitting the final seller application errored with "verify your email" even after the user had verified.
+
+**Root cause**: two divergent apply pages coexisted — `/seller/apply` → old `SellerApply.jsx` (stale AuthContext.user.email_verified guard), `/apply-seller` → new `SellerApplyQuick.jsx` (correct OTP flow). Any stale bookmark, in-app link, or manual URL bar entry hit the broken legacy page.
+
+**Fixes**:
+- `App.js` — `<Route path="/seller/apply">` now `<Navigate to="/apply-seller" replace />` so every legacy path/link routes to the working OTP flow.
+- `SellerApplyQuick.jsx` — `useEffect` on mount now calls `refresh()` before loading `/seller/application`, so if the user verified in another tab or an admin flipped the flag externally, the context syncs before UI renders.
+- `services/email_otp.request_otp` — when the mailer fails, we now ALSO delete the optimistic `db.otp_inbox` row (previously left a plaintext code that no longer verified — code-review comment fix).
+
+**OTP Inbox Bell** (feature):
+- New `components/OtpInboxBell.jsx` — polls `/api/otp/inbox` every 15s, shows an unread badge (red `#FF0515`), opens a drawer listing each active code with countdown + one-tap copy.
+- Wired into `Header.jsx` between NotificationsBell and MessageSquare; only renders for logged-in users; `compact` variant matches the scrolled-header size.
+- `/api/otp/inbox` upgraded — read-only by default (poll-safe), pass `?mark_read=1` to flip the flag (fires when the drawer opens). Prevents the badge from clinging to zero after the first poll (code-review comment fix).
+
+**Testing agent iteration 71**: 5/5 new bug tests + 19/19 auth regression tests passed. E2E chain (register → otp/request → otp/inbox → otp/verify → auth/me shows email_verified=true → seller/apply returns 200 pending) verified.
+
+**Service worker** bumped `v10-inbox-bell`.

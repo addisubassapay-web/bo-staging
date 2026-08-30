@@ -32,11 +32,17 @@ async def verify_otp_endpoint(payload: dict = Body(...), user: dict = Depends(ge
 
 
 @router.get("/otp/inbox")
-async def otp_inbox_endpoint(user: dict = Depends(get_current_user)):
+async def otp_inbox_endpoint(user: dict = Depends(get_current_user), mark_read: bool = False):
     """In-platform OTP inbox. Returns the caller's active + recent OTP
     codes so users can grab the 6-digit code inside BlueOcean itself
     instead of switching to email. Only returns codes that belong to
-    the authenticated user."""
+    the authenticated user.
+
+    Poll-friendly: this endpoint is READ-ONLY by default so a header
+    bell polling every 15s can still see `read=false` for a code that
+    hasn't been viewed. Call with `?mark_read=1` (typically when the
+    user opens the drawer) to flip the flag.
+    """
     from datetime import datetime, timezone
     db = get_db()
     now = datetime.now(timezone.utc)
@@ -46,8 +52,7 @@ async def otp_inbox_endpoint(user: dict = Depends(get_current_user)):
          "created_at": 1, "expires_at": 1, "read": 1},
     ).sort("created_at", -1).limit(10)
     items = [doc async for doc in cursor]
-    # Mark as read (idempotent — flips false→true, TTL cleans up in 10min)
-    if items:
+    if mark_read and items:
         await db.otp_inbox.update_many(
             {"user_id": user["id"], "read": False},
             {"$set": {"read": True, "read_at": now}},

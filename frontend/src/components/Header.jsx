@@ -23,6 +23,7 @@ import { FontSizePicker } from "@/components/FontSizePicker";
 import HeaderSettingsMenu from "@/components/HeaderSettingsMenu";
 import ThemeToggle from "@/components/ThemeToggle";
 import MiniCart from "@/components/MiniCart";
+import OtpInboxBell from "@/components/OtpInboxBell";
 
 // Icon + accent color mapping for the 10 Apify-native categories shown in
 // the top nav strip. Falls back to Sparkles for any future category the DB
@@ -255,6 +256,8 @@ const Header = () => {
                 <span className="absolute -top-1 -right-1 bg-[#DC2626] text-white text-[10px] rounded-full h-4 min-w-4 px-1 grid place-items-center pointer-events-none">{notifCount}</span>
               )}
             </div>
+
+            {user && <OtpInboxBell compact={compact} />}
 
             {user && (
               <IconButton to="/chat" label="Messages" testid="header-msg-btn">

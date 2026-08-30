@@ -116,8 +116,12 @@ const SellerApplyQuick = () => {
 
   useEffect(() => {
     if (!user) return;
+    // If the applicant's email was verified in another tab / an admin
+    // flipped the flag, pick that up before we render — the OTP flow
+    // still runs, but a stale user.email_verified won't confuse the UI.
+    refresh?.().catch(() => {});
     api.get("/seller/application").then((r) => setExisting(r.data)).catch(() => {});
-  }, [user]);
+  }, [user, refresh]);
 
   // Live countdown for OTP expiry
   useEffect(() => {
