@@ -110,10 +110,10 @@ const Register = () => {
           className="relative hidden lg:flex flex-col justify-between p-12 text-white overflow-hidden"
           style={{
             background:
-              "radial-gradient(circle at 25% 25%, rgba(255,122,24,0.55) 0%, transparent 45%), radial-gradient(circle at 80% 75%, rgba(125,211,252,0.6) 0%, transparent 45%), linear-gradient(160deg, #0F172A 0%, #1E293B 100%)",
+              "radial-gradient(circle at 25% 25%, rgba(84,89,232,0.55) 0%, transparent 45%), radial-gradient(circle at 80% 75%, rgba(255,5,21,0.5) 0%, transparent 45%), linear-gradient(160deg, #0F172A 0%, #1E293B 100%)",
           }}
         >
-          <div className="pointer-events-none absolute -top-24 -right-24 h-96 w-96 rounded-full bg-[#2563EB] opacity-20 blur-3xl animate-pulse" />
+          <div className="pointer-events-none absolute -top-24 -right-24 h-96 w-96 rounded-full bg-[#818CF8] opacity-25 blur-3xl animate-pulse" />
           <div className="pointer-events-none absolute -bottom-24 -left-24 h-96 w-96 rounded-full bg-[#5459E8] opacity-20 blur-3xl" />
 
           <BrandMark size={64} showWordmark animated wordmarkClassName="text-white" />
@@ -305,7 +305,7 @@ const Register = () => {
                 <Button
                   type="submit"
                   disabled={loading || passwordsMismatch}
-                  className="w-full bg-gradient-to-r from-[#7DD3FC] to-[#2563EB] hover:brightness-110 text-white h-11 shadow-sm hover:shadow-md transition-all font-semibold disabled:opacity-60"
+                  className="w-full bg-gradient-to-r from-[#5459E8] to-[#818CF8] hover:brightness-110 text-white h-11 shadow-md shadow-[#5459E8]/25 hover:shadow-lg transition-all font-semibold disabled:opacity-60"
                   data-testid="register-submit"
                 >
                   {loading ? "Creating your account…" : <>Create account <ArrowRight className="h-4 w-4 ml-1" /></>}

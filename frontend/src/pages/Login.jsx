@@ -69,10 +69,10 @@ const Login = () => {
           className="relative hidden lg:flex flex-col justify-between p-12 text-white overflow-hidden"
           style={{
             background:
-              "radial-gradient(circle at 20% 15%, rgba(255,122,24,0.55) 0%, transparent 45%), radial-gradient(circle at 85% 85%, rgba(37,99,235,0.6) 0%, transparent 45%), linear-gradient(160deg, #0F172A 0%, #1E293B 100%)",
+              "radial-gradient(circle at 20% 15%, rgba(84,89,232,0.55) 0%, transparent 45%), radial-gradient(circle at 85% 85%, rgba(255,5,21,0.5) 0%, transparent 45%), linear-gradient(160deg, #0F172A 0%, #1E293B 100%)",
           }}
         >
-          <div className="pointer-events-none absolute -top-24 -right-24 h-96 w-96 rounded-full bg-[#7DD3FC] opacity-20 blur-3xl" />
+          <div className="pointer-events-none absolute -top-24 -right-24 h-96 w-96 rounded-full bg-[#818CF8] opacity-25 blur-3xl" />
           <div className="pointer-events-none absolute -bottom-24 -left-24 h-96 w-96 rounded-full bg-[#5459E8] opacity-20 blur-3xl" />
 
           <BrandMark size={64} showWordmark animated wordmarkClassName="text-white" />
@@ -161,7 +161,7 @@ const Login = () => {
                 <Button
                   type="submit"
                   disabled={loading || (lockedUntil && Date.now() < lockedUntil)}
-                  className="w-full bg-gradient-to-r from-[#7DD3FC] to-[#2563EB] hover:brightness-110 text-white h-11 shadow-sm hover:shadow-md transition-all font-semibold"
+                  className="w-full bg-gradient-to-r from-[#5459E8] to-[#818CF8] hover:brightness-110 text-white h-11 shadow-md shadow-[#5459E8]/25 hover:shadow-lg transition-all font-semibold"
                   data-testid="login-submit"
                 >
                   {loading ? "Verifying…" : <>Sign in <ArrowRight className="h-4 w-4 ml-1" /></>}

@@ -6,7 +6,13 @@ export const API = `${BACKEND_URL}/api`;
 const api = axios.create({ baseURL: API });
 
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("mercari-global_token");
+  // Look in sessionStorage first (short-lived "don't remember me" tokens)
+  // then fall back to localStorage (persistent sessions). Keeps the
+  // "Keep me signed in" checkbox honest.
+  let token = null;
+  try {
+    token = sessionStorage.getItem("mercari-global_token") || localStorage.getItem("mercari-global_token");
+  } catch { /* storage disabled */ }
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });

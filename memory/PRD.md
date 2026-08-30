@@ -2143,3 +2143,29 @@ See `/app/memory/test_credentials.md`.
 - `GlobalNavMenu.jsx`: the drawer's "Language", "Currency" and "Your account" section eyebrows recoloured to `#FF0515` uppercase extrabold; select values themselves rendered in indigo bold.
 
 **Service worker** bumped `v8-heading-accents` for cache purge.
+
+### Feb 30 2026 — Deep auth-stack audit
+
+**User asked** for a full investigation of login/registration with automated tests.
+
+**Bugs found + fixed**:
+1. Register did NOT normalize email casing — `Foo@X.com` and `foo@x.com` could register as separate accounts, then login could not resolve the mixed-case account (Pydantic EmailStr kept casing). Fixed: strip+lower the email before uniqueness lookup, force `doc["email"]` = normalized value. Also trim username.
+2. Register `insert_one` had no exception handler — a race between the check-then-insert path and the unique index on `users.email/username` would surface as HTTP 500. Fixed: catch duplicate-key (code 11000) and return the friendly 400.
+3. Login lookup was case-sensitive — a user who registered with uppercase couldn't sign back in with lowercase. Fixed: `db.users.find_one({"email": body.email.strip().lower()})`.
+4. Frontend "Keep me signed in" checkbox on Login was dead — `login(email, password, { remember })` was passed but AuthContext's signature was `(email, password)` so the 3rd arg dropped silently. Fixed: AuthContext.login now accepts `opts.remember` (defaults true), writes token to sessionStorage when false and localStorage when true, and api.js reads from both stores.
+5. IP-throttle key on failed-login used `request.client.host` — behind the k8s ingress that's the backend pod IP, so attempts round-robin across pods and dilute the limit. Fixed: prefer first hop in `X-Forwarded-For`, then `X-Real-IP`, then `request.client.host`.
+
+**Cosmetics**: Login/Register brand panes + primary CTA still used pre-rebrand orange/blue gradient — swapped to brand indigo `#5459E8 → #818CF8` with matching drop-shadow.
+
+**Testing**:
+- Added `/app/backend/tests/test_auth_deep_investigation.py` (public-URL httpx suite) — grew to 19 tests after testing agent expansion.
+- Also `/app/backend/tests/test_auth_deep_investigation_db.py` for cases that touch reset-token / must_change / IP throttle at the DB level.
+- Testing agent: 19/19 passed. No critical backend issues remain.
+
+**Files changed**:
+- `/app/backend/routers/auth.py`
+- `/app/frontend/src/context/AuthContext.jsx`
+- `/app/frontend/src/lib/api.js`
+- `/app/frontend/src/pages/Login.jsx`
+- `/app/frontend/src/pages/Register.jsx`
+- New: `/app/backend/tests/test_auth_deep_investigation.py`, `/app/backend/tests/test_auth_deep_investigation_db.py`

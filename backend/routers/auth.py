@@ -74,8 +74,15 @@ async def register(payload: dict):
     User, UserCreate, _UL, UserPublic, AuthResponse = _models()
     body = UserCreate(**payload)
     db = get_db()
+    # Normalize inputs to prevent case-collision duplicates (e.g. "Foo@X.com"
+    # vs "foo@x.com" being treated as separate accounts). EmailStr keeps the
+    # case from Pydantic; lowercase it explicitly here so lookups match.
+    email_norm = (body.email or "").strip().lower()
+    username_norm = (body.username or "").strip()
+    if not email_norm or not username_norm:
+        raise HTTPException(status_code=400, detail="Email and username are required")
     existing = await db.users.find_one(
-        {"$or": [{"email": body.email}, {"username": body.username}]}
+        {"$or": [{"email": email_norm}, {"username": username_norm}]}
     )
     if existing:
         raise HTTPException(status_code=400, detail="Email or username already exists")
@@ -97,10 +104,20 @@ async def register(payload: dict):
             referred_by = ref["id"]
     elif invite_only:
         raise HTTPException(status_code=403, detail="Registration is invite-only. Please enter a valid invitation code from a member.")
-    user = User(email=body.email, username=body.username, referred_by=referred_by)
+    user = User(email=email_norm, username=username_norm, referred_by=referred_by)
     doc = user.model_dump()
+    doc["email"] = email_norm
+    doc["username"] = username_norm
     doc["password_hash"] = hash_password(body.password)
-    await db.users.insert_one(doc)
+    try:
+        await db.users.insert_one(doc)
+    except Exception as e:
+        # Cover the concurrent-signup race: two requests both passed the
+        # `existing` check, but Mongo's unique index on email/username
+        # rejected the second insert. Return the friendly 400 instead of 500.
+        if "duplicate key" in str(e).lower() or getattr(e, "code", None) == 11000:
+            raise HTTPException(status_code=400, detail="Email or username already exists")
+        raise
     if settings.get("signup_bonus", 0) > 0:
         await credit_wallet(user.id, settings["signup_bonus"], "bonus", "Signup bonus")
     token = create_token(user.id, user.role)
@@ -113,12 +130,26 @@ async def login(payload: dict, request: Request):
     _U, _UC, UserLogin, UserPublic, AuthResponse = _models()
     body = UserLogin(**payload)
     db = get_db()
-    user = await db.users.find_one({"email": body.email})
+    email_lc = (body.email or "").strip().lower()
+    user = await db.users.find_one({"email": email_lc})
 
     # Rate-limit unknown emails per IP so attackers can't enumerate accounts.
     if not user:
-        ip = (request.client.host if request.client else "unknown")
-        key = f"ip:{ip}"
+        # Prefer the first hop in X-Forwarded-For when present (we sit behind
+        # the k8s ingress + a CDN). Falling back to request.client.host means
+        # the throttle counts against the pod IP, which round-robins and
+        # dilutes the limit. Use the first non-empty forwarded hop.
+        xff = request.headers.get("x-forwarded-for", "")
+        client_ip = None
+        if xff:
+            for hop in xff.split(","):
+                hop = hop.strip()
+                if hop:
+                    client_ip = hop
+                    break
+        if not client_ip:
+            client_ip = request.headers.get("x-real-ip") or (request.client.host if request.client else "unknown")
+        key = f"ip:{client_ip}"
         ip_row = await db.login_throttle.find_one({"key": key}, {"_id": 0})
         attempts = int((ip_row or {}).get("attempts", 0)) + 1
         window_start = (ip_row or {}).get("window_start") or _now()

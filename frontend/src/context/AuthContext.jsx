@@ -3,12 +3,43 @@ import api from "@/lib/api";
 
 const AuthContext = createContext(null);
 
+// Token lives in localStorage by default (persists across browser restarts).
+// When the user unchecks "Keep me signed in" on Login, we store it in
+// sessionStorage instead — so closing the tab clears the session, matching
+// the checkbox contract.
+const TOKEN_KEY = "mercari-global_token";
+const USERNAME_KEY = "mercari-global_username";
+
+const readToken = () => {
+  try { return sessionStorage.getItem(TOKEN_KEY) || localStorage.getItem(TOKEN_KEY) || null; }
+  catch { return null; }
+};
+
+const writeToken = (token, remember = true) => {
+  try {
+    // Always clear both first so we never end up with two conflicting tokens.
+    localStorage.removeItem(TOKEN_KEY);
+    sessionStorage.removeItem(TOKEN_KEY);
+    if (remember) localStorage.setItem(TOKEN_KEY, token);
+    else sessionStorage.setItem(TOKEN_KEY, token);
+  } catch { /* storage disabled */ }
+};
+
+const clearToken = () => {
+  try {
+    localStorage.removeItem(TOKEN_KEY);
+    sessionStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(USERNAME_KEY);
+    sessionStorage.removeItem(USERNAME_KEY);
+  } catch { /* ignore */ }
+};
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const fetchMe = useCallback(async () => {
-    const token = localStorage.getItem("mercari-global_token");
+    const token = readToken();
     if (!token) {
       setLoading(false);
       return;
@@ -16,10 +47,9 @@ export const AuthProvider = ({ children }) => {
     try {
       const { data } = await api.get("/auth/me");
       setUser(data);
-      try { localStorage.setItem("mercari-global_username", data.username || ""); } catch { /* ignore */ }
+      try { localStorage.setItem(USERNAME_KEY, data.username || ""); } catch { /* ignore */ }
     } catch {
-      localStorage.removeItem("mercari-global_token");
-      localStorage.removeItem("mercari-global_username");
+      clearToken();
       setUser(null);
     } finally {
       setLoading(false);
@@ -30,10 +60,11 @@ export const AuthProvider = ({ children }) => {
     fetchMe();
   }, [fetchMe]);
 
-  const login = async (email, password) => {
+  const login = async (email, password, opts = {}) => {
+    const remember = opts.remember !== false; // default true
     const { data } = await api.post("/auth/login", { email, password });
-    localStorage.setItem("mercari-global_token", data.token);
-    try { localStorage.setItem("mercari-global_username", data.user?.username || ""); } catch { /* ignore */ }
+    writeToken(data.token, remember);
+    try { localStorage.setItem(USERNAME_KEY, data.user?.username || ""); } catch { /* ignore */ }
     // Carry the server-issued must-change flag onto the client user so
     // downstream components can gate on `user.must_change_password`.
     const merged = { ...data.user, must_change_password: !!data.password_change_required };
@@ -43,15 +74,14 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (email, username, password) => {
     const { data } = await api.post("/auth/register", { email, username, password });
-    localStorage.setItem("mercari-global_token", data.token);
-    try { localStorage.setItem("mercari-global_username", data.user?.username || ""); } catch { /* ignore */ }
+    writeToken(data.token, true);
+    try { localStorage.setItem(USERNAME_KEY, data.user?.username || ""); } catch { /* ignore */ }
     setUser(data.user);
     return data.user;
   };
 
   const logout = () => {
-    localStorage.removeItem("mercari-global_token");
-    localStorage.removeItem("mercari-global_username");
+    clearToken();
     setUser(null);
   };
 
