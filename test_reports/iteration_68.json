@@ -1,0 +1,16 @@
+{
+  "summary": "Verified service-worker cache-invalidation fix for the Mercari→Ocean rebrand. All 7 requested assertions pass: SW served at preview URL contains VERSION='v2-ocean-rebrand' and cache names 'ocean-shell-*' / 'ocean-runtime-*' (no 'merchari'/'mercari' strings); skipWaiting() on install and self.clients.claim() on activate present; activate handler filters and deletes non-matching caches; homepage HTML title/meta shows 'Ocean — Smart Ecommerce Platform' (no 'Mercari'); browser render at 1400x900 shows 'Ocean-Smarthub' wordmark, 'Ocean Marketplace' top strip, and zero 'Mercari' occurrences on initial viewport; admin login (admin@mercari.local/admin123) returns 200; GET /api/categories returns 200.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [],
+  "updated_files": [],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "test_credentials": "admin@mercari.local / admin123 (intentionally not rebranded)",
+  "seed_data_creation": "",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "SW cache-invalidation validated. Served /service-worker.js has ocean-* cache keys and skipWaiting+clients.claim so returning visitors will purge old merchari-global-* caches on next activation. Homepage HTML + rendered header confirmed Ocean branding. Admin email intentionally still uses @mercari.local.",
+  "rca of the issue": "Prior to this fix, service-worker.js used cache keys 'merchari-global-shell-v1' / 'merchari-global-runtime-v1'. Since the SW filename and cache-name were unchanged after the rebrand, returning visitors' browsers served cached pre-rebrand HTML/JS bearing old Mercari branding. Fix: bumped VERSION to 'v2-ocean-rebrand' and renamed caches to ocean-shell/ocean-runtime; combined with existing skipWaiting()+clients.claim() and the activate-handler cache purge, this forces immediate SW update and eviction of old caches on next visit."
+}

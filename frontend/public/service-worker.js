@@ -2,9 +2,9 @@
  * - App shell + navigation offline fallback
  * - Cache-first for static assets, network-first for API
  */
-const VERSION = "v1";
-const APP_SHELL_CACHE = `merchari-global-shell-${VERSION}`;
-const RUNTIME_CACHE   = `merchari-global-runtime-${VERSION}`;
+const VERSION = "v2-ocean-rebrand";
+const APP_SHELL_CACHE = `ocean-shell-${VERSION}`;
+const RUNTIME_CACHE   = `ocean-runtime-${VERSION}`;
 
 const APP_SHELL = [
   "/",

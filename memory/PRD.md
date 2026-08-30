@@ -24,6 +24,21 @@ Full-stack ecommerce marketplace **Mercari-Global** — same color scheme (`#FF2
 
 ---
 
+### Feb 27 2026 — SW Cache Bug: "Old Mercari branding still showing"
+
+**Bug**: After the rebrand, the header on the deployed/returning-visit view was still rendering "Mercari-Global / Smart Ecommerce". Source code was 100% Ocean (verified) — the source of the leak was the browser service-worker cache.
+
+**Root cause**: `public/service-worker.js` used cache keys `merchari-global-shell-v1` and `merchari-global-runtime-v1`. Once a user had visited the app pre-rebrand, that SW cached the old HTML shell + assets. On every subsequent visit the SW served the pre-rebrand HTML from cache before ever consulting the network, so the new Ocean bundle never ran.
+
+**Fix**:
+- Bumped `VERSION` from `"v1"` → `"v2-ocean-rebrand"`.
+- Renamed cache buckets to `ocean-shell-${VERSION}` and `ocean-runtime-${VERSION}`.
+- The existing activate handler already `caches.delete()`s any bucket that doesn't match the current names, so the old `merchari-global-*` caches are purged automatically on next SW activation. `skipWaiting()` + `self.clients.claim()` (both already present) make the new SW take over open tabs instantly.
+
+**Testing agent iteration_68.json**: **100% pass** on both backend + frontend. Zero issues, zero action items. Confirms the served SW has the new cache names, homepage HTML renders "Ocean", admin login + `/api/categories` still return 200.
+
+
+
 ### Feb 27 2026 — Rebrand Verification (deep audit + testing_agent)
 
 **User asked** to re-check whether the earlier rebrand actually completed. Deep grep found leaked "Mercari" strings the first sweep missed.
