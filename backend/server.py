@@ -7273,7 +7273,7 @@ async def seed_data():
     admin_id = str(uuid.uuid4())
     admin = {
         "id": admin_id,
-        "email": "admin@mercari-global.local",
+        "email": "admin@ocean.local",
         "username": "admin",
         "role": "admin",
         "avatar": None,
@@ -7315,7 +7315,7 @@ async def seed_data():
         "users": len(sellers) + 1,
         "listings": 0,
         "note": "Categories, admin, and demo sellers seeded. Listings come from Apify — trigger /api/admin/sync/apify to import real Amazon products.",
-        "admin_credentials": {"email": "admin@mercari-global.local", "password": "admin123"},
+        "admin_credentials": {"email": "admin@ocean.local", "password": "admin123"},
     }
 
 

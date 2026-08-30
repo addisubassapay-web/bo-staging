@@ -1,0 +1,18 @@
+{
+  "summary": "Final rebrand deep-audit validation (iteration 69). Verified all 4 targeted residues are patched: WalletDialogs.jsx has 0 occurrences of `mercari-global-red`; server.py seed endpoint has 0 occurrences of `admin@mercari-global` (now `admin@ocean.local` at L7276 & L7318); ThemeContext uses STORAGE_KEY='ocean-theme' with LEGACY_KEYS=['mercari-global-theme'] migration; FontSizeContext uses STORAGE_KEY='ocean-fontsize' with legacy migration for both 'mercarie-global_fontsize' and 'mercari-global_fontsize'. Backend regression: admin login (admin@mercari.local/admin123) → HTTP 200; GET /api/categories → HTTP 200. Preview homepage renders 'Ocean — Smart Ecommerce Platform' title with 0 user-visible 'mercari' text occurrences (7 'ocean' hits). LocalStorage confirmed populated with 'ocean-theme' and 'ocean-fontsize' keys on first load. Explicitly preserved items (mercari-global_token, mercari_store synthetic seller, jp.mercari.com supplier URLs, DB name) left untouched as instructed.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Many other internal localStorage keys still use the `mercari-global_*` prefix (e.g., in AuthContext, CurrencyContext, SplashScreen, PWAInstallPrompt, CashOutTicker, Footer, GlobalWalletToaster, BuyerProgressToast, SearchAutocomplete, BalanceMask, ProductCard, StoreApprovalWatcher, SavedSeeds, PaginatedSeedScrape). These are internal (non-user-visible) and explicitly preserved for the token key, but the pattern is inconsistent with the ocean-* rename applied to theme/fontsize. Consider a future one-shot migration pass for consistency (non-blocking, per current request scope)."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "test_credentials": "admin@mercari.local / admin123 (from /app/memory/test_credentials.md — deliberately not rebranded)",
+  "seed_data_creation": "none",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Rebrand audit is complete across iterations 67-69. Only remaining `mercari-global` leaks in frontend/src are internal localStorage keys (token, currency, splash, PWA, cashout ticker, etc.) which are explicitly preserved per main agent instructions. No further rebrand action needed unless user requests a full internal key migration.",
+  "rca of the issue": "N/A — validation-only iteration; all patches verified as applied."
+}

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 
-const STORAGE_KEY = "mercari-global-theme";
+const STORAGE_KEY = "ocean-theme";
+const LEGACY_KEYS = ["mercari-global-theme"];  // one-shot migration of pre-rebrand pref
 const ThemeContext = createContext({ theme: "light", toggleTheme: () => {}, setTheme: () => {} });
 
 const applyClass = (t) => {
@@ -13,7 +14,14 @@ const applyClass = (t) => {
 export const ThemeProvider = ({ children }) => {
   const [theme, setThemeState] = useState(() => {
     if (typeof window === "undefined") return "light";
-    const saved = window.localStorage.getItem(STORAGE_KEY);
+    let saved = window.localStorage.getItem(STORAGE_KEY);
+    // One-shot migration from pre-rebrand keys
+    if (!saved) {
+      for (const k of LEGACY_KEYS) {
+        const v = window.localStorage.getItem(k);
+        if (v) { saved = v; window.localStorage.removeItem(k); break; }
+      }
+    }
     if (saved === "dark" || saved === "light") return saved;
     return window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   });

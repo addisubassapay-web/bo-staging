@@ -55,7 +55,7 @@ async def _category_lookup(db) -> Dict[str, dict]:
 def _country_from_source_url(url: str) -> str:
     """Best-effort ISO-2 country guess from an Apify source URL host.
 
-    Amazon US and jp.mercari.com are our two current supplier surfaces; extend
+    Amazon US and jp.mercari.com (external Japanese supplier surface) — extend; extend
     the mapping as new suppliers come online.
     """
     if not url:

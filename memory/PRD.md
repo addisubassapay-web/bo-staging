@@ -24,6 +24,27 @@ Full-stack ecommerce marketplace **Mercari-Global** — same color scheme (`#FF2
 
 ---
 
+### Feb 27 2026 — Deep-Audit Rebrand Pass #3 (final)
+
+**User asked** for a 100% verification. Third-pass grep found 4 remaining leaks the first two sweeps missed.
+
+**Patched**:
+- `components/WalletDialogs.jsx` × 5 Tailwind class names: `bg-mercari-global-red` / `bg-mercari-global-red-hover` / `border-mercari-global-red` → `bg-ocean-red*` / `border-ocean-red`. (Tailwind config never defined these classes, so purely cosmetic — buttons kept working before and still do.)
+- `server.py` L7276 + L7318 (seed endpoint) — `admin@mercari-global.local` → `admin@ocean.local` (the LIVE admin login `admin@mercari.local` is intentionally untouched).
+- `context/ThemeContext.jsx` — `STORAGE_KEY` renamed to `"ocean-theme"` with a `LEGACY_KEYS = ["mercari-global-theme"]` one-shot migration on first load (preserves users' pre-rebrand theme preference then removes the old key).
+- `context/FontSizeContext.jsx` — same treatment: `STORAGE_KEY = "ocean-fontsize"` with migration reading legacy `mercarie-global_fontsize` (typo) + `mercari-global_fontsize`.
+
+**Explicitly preserved** (each would break something):
+- `admin@mercari.local` — real admin login credential.
+- MongoDB `DB_NAME=merchari_global` + `MONGO_URL` — data at rest.
+- localStorage token key `mercari-global_token` — every user is currently signed in with this key.
+- Synthetic seller username `mercari_store` in `listing_mirror.py` / scripts — every catalog listing's `seller_username` is tied to this row.
+- `jp.mercari.com` URL substring in country-detection helpers — external Japanese Mercari supplier surface, not our brand.
+
+**Testing agent iteration_69.json: 100% pass** — backend 100%, frontend 100%, zero issues, zero action items. Every user-visible surface reads Ocean; auth + core APIs green.
+
+
+
 ### Feb 27 2026 — SW Cache Bug: "Old Mercari branding still showing"
 
 **Bug**: After the rebrand, the header on the deployed/returning-visit view was still rendering "Mercari-Global / Smart Ecommerce". Source code was 100% Ocean (verified) — the source of the leak was the browser service-worker cache.
