@@ -96,10 +96,10 @@ const TopStrip = ({ user, onLogout }) => {
 
 const IconButton = ({ to, label, badge, children, testid }) => (
   <Link to={to}>
-    <button aria-label={label} className="h-10 w-10 sm:h-11 sm:w-11 rounded-full border border-neutral-200 dark:border-neutral-700 hover:border-[#FF7A18] dark:hover:border-[#FF7A18] grid place-items-center transition relative text-neutral-700 dark:text-neutral-200" data-testid={testid}>
+    <button aria-label={label} className="h-10 w-10 sm:h-11 sm:w-11 rounded-full border border-neutral-200 dark:border-neutral-700 hover:border-[#1E40AF] dark:hover:border-[#1E40AF] grid place-items-center transition relative text-neutral-700 dark:text-neutral-200" data-testid={testid}>
       {children}
       {badge > 0 && (
-        <span className="absolute -top-1 -right-1 bg-[#FF211F] text-white text-[10px] font-semibold rounded-full h-4 min-w-4 px-1 grid place-items-center leading-none tabular-nums">
+        <span className="absolute -top-1 -right-1 bg-[#DC2626] text-white text-[10px] font-semibold rounded-full h-4 min-w-4 px-1 grid place-items-center leading-none tabular-nums">
           {badge > 99 ? "99+" : badge}
         </span>
       )}
@@ -186,8 +186,8 @@ const Header = () => {
               data-testid="header-logo"
             />
             <div className={`hidden lg:block leading-tight transition-opacity ${compact ? "hidden xl:block" : ""}`}>
-              <div className={`font-bold text-neutral-900 dark:text-neutral-100 ${compact ? "text-base" : "text-lg xl:text-xl"}`}>Ocean<span className="text-[#FF7A18]">-Smarthub</span></div>
-              {!compact && <div className="text-[11px] text-neutral-500 dark:text-neutral-400 -mt-0.5">Smart Ecommerce</div>}
+              <div className={`font-bold text-neutral-900 dark:text-neutral-100 tracking-tight ${compact ? "text-base" : "text-lg xl:text-xl"}`}>Blue<span className="text-[#1E40AF]">Ocean</span></div>
+              {!compact && <div className="text-[11px] text-neutral-500 dark:text-neutral-400 -mt-0.5 tracking-wide">Smart Ecommerce</div>}
             </div>
           </Link>
 
@@ -207,7 +207,7 @@ const Header = () => {
             <button
               type="button"
               onClick={() => setCpOpen(true)}
-              className="hidden xl:inline-flex items-center gap-1.5 h-11 px-3 rounded-full border border-neutral-200 dark:border-neutral-700 hover:border-[#FF7A18] text-xs text-neutral-500 dark:text-neutral-400 transition"
+              className="hidden xl:inline-flex items-center gap-1.5 h-11 px-3 rounded-full border border-neutral-200 dark:border-neutral-700 hover:border-[#1E40AF] text-xs text-neutral-500 dark:text-neutral-400 transition"
               aria-label="Open command palette"
               data-testid="header-cp-btn"
               title="Command palette (⌘K)"
@@ -218,7 +218,7 @@ const Header = () => {
 
             <Link to="/marketplace">
               <button
-                className={`rounded-full bg-gradient-to-r from-[#FF7A18] to-[#FF211F] hover:brightness-110 text-white font-semibold text-sm shadow-sm hover:shadow-md transition-all flex items-center gap-1.5 shrink-0 ${compact ? "h-10 px-3 sm:px-4" : "h-11 px-4 sm:px-5"}`}
+                className={`rounded-full bg-gradient-to-r from-[#1E40AF] to-[#3B82F6] hover:brightness-110 text-white font-semibold text-sm shadow-sm hover:shadow-md transition-all flex items-center gap-1.5 shrink-0 ${compact ? "h-10 px-3 sm:px-4" : "h-11 px-4 sm:px-5"}`}
                 data-testid="header-shopnow-btn"
               >
                 <ShoppingBag className="h-4 w-4" /> <span className="hidden xs:inline">Shop</span><span className="hidden sm:inline"> Now</span>
@@ -249,10 +249,10 @@ const Header = () => {
               <Heart className="h-5 w-5" />
             </IconButton>
 
-            <div className="h-10 w-10 sm:h-11 sm:w-11 rounded-full border border-neutral-200 hover:border-[#FF7A18] dark:border-neutral-700 dark:hover:border-[#FF7A18] grid place-items-center transition relative">
+            <div className="h-10 w-10 sm:h-11 sm:w-11 rounded-full border border-neutral-200 hover:border-[#1E40AF] dark:border-neutral-700 dark:hover:border-[#1E40AF] grid place-items-center transition relative">
               <NotificationsBell />
               {notifCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-[#FF211F] text-white text-[10px] rounded-full h-4 min-w-4 px-1 grid place-items-center pointer-events-none">{notifCount}</span>
+                <span className="absolute -top-1 -right-1 bg-[#DC2626] text-white text-[10px] rounded-full h-4 min-w-4 px-1 grid place-items-center pointer-events-none">{notifCount}</span>
               )}
             </div>
 
@@ -348,7 +348,7 @@ const Header = () => {
               </DropdownMenu>
             ) : (
               <Link to="/login">
-                <button className="h-11 px-4 rounded-full border border-neutral-200 dark:border-neutral-700 hover:border-[#FF7A18] dark:hover:border-[#FF7A18] text-sm font-semibold text-neutral-800 dark:text-neutral-100 transition flex items-center gap-1.5" data-testid="header-login-btn">
+                <button className="h-11 px-4 rounded-full border border-neutral-200 dark:border-neutral-700 hover:border-[#1E40AF] dark:hover:border-[#1E40AF] text-sm font-semibold text-neutral-800 dark:text-neutral-100 transition flex items-center gap-1.5" data-testid="header-login-btn">
                   <User className="h-4 w-4" /> {t("nav.signIn")}
                 </button>
               </Link>
@@ -360,7 +360,7 @@ const Header = () => {
             <Link to="/cart" aria-label="Cart" className="h-10 w-10 rounded-full grid place-items-center relative text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition" data-testid="header-cart-btn-mobile">
               <ShoppingCart className="h-5 w-5" />
               {cartCount > 0 && (
-                <span className="absolute top-0.5 right-0.5 bg-[#FF211F] text-white text-[10px] rounded-full h-4 min-w-4 px-1 grid place-items-center">{cartCount}</span>
+                <span className="absolute top-0.5 right-0.5 bg-[#DC2626] text-white text-[10px] rounded-full h-4 min-w-4 px-1 grid place-items-center">{cartCount}</span>
               )}
             </Link>
           </div>
@@ -377,7 +377,7 @@ const Header = () => {
             type="button"
             aria-label="Scroll categories left"
             onClick={() => ribbonRef.current?.scrollBy({ left: -240, behavior: "smooth" })}
-            className={`hidden md:grid absolute left-1 top-1/2 -translate-y-1/2 z-10 h-8 w-8 place-items-center rounded-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 shadow-sm hover:border-[#FF7A18] transition-opacity ${ribbonAtStart ? "opacity-0 pointer-events-none" : "opacity-100"}`}
+            className={`hidden md:grid absolute left-1 top-1/2 -translate-y-1/2 z-10 h-8 w-8 place-items-center rounded-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 shadow-sm hover:border-[#1E40AF] transition-opacity ${ribbonAtStart ? "opacity-0 pointer-events-none" : "opacity-100"}`}
             data-testid="cat-ribbon-prev"
           >
             <ChevronLeft className="h-4 w-4 text-neutral-600 dark:text-neutral-300" />
@@ -391,7 +391,7 @@ const Header = () => {
             data-testid="cat-ribbon-scroll"
           >
             <Link to="/search" data-testid="cat-pill-all">
-              <button className="whitespace-nowrap px-4 sm:px-5 h-8 sm:h-9 rounded-full bg-gradient-to-r from-[#FF7A18] to-[#FF211F] text-white font-semibold text-xs sm:text-sm flex items-center gap-1.5 shrink-0 shadow-sm">
+              <button className="whitespace-nowrap px-4 sm:px-5 h-8 sm:h-9 rounded-full bg-gradient-to-r from-[#1E40AF] to-[#3B82F6] text-white font-semibold text-xs sm:text-sm flex items-center gap-1.5 shrink-0 shadow-sm">
                 <span className="text-base leading-none">▦</span> All Products
               </button>
             </Link>
@@ -420,7 +420,7 @@ const Header = () => {
             type="button"
             aria-label="Scroll categories right"
             onClick={() => ribbonRef.current?.scrollBy({ left: 240, behavior: "smooth" })}
-            className={`hidden md:grid absolute right-1 top-1/2 -translate-y-1/2 z-10 h-8 w-8 place-items-center rounded-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 shadow-sm hover:border-[#FF7A18] transition-opacity ${ribbonAtEnd ? "opacity-0 pointer-events-none" : "opacity-100"}`}
+            className={`hidden md:grid absolute right-1 top-1/2 -translate-y-1/2 z-10 h-8 w-8 place-items-center rounded-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 shadow-sm hover:border-[#1E40AF] transition-opacity ${ribbonAtEnd ? "opacity-0 pointer-events-none" : "opacity-100"}`}
             data-testid="cat-ribbon-next"
           >
             <ChevronRight className="h-4 w-4 text-neutral-600 dark:text-neutral-300" />

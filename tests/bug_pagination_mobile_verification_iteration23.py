@@ -13,7 +13,7 @@ import asyncio
 from playwright.async_api import async_playwright, expect
 
 
-BASE_URL = "https://marketplace-dropship.preview.emergentagent.com"
+BASE_URL = "https://ocean-marketplace.preview.emergentagent.com"
 ROUTES = ["/search", "/", "/cart", "/marketplace/stores"]
 VIEWPORTS = [(390, 844), (375, 812), (320, 568)]
 

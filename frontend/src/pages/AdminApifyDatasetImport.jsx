@@ -197,7 +197,7 @@ const AdminApifyDatasetImport = () => {
         <Button
           type="submit"
           disabled={!canSubmit}
-          className="w-full sm:w-auto bg-[#FF211F] hover:bg-[#e01d1b] min-h-[44px]"
+          className="w-full sm:w-auto bg-[#DC2626] hover:bg-[#e01d1b] min-h-[44px]"
           data-testid="ai-submit-btn"
         >
           {loading ? (

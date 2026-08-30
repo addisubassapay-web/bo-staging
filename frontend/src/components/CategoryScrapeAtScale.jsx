@@ -172,7 +172,7 @@ const CategoryScrapeAtScale = () => {
           {/* Shared controls */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <Label className="text-sm">Target category {autoPublish && <span className="text-[#FF211F]">*</span>}</Label>
+              <Label className="text-sm">Target category {autoPublish && <span className="text-[#DC2626]">*</span>}</Label>
               <Select value={categoryId} onValueChange={setCategoryId}>
                 <SelectTrigger className="mt-1 h-10" data-testid="scale-category-select">
                   <SelectValue placeholder="Choose a category" />
@@ -205,7 +205,7 @@ const CategoryScrapeAtScale = () => {
           <Button
             onClick={submit}
             disabled={submitting}
-            className="w-full sm:w-auto bg-[#FF211F] hover:bg-[#e01d1b] h-11"
+            className="w-full sm:w-auto bg-[#DC2626] hover:bg-[#e01d1b] h-11"
             data-testid="scale-import-submit"
           >
             {submitting

@@ -20,6 +20,6 @@
   "seed_data_creation": "None. No data mutated; all reads plus invalid-run 404 probe against admin apify import endpoint.",
   "retest_needed": false,
   "should_main_agent_self_test": false,
-  "context_for_next_testing_agent": "Regression suite is /app/backend/tests/test_iteration61_regression.py — covers rebrand HTML/manifest, admin login (Atlas rotation regression), categories/subcategories with Computer/Laptop, seller_country on products+listings, and admin apify import endpoint (403/404/401). Frontend verified: font-size-{sm|md|lg} data-testids on header, admin-drawer-open+admin-drawer-nav, admin-products-mobile-list with admin-product-card-{id}, ledger-audit-mobile-list, product-origin-{id} tiles with flag emoji. Preview URL https://marketplace-dropship.preview.emergentagent.com is green for deploy.",
+  "context_for_next_testing_agent": "Regression suite is /app/backend/tests/test_iteration61_regression.py — covers rebrand HTML/manifest, admin login (Atlas rotation regression), categories/subcategories with Computer/Laptop, seller_country on products+listings, and admin apify import endpoint (403/404/401). Frontend verified: font-size-{sm|md|lg} data-testids on header, admin-drawer-open+admin-drawer-nav, admin-products-mobile-list with admin-product-card-{id}, ledger-audit-mobile-list, product-origin-{id} tiles with flag emoji. Preview URL https://ocean-marketplace.preview.emergentagent.com is green for deploy.",
   "rca of the issue": "N/A — verification only, no bugs found."
 }

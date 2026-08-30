@@ -59,7 +59,7 @@ const StoreCard = ({ store, categoryMap = {}, currentCategoryId }) => {
       className="group block rounded-2xl overflow-hidden bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all"
       data-testid={`store-card-${store.slug}`}
     >
-      <div className="relative h-28 bg-gradient-to-br from-[#FF7A18] via-[#FF5722] to-[#FF211F]">
+      <div className="relative h-28 bg-gradient-to-br from-[#1E40AF] via-[#FF5722] to-[#DC2626]">
         {store.banner && (
           <img src={store.banner} alt="" className="w-full h-full object-cover opacity-90" />
         )}
@@ -172,7 +172,7 @@ const StoresMarketplace = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 py-10">
       {/* Hero */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#FF7A18] via-[#FF5722] to-[#FF211F] px-6 sm:px-10 py-10 shadow-lg">
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#1E40AF] via-[#FF5722] to-[#DC2626] px-6 sm:px-10 py-10 shadow-lg">
         <div className="absolute -top-24 -right-24 h-72 w-72 rounded-full bg-white/20 blur-3xl" />
         <div className="absolute -bottom-24 -left-24 h-72 w-72 rounded-full bg-[#2563EB]/25 blur-3xl" />
         <div className="relative">

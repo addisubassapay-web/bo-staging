@@ -110,7 +110,7 @@ const StoreAdminNudgeBanner = ({ slug }) => {
                 onClick={() => nudge(o.id)}
                 disabled={busy[o.id]}
                 data-testid={`admin-nudge-btn-${o.id}`}
-                className="bg-[#FF211F] hover:bg-[#e01a19] text-white rounded-full"
+                className="bg-[#DC2626] hover:bg-[#e01a19] text-white rounded-full"
               >
                 {busy[o.id] ? (
                   <>

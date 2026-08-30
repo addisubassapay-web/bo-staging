@@ -114,7 +114,7 @@ const Register = () => {
           }}
         >
           <div className="pointer-events-none absolute -top-24 -right-24 h-96 w-96 rounded-full bg-[#2563EB] opacity-20 blur-3xl animate-pulse" />
-          <div className="pointer-events-none absolute -bottom-24 -left-24 h-96 w-96 rounded-full bg-[#FF7A18] opacity-20 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-24 -left-24 h-96 w-96 rounded-full bg-[#1E40AF] opacity-20 blur-3xl" />
 
           <BrandMark size={64} showWordmark animated wordmarkClassName="text-white" />
 
@@ -131,7 +131,7 @@ const Register = () => {
             </ul>
           </div>
 
-          <div className="text-xs text-white/60">© {new Date().getFullYear()} Ocean · All rights reserved.</div>
+          <div className="text-xs text-white/60">© {new Date().getFullYear()} BlueOcean · All rights reserved.</div>
         </div>
 
         {/* Right — form pane */}
@@ -162,7 +162,7 @@ const Register = () => {
               <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
                 {inviteOnly
                   ? "Enter the invitation code shared by an existing member to join."
-                  : "Join Ocean and get your storefront in seconds."}
+                  : "Join BlueOcean and get your storefront in seconds."}
               </p>
 
               <form onSubmit={submit} className="mt-6 space-y-4" data-testid="register-form">
@@ -282,7 +282,7 @@ const Register = () => {
                   </div>
                   {inviteOnly && !inviteLoading && (
                     <p className="mt-1 text-[11px] text-neutral-500 dark:text-neutral-400 inline-flex items-center gap-1">
-                      <Sparkles className="h-3 w-3 text-amber-500" /> New signups need a valid invitation from a Ocean member.
+                      <Sparkles className="h-3 w-3 text-amber-500" /> New signups need a valid invitation from a BlueOcean member.
                     </p>
                   )}
                 </div>
@@ -296,7 +296,7 @@ const Register = () => {
                     data-testid="register-accept"
                   />
                   <span>
-                    I agree to Ocean&apos;s{" "}
+                    I agree to BlueOcean&apos;s{" "}
                     <a href="/terms" className="text-[#2563EB] dark:text-[#7DD3FC] hover:underline">Terms</a> and{" "}
                     <a href="/privacy" className="text-[#2563EB] dark:text-[#7DD3FC] hover:underline">Privacy Policy</a>.
                   </span>

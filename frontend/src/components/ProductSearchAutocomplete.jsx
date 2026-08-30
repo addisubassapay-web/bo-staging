@@ -181,7 +181,7 @@ export default function ProductSearchAutocomplete({
         onFocus={() => setOpen(true)}
         onKeyDown={onKey}
         placeholder={placeholder}
-        className="pl-9 pr-9 h-10 w-full sm:w-72 rounded-full border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-sm outline-none focus:border-[#FF211F] focus:ring-2 focus:ring-[#FF211F]/30 transition"
+        className="pl-9 pr-9 h-10 w-full sm:w-72 rounded-full border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-sm outline-none focus:border-[#DC2626] focus:ring-2 focus:ring-[#DC2626]/30 transition"
         data-testid="products-search-input"
         autoComplete="off"
       />
@@ -216,7 +216,7 @@ export default function ProductSearchAutocomplete({
                 clearRecent();
                 setRecent([]);
               }}
-              className="text-[11px] text-neutral-500 hover:text-[#FF211F] font-medium"
+              className="text-[11px] text-neutral-500 hover:text-[#DC2626] font-medium"
               data-testid="products-search-recent-clear"
             >
               Clear
@@ -256,10 +256,10 @@ export default function ProductSearchAutocomplete({
               }`}
               data-testid="products-search-correction"
             >
-              <WandSparkles className="h-4 w-4 text-[#FF211F] shrink-0" />
+              <WandSparkles className="h-4 w-4 text-[#DC2626] shrink-0" />
               <span className="text-neutral-600 dark:text-neutral-300">
                 Did you mean{" "}
-                <span className="font-semibold text-[#FF211F]">
+                <span className="font-semibold text-[#DC2626]">
                   {suggest.corrected}
                 </span>
                 ?
@@ -283,7 +283,7 @@ export default function ProductSearchAutocomplete({
                       setOpen(false);
                       onSubmit("", c.name);
                     }}
-                    className="inline-flex items-center gap-1.5 rounded-full bg-neutral-100 dark:bg-neutral-800 hover:bg-[#FF211F]/10 hover:text-[#FF211F] px-2.5 h-6 text-xs"
+                    className="inline-flex items-center gap-1.5 rounded-full bg-neutral-100 dark:bg-neutral-800 hover:bg-[#DC2626]/10 hover:text-[#DC2626] px-2.5 h-6 text-xs"
                     data-testid={`products-search-cat-${c.slug}`}
                   >
                     {c.name}
@@ -308,7 +308,7 @@ export default function ProductSearchAutocomplete({
                     key={t}
                     type="button"
                     onClick={() => commit(t)}
-                    className="rounded-full bg-neutral-100 dark:bg-neutral-800 hover:bg-[#FF211F]/10 hover:text-[#FF211F] px-2.5 h-6 text-xs"
+                    className="rounded-full bg-neutral-100 dark:bg-neutral-800 hover:bg-[#DC2626]/10 hover:text-[#DC2626] px-2.5 h-6 text-xs"
                     data-testid={`products-search-term-${t}`}
                   >
                     {t}
@@ -361,7 +361,7 @@ export default function ProductSearchAutocomplete({
                           ) : null}
                         </div>
                       </div>
-                      <div className="text-sm font-semibold text-[#FF211F] tabular-nums shrink-0">
+                      <div className="text-sm font-semibold text-[#DC2626] tabular-nums shrink-0">
                         {p.in_stock === false ? "—" : `$${Number(p.price).toFixed(2)}`}
                       </div>
                     </Link>
@@ -382,7 +382,7 @@ export default function ProductSearchAutocomplete({
             <button
               type="button"
               onClick={() => commit(value)}
-              className="w-full text-center border-t border-neutral-100 dark:border-neutral-800 px-4 py-2.5 text-xs font-semibold text-[#FF211F] hover:bg-[#FF211F]/5"
+              className="w-full text-center border-t border-neutral-100 dark:border-neutral-800 px-4 py-2.5 text-xs font-semibold text-[#DC2626] hover:bg-[#DC2626]/5"
               data-testid="products-search-show-all"
             >
               Show all results for &ldquo;{value}&rdquo; →

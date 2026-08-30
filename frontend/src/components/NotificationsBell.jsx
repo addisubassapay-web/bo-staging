@@ -50,7 +50,7 @@ const NotificationsBell = () => {
         <Button variant="ghost" size="sm" className="relative">
           <Bell className="h-5 w-5" />
           {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 bg-[#FF211F] text-white text-[10px] rounded-full h-4 min-w-4 px-1 grid place-items-center">
+            <span className="absolute -top-1 -right-1 bg-[#DC2626] text-white text-[10px] rounded-full h-4 min-w-4 px-1 grid place-items-center">
               {unreadCount}
             </span>
           )}
@@ -60,7 +60,7 @@ const NotificationsBell = () => {
         <div className="flex items-center justify-between p-3 border-b">
           <div className="font-semibold">Notifications</div>
           {unreadCount > 0 && (
-            <button onClick={markAllRead} className="text-xs text-[#FF211F] hover:underline flex items-center gap-1">
+            <button onClick={markAllRead} className="text-xs text-[#DC2626] hover:underline flex items-center gap-1">
               <CheckCheck className="h-3 w-3" /> Mark all read
             </button>
           )}

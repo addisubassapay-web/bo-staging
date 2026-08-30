@@ -74,7 +74,7 @@ const HeroCarousel = () => {
       {/* Warm welcome ribbon */}
       <div className="mb-3 sm:mb-4 flex items-center justify-between flex-wrap gap-2 px-1">
         <div className="flex items-center gap-2 text-sm sm:text-base">
-          <span className="inline-flex h-6 sm:h-7 items-center gap-1.5 rounded-full bg-gradient-to-r from-[#FF7A18]/10 to-[#FF211F]/10 dark:from-[#FF7A18]/20 dark:to-[#FF211F]/20 border border-orange-200/70 dark:border-orange-500/30 px-2.5 text-[#FF211F] dark:text-orange-300 font-medium">
+          <span className="inline-flex h-6 sm:h-7 items-center gap-1.5 rounded-full bg-gradient-to-r from-[#1E40AF]/10 to-[#DC2626]/10 dark:from-[#1E40AF]/20 dark:to-[#DC2626]/20 border border-orange-200/70 dark:border-orange-500/30 px-2.5 text-[#DC2626] dark:text-orange-300 font-medium">
             <Sparkles className="h-3.5 w-3.5" /> {greeting}
           </span>
           <span className="text-neutral-500 dark:text-neutral-400 hidden sm:inline">{t("home.greeting.suffix")}</span>
@@ -101,14 +101,14 @@ const HeroCarousel = () => {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_85%_25%,rgba(255,255,255,0.28),transparent_55%)]" />
 
         {/* Decorative blobs */}
-        <div className="pointer-events-none absolute -top-16 -right-16 h-56 w-56 rounded-full bg-[#FF7A18]/40 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-20 left-1/3 h-56 w-56 rounded-full bg-[#FF211F]/30 blur-3xl" />
+        <div className="pointer-events-none absolute -top-16 -right-16 h-56 w-56 rounded-full bg-[#1E40AF]/40 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-20 left-1/3 h-56 w-56 rounded-full bg-[#DC2626]/30 blur-3xl" />
 
         {/* Content */}
         <div className="absolute inset-0 flex flex-col justify-center gap-3 sm:gap-4 p-5 sm:p-10 md:p-14 max-w-2xl">
           <span
             key={`${s.tag}-${idx}`}
-            className="inline-flex items-center gap-1.5 self-start bg-white/95 text-[#FF211F] text-[10px] sm:text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full shadow-sm animate-hero-in"
+            className="inline-flex items-center gap-1.5 self-start bg-white/95 text-[#DC2626] text-[10px] sm:text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full shadow-sm animate-hero-in"
           >
             <Flame className="h-3 w-3" /> {s.tag}
           </span>
@@ -130,7 +130,7 @@ const HeroCarousel = () => {
           <div className="flex gap-2 sm:gap-3 flex-wrap">
             <Link to={s.ctaLink}>
               <Button
-                className="bg-white text-[#FF211F] hover:bg-[#FF7A18] hover:text-white h-11 sm:h-12 px-5 sm:px-6 rounded-full font-semibold shadow-lg gap-2 transition-all group"
+                className="bg-white text-[#DC2626] hover:bg-[#1E40AF] hover:text-white h-11 sm:h-12 px-5 sm:px-6 rounded-full font-semibold shadow-lg gap-2 transition-all group"
                 data-testid="hero-shop-now"
               >
                 {t("cta.shopNow")}
@@ -140,7 +140,7 @@ const HeroCarousel = () => {
             <Link to="/search">
               <Button
                 variant="outline"
-                className="h-11 sm:h-12 px-5 sm:px-6 rounded-full bg-white/10 backdrop-blur-sm border-2 border-white/70 text-white hover:bg-white hover:text-[#FF7A18] font-semibold"
+                className="h-11 sm:h-12 px-5 sm:px-6 rounded-full bg-white/10 backdrop-blur-sm border-2 border-white/70 text-white hover:bg-white hover:text-[#1E40AF] font-semibold"
               >
                 Browse everything
               </Button>
@@ -215,11 +215,11 @@ const FlashCard = ({ l, onFavChange, isFav }) => {
   const stockPct = Math.max(6, Math.min(95, stockLeft));
 
   return (
-    <div className="group relative bg-white rounded-xl border border-neutral-200 overflow-hidden hover:shadow-lg hover:border-[#FF7A18]/40 transition" data-testid={`flash-card-${l.id}`}>
+    <div className="group relative bg-white rounded-xl border border-neutral-200 overflow-hidden hover:shadow-lg hover:border-[#1E40AF]/40 transition" data-testid={`flash-card-${l.id}`}>
       <Link to={`/listing/${l.id}`}>
         <div className="relative aspect-square bg-neutral-100 overflow-hidden">
           <img src={l.images?.[0]} alt={l.title} className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500" />
-          <span className="absolute top-2 left-2 bg-[#FF211F] text-white text-[11px] font-bold px-2 py-1 rounded shadow">
+          <span className="absolute top-2 left-2 bg-[#DC2626] text-white text-[11px] font-bold px-2 py-1 rounded shadow">
             FLASH -{discount}%
           </span>
           <button
@@ -227,7 +227,7 @@ const FlashCard = ({ l, onFavChange, isFav }) => {
             onClick={(e) => { e.preventDefault(); onFavChange?.(l.id); }}
             className="absolute top-2 right-2 h-8 w-8 rounded-full bg-white/95 hover:bg-white grid place-items-center transition"
           >
-            <Heart className={`h-4 w-4 ${isFav ? "fill-[#FF211F] text-[#FF211F]" : "text-neutral-600"}`} />
+            <Heart className={`h-4 w-4 ${isFav ? "fill-[#DC2626] text-[#DC2626]" : "text-neutral-600"}`} />
           </button>
         </div>
       </Link>
@@ -238,10 +238,10 @@ const FlashCard = ({ l, onFavChange, isFav }) => {
         <div className="mt-1.5 flex items-baseline gap-2 flex-wrap">
           <span className="text-lg font-bold text-neutral-900">{money(l.price)}</span>
           <span className="text-xs text-neutral-400 line-through">${Number(original).toFixed(2)}</span>
-          <span className="ml-auto text-[11px] text-[#FF211F] font-medium">Only {stockLeft} left</span>
+          <span className="ml-auto text-[11px] text-[#DC2626] font-medium">Only {stockLeft} left</span>
         </div>
         <div className="mt-2 h-1.5 rounded-full bg-neutral-100 overflow-hidden">
-          <div className="h-full bg-gradient-to-r from-[#FF211F] to-[#FF7A18]" style={{ width: `${stockPct}%` }} />
+          <div className="h-full bg-gradient-to-r from-[#DC2626] to-[#1E40AF]" style={{ width: `${stockPct}%` }} />
         </div>
         <div className="mt-2 text-[11px] text-amber-600 font-medium flex items-center gap-1">
           <Zap className="h-3 w-3" /> Fast Delivery
@@ -261,7 +261,7 @@ const FlashDeals = ({ items, onFav, favIds }) => {
       <div className="bg-gradient-to-b from-[#FFF7EF] to-white rounded-2xl border border-orange-100 p-5 sm:p-6">
         <div className="flex items-start sm:items-center justify-between flex-wrap gap-3">
           <div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#FF211F] flex items-center gap-2">
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#DC2626] flex items-center gap-2">
               <Zap className="h-6 w-6" /> {t("home.flashTitle")}
             </h2>
             <p className="text-sm text-neutral-600">{t("home.flashSubtitle")}</p>
@@ -286,7 +286,7 @@ const TrustStrip = () => {
   return (
   <section className="max-w-7xl mx-auto px-4 mt-16 sm:mt-20">
     <div className="text-center">
-      <span className="inline-block text-[10px] uppercase tracking-[0.2em] font-semibold text-[#FF7A18] bg-[#FF7A18]/10 border border-[#FF7A18]/20 rounded-full px-3 py-1">
+      <span className="inline-block text-[10px] uppercase tracking-[0.2em] font-semibold text-[#1E40AF] bg-[#1E40AF]/10 border border-[#1E40AF]/20 rounded-full px-3 py-1">
         {t("home.whyKicker")}
       </span>
       <h2 className="mt-3 text-3xl sm:text-4xl font-extrabold text-neutral-900 dark:text-neutral-100 tracking-tight">{t("home.whyTitle")}</h2>
@@ -308,7 +308,7 @@ const TrustStrip = () => {
         return (
           <div
             key={t.title}
-            className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_12px_28px_-16px_rgba(255,33,31,0.25)] hover:-translate-y-0.5 hover:border-[#FF7A18]/40 transition-all duration-300"
+            className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_12px_28px_-16px_rgba(255,33,31,0.25)] hover:-translate-y-0.5 hover:border-[#1E40AF]/40 transition-all duration-300"
             data-testid={`trust-${i}`}
           >
             <div className={`h-11 w-11 rounded-xl grid place-items-center ${tones[f.tone]}`}>
@@ -337,7 +337,7 @@ const RequestBanner = () => {
   const { t } = useLang();
   return (
   <section className="max-w-7xl mx-auto px-4 mt-16 sm:mt-20">
-    <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-[#FF7A18] via-[#FF5722] to-[#FF211F] text-white text-center px-6 py-14 shadow-[0_20px_50px_-20px_rgba(255,33,31,0.55)]">
+    <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-[#1E40AF] via-[#FF5722] to-[#DC2626] text-white text-center px-6 py-14 shadow-[0_20px_50px_-20px_rgba(255,33,31,0.55)]">
       {/* Decorative blobs */}
       <div className="pointer-events-none absolute -top-16 -left-10 h-52 w-52 rounded-full bg-white/15 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-20 -right-16 h-64 w-64 rounded-full bg-black/20 blur-3xl" />
@@ -349,12 +349,12 @@ const RequestBanner = () => {
         <p className="mt-3 text-white/90 max-w-2xl mx-auto text-sm sm:text-base">{t("home.requestBody")}</p>
         <div className="mt-7 flex items-center justify-center gap-3 flex-wrap">
           <Link to="/chat">
-            <Button className="bg-white text-[#FF211F] hover:bg-neutral-100 h-11 px-6 rounded-full font-semibold shadow-lg gap-1.5 group" data-testid="cta-request-product">
+            <Button className="bg-white text-[#DC2626] hover:bg-neutral-100 h-11 px-6 rounded-full font-semibold shadow-lg gap-1.5 group" data-testid="cta-request-product">
               {t("cta.requestProduct")} <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
             </Button>
           </Link>
           <Link to="/chat">
-            <Button variant="outline" className="h-11 px-6 rounded-full bg-white/10 backdrop-blur border-2 border-white/70 text-white hover:bg-white hover:text-[#FF7A18] font-semibold">
+            <Button variant="outline" className="h-11 px-6 rounded-full bg-white/10 backdrop-blur border-2 border-white/70 text-white hover:bg-white hover:text-[#1E40AF] font-semibold">
               {t("cta.contactSupport")}
             </Button>
           </Link>
@@ -399,11 +399,11 @@ const FeaturedStoresStrip = ({ stores }) => {
       <div className="flex items-end justify-between mb-4 gap-4">
         <div>
           <h2 className="text-2xl sm:text-3xl font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
-            <StoreIcon className="h-6 w-6 text-[#FF7A18]" /> Featured Storefronts
+            <StoreIcon className="h-6 w-6 text-[#1E40AF]" /> Featured Storefronts
           </h2>
           <p className="text-sm text-neutral-500 dark:text-neutral-400">Handpicked sellers you&apos;ll love</p>
         </div>
-        <Link to="/search" className="text-sm text-[#FF7A18] font-medium hover:underline flex items-center gap-1 whitespace-nowrap">
+        <Link to="/search" className="text-sm text-[#1E40AF] font-medium hover:underline flex items-center gap-1 whitespace-nowrap">
           Discover more <ArrowRight className="h-3 w-3" />
         </Link>
       </div>
@@ -417,8 +417,8 @@ const FeaturedStoresStrip = ({ stores }) => {
               className="snap-start shrink-0 w-64 group"
               data-testid={`featured-store-${s.slug}`}
             >
-              <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 overflow-hidden hover:shadow-lg hover:border-[#FF7A18] transition h-full">
-                <div className="h-24 bg-gradient-to-br from-[#FF7A18] via-[#FF5B22] to-[#FF211F] relative">
+              <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 overflow-hidden hover:shadow-lg hover:border-[#1E40AF] transition h-full">
+                <div className="h-24 bg-gradient-to-br from-[#1E40AF] via-[#FF5B22] to-[#DC2626] relative">
                   {s.banner && (
                     <img src={s.banner} alt="" className="absolute inset-0 h-full w-full object-cover opacity-70" />
                   )}
@@ -432,10 +432,10 @@ const FeaturedStoresStrip = ({ stores }) => {
                     )}
                   </div>
                   <div className="mt-3 flex items-center gap-1.5">
-                    <div className="font-bold text-neutral-900 dark:text-neutral-100 truncate group-hover:text-[#FF211F] transition">
+                    <div className="font-bold text-neutral-900 dark:text-neutral-100 truncate group-hover:text-[#DC2626] transition">
                       {s.name}
                     </div>
-                    {s.verified_tier !== "none" && <BadgeCheck className="h-4 w-4 text-[#FF7A18] shrink-0" />}
+                    {s.verified_tier !== "none" && <BadgeCheck className="h-4 w-4 text-[#1E40AF] shrink-0" />}
                   </div>
                   <div className="text-xs text-neutral-500 dark:text-neutral-400 line-clamp-1">
                     {s.tagline || `/${s.slug}`}
@@ -511,7 +511,7 @@ const Home = () => {
               <h2 className="text-lg sm:text-xl font-bold text-neutral-900">{t("home.pickup")}</h2>
               <p className="text-xs text-neutral-500">{t("home.recent")}</p>
             </div>
-            <Link to="/search" className="text-xs text-[#FF7A18] font-medium hover:underline">{t("cta.browseMore")}</Link>
+            <Link to="/search" className="text-xs text-[#1E40AF] font-medium hover:underline">{t("cta.browseMore")}</Link>
           </div>
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-6 gap-3">
             {recentlyViewed.slice(0, 12).map((l) => (
@@ -549,7 +549,7 @@ const Home = () => {
 
       {/* Limited time badge */}
       <div className="max-w-7xl mx-auto px-4 mt-10 text-center">
-        <Badge className="bg-[#FF7A18] hover:bg-[#FF7A18] text-white uppercase tracking-wider font-bold px-4 py-1">Limited Time Deals</Badge>
+        <Badge className="bg-[#1E40AF] hover:bg-[#1E40AF] text-white uppercase tracking-wider font-bold px-4 py-1">Limited Time Deals</Badge>
       </div>
 
       <FlashDeals items={flashItems} onFav={toggleFav} favIds={favIds} />
@@ -560,11 +560,11 @@ const Home = () => {
           <div className="flex items-center justify-between mb-5">
             <div>
               <h2 className="text-2xl sm:text-3xl font-bold text-neutral-900 flex items-center gap-2">
-                <Sparkles className="h-6 w-6 text-[#FF7A18]" /> For You
+                <Sparkles className="h-6 w-6 text-[#1E40AF]" /> For You
               </h2>
               <p className="text-sm text-neutral-500">Handpicked from your favourites &amp; purchases</p>
             </div>
-            <Link to="/search" className="text-sm text-[#FF7A18] font-medium hover:underline flex items-center gap-1">
+            <Link to="/search" className="text-sm text-[#1E40AF] font-medium hover:underline flex items-center gap-1">
               Refresh <ArrowRight className="h-3 w-3" />
             </Link>
           </div>
@@ -592,7 +592,7 @@ const Home = () => {
                 </div>
                 <Link
                   to={`/search?category_slug=${sh.category_slugs[0]}`}
-                  className="text-sm text-[#FF7A18] font-semibold hover:text-[#FF211F] transition flex items-center gap-1 whitespace-nowrap group"
+                  className="text-sm text-[#1E40AF] font-semibold hover:text-[#DC2626] transition flex items-center gap-1 whitespace-nowrap group"
                   data-testid={`shelf-see-${sh.id}`}
                 >
                   See all <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
@@ -612,15 +612,15 @@ const Home = () => {
       <section className="max-w-7xl mx-auto px-4 mt-16 sm:mt-20">
         <div className="flex items-end justify-between mb-6 gap-4">
           <div>
-            <span className="inline-block text-[10px] uppercase tracking-[0.2em] font-semibold text-[#FF211F] bg-[#FF211F]/10 border border-[#FF211F]/20 rounded-full px-3 py-1">
+            <span className="inline-block text-[10px] uppercase tracking-[0.2em] font-semibold text-[#DC2626] bg-[#DC2626]/10 border border-[#DC2626]/20 rounded-full px-3 py-1">
               {t("home.liveNow")}
             </span>
-            <h2 className="mt-2 text-2xl sm:text-3xl font-extrabold text-[#FF211F] flex items-center gap-2 tracking-tight">
+            <h2 className="mt-2 text-2xl sm:text-3xl font-extrabold text-[#DC2626] flex items-center gap-2 tracking-tight">
               <Flame className="h-6 w-6" /> {t("home.trendingNow")}
             </h2>
             <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">{t("home.trendingSub")}</p>
           </div>
-          <Link to="/search?sort=trending" className="text-sm text-[#FF7A18] font-semibold hover:text-[#FF211F] transition flex items-center gap-1 whitespace-nowrap group">
+          <Link to="/search?sort=trending" className="text-sm text-[#1E40AF] font-semibold hover:text-[#DC2626] transition flex items-center gap-1 whitespace-nowrap group">
             {t("cta.liveFeed")} <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
           </Link>
         </div>
@@ -642,7 +642,7 @@ const Home = () => {
               <h2 className="mt-2 text-2xl sm:text-3xl font-extrabold text-neutral-900 dark:text-neutral-100 tracking-tight">{t("home.justListed")}</h2>
               <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">{t("home.justListedSub")}</p>
             </div>
-            <Link to="/search?sort=newest" className="text-sm text-[#FF7A18] font-semibold hover:text-[#FF211F] transition flex items-center gap-1 whitespace-nowrap group">
+            <Link to="/search?sort=newest" className="text-sm text-[#1E40AF] font-semibold hover:text-[#DC2626] transition flex items-center gap-1 whitespace-nowrap group">
               {t("cta.viewMore")} <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
             </Link>
           </div>

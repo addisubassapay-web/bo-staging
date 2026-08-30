@@ -4,7 +4,7 @@ This file records the exact browser automation used by the testing agent.
 It is not part of the product code.
 """
 
-BASE_URL = "https://marketplace-dropship.preview.emergentagent.com/search"
+BASE_URL = "https://ocean-marketplace.preview.emergentagent.com/search"
 
 
 async def verify_search_pagination(page):

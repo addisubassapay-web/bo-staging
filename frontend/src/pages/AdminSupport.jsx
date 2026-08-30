@@ -147,7 +147,7 @@ const AdminSupport = () => {
         <div className="p-3 border-b border-neutral-200 dark:border-neutral-800">
           <div className="flex items-center justify-between mb-2">
             <div className="font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-1.5">
-              <MessageCircle className="h-4 w-4 text-[#FF211F]" /> Support inbox
+              <MessageCircle className="h-4 w-4 text-[#DC2626]" /> Support inbox
             </div>
             {unread > 0 && (
               <span className="text-[11px] font-bold bg-emerald-100 text-emerald-700 rounded-full px-2 py-0.5" data-testid="admin-support-unread-badge">
@@ -199,7 +199,7 @@ const AdminSupport = () => {
                   key={t.id}
                   type="button"
                   onClick={() => openTicket(t)}
-                  className={`w-full text-left px-3 py-3 border-b border-neutral-100 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors ${isActive ? "bg-orange-50 dark:bg-orange-950/40 border-l-4 border-l-[#FF211F]" : ""}`}
+                  className={`w-full text-left px-3 py-3 border-b border-neutral-100 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors ${isActive ? "bg-orange-50 dark:bg-orange-950/40 border-l-4 border-l-[#DC2626]" : ""}`}
                   data-testid={`admin-ticket-${t.id}`}
                 >
                   <div className="flex items-center gap-2">

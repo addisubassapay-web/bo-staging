@@ -100,7 +100,7 @@ const NewDisputeDialog = ({ open, onOpenChange, orders, onCreated }) => {
       <DialogContent className="max-w-lg" data-testid="new-dispute-dialog">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <MessageSquareWarning className="h-5 w-5 text-[#FF211F]" /> Open a dispute
+            <MessageSquareWarning className="h-5 w-5 text-[#DC2626]" /> Open a dispute
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
@@ -143,7 +143,7 @@ const NewDisputeDialog = ({ open, onOpenChange, orders, onCreated }) => {
           <div>
             <Label className="text-xs uppercase tracking-wider text-neutral-500 flex items-center justify-between">
               <span>Photo evidence <span className="text-neutral-400">(optional, up to 8)</span></span>
-              <label className="text-[#FF7A18] hover:underline cursor-pointer inline-flex items-center gap-1">
+              <label className="text-[#1E40AF] hover:underline cursor-pointer inline-flex items-center gap-1">
                 <ImagePlus className="h-4 w-4" /> Add photos
                 <input
                   type="file" accept="image/*" multiple hidden
@@ -175,7 +175,7 @@ const NewDisputeDialog = ({ open, onOpenChange, orders, onCreated }) => {
           <Button
             onClick={submit}
             disabled={submitting || uploading || !orderId || !description.trim()}
-            className="bg-[#FF211F] hover:bg-[#e01d1b]"
+            className="bg-[#DC2626] hover:bg-[#e01d1b]"
             data-testid="dispute-submit"
           >
             {submitting ? "Submitting…" : "Submit dispute"}
@@ -189,7 +189,7 @@ const NewDisputeDialog = ({ open, onOpenChange, orders, onCreated }) => {
 const ROLE_META = {
   buyer:  { label: "Buyer",  cls: "bg-sky-500/15 text-sky-700 dark:text-sky-300 border-sky-500/30" },
   seller: { label: "Seller", cls: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30" },
-  admin:  { label: "Support", cls: "bg-[#FF211F]/15 text-[#FF211F] dark:text-orange-300 border-[#FF211F]/30" },
+  admin:  { label: "Support", cls: "bg-[#DC2626]/15 text-[#DC2626] dark:text-orange-300 border-[#DC2626]/30" },
 };
 
 const fileUrl = (url) => {
@@ -260,7 +260,7 @@ const DisputeChat = ({ disputeId, currentUserId, currentUserRole, closed }) => {
   return (
     <div className="mt-4 border-t border-neutral-200 dark:border-neutral-800 pt-3" data-testid={`dispute-chat-${disputeId}`}>
       <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-neutral-500 dark:text-neutral-400 font-medium mb-2">
-        <MessageCircle className="h-4 w-4 text-[#FF7A18]" /> Conversation
+        <MessageCircle className="h-4 w-4 text-[#1E40AF]" /> Conversation
         <span className="ml-auto normal-case tracking-normal text-[11px] text-neutral-400">
           {messages.length} {messages.length === 1 ? "message" : "messages"}
         </span>
@@ -278,7 +278,7 @@ const DisputeChat = ({ disputeId, currentUserId, currentUserRole, closed }) => {
             <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`} data-testid={`dispute-msg-${m.id}`}>
               <div className={`max-w-[80%] rounded-2xl px-3.5 py-2.5 ${
                 mine
-                  ? "bg-[#FF211F] text-white rounded-br-md"
+                  ? "bg-[#DC2626] text-white rounded-br-md"
                   : "bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 rounded-bl-md"
               }`}>
                 <div className={`flex items-center gap-1.5 text-[10px] font-medium mb-1 ${mine ? "opacity-80" : ""}`}>
@@ -340,7 +340,7 @@ const DisputeChat = ({ disputeId, currentUserId, currentUserRole, closed }) => {
             </div>
           )}
           <div className="flex items-center gap-1 pt-2 border-t border-neutral-100 dark:border-neutral-800">
-            <label className="inline-flex items-center gap-1 text-xs text-neutral-500 dark:text-neutral-400 hover:text-[#FF7A18] cursor-pointer px-2 py-1 rounded-md">
+            <label className="inline-flex items-center gap-1 text-xs text-neutral-500 dark:text-neutral-400 hover:text-[#1E40AF] cursor-pointer px-2 py-1 rounded-md">
               <ImagePlus className="h-4 w-4" /> Attach
               <input
                 type="file" accept="image/*" multiple hidden
@@ -355,7 +355,7 @@ const DisputeChat = ({ disputeId, currentUserId, currentUserRole, closed }) => {
                 onClick={send}
                 disabled={sending || uploading || (!body.trim() && photos.length === 0)}
                 size="sm"
-                className="bg-[#FF211F] hover:bg-[#e01d1b] gap-1"
+                className="bg-[#DC2626] hover:bg-[#e01d1b] gap-1"
                 data-testid={`dispute-chat-send-${disputeId}`}
               >
                 <Send className="h-3.5 w-3.5" /> Send
@@ -412,7 +412,7 @@ const DisputeCard = ({ d, currentUserId }) => {
               key={i}
               href={url.startsWith("http") ? url : `${process.env.REACT_APP_BACKEND_URL}${url}?auth=${localStorage.getItem("mercari-global_token") || ""}`}
               target="_blank" rel="noreferrer"
-              className="block aspect-square rounded-lg overflow-hidden bg-neutral-100 dark:bg-neutral-800 hover:ring-2 hover:ring-[#FF7A18]"
+              className="block aspect-square rounded-lg overflow-hidden bg-neutral-100 dark:bg-neutral-800 hover:ring-2 hover:ring-[#1E40AF]"
               data-testid={`dispute-photo-${d.id}-${i}`}
             >
               <img
@@ -433,7 +433,7 @@ const DisputeCard = ({ d, currentUserId }) => {
 
       <button
         onClick={() => setChatOpen((v) => !v)}
-        className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-[#FF7A18] hover:text-[#FF211F] transition"
+        className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-[#1E40AF] hover:text-[#DC2626] transition"
         data-testid={`dispute-toggle-chat-${d.id}`}
       >
         <MessageCircle className="h-4 w-4" />
@@ -484,7 +484,7 @@ const Disputes = () => {
     return (
       <div className="max-w-3xl mx-auto px-4 py-16 text-center">
         <p className="text-neutral-700 dark:text-neutral-300">
-          Please <Link to="/login" className="text-[#FF7A18] underline">log in</Link> to view your disputes.
+          Please <Link to="/login" className="text-[#1E40AF] underline">log in</Link> to view your disputes.
         </p>
       </div>
     );
@@ -495,7 +495,7 @@ const Disputes = () => {
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-3xl sm:text-4xl font-extrabold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
-            <AlertCircle className="h-7 w-7 text-[#FF211F]" /> Disputes &amp; Returns
+            <AlertCircle className="h-7 w-7 text-[#DC2626]" /> Disputes &amp; Returns
           </h1>
           <p className="text-neutral-500 dark:text-neutral-400 mt-1">
             Not what you expected? Open a case, share evidence, and our team will step in.
@@ -503,7 +503,7 @@ const Disputes = () => {
         </div>
         <Button
           onClick={() => setDialogOpen(true)}
-          className="bg-[#FF211F] hover:bg-[#e01d1b] gap-1.5"
+          className="bg-[#DC2626] hover:bg-[#e01d1b] gap-1.5"
           data-testid="open-new-dispute-btn"
           disabled={eligibleForNew.length === 0}
           title={eligibleForNew.length === 0 ? "No eligible orders" : "Open a new dispute"}
@@ -517,7 +517,7 @@ const Disputes = () => {
           onClick={() => setTab("mine")}
           className={`px-4 h-9 rounded-full text-sm font-medium transition ${
             tab === "mine"
-              ? "bg-[#FF211F] text-white shadow"
+              ? "bg-[#DC2626] text-white shadow"
               : "text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-neutral-100"
           }`}
           data-testid="tab-mine"
@@ -528,7 +528,7 @@ const Disputes = () => {
           onClick={() => setTab("against")}
           className={`px-4 h-9 rounded-full text-sm font-medium transition ${
             tab === "against"
-              ? "bg-[#FF211F] text-white shadow"
+              ? "bg-[#DC2626] text-white shadow"
               : "text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-neutral-100"
           }`}
           data-testid="tab-against"

@@ -1,5 +1,5 @@
 {
-  "base_url": "https://marketplace-dropship.preview.emergentagent.com",
+  "base_url": "https://ocean-marketplace.preview.emergentagent.com",
   "browser_flow": "admin login -> /admin -> ApifySyncTicker rebalance button -> confirm -> result card -> public /products",
   "result": "passed",
   "evidence": {

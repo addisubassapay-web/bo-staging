@@ -160,7 +160,7 @@ const BulkImportFromUrls = ({ onUseListing }) => {
           <Button
             onClick={submit}
             disabled={submitting || urls.length === 0}
-            className="w-full sm:w-auto bg-[#FF211F] hover:bg-[#e01d1b] h-11"
+            className="w-full sm:w-auto bg-[#DC2626] hover:bg-[#e01d1b] h-11"
             data-testid="bulk-import-submit"
           >
             {submitting ? (<><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Queueing…</>) : (<>Import {urls.length} URLs <ArrowRight className="h-4 w-4 ml-1.5" /></>)}

@@ -45,8 +45,8 @@ const CATEGORY_STYLES = {
   Home: {
     frame: "bg-[#F5F1EA] dark:bg-[#1F1B15] border-[#E1D6C4] dark:border-[#3A311F]",
     accent: "text-[#7B5D2E]",
-    priceColor: "text-[#B85C38]",
-    tag: "bg-[#B85C38]/10 text-[#B85C38]",
+    priceColor: "text-[#1E40AF]",
+    tag: "bg-[#1E40AF]/10 text-[#1E40AF]",
     titleFont: "",
   },
   Sports: {
@@ -59,7 +59,7 @@ const CATEGORY_STYLES = {
 };
 const DEFAULT_STYLE = {
   frame: "bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800",
-  priceColor: "text-[#B85C38]",
+  priceColor: "text-[#1E40AF]",
   tag: "bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300",
   titleFont: "",
 };
@@ -252,18 +252,18 @@ const Products = () => {
     <div className="max-w-7xl mx-auto px-4 py-8" data-testid="products-catalog-page">
       {/* Editorial-boutique hero — warm cream field, terracotta accents, serif display */}
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#FBF6EF] via-[#F5ECE0] to-[#EBDFD0] dark:from-[#1C1712] dark:via-[#231C15] dark:to-[#2A2119] p-8 sm:p-10 mb-6 border border-[#E7D9C6] dark:border-[#3A2E23]">
-        <div className="absolute -top-16 -right-16 h-56 w-56 rounded-full bg-[#B85C38]/15 blur-3xl pointer-events-none" />
+        <div className="absolute -top-16 -right-16 h-56 w-56 rounded-full bg-[#1E40AF]/15 blur-3xl pointer-events-none" />
         <div className="absolute -bottom-20 -left-10 h-64 w-64 rounded-full bg-[#3A5A40]/10 blur-3xl pointer-events-none" />
         <div className="relative flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/70 dark:bg-neutral-900/50 backdrop-blur px-3 py-1 text-[10px] uppercase tracking-[0.2em] font-semibold text-[#B85C38] mb-3">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#B85C38]" /> Curated for you
+            <div className="inline-flex items-center gap-2 rounded-full bg-white/70 dark:bg-neutral-900/50 backdrop-blur px-3 py-1 text-[10px] uppercase tracking-[0.2em] font-semibold text-[#1E40AF] mb-3">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#1E40AF]" /> Curated for you
             </div>
             <h1
               className="font-serif text-4xl sm:text-5xl lg:text-6xl leading-[1.05] tracking-tight text-neutral-900 dark:text-neutral-50"
               style={{ fontFamily: "'Playfair Display', 'DM Serif Display', Georgia, serif" }}
             >
-              The <em className="italic text-[#B85C38]">Ocean</em> catalogue
+              The <em className="italic text-[#1E40AF]">BlueOcean</em> catalogue
             </h1>
             <p className="mt-3 text-neutral-700 dark:text-neutral-300 max-w-xl leading-relaxed">
               Every category, every drop — curated from real supply.{" "}
@@ -287,7 +287,7 @@ const Products = () => {
                 next.set("page", "1");
                 setParams(next);
               }}
-              className="h-4 w-4 accent-[#FF211F]"
+              className="h-4 w-4 accent-[#DC2626]"
               data-testid="products-in-stock-only-toggle"
             />
             In stock only
@@ -315,8 +315,8 @@ const Products = () => {
               data-testid="products-chip-all"
               className={`shrink-0 inline-flex items-center gap-2 rounded-full px-4 h-9 text-sm font-medium border transition ${
                 !category
-                  ? "bg-[#FF211F] text-white border-[#FF211F] shadow-sm"
-                  : "bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200 border-neutral-200 dark:border-neutral-800 hover:border-[#FF211F]/50"
+                  ? "bg-[#DC2626] text-white border-[#DC2626] shadow-sm"
+                  : "bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200 border-neutral-200 dark:border-neutral-800 hover:border-[#DC2626]/50"
               }`}
             >
               All
@@ -343,10 +343,10 @@ const Products = () => {
                   disabled={c.count === 0}
                   className={`shrink-0 inline-flex items-center gap-2 rounded-full px-4 h-9 text-sm font-medium border transition ${
                     isActive
-                      ? "bg-[#FF211F] text-white border-[#FF211F] shadow-sm"
+                      ? "bg-[#DC2626] text-white border-[#DC2626] shadow-sm"
                       : c.count === 0
                         ? "bg-neutral-50 dark:bg-neutral-900/40 text-neutral-400 border-neutral-200 dark:border-neutral-800 cursor-not-allowed"
-                        : "bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200 border-neutral-200 dark:border-neutral-800 hover:border-[#FF211F]/50"
+                        : "bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200 border-neutral-200 dark:border-neutral-800 hover:border-[#DC2626]/50"
                   }`}
                 >
                   {c.name}

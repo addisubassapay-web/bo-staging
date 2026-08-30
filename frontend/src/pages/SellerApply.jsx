@@ -75,7 +75,7 @@ const SellerApply = () => {
   if (!user) {
     return (
       <div className="max-w-3xl mx-auto px-4 py-12">
-        <p className="text-neutral-700">Please <Link to="/login" className="text-[#FF211F] underline">log in</Link>.</p>
+        <p className="text-neutral-700">Please <Link to="/login" className="text-[#DC2626] underline">log in</Link>.</p>
       </div>
     );
   }
@@ -119,10 +119,10 @@ const SellerApply = () => {
   return (
     <div className="max-w-3xl mx-auto px-4 py-10 space-y-6" data-testid="seller-apply-page">
       <div>
-        <span className="inline-block text-[10px] uppercase tracking-[0.2em] font-semibold text-[#FF7A18] bg-[#FF7A18]/10 border border-[#FF7A18]/20 rounded-full px-3 py-1">
+        <span className="inline-block text-[10px] uppercase tracking-[0.2em] font-semibold text-[#1E40AF] bg-[#1E40AF]/10 border border-[#1E40AF]/20 rounded-full px-3 py-1">
           Become a seller
         </span>
-        <h1 className="mt-2 text-3xl sm:text-4xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">Sell on Ocean</h1>
+        <h1 className="mt-2 text-3xl sm:text-4xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">Sell on BlueOcean</h1>
         <p className="text-neutral-500 dark:text-neutral-400 mt-1">List items, set your prices, ship worldwide, and get paid. High-trust accounts are approved instantly.</p>
       </div>
 
@@ -143,7 +143,7 @@ const SellerApply = () => {
       </div>
       {!allReady && (
         <div className="border border-amber-200 bg-amber-50 rounded-lg p-4 text-sm">
-          Please <Link to="/verify" className="text-[#FF211F] underline font-medium">verify your email</Link> before applying. All other details are trusted by default.
+          Please <Link to="/verify" className="text-[#DC2626] underline font-medium">verify your email</Link> before applying. All other details are trusted by default.
         </div>
       )}
 
@@ -164,7 +164,7 @@ const SellerApply = () => {
           )}
           {existing.status === "approved" && (
             <>
-              <Button className="mt-4 bg-[#FF211F] hover:bg-[#e01d1b] rounded-full h-11 shadow-lg shadow-[#FF211F]/20" onClick={() => navigate("/sell")} data-testid="approved-start-selling">
+              <Button className="mt-4 bg-[#DC2626] hover:bg-[#e01d1b] rounded-full h-11 shadow-lg shadow-[#DC2626]/20" onClick={() => navigate("/sell")} data-testid="approved-start-selling">
                 Start selling
               </Button>
               <PayoutPreviewCard tier={trust?.tier} />
@@ -250,7 +250,7 @@ const SellerApply = () => {
             <Label>Government-issued ID</Label>
             <p className="text-xs text-neutral-500 mt-0.5">Passport, driver&apos;s license, or national ID. Only the admin and you can view this. PDF/JPG/PNG, max 12MB.</p>
             {!idFile ? (
-              <label className="mt-2 flex items-center gap-3 border border-dashed border-neutral-300 hover:border-[#FF211F] hover:bg-[#FFF3F2] rounded-lg p-4 cursor-pointer transition" data-testid="id-doc-upload">
+              <label className="mt-2 flex items-center gap-3 border border-dashed border-neutral-300 hover:border-[#DC2626] hover:bg-[#FFF3F2] rounded-lg p-4 cursor-pointer transition" data-testid="id-doc-upload">
                 <UploadIcon className="h-5 w-5 text-neutral-500" />
                 <div>
                   <div className="text-sm font-medium">{uploading ? "Uploading…" : "Click to upload"}</div>
@@ -281,7 +281,7 @@ const SellerApply = () => {
             <Label>Additional notes (optional)</Label>
             <Textarea value={form.id_document_note} onChange={set("id_document_note")} placeholder="Anything else our reviewers should know" data-testid="apply-id-note" className="mt-1" rows={2} />
           </div>
-          <Button type="submit" disabled={submitting || !allReady} className="bg-[#FF211F] hover:bg-[#e01d1b] rounded-full h-11 w-full shadow-lg shadow-[#FF211F]/20" data-testid="apply-submit-btn">
+          <Button type="submit" disabled={submitting || !allReady} className="bg-[#DC2626] hover:bg-[#e01d1b] rounded-full h-11 w-full shadow-lg shadow-[#DC2626]/20" data-testid="apply-submit-btn">
             {submitting ? "Submitting…" : trust?.auto_approve_eligible ? "Submit — you'll be instantly approved" : "Submit application"}
           </Button>
         </form>
@@ -312,7 +312,7 @@ const PayoutPreviewCard = ({ tier, previewOnly = false }) => {
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <div className="text-xs uppercase tracking-wider text-neutral-500 dark:text-neutral-400 font-medium flex items-center gap-1.5">
-            <Zap className="h-3.5 w-3.5 text-[#FF7A18]" /> Weekly earnings preview
+            <Zap className="h-3.5 w-3.5 text-[#1E40AF]" /> Weekly earnings preview
           </div>
           <div className="mt-1 text-3xl sm:text-4xl font-extrabold text-neutral-900 dark:text-neutral-100 tabular-nums" data-testid="payout-preview-range">
             ${scenarios.lo.toLocaleString()} – ${scenarios.hi.toLocaleString()}
@@ -332,11 +332,11 @@ const PayoutPreviewCard = ({ tier, previewOnly = false }) => {
       <div className="mt-4">
         <div className="h-2.5 rounded-full overflow-hidden bg-neutral-100 dark:bg-neutral-800 flex">
           <div className="h-full bg-gradient-to-r from-emerald-400 to-emerald-500" style={{ width: `${100 - feePct}%` }} />
-          <div className="h-full bg-gradient-to-r from-[#FF7A18] to-[#FF211F]" style={{ width: `${feePct}%` }} />
+          <div className="h-full bg-gradient-to-r from-[#1E40AF] to-[#3B82F6]" style={{ width: `${feePct}%` }} />
         </div>
         <div className="mt-2 flex justify-between text-[11px] uppercase tracking-wider">
           <span className="text-emerald-700 dark:text-emerald-300 font-semibold">You keep {100 - feePct}%</span>
-          <span className="text-[#FF211F] font-semibold">Platform fee {feePct}%</span>
+          <span className="text-[#DC2626] font-semibold">Platform fee {feePct}%</span>
         </div>
       </div>
 
@@ -348,7 +348,7 @@ const PayoutPreviewCard = ({ tier, previewOnly = false }) => {
         </div>
         <div className="rounded-xl bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-100 dark:border-neutral-800 p-3">
           <div className="text-[10px] uppercase tracking-wider text-neutral-500 dark:text-neutral-400">Platform fee</div>
-          <div className="mt-0.5 font-extrabold text-[#FF211F] tabular-nums">-${platformFee.toLocaleString()}</div>
+          <div className="mt-0.5 font-extrabold text-[#DC2626] tabular-nums">-${platformFee.toLocaleString()}</div>
         </div>
         <div className="rounded-xl bg-emerald-50 dark:bg-emerald-500/15 border border-emerald-100 dark:border-emerald-500/30 p-3">
           <div className="text-[10px] uppercase tracking-wider text-emerald-700 dark:text-emerald-300">Your payout</div>
@@ -383,17 +383,17 @@ const BoostScoreHint = ({ trust }) => {
 
   return (
     <div
-      className="rounded-2xl border border-[#FF7A18]/25 bg-gradient-to-br from-[#FFF7EF] to-white dark:from-[#FF7A18]/10 dark:to-neutral-900 p-5 sm:p-6 shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
+      className="rounded-2xl border border-[#1E40AF]/25 bg-gradient-to-br from-[#FFF7EF] to-white dark:from-[#1E40AF]/10 dark:to-neutral-900 p-5 sm:p-6 shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
       data-testid="boost-score-hint"
     >
       <div className="flex items-start gap-3 flex-wrap">
-        <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#FF7A18] to-[#FF211F] text-white grid place-items-center shadow-lg shadow-[#FF211F]/20 shrink-0">
+        <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#1E40AF] to-[#3B82F6] text-white grid place-items-center shadow-lg shadow-[#DC2626]/20 shrink-0">
           <Zap className="h-5 w-5" />
         </div>
         <div className="flex-1 min-w-0">
-          <div className="text-xs uppercase tracking-wider font-semibold text-[#FF211F]">Boost your score</div>
+          <div className="text-xs uppercase tracking-wider font-semibold text-[#DC2626]">Boost your score</div>
           <div className="mt-0.5 text-lg sm:text-xl font-extrabold text-neutral-900 dark:text-neutral-100 tracking-tight">
-            You&apos;re <span className="text-[#FF211F] tabular-nums" data-testid="boost-points-remaining">{remaining}</span> point{remaining === 1 ? "" : "s"} away from instant approval
+            You&apos;re <span className="text-[#DC2626] tabular-nums" data-testid="boost-points-remaining">{remaining}</span> point{remaining === 1 ? "" : "s"} away from instant approval
           </div>
           <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
             Tap the fastest lifts below — each one instantly bumps your score.
@@ -405,17 +405,17 @@ const BoostScoreHint = ({ trust }) => {
           <Link
             key={a.key}
             to={a.to}
-            className="group flex items-center gap-3 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-3 hover:border-[#FF7A18] hover:shadow-[0_10px_24px_-16px_rgba(255,33,31,0.28)] hover:-translate-y-0.5 transition-all duration-200"
+            className="group flex items-center gap-3 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-3 hover:border-[#1E40AF] hover:shadow-[0_10px_24px_-16px_rgba(255,33,31,0.28)] hover:-translate-y-0.5 transition-all duration-200"
             data-testid={`boost-action-${a.key}`}
           >
-            <span className="inline-flex h-8 w-8 rounded-lg bg-[#FF7A18]/10 text-[#FF211F] items-center justify-center font-extrabold text-sm tabular-nums shrink-0">
+            <span className="inline-flex h-8 w-8 rounded-lg bg-[#1E40AF]/10 text-[#DC2626] items-center justify-center font-extrabold text-sm tabular-nums shrink-0">
               +{a.gap}
             </span>
             <div className="flex-1 min-w-0">
               <div className="font-semibold text-neutral-900 dark:text-neutral-100 truncate">{a.label}</div>
               <div className="text-[11px] text-neutral-500 dark:text-neutral-400">Worth up to +{a.gap} pts</div>
             </div>
-            <span className="text-xs font-semibold text-[#FF7A18] group-hover:text-[#FF211F] whitespace-nowrap">{a.cta} →</span>
+            <span className="text-xs font-semibold text-[#1E40AF] group-hover:text-[#DC2626] whitespace-nowrap">{a.cta} →</span>
           </Link>
         ))}
       </div>
@@ -440,7 +440,7 @@ const TrustScoreCard = ({ trust }) => {
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <div className="text-xs uppercase tracking-wider text-neutral-500 dark:text-neutral-400 font-medium flex items-center gap-1.5">
-            <Sparkles className="h-3.5 w-3.5 text-[#FF7A18]" /> Trust score
+            <Sparkles className="h-3.5 w-3.5 text-[#1E40AF]" /> Trust score
           </div>
           <div className="flex items-baseline gap-3 mt-1">
             <div className="text-4xl sm:text-5xl font-extrabold text-neutral-900 dark:text-neutral-100 tabular-nums" data-testid="trust-score-value">
@@ -471,7 +471,7 @@ const TrustScoreCard = ({ trust }) => {
           className={`h-full rounded-full transition-all duration-700 ease-out ${
             eligible
               ? "bg-gradient-to-r from-emerald-400 to-emerald-500"
-              : "bg-gradient-to-r from-[#FF7A18] to-[#FF211F]"
+              : "bg-gradient-to-r from-[#1E40AF] to-[#3B82F6]"
           }`}
           style={{ width: `${pct}%` }}
         />

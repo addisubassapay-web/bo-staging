@@ -12,7 +12,7 @@ import { Bookmark, Plus, Play, Trash2, Loader2, Sparkles, Clock, Lightbulb, BarC
 const PROVIDERS = [
   { id: "amazon_search", label: "Amazon — search" },
   { id: "amazon_bestsellers", label: "Amazon — bestsellers" },
-  { id: "mercari-global_search", label: "Ocean — search" },
+  { id: "mercari-global_search", label: "BlueOcean — search" },
 ];
 
 const SavedSeeds = () => {
@@ -147,7 +147,7 @@ const SavedSeeds = () => {
         </div>
         <Button
           onClick={() => setShowForm(!showForm)}
-          className="bg-[#FF211F] hover:bg-[#e01d1b]"
+          className="bg-[#DC2626] hover:bg-[#e01d1b]"
           data-testid="saved-seeds-add"
         >
           <Plus className="h-4 w-4 mr-1.5" /> {showForm ? "Cancel" : "Add seed"}

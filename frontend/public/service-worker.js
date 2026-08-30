@@ -1,10 +1,10 @@
-/* Ocean — Service Worker
+/* BlueOcean — Service Worker
  * - App shell + navigation offline fallback
  * - Cache-first for static assets, network-first for API
  */
-const VERSION = "v2-ocean-rebrand";
-const APP_SHELL_CACHE = `ocean-shell-${VERSION}`;
-const RUNTIME_CACHE   = `ocean-runtime-${VERSION}`;
+const VERSION = "v3-blueocean-rebrand";
+const APP_SHELL_CACHE = `blueocean-shell-${VERSION}`;
+const RUNTIME_CACHE   = `blueocean-runtime-${VERSION}`;
 
 const APP_SHELL = [
   "/",

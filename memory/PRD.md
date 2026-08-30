@@ -1984,3 +1984,55 @@ See `/app/memory/test_credentials.md`.
 - **Emergent LLM Key** (`gpt-5.4` vision) — AI listing assistant.
 - **Emergent Object Storage** — file uploads for seller ID documents and (future) listing images.
 - **Apify** (`junglee/amazon-crawler`) — real Amazon scraping, weekly auto-sync.
+
+---
+
+### Feb 30 2026 — Ocean → BlueOcean Rebrand + Design Refresh
+
+**User asked** for a full platform rebrand from "Ocean" → "BlueOcean" with a new blue/red palette and minimalist wave logo.
+
+**Palette decisions locked in**:
+- Primary Blue: `#1E40AF` (deep royal — main bg, CTAs, brand text accent)
+- Secondary Blue (gradient partner): `#3B82F6`
+- Error/Danger: `#DC2626` (bright red — notification badges, alerts)
+- Success: standard emerald/green (unchanged from platform defaults)
+
+**Patched**:
+- `components/BrandMark.jsx` — full rewrite: new wave/ocean-drop SVG on a rounded-square tile with blue gradient fill and white water crests. Supports `default`/`mono`/`outline` variants, animated pulse, and inline "Blue" + "Ocean" wordmark.
+- `public/logo-mark.svg` — matching static asset for PWA icon fallback and share cards.
+- `components/Header.jsx` — wordmark now reads **Blue<span blue>Ocean</span>** + "Smart Ecommerce" tagline; removed legacy "-Smarthub" span.
+- Global color migration via sed across `src/**/*.{jsx,js,css}`:
+  - `#FF7A18` → `#1E40AF` (accent orange → primary blue)
+  - `#FF211F` → `#DC2626` (former CTA red → true error red; standalone occurrences)
+  - `from-[#FF7A18] to-[#FF211F]` gradient → `from-[#1E40AF] to-[#3B82F6]` (blue-to-lighter-blue)
+  - `#B85C38` (Products italic accent) → `#1E40AF`
+- `components/SplashScreen.jsx` — radial gradient now blue tints (`#EFF6FF`→`#BFDBFE`) with blue decorative blobs.
+- `index.css` — `brand-mark-pulse` drop-shadow rewritten to blue rgba tones.
+- `components/ui/StoreApprovedModal.jsx` — aurora header now all-blue gradient; primary CTA switched to `bg-[#1E40AF]`.
+- `tailwind.config.js` — added semantic `brand.{DEFAULT,light,soft,ink,danger,success}` tokens for reuse.
+- Text sweep `\bOcean\b` → `BlueOcean` across all `pages/`, `components/`, `context/` (word-boundary safe — did not touch internal identifiers).
+- `LanguageContext.jsx` — all 8 language translation blocks updated in-place.
+- `Legal.jsx` — `brand`, `domain: blueocean.com`, `email: support@blueocean.com`.
+- All social share text (`StorefrontShare`, `Checkout`, `Profile`) uses `#BlueOcean` hashtag and BlueOcean title.
+- `public/index.html` — `<title>`, meta description, og:*, twitter:*, apple-mobile-web-app-title all updated; `theme-color` → `#1E40AF`.
+- `public/manifest.json` — short_name, name, theme_color → BlueOcean / `#1E40AF`.
+- `public/service-worker.js` — VERSION bumped `v2-ocean-rebrand` → `v3-blueocean-rebrand`; cache buckets renamed to `blueocean-shell-*` / `blueocean-runtime-*` (forces PWA cache purge on next visit).
+- Backend brand strings:
+  - `services/mailer.py` — `EMAIL_FROM_NAME` default "BlueOcean"; `X-BlueOcean-Tags` header.
+  - `services/email_templates.py` — `BRAND_NAME = "BlueOcean"`; all subject lines, welcome/reset/lock template copy updated.
+  - `services/email_otp.py` — OTP subject "Your BlueOcean verification code"; footer "BlueOcean Trust & Safety".
+  - `services/listing_mirror.py` + `scripts/sync_products_to_listings.py` — seller display "BlueOcean Store"; official catalog copy updated.
+  - `routers/scraper.py`, `routers/scraper_stub.py` — comment/error strings.
+
+**Explicitly preserved** (would break state/data):
+- localStorage keys: `ocean-theme`, `ocean-fontsize`, `mercari-global_token`, `mercari-global_visited_before`, `mercari-global_splash_seen`, `mercari-global_newsletter_email` — user session/preference state.
+- Admin credential `admin@mercari.local` and DB `merchari_global` — auth continuity + data at rest.
+- Backend test-suite historical strings (`backend/tests/*`) — regression baselines.
+- Broken/never-defined Tailwind classes in `WalletDialogs.jsx` (`bg-ocean-red`, `text-canvas-0`) — dead CSS, no visual impact.
+
+**Verified**:
+- `yarn build` — succeeded, one pre-existing ESLint warning unrelated to rebrand.
+- Live preview screenshot confirms: new wave/drop logo, "BlueOcean" wordmark with blue "Ocean" accent, blue CTAs, "BlueOcean Marketplace" in top strip, all category pills styled with new blue accents.
+- `curl /api/categories` returns 12 categories → backend healthy after service string edits.
+- Python REPL confirms `services.email_templates.BRAND_NAME == "BlueOcean"`.
+

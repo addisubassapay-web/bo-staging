@@ -244,7 +244,7 @@ const SellerApplyQuick = () => {
   if (!user) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-12">
-        <p className="text-neutral-700">Please <Link to="/login" className="text-[#FF211F] underline">log in</Link> to apply.</p>
+        <p className="text-neutral-700">Please <Link to="/login" className="text-[#DC2626] underline">log in</Link> to apply.</p>
       </div>
     );
   }
@@ -255,11 +255,11 @@ const SellerApplyQuick = () => {
     <div className="max-w-2xl mx-auto px-4 py-10 space-y-6" data-testid="seller-apply-quick-page">
       {/* Header */}
       <div>
-        <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-[0.2em] font-semibold text-[#FF7A18] bg-[#FF7A18]/10 border border-[#FF7A18]/20 rounded-full px-3 py-1">
+        <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-[0.2em] font-semibold text-[#1E40AF] bg-[#1E40AF]/10 border border-[#1E40AF]/20 rounded-full px-3 py-1">
           <Zap className="h-3 w-3" /> Quick apply · 60 seconds
         </span>
         <h1 className="mt-2 text-3xl sm:text-4xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">
-          Open your store on Ocean
+          Open your store on BlueOcean
         </h1>
         <p className="text-neutral-500 dark:text-neutral-400 mt-1">
           Four fields, instant setup. We&apos;ll spin up your storefront on our best-selling <b>Modern Storefront</b> template.
@@ -282,7 +282,7 @@ const SellerApplyQuick = () => {
         </div>
         <div className="mt-4 grid grid-cols-3 gap-2 text-center">
           {[
-            { icon: Sparkles, label: "Instant setup", tone: "text-[#FF7A18]" },
+            { icon: Sparkles, label: "Instant setup", tone: "text-[#1E40AF]" },
             { icon: Truck, label: "Weekly payouts", tone: "text-sky-600" },
             { icon: ShieldCheck, label: "Escrow protected", tone: "text-emerald-600" },
           ].map((p, i) => (
@@ -304,7 +304,7 @@ const SellerApplyQuick = () => {
               {existing.status === "approved" ? "Your storefront is live." : "Our team is reviewing — you'll be notified as soon as it's approved."}
             </div>
             {existing.status === "approved" && (
-              <Button onClick={() => navigate("/dashboard/seller")} className="mt-3 bg-[#FF211F] hover:bg-[#e01d1b] rounded-full h-10" data-testid="quick-goto-dashboard">
+              <Button onClick={() => navigate("/dashboard/seller")} className="mt-3 bg-[#DC2626] hover:bg-[#e01d1b] rounded-full h-10" data-testid="quick-goto-dashboard">
                 Go to storefront <ArrowRight className="h-4 w-4 ml-1.5" />
               </Button>
             )}
@@ -319,7 +319,7 @@ const SellerApplyQuick = () => {
           {Object.entries(REQUIRED_RULES).map(([k, rule]) => (
             <div key={k}>
               <Label htmlFor={`sqf-${k}`} className="text-sm">
-                {rule.label} <span className="text-[#FF211F]">*</span>
+                {rule.label} <span className="text-[#DC2626]">*</span>
               </Label>
               <Input
                 id={`sqf-${k}`}
@@ -338,7 +338,7 @@ const SellerApplyQuick = () => {
 
           {/* Payout method picker */}
           <div>
-            <Label className="text-sm">Payout method <span className="text-[#FF211F]">*</span></Label>
+            <Label className="text-sm">Payout method <span className="text-[#DC2626]">*</span></Label>
             <div className="mt-2 grid sm:grid-cols-2 gap-2" data-testid="payout-picker">
               {PAYOUT_METHODS.map((m) => {
                 const active = payout === m.key;
@@ -349,7 +349,7 @@ const SellerApplyQuick = () => {
                     onClick={() => setPayout(m.key)}
                     className={`relative flex items-start gap-3 rounded-xl border p-3 text-left transition-all min-h-[68px] ${
                       active
-                        ? "border-[#FF211F] bg-[#FFF3F2] shadow-[0_2px_16px_-8px_rgba(255,33,31,0.35)]"
+                        ? "border-[#DC2626] bg-[#FFF3F2] shadow-[0_2px_16px_-8px_rgba(255,33,31,0.35)]"
                         : "border-neutral-200 dark:border-neutral-700 hover:border-neutral-400 dark:hover:border-neutral-500 bg-white dark:bg-neutral-900"
                     }`}
                     data-testid={`payout-${m.key}`}
@@ -371,7 +371,7 @@ const SellerApplyQuick = () => {
                       <div className="text-[10px] text-neutral-400 dark:text-neutral-500 mt-1">{m.hint}</div>
                     </div>
                     {active && (
-                      <CheckCircle2 className="absolute top-2 right-2 h-4 w-4 text-[#FF211F]" />
+                      <CheckCircle2 className="absolute top-2 right-2 h-4 w-4 text-[#DC2626]" />
                     )}
                   </button>
                 );
@@ -415,7 +415,7 @@ const SellerApplyQuick = () => {
                     type="button"
                     onClick={verifyOtp}
                     disabled={otpCode.length !== 6 || otpStage === "verifying"}
-                    className="bg-[#FF211F] hover:bg-[#e01d1b] min-h-[44px]"
+                    className="bg-[#DC2626] hover:bg-[#e01d1b] min-h-[44px]"
                     data-testid="otp-verify-btn"
                   >
                     {otpStage === "verifying" ? "Verifying…" : "Verify code"}
@@ -429,7 +429,7 @@ const SellerApplyQuick = () => {
                     type="button"
                     onClick={requestOtp}
                     disabled={otpStage === "requesting"}
-                    className="text-[#FF211F] hover:underline inline-flex items-center gap-1"
+                    className="text-[#DC2626] hover:underline inline-flex items-center gap-1"
                     data-testid="otp-resend"
                   >
                     <RefreshCw className="h-3 w-3" /> Resend
@@ -443,7 +443,7 @@ const SellerApplyQuick = () => {
           <Button
             type="submit"
             disabled={submitting || !isValid || otpStage === "requesting" || otpStage === "verifying"}
-            className="w-full rounded-full h-12 bg-[#FF211F] hover:bg-[#e01d1b] shadow-lg shadow-[#FF211F]/25 disabled:opacity-50"
+            className="w-full rounded-full h-12 bg-[#DC2626] hover:bg-[#e01d1b] shadow-lg shadow-[#DC2626]/25 disabled:opacity-50"
             data-testid="sqf-submit-btn"
           >
             {submitting
@@ -460,7 +460,7 @@ const SellerApplyQuick = () => {
 
           <div className="text-[11px] text-neutral-500 text-center">
             Need more control? Use the{" "}
-            <Link to="/seller/apply" className="text-[#FF211F] underline" data-testid="advanced-apply-link">
+            <Link to="/seller/apply" className="text-[#DC2626] underline" data-testid="advanced-apply-link">
               advanced application
             </Link>.
           </div>

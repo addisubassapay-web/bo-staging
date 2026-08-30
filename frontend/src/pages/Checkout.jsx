@@ -97,7 +97,7 @@ const Checkout = () => {
       // 🎉 Confetti burst on success
       requestAnimationFrame(() => {
         const end = Date.now() + 1500;
-        const colors = ["#FF211F", "#FF7A18", "#FFD166", "#06D6A0", "#118AB2"];
+        const colors = ["#DC2626", "#1E40AF", "#FFD166", "#06D6A0", "#118AB2"];
         (function frame() {
           confetti({ particleCount: 5, angle: 60, spread: 55, startVelocity: 55, origin: { x: 0, y: 0.7 }, colors });
           confetti({ particleCount: 5, angle: 120, spread: 55, startVelocity: 55, origin: { x: 1, y: 0.7 }, colors });
@@ -129,10 +129,10 @@ const Checkout = () => {
 
   if (done) {
     const shareUrl = `${window.location.origin}/listing/${done.listing_id || done.listing?.id || id}`;
-    const shareText = `I just scored "${done.listing_title}" on Ocean! 🎉`;
+    const shareText = `I just scored "${done.listing_title}" on BlueOcean! 🎉`;
     const doShare = async () => {
       if (navigator.share) {
-        try { await navigator.share({ title: "Ocean", text: shareText, url: shareUrl }); }
+        try { await navigator.share({ title: "BlueOcean", text: shareText, url: shareUrl }); }
         catch (e) { if (e?.name !== "AbortError") console.warn("[share] failed:", e); }
       } else {
         try {
@@ -174,7 +174,7 @@ const Checkout = () => {
             <Share2 className="h-4 w-4" /> {t("cta.share")}
           </Button>
           <Button variant="outline" className="rounded-full" onClick={() => navigate("/profile?tab=orders")}>{t("cta.viewOrders")}</Button>
-          <Button className="bg-[#FF211F] hover:bg-[#e01d1b] rounded-full shadow-lg shadow-[#FF211F]/20" onClick={() => navigate("/")}>{t("cta.keepShopping")}</Button>
+          <Button className="bg-[#DC2626] hover:bg-[#e01d1b] rounded-full shadow-lg shadow-[#DC2626]/20" onClick={() => navigate("/")}>{t("cta.keepShopping")}</Button>
         </div>
       </div>
     );
@@ -204,7 +204,7 @@ const Checkout = () => {
   return (
     <div className="max-w-5xl w-full mx-auto px-3 sm:px-4 py-8 min-w-0 pb-28 lg:pb-8" data-testid="checkout-page">
       <div className="mb-8">
-        <span className="inline-block text-[10px] uppercase tracking-[0.2em] font-semibold text-[#FF7A18] bg-[#FF7A18]/10 border border-[#FF7A18]/20 rounded-full px-3 py-1">
+        <span className="inline-block text-[10px] uppercase tracking-[0.2em] font-semibold text-[#1E40AF] bg-[#1E40AF]/10 border border-[#1E40AF]/20 rounded-full px-3 py-1">
           {t("checkout.kicker")}
         </span>
         <h1 className="mt-2 text-3xl sm:text-4xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">{t("checkout.title")}</h1>
@@ -247,7 +247,7 @@ const Checkout = () => {
               </span>
             </div>
 
-            {/* Wallet-only payment — Ocean orders debit the wallet
+            {/* Wallet-only payment — BlueOcean orders debit the wallet
                 directly. Top up first via /wallet (crypto or bank transfer,
                 admin-approved) if the balance is short. */}
             <div className="mb-4 rounded-xl border border-emerald-200 dark:border-emerald-500/30 bg-emerald-50/60 dark:bg-emerald-500/10 px-4 py-3 flex items-start gap-3" data-testid="pay-method-wallet-only">
@@ -320,7 +320,7 @@ const Checkout = () => {
                   disabled={quantity <= 1}
                   aria-label="Decrease quantity"
                   data-testid="qty-decrease"
-                  className="h-8 w-8 rounded-full border border-neutral-200 dark:border-neutral-700 grid place-items-center text-lg font-bold text-neutral-700 dark:text-neutral-200 hover:border-[#FF211F] hover:text-[#FF211F] disabled:opacity-40 disabled:cursor-not-allowed transition"
+                  className="h-8 w-8 rounded-full border border-neutral-200 dark:border-neutral-700 grid place-items-center text-lg font-bold text-neutral-700 dark:text-neutral-200 hover:border-[#DC2626] hover:text-[#DC2626] disabled:opacity-40 disabled:cursor-not-allowed transition"
                 >−</button>
                 <input
                   type="number"
@@ -338,7 +338,7 @@ const Checkout = () => {
                   disabled={quantity >= 99}
                   aria-label="Increase quantity"
                   data-testid="qty-increase"
-                  className="h-8 w-8 rounded-full border border-neutral-200 dark:border-neutral-700 grid place-items-center text-lg font-bold text-neutral-700 dark:text-neutral-200 hover:border-[#FF211F] hover:text-[#FF211F] disabled:opacity-40 transition"
+                  className="h-8 w-8 rounded-full border border-neutral-200 dark:border-neutral-700 grid place-items-center text-lg font-bold text-neutral-700 dark:text-neutral-200 hover:border-[#DC2626] hover:text-[#DC2626] disabled:opacity-40 transition"
                 >+</button>
               </div>
             </div>
@@ -429,7 +429,7 @@ const Checkout = () => {
           <Button
             type="submit"
             disabled={placing || (wallet && (wallet.balance ?? 0) < total)}
-            className="w-full mt-5 bg-gradient-to-r from-[#FF7A18] to-[#FF211F] hover:brightness-110 rounded-full h-12 min-h-[48px] font-bold shadow-lg shadow-[#FF211F]/30 disabled:opacity-60 hover:-translate-y-0.5 active:translate-y-0 transition-all hidden lg:block"
+            className="w-full mt-5 bg-gradient-to-r from-[#1E40AF] to-[#3B82F6] hover:brightness-110 rounded-full h-12 min-h-[48px] font-bold shadow-lg shadow-[#DC2626]/30 disabled:opacity-60 hover:-translate-y-0.5 active:translate-y-0 transition-all hidden lg:block"
             data-testid="place-order-btn"
           >
             {placing ? t("checkout.placing") : `${t("checkout.pay")} ${format(total)}`}
@@ -450,7 +450,7 @@ const Checkout = () => {
           type="button"
           onClick={place}
           disabled={placing || (wallet && (wallet.balance ?? 0) < total)}
-          className="flex-1 max-w-[240px] bg-gradient-to-r from-[#FF7A18] to-[#FF211F] hover:brightness-110 rounded-full h-12 min-h-[48px] font-bold shadow-lg shadow-[#FF211F]/30 disabled:opacity-60 transition-all"
+          className="flex-1 max-w-[240px] bg-gradient-to-r from-[#1E40AF] to-[#3B82F6] hover:brightness-110 rounded-full h-12 min-h-[48px] font-bold shadow-lg shadow-[#DC2626]/30 disabled:opacity-60 transition-all"
           data-testid="place-order-mobile-btn"
         >
           {placing ? t("checkout.placing") : t("checkout.pay")}

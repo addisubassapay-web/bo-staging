@@ -99,7 +99,7 @@ const ImportFromUrl = ({ onImportReady }) => {
           <Button
             type="submit"
             disabled={submitting}
-            className="h-11 bg-[#FF211F] hover:bg-[#e01d1b]"
+            className="h-11 bg-[#DC2626] hover:bg-[#e01d1b]"
             data-testid="import-url-submit"
           >
             {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : (<>Import <ArrowRight className="h-4 w-4 ml-1.5" /></>)}

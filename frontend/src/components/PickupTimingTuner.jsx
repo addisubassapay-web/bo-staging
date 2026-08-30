@@ -138,7 +138,7 @@ const PickupTimingTuner = () => {
           onClick={save}
           disabled={saving}
           data-testid="pickup-tuner-save"
-          className="bg-[#FF211F] hover:bg-[#e01a19] text-white"
+          className="bg-[#DC2626] hover:bg-[#e01a19] text-white"
         >
           {saving ? (
             <>

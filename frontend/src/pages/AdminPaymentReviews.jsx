@@ -185,7 +185,7 @@ const AdminPaymentReviews = () => {
         key={d.id}
         className={`rounded-xl border p-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 transition ${
           isSelected
-            ? "border-[#FF211F] bg-rose-50/60 dark:bg-rose-500/10"
+            ? "border-[#DC2626] bg-rose-50/60 dark:bg-rose-500/10"
             : "border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900"
         }`}
         data-testid={`review-deposit-${d.id}`}
@@ -195,7 +195,7 @@ const AdminPaymentReviews = () => {
             type="checkbox"
             checked={isSelected}
             onChange={() => toggleOne(d.id)}
-            className="h-4 w-4 accent-[#FF211F] cursor-pointer"
+            className="h-4 w-4 accent-[#DC2626] cursor-pointer"
             data-testid={`review-select-${d.id}`}
             aria-label={`Select deposit ${d.id}`}
           />
@@ -264,7 +264,7 @@ const AdminPaymentReviews = () => {
         <Link
           to={`/admin/orders`}
           state={{ focusOrder: o.id }}
-          className="inline-flex items-center gap-1 text-xs font-semibold text-[#FF211F] hover:underline"
+          className="inline-flex items-center gap-1 text-xs font-semibold text-[#DC2626] hover:underline"
           data-testid={`review-order-link-${o.id}`}
         >
           Open order <ArrowUpRight className="h-3.5 w-3.5" />
@@ -321,7 +321,7 @@ const AdminPaymentReviews = () => {
                 </div>
                 <Badge variant="secondary" className="rounded-full">{counts.resubmitted_deposits}</Badge>
                 <span className="text-xs text-neutral-500">Priority — buyer already waited once</span>
-                <button type="button" onClick={() => toggleAllDeposits(data.resubmitted_deposits)} className="ml-auto text-xs text-[#FF211F] font-semibold hover:underline" data-testid="reviews-select-all-resubmitted">
+                <button type="button" onClick={() => toggleAllDeposits(data.resubmitted_deposits)} className="ml-auto text-xs text-[#DC2626] font-semibold hover:underline" data-testid="reviews-select-all-resubmitted">
                   {data.resubmitted_deposits.every((d) => selected.has(d.id)) ? "Deselect all" : "Select all"}
                 </button>
               </div>
@@ -338,7 +338,7 @@ const AdminPaymentReviews = () => {
                 </div>
                 <Badge variant="secondary" className="rounded-full">{counts.pending_deposits}</Badge>
                 <span className="text-xs text-neutral-500">Awaiting first review</span>
-                <button type="button" onClick={() => toggleAllDeposits(data.pending_deposits)} className="ml-auto text-xs text-[#FF211F] font-semibold hover:underline" data-testid="reviews-select-all-pending">
+                <button type="button" onClick={() => toggleAllDeposits(data.pending_deposits)} className="ml-auto text-xs text-[#DC2626] font-semibold hover:underline" data-testid="reviews-select-all-pending">
                   {data.pending_deposits.every((d) => selected.has(d.id)) ? "Deselect all" : "Select all"}
                 </button>
               </div>

@@ -25,7 +25,7 @@ const DigestCard = () => {
     <div className="bg-white border border-neutral-200 rounded-xl p-4" data-testid="digest-card">
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-2">
-          <div className="h-9 w-9 rounded-lg bg-[#FFF3F2] text-[#FF211F] grid place-items-center"><Mail className="h-4 w-4" /></div>
+          <div className="h-9 w-9 rounded-lg bg-[#FFF3F2] text-[#DC2626] grid place-items-center"><Mail className="h-4 w-4" /></div>
           <div>
             <div className="font-semibold text-neutral-900">Wishlist digest</div>
             <div className="text-xs text-neutral-500">Weekly price drops on your favourites</div>
@@ -35,7 +35,7 @@ const DigestCard = () => {
       </div>
       <div className="mt-3 flex items-center justify-between text-xs text-neutral-600">
         <span>{data.drops.length} drop{data.drops.length === 1 ? "" : "s"} this week · {data.total_favorites} favourites</span>
-        <button onClick={() => setOpen(true)} className="text-[#FF7A18] font-medium hover:underline" data-testid="digest-preview-btn">Preview</button>
+        <button onClick={() => setOpen(true)} className="text-[#1E40AF] font-medium hover:underline" data-testid="digest-preview-btn">Preview</button>
       </div>
 
       {open && (
@@ -43,7 +43,7 @@ const DigestCard = () => {
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl" onClick={(e) => e.stopPropagation()} data-testid="digest-preview-modal">
             <div className="flex items-start justify-between">
               <div>
-                <div className="text-xs uppercase tracking-wider text-[#FF7A18] font-semibold">Preview · Ocean</div>
+                <div className="text-xs uppercase tracking-wider text-[#1E40AF] font-semibold">Preview · BlueOcean</div>
                 <h3 className="text-xl font-bold mt-1">Price drops on your wishlist</h3>
                 <p className="text-sm text-neutral-500">Sent to <span className="font-mono">{data.email}</span></p>
               </div>
@@ -69,7 +69,7 @@ const DigestCard = () => {
               <Button variant="outline" className="flex-1" onClick={() => toggle(false)} disabled={!data.opt_in} data-testid="digest-unsub-btn">
                 Unsubscribe
               </Button>
-              <Button className="flex-1 bg-[#FF211F] hover:bg-[#e01d1b]" onClick={() => setOpen(false)}>Close</Button>
+              <Button className="flex-1 bg-[#DC2626] hover:bg-[#e01d1b]" onClick={() => setOpen(false)}>Close</Button>
             </div>
             <p className="text-[10px] text-neutral-400 mt-3 text-center">Delivery: {data.next_send}</p>
           </div>

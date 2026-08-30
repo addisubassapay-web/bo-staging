@@ -43,7 +43,7 @@ const CurrencyPicker = ({ variant = "compact" }) => {
               <button
                 key={c}
                 onClick={() => { setCurrency(c); setOpen(false); }}
-                className={`w-full flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-neutral-50 dark:hover:bg-neutral-800 transition text-left ${active ? "font-semibold text-[#FF7A18]" : "text-neutral-800 dark:text-neutral-100"}`}
+                className={`w-full flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-neutral-50 dark:hover:bg-neutral-800 transition text-left ${active ? "font-semibold text-[#1E40AF]" : "text-neutral-800 dark:text-neutral-100"}`}
                 data-testid={`currency-option-${c}`}
               >
                 <span className="text-base leading-none">{m.flag}</span>

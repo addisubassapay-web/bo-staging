@@ -29,7 +29,7 @@ const StatCard = ({ icon: Icon, label, value, sub, tone = "neutral", testid }) =
     neutral: "from-neutral-100 to-neutral-50 text-neutral-800 dark:from-neutral-800 dark:to-neutral-900 dark:text-neutral-100 border-neutral-200 dark:border-neutral-800",
     green: "from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-500/25 border-transparent",
     amber: "from-amber-400 to-orange-500 text-white shadow-lg shadow-amber-500/25 border-transparent",
-    red: "from-[#FF7A18] to-[#FF211F] text-white shadow-lg shadow-[#FF211F]/25 border-transparent",
+    red: "from-[#1E40AF] to-[#3B82F6] text-white shadow-lg shadow-[#DC2626]/25 border-transparent",
     blue: "from-sky-500 to-indigo-500 text-white shadow-lg shadow-sky-500/25 border-transparent",
   };
   return (
@@ -97,10 +97,10 @@ const PayoutDashboard = () => {
       {/* Header */}
       <div className="mb-8 flex items-end justify-between flex-wrap gap-3">
         <div>
-          <Link to="/wallet" className="inline-flex items-center gap-1 text-sm text-neutral-500 dark:text-neutral-400 hover:text-[#FF211F] transition mb-2">
+          <Link to="/wallet" className="inline-flex items-center gap-1 text-sm text-neutral-500 dark:text-neutral-400 hover:text-[#DC2626] transition mb-2">
             <ChevronLeft className="h-4 w-4" /> Back to wallet
           </Link>
-          <span className="inline-block text-[10px] uppercase tracking-[0.2em] font-semibold text-[#FF7A18] bg-[#FF7A18]/10 border border-[#FF7A18]/20 rounded-full px-3 py-1">
+          <span className="inline-block text-[10px] uppercase tracking-[0.2em] font-semibold text-[#1E40AF] bg-[#1E40AF]/10 border border-[#1E40AF]/20 rounded-full px-3 py-1">
             Seller payouts
           </span>
           <h1 className="mt-2 text-3xl sm:text-4xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">
@@ -115,7 +115,7 @@ const PayoutDashboard = () => {
             <button
               key={w.days}
               onClick={() => setDays(w.days)}
-              className={`px-3 h-8 rounded-full text-xs font-semibold transition ${days === w.days ? "bg-white dark:bg-neutral-900 text-[#FF211F] shadow-sm" : "text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-neutral-100"}`}
+              className={`px-3 h-8 rounded-full text-xs font-semibold transition ${days === w.days ? "bg-white dark:bg-neutral-900 text-[#DC2626] shadow-sm" : "text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-neutral-100"}`}
               data-testid={`window-${w.days}`}
             >
               {w.label}
@@ -181,8 +181,8 @@ const PayoutDashboard = () => {
                   <stop offset="100%" stopColor="#10B981" stopOpacity={0} />
                 </linearGradient>
                 <linearGradient id="wdGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#FF211F" stopOpacity={0.5} />
-                  <stop offset="100%" stopColor="#FF211F" stopOpacity={0} />
+                  <stop offset="0%" stopColor="#DC2626" stopOpacity={0.5} />
+                  <stop offset="100%" stopColor="#DC2626" stopOpacity={0} />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="text-neutral-200 dark:text-neutral-800" />
@@ -197,7 +197,7 @@ const PayoutDashboard = () => {
               <Legend wrapperStyle={{ fontSize: 12 }} />
               <Area type="monotone" dataKey="frozen_in" name="Frozen in" stroke="#F59E0B" fill="url(#frozenGrad)" strokeWidth={2} />
               <Area type="monotone" dataKey="released" name="Released" stroke="#10B981" fill="url(#releasedGrad)" strokeWidth={2} />
-              <Area type="monotone" dataKey="withdrawal" name="Withdrawn" stroke="#FF211F" fill="url(#wdGrad)" strokeWidth={2} />
+              <Area type="monotone" dataKey="withdrawal" name="Withdrawn" stroke="#DC2626" fill="url(#wdGrad)" strokeWidth={2} />
             </AreaChart>
           </ResponsiveContainer>
         </div>
@@ -219,7 +219,7 @@ const PayoutDashboard = () => {
         </div>
         <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4">
           <div className="text-[10px] uppercase tracking-wider text-neutral-500 dark:text-neutral-400 font-semibold">Withdrawn ({data.window.days}d)</div>
-          <div className="mt-1 text-xl font-extrabold text-[#FF211F] tabular-nums">{format(data.window.total_withdrawn)}</div>
+          <div className="mt-1 text-xl font-extrabold text-[#DC2626] tabular-nums">{format(data.window.total_withdrawn)}</div>
         </div>
       </div>
 
@@ -244,7 +244,7 @@ const PayoutDashboard = () => {
                   ) : (
                     <div className="h-10 w-10 rounded-lg bg-neutral-100 dark:bg-neutral-800 grid place-items-center shrink-0"><PackageIcon className="h-4 w-4 text-neutral-400" /></div>
                   )}
-                  <Link to={`/listing/${l.listing_id}`} className="flex-1 min-w-0 text-sm text-neutral-900 dark:text-neutral-100 line-clamp-1 hover:text-[#FF211F]">{l.title}</Link>
+                  <Link to={`/listing/${l.listing_id}`} className="flex-1 min-w-0 text-sm text-neutral-900 dark:text-neutral-100 line-clamp-1 hover:text-[#DC2626]">{l.title}</Link>
                   <span className="text-xs text-neutral-500 dark:text-neutral-400 tabular-nums shrink-0">{l.sales} sale{l.sales === 1 ? "" : "s"}</span>
                   <span className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 tabular-nums shrink-0 min-w-16 text-right">{format(l.earnings)}</span>
                 </li>
@@ -278,7 +278,7 @@ const PayoutDashboard = () => {
             <h3 className="font-bold text-neutral-900 dark:text-neutral-100">Ready to cash out?</h3>
             <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">You can withdraw available funds anytime — frozen and pending don&apos;t count.</p>
             <Link to="/wallet">
-              <Button className="mt-3 w-full h-10 rounded-full bg-gradient-to-r from-[#FF7A18] to-[#FF211F] hover:brightness-110 text-white font-semibold shadow-sm" data-testid="cta-withdraw">
+              <Button className="mt-3 w-full h-10 rounded-full bg-gradient-to-r from-[#1E40AF] to-[#3B82F6] hover:brightness-110 text-white font-semibold shadow-sm" data-testid="cta-withdraw">
                 <ArrowUpRight className="h-4 w-4 mr-1.5" /> Request withdrawal
               </Button>
             </Link>

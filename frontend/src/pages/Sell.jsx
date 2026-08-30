@@ -19,7 +19,7 @@ const PLACEHOLDER_SEEDS = ["seed1", "seed2", "seed3", "seed4", "seed5", "seed6",
 const SellerGate = ({ status }) => {
   const cases = {
     none: {
-      icon: Lock, color: "bg-[#FFF3F2] text-[#FF211F]", title: "Selling is limited to verified sellers",
+      icon: Lock, color: "bg-[#FFF3F2] text-[#DC2626]", title: "Selling is limited to verified sellers",
       body: "Take 2 minutes to submit your seller application. Once an admin approves you, listing (new items) and reselling (catalog items) both unlock instantly.",
       cta: { to: "/seller/apply", label: "Apply to sell", primary: true },
     },
@@ -50,7 +50,7 @@ const SellerGate = ({ status }) => {
       </ul>
       <Link to={c.cta.to}>
         <Button
-          className={`min-h-[48px] rounded-full mt-6 px-6 gap-1.5 ${c.cta.primary ? "bg-[#FF211F] hover:bg-[#e01d1b] text-white" : "bg-neutral-100 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-100 hover:bg-neutral-200"}`}
+          className={`min-h-[48px] rounded-full mt-6 px-6 gap-1.5 ${c.cta.primary ? "bg-[#DC2626] hover:bg-[#e01d1b] text-white" : "bg-neutral-100 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-100 hover:bg-neutral-200"}`}
           data-testid="seller-gate-cta"
         >
           {c.cta.label}
@@ -277,7 +277,7 @@ const Sell = () => {
         <button
           type="button"
           onClick={() => setMode("new")}
-          className={`h-10 rounded-full text-sm font-semibold transition inline-flex items-center justify-center gap-1.5 ${mode === "new" ? "bg-white dark:bg-neutral-950 text-[#FF211F] shadow-sm" : "text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-neutral-100"}`}
+          className={`h-10 rounded-full text-sm font-semibold transition inline-flex items-center justify-center gap-1.5 ${mode === "new" ? "bg-white dark:bg-neutral-950 text-[#DC2626] shadow-sm" : "text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-neutral-100"}`}
           data-testid="sell-mode-new"
         >
           <PenLine className="h-4 w-4" /> New listing
@@ -285,7 +285,7 @@ const Sell = () => {
         <button
           type="button"
           onClick={() => setMode("resell")}
-          className={`h-10 rounded-full text-sm font-semibold transition inline-flex items-center justify-center gap-1.5 ${mode === "resell" ? "bg-white dark:bg-neutral-950 text-[#FF211F] shadow-sm" : "text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-neutral-100"}`}
+          className={`h-10 rounded-full text-sm font-semibold transition inline-flex items-center justify-center gap-1.5 ${mode === "resell" ? "bg-white dark:bg-neutral-950 text-[#DC2626] shadow-sm" : "text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-neutral-100"}`}
           data-testid="sell-mode-resell"
         >
           <PackagePlus className="h-4 w-4" /> Resell existing
@@ -293,7 +293,7 @@ const Sell = () => {
         <button
           type="button"
           onClick={() => setMode("import")}
-          className={`h-10 rounded-full text-sm font-semibold transition inline-flex items-center justify-center gap-1.5 ${mode === "import" ? "bg-white dark:bg-neutral-950 text-[#FF211F] shadow-sm" : "text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-neutral-100"}`}
+          className={`h-10 rounded-full text-sm font-semibold transition inline-flex items-center justify-center gap-1.5 ${mode === "import" ? "bg-white dark:bg-neutral-950 text-[#DC2626] shadow-sm" : "text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-neutral-100"}`}
           data-testid="sell-mode-import"
         >
           <LinkIcon className="h-4 w-4" /> Import from URL
@@ -308,12 +308,12 @@ const Sell = () => {
           <div className="rounded-2xl border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/40 p-6 text-center" data-testid="import-deprecated-notice">
             <div className="text-2xl font-extrabold text-amber-900 dark:text-amber-100">Direct URL imports have moved</div>
             <p className="mt-2 text-sm text-amber-800 dark:text-amber-200 max-w-md mx-auto">
-              Ocean now sources every catalog listing from the curated Apify Amazon feed. Use the <b>Resell from catalog</b> tab to publish inventory to your storefront — new items refresh automatically as the platform-wide sync runs.
+              BlueOcean now sources every catalog listing from the curated Apify Amazon feed. Use the <b>Resell from catalog</b> tab to publish inventory to your storefront — new items refresh automatically as the platform-wide sync runs.
             </p>
             <button
               type="button"
               onClick={() => setMode("resell")}
-              className="mt-4 min-h-[44px] px-5 rounded-full bg-gradient-to-r from-[#FF7A18] to-[#FF211F] text-white font-semibold hover:brightness-110"
+              className="mt-4 min-h-[44px] px-5 rounded-full bg-gradient-to-r from-[#1E40AF] to-[#3B82F6] text-white font-semibold hover:brightness-110"
               data-testid="import-deprecated-cta"
             >
               Browse the catalog
@@ -326,7 +326,7 @@ const Sell = () => {
         <section>
           <div className="flex items-center justify-between">
             <div>
-              <Label className="text-base font-semibold">Photos <span className="text-[#FF211F]">*</span></Label>
+              <Label className="text-base font-semibold">Photos <span className="text-[#DC2626]">*</span></Label>
               <p className="text-sm text-neutral-500 mb-1">Add up to 8 photos. First photo is the cover.</p>
             </div>
             <Button
@@ -335,7 +335,7 @@ const Sell = () => {
               size="sm"
               onClick={suggestFromFirstPhoto}
               disabled={aiLoading || images.length === 0}
-              className="gap-1.5 border-[#FF211F] text-[#FF211F] hover:bg-[#FFF3F2]"
+              className="gap-1.5 border-[#DC2626] text-[#DC2626] hover:bg-[#FFF3F2]"
               data-testid="ai-suggest-btn"
             >
               <Sparkles className="h-4 w-4" />
@@ -346,13 +346,13 @@ const Sell = () => {
             {images.map((src, i) => (
               <div key={i} className="relative aspect-square rounded-lg overflow-hidden bg-neutral-100 group">
                 <img src={src} alt="" className="w-full h-full object-cover" />
-                {i === 0 && <span className="absolute top-1 left-1 bg-[#FF211F] text-white text-[10px] px-1.5 py-0.5 rounded">Cover</span>}
+                {i === 0 && <span className="absolute top-1 left-1 bg-[#DC2626] text-white text-[10px] px-1.5 py-0.5 rounded">Cover</span>}
                 <button
                   type="button"
                   onClick={() => enhancePhoto(i)}
                   disabled={enhancingIdx === i}
                   aria-label="Enhance photo with AI"
-                  className="absolute bottom-1 left-1 h-7 w-7 rounded-full bg-[#FF7A18] hover:bg-[#e86a10] disabled:opacity-60 text-white grid place-items-center shadow-md"
+                  className="absolute bottom-1 left-1 h-7 w-7 rounded-full bg-[#1E40AF] hover:bg-[#e86a10] disabled:opacity-60 text-white grid place-items-center shadow-md"
                   data-testid={`enhance-photo-${i}`}
                   title="Enhance with AI (Nano Banana)"
                 >
@@ -365,7 +365,7 @@ const Sell = () => {
             ))}
             {images.length < 8 && (
               <>
-                <label className="aspect-square rounded-lg border-2 border-dashed border-neutral-300 hover:border-[#FF211F] hover:bg-[#FFF3F2] grid place-items-center cursor-pointer transition">
+                <label className="aspect-square rounded-lg border-2 border-dashed border-neutral-300 hover:border-[#DC2626] hover:bg-[#FFF3F2] grid place-items-center cursor-pointer transition">
                   <div className="flex flex-col items-center gap-1 text-neutral-500">
                     <Upload className="h-5 w-5" />
                     <span className="text-xs">Upload</span>
@@ -375,7 +375,7 @@ const Sell = () => {
                 <button
                   type="button"
                   onClick={addPlaceholder}
-                  className="aspect-square rounded-lg border-2 border-dashed border-neutral-300 hover:border-[#FF211F] hover:bg-[#FFF3F2] grid place-items-center transition"
+                  className="aspect-square rounded-lg border-2 border-dashed border-neutral-300 hover:border-[#DC2626] hover:bg-[#FFF3F2] grid place-items-center transition"
                 >
                   <div className="flex flex-col items-center gap-1 text-neutral-500">
                     <Camera className="h-5 w-5" />
@@ -389,19 +389,19 @@ const Sell = () => {
 
         <section className="space-y-4">
           <div>
-            <Label>Title <span className="text-[#FF211F]">*</span></Label>
+            <Label>Title <span className="text-[#DC2626]">*</span></Label>
             <Input value={form.title} onChange={(e) => set("title", e.target.value)} placeholder="e.g. Vintage Denim Jacket" maxLength={80} className="mt-1" />
             <div className="text-xs text-neutral-400 mt-1">{form.title.length}/80</div>
           </div>
 
           <div>
-            <Label>Description <span className="text-[#FF211F]">*</span></Label>
+            <Label>Description <span className="text-[#DC2626]">*</span></Label>
             <Textarea value={form.description} onChange={(e) => set("description", e.target.value)} rows={4} placeholder="Describe your item, condition, measurements, flaws…" className="mt-1" />
           </div>
 
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
-              <Label>Category <span className="text-[#FF211F]">*</span></Label>
+              <Label>Category <span className="text-[#DC2626]">*</span></Label>
               <Select value={form.category_id} onValueChange={(v) => set("category_id", v)}>
                 <SelectTrigger className="mt-1"><SelectValue placeholder="Select category" /></SelectTrigger>
                 <SelectContent>
@@ -412,7 +412,7 @@ const Sell = () => {
               </Select>
             </div>
             <div>
-              <Label>Condition <span className="text-[#FF211F]">*</span></Label>
+              <Label>Condition <span className="text-[#DC2626]">*</span></Label>
               <Select value={form.condition} onValueChange={(v) => set("condition", v)}>
                 <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -443,7 +443,7 @@ const Sell = () => {
 
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
-              <Label>Selling price <span className="text-[#FF211F]">*</span></Label>
+              <Label>Selling price <span className="text-[#DC2626]">*</span></Label>
               <div className="relative mt-1">
                 <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
                 <Input type="number" step="0.01" value={form.price} onChange={(e) => set("price", e.target.value)} placeholder="0.00" className="pl-8" />
@@ -461,7 +461,7 @@ const Sell = () => {
           <div>
             <Label>Shipping paid by</Label>
             <RadioGroup value={form.shipping_paid_by} onValueChange={(v) => set("shipping_paid_by", v)} className="mt-2 grid sm:grid-cols-2 gap-2">
-              <label className={`border rounded-lg p-3 cursor-pointer ${form.shipping_paid_by === "seller" ? "border-[#FF211F] bg-[#FFF3F2]" : "border-neutral-200"}`}>
+              <label className={`border rounded-lg p-3 cursor-pointer ${form.shipping_paid_by === "seller" ? "border-[#DC2626] bg-[#FFF3F2]" : "border-neutral-200"}`}>
                 <div className="flex items-center gap-2">
                   <RadioGroupItem value="seller" />
                   <div>
@@ -470,7 +470,7 @@ const Sell = () => {
                   </div>
                 </div>
               </label>
-              <label className={`border rounded-lg p-3 cursor-pointer ${form.shipping_paid_by === "buyer" ? "border-[#FF211F] bg-[#FFF3F2]" : "border-neutral-200"}`}>
+              <label className={`border rounded-lg p-3 cursor-pointer ${form.shipping_paid_by === "buyer" ? "border-[#DC2626] bg-[#FFF3F2]" : "border-neutral-200"}`}>
                 <div className="flex items-center gap-2">
                   <RadioGroupItem value="buyer" />
                   <div>
@@ -485,7 +485,7 @@ const Sell = () => {
 
         <div className="flex justify-end gap-3 pt-4 border-t">
           <Button type="button" variant="outline" onClick={() => navigate(-1)}>Cancel</Button>
-          <Button type="submit" disabled={submitting} className="bg-[#FF211F] hover:bg-[#e01d1b] min-w-[140px]" data-testid="publish-btn">
+          <Button type="submit" disabled={submitting} className="bg-[#DC2626] hover:bg-[#e01d1b] min-w-[140px]" data-testid="publish-btn">
             {submitting ? "Publishing…" : "Publish listing"}
           </Button>
         </div>
@@ -497,7 +497,7 @@ const Sell = () => {
         <div className="fixed inset-0 z-50 bg-black/40 grid place-items-center px-4" onClick={() => !enhanceAllBusy && setPrePublishOpen(false)} data-testid="pre-publish-modal">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-start gap-3">
-              <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-[#FF7A18] to-[#FF211F] grid place-items-center text-white">
+              <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-[#1E40AF] to-[#3B82F6] grid place-items-center text-white">
                 <Sparkles className="h-5 w-5" />
               </div>
               <div className="flex-1">
@@ -523,7 +523,7 @@ const Sell = () => {
                 Skip &amp; publish
               </Button>
               <Button
-                className="flex-1 bg-[#FF7A18] hover:bg-[#e86a10] gap-1.5"
+                className="flex-1 bg-[#1E40AF] hover:bg-[#e86a10] gap-1.5"
                 disabled={enhanceAllBusy}
                 onClick={async () => { await enhanceAll(); await doPublish(); }}
                 data-testid="publish-enhance-all"

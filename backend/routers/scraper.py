@@ -422,7 +422,7 @@ async def scraper_status(_admin: dict = Depends(require_admin)):
 
 
 # =========================================================================
-# Paginated seed scraper — Amazon + Ocean at scale
+# Paginated seed scraper — Amazon + BlueOcean at scale
 # =========================================================================
 _SEED_TEMPLATES = {
     "amazon_search":  "https://www.amazon.com/s?k={q}&page={p}",

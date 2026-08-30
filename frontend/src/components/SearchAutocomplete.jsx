@@ -195,7 +195,7 @@ const SearchAutocomplete = ({ value, onChange, onSubmit, placeholder, categories
       <form
         onSubmit={(e) => { e.preventDefault(); submitQuery(value); onSubmit?.(e); }}
         data-testid="header-search-form"
-        className="flex items-stretch h-11 sm:h-12 w-full rounded-full border-2 border-[#FF7A18]/70 focus-within:border-[#FF7A18] bg-white dark:bg-neutral-900 overflow-hidden shadow-sm"
+        className="flex items-stretch h-11 sm:h-12 w-full rounded-full border-2 border-[#1E40AF]/70 focus-within:border-[#1E40AF] bg-white dark:bg-neutral-900 overflow-hidden shadow-sm"
       >
         {/* Category scope */}
         <div ref={scopeRef} className="relative shrink-0 hidden sm:block">
@@ -213,14 +213,14 @@ const SearchAutocomplete = ({ value, onChange, onSubmit, placeholder, categories
             <div className="absolute left-0 top-[calc(100%+4px)] z-50 w-64 max-h-80 overflow-y-auto rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-xl py-1.5" data-testid="header-search-scope-menu">
               <button
                 onMouseDown={(e) => { e.preventDefault(); setScope(""); setScopePickerOpen(false); }}
-                className={`w-full text-left px-4 py-2 text-sm hover:bg-neutral-50 dark:hover:bg-neutral-800 transition ${!scope ? "font-semibold text-[#FF7A18]" : "text-neutral-700 dark:text-neutral-200"}`}
+                className={`w-full text-left px-4 py-2 text-sm hover:bg-neutral-50 dark:hover:bg-neutral-800 transition ${!scope ? "font-semibold text-[#1E40AF]" : "text-neutral-700 dark:text-neutral-200"}`}
                 data-testid="scope-item-all"
               >All categories</button>
               {categories.map((c) => (
                 <button
                   key={c.id}
                   onMouseDown={(e) => { e.preventDefault(); setScope(c.id); setScopePickerOpen(false); }}
-                  className={`w-full text-left px-4 py-2 text-sm hover:bg-neutral-50 dark:hover:bg-neutral-800 transition ${scope === c.id ? "font-semibold text-[#FF7A18]" : "text-neutral-700 dark:text-neutral-200"}`}
+                  className={`w-full text-left px-4 py-2 text-sm hover:bg-neutral-50 dark:hover:bg-neutral-800 transition ${scope === c.id ? "font-semibold text-[#1E40AF]" : "text-neutral-700 dark:text-neutral-200"}`}
                   data-testid={`scope-item-${c.slug}`}
                 >{c.name}</button>
               ))}
@@ -253,7 +253,7 @@ const SearchAutocomplete = ({ value, onChange, onSubmit, placeholder, categories
           onClick={startVoice}
           title={voiceListening ? "Stop listening" : "Voice search"}
           aria-label="Voice search"
-          className={`hidden sm:grid h-full aspect-square place-items-center border-l border-neutral-200 dark:border-neutral-700 transition ${voiceListening ? "bg-[#FF211F] text-white animate-pulse" : "text-neutral-500 hover:text-[#FF211F] hover:bg-neutral-50 dark:hover:bg-neutral-800"}`}
+          className={`hidden sm:grid h-full aspect-square place-items-center border-l border-neutral-200 dark:border-neutral-700 transition ${voiceListening ? "bg-[#DC2626] text-white animate-pulse" : "text-neutral-500 hover:text-[#DC2626] hover:bg-neutral-50 dark:hover:bg-neutral-800"}`}
           data-testid="header-search-voice"
         >
           <Mic className="h-4.5 w-4.5" />
@@ -266,7 +266,7 @@ const SearchAutocomplete = ({ value, onChange, onSubmit, placeholder, categories
           title="Search by image"
           aria-label="Search by image"
           disabled={imgLoading}
-          className={`hidden sm:grid h-full aspect-square place-items-center border-l border-neutral-200 dark:border-neutral-700 transition text-neutral-500 hover:text-[#FF7A18] hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-50`}
+          className={`hidden sm:grid h-full aspect-square place-items-center border-l border-neutral-200 dark:border-neutral-700 transition text-neutral-500 hover:text-[#1E40AF] hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-50`}
           data-testid="header-search-image"
         >
           {imgLoading ? <Loader2 className="h-4.5 w-4.5 animate-spin" /> : <Camera className="h-4.5 w-4.5" />}
@@ -282,7 +282,7 @@ const SearchAutocomplete = ({ value, onChange, onSubmit, placeholder, categories
 
         {/* Submit */}
         <button type="submit" aria-label="Search"
-          className="h-full aspect-square bg-[#FF7A18] hover:bg-[#e86a10] text-white grid place-items-center transition"
+          className="h-full aspect-square bg-[#1E40AF] hover:bg-[#e86a10] text-white grid place-items-center transition"
           data-testid="header-search-btn">
           <Search className="h-4 w-4 sm:h-5 sm:w-5" />
         </button>
@@ -296,7 +296,7 @@ const SearchAutocomplete = ({ value, onChange, onSubmit, placeholder, categories
               <Loader2 className="h-3 w-3 animate-spin" /> counting…
             </>
           ) : liveCount !== null ? (
-            <span><span className="text-[#FF211F] font-bold">{liveCount.toLocaleString()}</span> matches</span>
+            <span><span className="text-[#DC2626] font-bold">{liveCount.toLocaleString()}</span> matches</span>
           ) : null}
         </div>
       )}
@@ -312,7 +312,7 @@ const SearchAutocomplete = ({ value, onChange, onSubmit, placeholder, categories
                   <div className="flex flex-wrap gap-1.5">
                     {suggestions.queries.map((q) => (
                       <button key={q} onMouseDown={(e) => { e.preventDefault(); onChange(q); submitQuery(q); }}
-                        className="px-3 h-7 rounded-full bg-neutral-100 dark:bg-neutral-800 hover:bg-[#FFF3F2] dark:hover:bg-[#3a1817] hover:text-[#FF211F] text-xs text-neutral-700 dark:text-neutral-200 transition"
+                        className="px-3 h-7 rounded-full bg-neutral-100 dark:bg-neutral-800 hover:bg-[#FFF3F2] dark:hover:bg-[#3a1817] hover:text-[#DC2626] text-xs text-neutral-700 dark:text-neutral-200 transition"
                         data-testid={`suggest-query-${q.replace(/\s+/g, '-')}`}>{q}</button>
                     ))}
                   </div>
@@ -324,7 +324,7 @@ const SearchAutocomplete = ({ value, onChange, onSubmit, placeholder, categories
                   <div className="flex flex-wrap gap-1.5">
                     {suggestions.brands.map((b) => (
                       <button key={b.name} onMouseDown={(e) => { e.preventDefault(); goToBrand(b.name); }}
-                        className="px-3 h-7 rounded-full border border-neutral-200 dark:border-neutral-700 hover:border-[#FF7A18] hover:text-[#FF7A18] text-xs text-neutral-700 dark:text-neutral-200 transition flex items-center gap-1.5"
+                        className="px-3 h-7 rounded-full border border-neutral-200 dark:border-neutral-700 hover:border-[#1E40AF] hover:text-[#1E40AF] text-xs text-neutral-700 dark:text-neutral-200 transition flex items-center gap-1.5"
                         data-testid={`suggest-brand-${b.name.replace(/\s+/g, '-')}`}>
                         <span className="font-medium">{b.name}</span>
                         <span className="text-neutral-400 tabular-nums">{b.count}</span>
@@ -346,7 +346,7 @@ const SearchAutocomplete = ({ value, onChange, onSubmit, placeholder, categories
                         >
                           {s.logo_url
                             ? <img src={s.logo_url} alt="" className="h-8 w-8 rounded-full object-cover bg-neutral-100 shrink-0" />
-                            : <div className="h-8 w-8 rounded-full bg-gradient-to-br from-[#FF7A18] to-[#FF211F] text-white grid place-items-center shrink-0"><StoreIcon className="h-3.5 w-3.5" /></div>}
+                            : <div className="h-8 w-8 rounded-full bg-gradient-to-br from-[#1E40AF] to-[#3B82F6] text-white grid place-items-center shrink-0"><StoreIcon className="h-3.5 w-3.5" /></div>}
                           <div className="flex-1 min-w-0">
                             <div className="text-sm text-neutral-900 dark:text-neutral-100 truncate font-medium">{s.name}</div>
                             {s.tagline && <div className="text-[11px] text-neutral-500 truncate">{s.tagline}</div>}
@@ -366,7 +366,7 @@ const SearchAutocomplete = ({ value, onChange, onSubmit, placeholder, categories
                   <div className="flex flex-wrap gap-1.5">
                     {suggestions.categories.map((c) => (
                       <button key={c.id} onMouseDown={(e) => { e.preventDefault(); goToCategory(c.id); }}
-                        className="px-3 h-7 rounded-full bg-neutral-100 dark:bg-neutral-800 hover:bg-[#FFF3F2] dark:hover:bg-[#3a1817] hover:text-[#FF211F] text-xs text-neutral-700 dark:text-neutral-200 transition"
+                        className="px-3 h-7 rounded-full bg-neutral-100 dark:bg-neutral-800 hover:bg-[#FFF3F2] dark:hover:bg-[#3a1817] hover:text-[#DC2626] text-xs text-neutral-700 dark:text-neutral-200 transition"
                         data-testid={`suggest-cat-${c.slug}`}>{c.name}</button>
                     ))}
                   </div>
@@ -391,7 +391,7 @@ const SearchAutocomplete = ({ value, onChange, onSubmit, placeholder, categories
                 </ul>
               )}
               <Link to={buildQueryStr(value.trim(), scope)} onMouseDown={(e) => { e.preventDefault(); submitQuery(value); }}
-                className="block text-center py-2.5 text-sm text-[#FF7A18] hover:bg-[#FFF3F2] dark:hover:bg-[#3a1817] font-semibold border-t border-neutral-100 dark:border-neutral-800"
+                className="block text-center py-2.5 text-sm text-[#1E40AF] hover:bg-[#FFF3F2] dark:hover:bg-[#3a1817] font-semibold border-t border-neutral-100 dark:border-neutral-800"
                 data-testid="suggest-see-all">
                 {t("search.seeAll")} &ldquo;{value.trim()}&rdquo; →
               </Link>
@@ -403,12 +403,12 @@ const SearchAutocomplete = ({ value, onChange, onSubmit, placeholder, categories
                 <div className="mb-3">
                   <div className="flex items-center justify-between px-1.5 mb-1.5">
                     <div className="text-[10px] uppercase tracking-wider text-neutral-500 dark:text-neutral-400 font-semibold flex items-center gap-1.5"><Clock className="h-3 w-3" /> {t("search.recentTitle")}</div>
-                    <button onMouseDown={(e) => { e.preventDefault(); clearRecent(); setRecent([]); }} className="text-[11px] text-neutral-500 hover:text-[#FF211F]" data-testid="recent-clear-btn">Clear</button>
+                    <button onMouseDown={(e) => { e.preventDefault(); clearRecent(); setRecent([]); }} className="text-[11px] text-neutral-500 hover:text-[#DC2626]" data-testid="recent-clear-btn">Clear</button>
                   </div>
                   <div className="flex flex-wrap gap-1.5 px-1">
                     {recent.map((r) => (
                       <button key={r} onMouseDown={(e) => { e.preventDefault(); onChange(r); submitQuery(r); }}
-                        className="px-3 h-7 rounded-full bg-neutral-100 dark:bg-neutral-800 hover:bg-[#FFF3F2] dark:hover:bg-[#3a1817] hover:text-[#FF211F] text-xs text-neutral-700 dark:text-neutral-200 transition"
+                        className="px-3 h-7 rounded-full bg-neutral-100 dark:bg-neutral-800 hover:bg-[#FFF3F2] dark:hover:bg-[#3a1817] hover:text-[#DC2626] text-xs text-neutral-700 dark:text-neutral-200 transition"
                         data-testid={`recent-item-${r.replace(/\s+/g, '-')}`}>{r}</button>
                     ))}
                   </div>
@@ -416,11 +416,11 @@ const SearchAutocomplete = ({ value, onChange, onSubmit, placeholder, categories
               )}
               {trending.length > 0 && (
                 <div>
-                  <div className="px-1.5 mb-1.5 text-[10px] uppercase tracking-wider text-neutral-500 dark:text-neutral-400 font-semibold flex items-center gap-1.5"><TrendingUp className="h-3 w-3 text-[#FF7A18]" /> {t("search.trendingTitle")}</div>
+                  <div className="px-1.5 mb-1.5 text-[10px] uppercase tracking-wider text-neutral-500 dark:text-neutral-400 font-semibold flex items-center gap-1.5"><TrendingUp className="h-3 w-3 text-[#1E40AF]" /> {t("search.trendingTitle")}</div>
                   <div className="flex flex-wrap gap-1.5 px-1">
                     {trending.map((tt) => (
                       <button key={tt} onMouseDown={(e) => { e.preventDefault(); onChange(tt); submitQuery(tt); }}
-                        className="px-3 h-7 rounded-full bg-gradient-to-r from-[#FF7A18]/10 to-[#FF211F]/10 hover:from-[#FF7A18]/20 hover:to-[#FF211F]/20 text-xs text-[#FF211F] font-medium transition"
+                        className="px-3 h-7 rounded-full bg-gradient-to-r from-[#1E40AF]/10 to-[#DC2626]/10 hover:from-[#1E40AF]/20 hover:to-[#DC2626]/20 text-xs text-[#DC2626] font-medium transition"
                         data-testid={`trending-item-${tt.replace(/\s+/g, '-')}`}>{tt}</button>
                     ))}
                   </div>

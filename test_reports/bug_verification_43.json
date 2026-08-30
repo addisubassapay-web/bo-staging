@@ -34,6 +34,6 @@
   "seed_data_creation": "None",
   "retest_needed": false,
   "should_main_agent_self_test": false,
-  "context_for_next_testing_agent": "Backend-only iteration 43 verification used preview URL https://marketplace-dropship.preview.emergentagent.com and did not trigger any manual Apify sync. Admin credentials worked. Primary regression was stable: all 10 sync status polls returned sync_running:false with next_scheduled_at 2026-09-19T16:00:49.705000.",
+  "context_for_next_testing_agent": "Backend-only iteration 43 verification used preview URL https://ocean-marketplace.preview.emergentagent.com and did not trigger any manual Apify sync. Admin credentials worked. Primary regression was stable: all 10 sync status polls returned sync_running:false with next_scheduled_at 2026-09-19T16:00:49.705000.",
   "rca_of_the_issue": "Previous regression was sync_running toggling true because the Apify auto-sync loop retried tightly after actor/quota failures. Runtime evidence now shows persisted next_scheduled_at is honored and sync_running remains false during a 20+ second poll window. Listing API evidence confirms legacy Zyte/toscrape data is filtered and marketplace/category feeds still expose a large Apify-backed catalog. No APIs were mocked in this verification."
 }

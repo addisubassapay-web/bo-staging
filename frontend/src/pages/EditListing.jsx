@@ -128,7 +128,7 @@ const EditListing = () => {
                 type="button"
                 key={i}
                 onClick={() => setSelectedPhotoIdx(i)}
-                className={`aspect-square rounded-lg overflow-hidden border-2 transition ${i === selectedPhotoIdx ? "border-[#FF7A18]" : "border-transparent hover:border-neutral-300"}`}
+                className={`aspect-square rounded-lg overflow-hidden border-2 transition ${i === selectedPhotoIdx ? "border-[#1E40AF]" : "border-transparent hover:border-neutral-300"}`}
                 data-testid={`edit-photo-${i}`}
               >
                 <img src={src} alt="" className="h-full w-full object-cover" />
@@ -140,7 +140,7 @@ const EditListing = () => {
             variant="outline"
             onClick={regenerate}
             disabled={aiLoading}
-            className="mt-3 w-full gap-1.5 border-[#FF7A18] text-[#FF7A18] hover:bg-[#FFF3F2]"
+            className="mt-3 w-full gap-1.5 border-[#1E40AF] text-[#1E40AF] hover:bg-[#FFF3F2]"
             data-testid="edit-ai-regenerate-btn"
           >
             <Sparkles className="h-4 w-4" />
@@ -182,7 +182,7 @@ const EditListing = () => {
             <Label>Condition</Label>
             <RadioGroup value={form.condition} onValueChange={set("condition")} className="mt-2 grid grid-cols-5 gap-2">
               {[["new", "New"], ["like_new", "Like new"], ["good", "Good"], ["fair", "Fair"], ["poor", "Poor"]].map(([v, l]) => (
-                <label key={v} className={`border rounded-lg p-2 text-center text-sm cursor-pointer ${form.condition === v ? "border-[#FF7A18] bg-[#FFF3F2]" : "border-neutral-200"}`}>
+                <label key={v} className={`border rounded-lg p-2 text-center text-sm cursor-pointer ${form.condition === v ? "border-[#1E40AF] bg-[#FFF3F2]" : "border-neutral-200"}`}>
                   <RadioGroupItem value={v} className="sr-only" />{l}
                 </label>
               ))}
@@ -193,7 +193,7 @@ const EditListing = () => {
             <div><Label>Size</Label><Input value={form.size} onChange={set("size")} className="mt-1" /></div>
             <div><Label>Color</Label><Input value={form.color} onChange={set("color")} className="mt-1" /></div>
           </div>
-          <Button type="submit" disabled={saving} className="bg-[#FF211F] hover:bg-[#e01d1b] h-11 px-6" data-testid="edit-save-btn">
+          <Button type="submit" disabled={saving} className="bg-[#DC2626] hover:bg-[#e01d1b] h-11 px-6" data-testid="edit-save-btn">
             {saving ? "Saving…" : "Save changes"}
           </Button>
         </form>

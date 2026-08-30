@@ -137,7 +137,7 @@ const StoreManage = () => {
     <div className="max-w-3xl mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2">
-          <StoreIcon className="h-6 w-6 text-[#FF211F]" />
+          <StoreIcon className="h-6 w-6 text-[#DC2626]" />
           <h1 className="text-3xl font-bold">{existing ? "Manage your store" : "Create a store"}</h1>
         </div>
         {existing && (
@@ -151,7 +151,7 @@ const StoreManage = () => {
       <form onSubmit={submit} className="space-y-6">
         {/* Cover / Banner uploader */}
         <div>
-          <Label className="flex items-center gap-1.5"><ImageIcon className="h-4 w-4 text-[#FF7A18]" /> Cover image</Label>
+          <Label className="flex items-center gap-1.5"><ImageIcon className="h-4 w-4 text-[#1E40AF]" /> Cover image</Label>
           <p className="text-xs text-neutral-500 mt-0.5 mb-2">Wide banner shown at the top of your storefront (recommended 1600×400).</p>
           <div className="relative rounded-xl border-2 border-dashed border-neutral-300 dark:border-neutral-700 overflow-hidden bg-neutral-50 dark:bg-neutral-900 aspect-[4/1] group" data-testid="store-banner-uploader">
             {form.banner ? (
@@ -170,7 +170,7 @@ const StoreManage = () => {
               <button
                 type="button"
                 onClick={() => bannerInputRef.current?.click()}
-                className="absolute inset-0 grid place-items-center text-neutral-500 hover:text-[#FF211F] hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+                className="absolute inset-0 grid place-items-center text-neutral-500 hover:text-[#DC2626] hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
                 data-testid="store-banner-upload"
               >
                 {uploading.banner ? <Loader2 className="h-8 w-8 animate-spin" /> : (
@@ -209,7 +209,7 @@ const StoreManage = () => {
                 <button
                   type="button"
                   onClick={() => logoInputRef.current?.click()}
-                  className="absolute inset-0 grid place-items-center text-neutral-500 hover:text-[#FF211F] hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+                  className="absolute inset-0 grid place-items-center text-neutral-500 hover:text-[#DC2626] hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
                   data-testid="store-logo-upload"
                 >
                   {uploading.logo ? <Loader2 className="h-7 w-7 animate-spin" /> : (
@@ -324,7 +324,7 @@ const StoreManage = () => {
 
         <div className="flex justify-end gap-2 pt-4 border-t">
           <Button type="button" variant="outline" onClick={() => navigate(-1)}>Cancel</Button>
-          <Button type="submit" disabled={saving} className="bg-[#FF211F] hover:bg-[#e01d1b]" data-testid="store-save-btn">
+          <Button type="submit" disabled={saving} className="bg-[#DC2626] hover:bg-[#e01d1b]" data-testid="store-save-btn">
             <Save className="h-4 w-4 mr-1" /> {saving ? "Saving…" : (existing ? "Save changes" : "Create store")}
           </Button>
         </div>

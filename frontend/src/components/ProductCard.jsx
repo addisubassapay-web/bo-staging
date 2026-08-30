@@ -71,7 +71,7 @@ const ProductCard = ({ listing, isFavorite = false, onFavoriteChange }) => {
   return (
     <Link
       to={`/listing/${listing.id}`}
-      className="group block rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-[#FF7A18]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-neutral-950"
+      className="group block rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-[#1E40AF]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-neutral-950"
       data-testid={`product-card-${listing.id}`}
     >
       <div className="relative aspect-square rounded-2xl overflow-hidden bg-neutral-100 dark:bg-neutral-800 ring-1 ring-black/[0.04] dark:ring-white/10 shadow-[0_1px_2px_rgba(0,0,0,0.04)] group-hover:shadow-[0_10px_30px_-12px_rgba(255,33,31,0.28)] group-hover:-translate-y-0.5 transition-all duration-300 ease-out">
@@ -119,12 +119,12 @@ const ProductCard = ({ listing, isFavorite = false, onFavoriteChange }) => {
           aria-label={fav ? "Remove from favorites" : "Add to favorites"}
           className={`absolute top-2.5 right-2.5 h-9 w-9 rounded-full grid place-items-center shadow-sm ring-1 backdrop-blur-md transition-all duration-200 ${
             fav
-              ? "bg-white text-[#FF211F] ring-[#FF211F]/30 scale-100"
+              ? "bg-white text-[#DC2626] ring-[#DC2626]/30 scale-100"
               : "bg-white/85 dark:bg-neutral-900/70 text-neutral-700 dark:text-neutral-200 ring-black/5 dark:ring-white/10 opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100"
           }`}
           data-testid={`favorite-btn-${listing.id}`}
         >
-          <Heart className={`h-4 w-4 ${fav ? "fill-[#FF211F] text-[#FF211F]" : ""}`} />
+          <Heart className={`h-4 w-4 ${fav ? "fill-[#DC2626] text-[#DC2626]" : ""}`} />
         </button>
       </div>
       <div className="mt-3 px-0.5">
@@ -138,7 +138,7 @@ const ProductCard = ({ listing, isFavorite = false, onFavoriteChange }) => {
               <ShieldCheck className="h-2.5 w-2.5" />
             </span>
           )}
-          <span className="group-hover:text-[#FF211F] transition-colors">{listing.title}</span>
+          <span className="group-hover:text-[#DC2626] transition-colors">{listing.title}</span>
         </div>
         <div className="mt-1.5 flex items-baseline justify-between gap-2">
           <div className="flex items-baseline gap-1.5 min-w-0">

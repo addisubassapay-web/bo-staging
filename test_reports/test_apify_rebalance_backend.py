@@ -10,7 +10,7 @@ from typing import Any, Dict, List, Optional
 import requests
 
 
-BASE_URL = os.environ.get("TEST_BASE_URL", "https://marketplace-dropship.preview.emergentagent.com").rstrip("/")
+BASE_URL = os.environ.get("TEST_BASE_URL", "https://ocean-marketplace.preview.emergentagent.com").rstrip("/")
 API = f"{BASE_URL}/api"
 OUT = "/app/test_reports/apify_rebalance_backend_results.json"
 

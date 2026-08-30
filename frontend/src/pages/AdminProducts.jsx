@@ -196,7 +196,7 @@ const EditProductDialog = ({ open, product, onClose, onSaved }) => {
           <Button
             onClick={save}
             disabled={saving}
-            className="bg-[#FF211F] hover:bg-[#e01d1b]"
+            className="bg-[#DC2626] hover:bg-[#e01d1b]"
             data-testid="edit-product-save-btn"
           >
             {saving ? "Saving…" : "Save changes"}
@@ -364,7 +364,7 @@ const AdminProducts = () => {
   return (
     <div data-testid="admin-products-page">
       <div className="flex items-center gap-2 mb-4">
-        <Package className="h-6 w-6 text-[#FF211F]" />
+        <Package className="h-6 w-6 text-[#DC2626]" />
         <h2 className="text-2xl font-bold">Products</h2>
         {data ? (
           <Badge variant="outline" className="ml-2">
@@ -423,7 +423,7 @@ const AdminProducts = () => {
           >
             <div className="flex items-center gap-2 text-sm">
               <span
-                className="font-semibold text-[#FF211F]"
+                className="font-semibold text-[#DC2626]"
                 data-testid="admin-products-bulk-count"
               >
                 {selectedIds.size}
@@ -543,7 +543,7 @@ const AdminProducts = () => {
                           href={p.source_url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-[11px] text-neutral-400 hover:text-[#FF211F] inline-flex items-center gap-1 mt-0.5"
+                          className="text-[11px] text-neutral-400 hover:text-[#DC2626] inline-flex items-center gap-1 mt-0.5"
                         >
                           source <ExternalLink className="h-3 w-3" />
                         </a>
@@ -648,7 +648,7 @@ const AdminProducts = () => {
                           href={p.source_url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-neutral-400 hover:text-[#FF211F] inline-flex items-center gap-1"
+                          className="text-neutral-400 hover:text-[#DC2626] inline-flex items-center gap-1"
                         >
                           source <ExternalLink className="h-3 w-3" />
                         </a>

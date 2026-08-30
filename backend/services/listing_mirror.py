@@ -17,7 +17,7 @@ from typing import Dict, List
 from pymongo import UpdateOne
 
 MERCHARI_SELLER_USERNAME = "mercari_store"
-MERCHARI_SELLER_DISPLAY = "Ocean Store"
+MERCHARI_SELLER_DISPLAY = "BlueOcean Store"
 
 
 async def _ensure_merchari_seller(db) -> dict:

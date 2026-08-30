@@ -61,18 +61,18 @@ const Sparkline = ({ series }) => {
       <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" className="w-full h-40">
         <defs>
           <linearGradient id="sparkFill" x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0%" stopColor="#FF7A18" stopOpacity="0.35" />
-            <stop offset="100%" stopColor="#FF7A18" stopOpacity="0" />
+            <stop offset="0%" stopColor="#1E40AF" stopOpacity="0.35" />
+            <stop offset="100%" stopColor="#1E40AF" stopOpacity="0" />
           </linearGradient>
         </defs>
         <path d={area} fill="url(#sparkFill)" />
-        <path d={path} fill="none" stroke="#FF211F" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
+        <path d={path} fill="none" stroke="#DC2626" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
         {pts.map(([x, y], i) => (
-          <circle key={i} cx={x} cy={y} r={i === pts.length - 1 ? 4 : 0} fill="#FF211F" />
+          <circle key={i} cx={x} cy={y} r={i === pts.length - 1 ? 4 : 0} fill="#DC2626" />
         ))}
       </svg>
       <div className="absolute top-1 right-2 text-xs bg-white/95 border border-neutral-200 rounded-full px-2 py-0.5 font-medium">
-        Today: <span className="text-[#FF211F]">{money(last?.earnings)}</span>
+        Today: <span className="text-[#DC2626]">{money(last?.earnings)}</span>
       </div>
     </div>
   );
@@ -116,7 +116,7 @@ const WeeklyRecapCard = ({ recap, currentEarnings = 0 }) => {
         {/* Left: recap summary */}
         <div className="p-5 sm:p-6">
           <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-neutral-500 font-medium">
-            <Trophy className="h-4 w-4 text-[#FF7A18]" /> Weekly recap
+            <Trophy className="h-4 w-4 text-[#1E40AF]" /> Weekly recap
             {weekLabel && <span className="text-neutral-400 normal-case tracking-normal">· week of {weekLabel}</span>}
           </div>
 
@@ -148,7 +148,7 @@ const WeeklyRecapCard = ({ recap, currentEarnings = 0 }) => {
               </div>
 
               <div className="mt-4 rounded-xl bg-gradient-to-r from-[#FFF7EF] to-white border border-orange-100 p-3 flex items-start gap-2">
-                <Sparkles className="h-4 w-4 text-[#FF7A18] mt-0.5 shrink-0" />
+                <Sparkles className="h-4 w-4 text-[#1E40AF] mt-0.5 shrink-0" />
                 <p className="text-sm text-neutral-700" data-testid="recap-suggestion">{recap.suggestion}</p>
               </div>
             </>
@@ -170,10 +170,10 @@ const WeeklyRecapCard = ({ recap, currentEarnings = 0 }) => {
                 className="h-20 w-20 rounded-xl object-cover bg-neutral-100 shrink-0"
               />
               <div className="min-w-0">
-                <div className="text-sm font-semibold text-neutral-900 line-clamp-2 group-hover:text-[#FF211F] transition">
+                <div className="text-sm font-semibold text-neutral-900 line-clamp-2 group-hover:text-[#DC2626] transition">
                   {recap.top_product.title}
                 </div>
-                <div className="text-base font-bold text-[#FF211F] mt-1">{money(recap.top_product.price)}</div>
+                <div className="text-base font-bold text-[#DC2626] mt-1">{money(recap.top_product.price)}</div>
                 <div className="text-[11px] text-neutral-500 mt-1">Tap to view listing</div>
               </div>
             </Link>
@@ -221,7 +221,7 @@ const StoreAnalytics = () => {
   if (!user) {
     return (
       <div className="max-w-3xl mx-auto px-4 py-16 text-center">
-        <p className="text-neutral-700">Please <Link to="/login" className="text-[#FF7A18] underline">log in</Link> to view your dashboard.</p>
+        <p className="text-neutral-700">Please <Link to="/login" className="text-[#1E40AF] underline">log in</Link> to view your dashboard.</p>
       </div>
     );
   }
@@ -240,7 +240,7 @@ const StoreAnalytics = () => {
         </div>
       )}
       {/* Header banner */}
-      <div className="relative rounded-3xl bg-gradient-to-br from-[#FF7A18] via-[#FF3D66] to-[#7C3AED] text-white p-6 sm:p-8 shadow-xl overflow-hidden">
+      <div className="relative rounded-3xl bg-gradient-to-br from-[#1E40AF] via-[#FF3D66] to-[#7C3AED] text-white p-6 sm:p-8 shadow-xl overflow-hidden">
         <div className="pointer-events-none absolute -top-16 -right-10 h-64 w-64 rounded-full bg-white/20 blur-3xl animate-pulse" />
         <div className="pointer-events-none absolute -bottom-20 left-1/4 h-72 w-72 rounded-full bg-amber-300/30 blur-3xl" />
         <div className="pointer-events-none absolute top-1/3 -left-10 h-40 w-40 rounded-full bg-fuchsia-400/30 blur-3xl" />
@@ -252,7 +252,7 @@ const StoreAnalytics = () => {
             {/* Quick action buttons */}
             <div className="mt-4 flex gap-2 flex-wrap">
               <Link to="/sell">
-                <Button className="min-h-[44px] rounded-full bg-white text-[#FF211F] hover:bg-neutral-100 font-semibold gap-1.5 shadow-md" data-testid="dash-cta-new-listing">
+                <Button className="min-h-[44px] rounded-full bg-white text-[#DC2626] hover:bg-neutral-100 font-semibold gap-1.5 shadow-md" data-testid="dash-cta-new-listing">
                   <PackagePlus className="h-4 w-4" /> New listing
                 </Button>
               </Link>
@@ -336,19 +336,19 @@ const StoreAnalytics = () => {
               </div>
             </div>
             {myStoreSlug && (
-              <Link to={`/store/${myStoreSlug}`} className="text-xs font-semibold text-[#FF7A18] hover:underline">View all →</Link>
+              <Link to={`/store/${myStoreSlug}`} className="text-xs font-semibold text-[#1E40AF] hover:underline">View all →</Link>
             )}
           </div>
           <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory -mx-5 px-5">
             {latestPublished.slice(0, 8).map((l) => (
               <Link key={l.id} to={`/listing/${l.id}`} className="snap-start shrink-0 w-[40%] sm:w-[160px] group">
-                <div className="rounded-xl overflow-hidden border border-neutral-200 group-hover:border-[#FF211F] transition">
+                <div className="rounded-xl overflow-hidden border border-neutral-200 group-hover:border-[#DC2626] transition">
                   <div className="aspect-square bg-neutral-100 overflow-hidden">
                     {(l.images?.[0]) && <img src={l.images[0]} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />}
                   </div>
                   <div className="p-2">
                     <div className="text-xs font-medium text-neutral-800 line-clamp-1">{l.title}</div>
-                    <div className="text-sm font-bold text-[#FF211F] tabular-nums">{money(l.price)}</div>
+                    <div className="text-sm font-bold text-[#DC2626] tabular-nums">{money(l.price)}</div>
                   </div>
                 </div>
               </Link>
@@ -361,7 +361,7 @@ const StoreAnalytics = () => {
       <div className="mt-6 bg-white border border-neutral-200 rounded-2xl p-5">
         <div className="flex items-start justify-between flex-wrap gap-3">
           <div>
-            <h2 className="text-lg font-bold flex items-center gap-2"><TrendingUp className="h-5 w-5 text-[#FF7A18]" /> Earnings — last 30 days</h2>
+            <h2 className="text-lg font-bold flex items-center gap-2"><TrendingUp className="h-5 w-5 text-[#1E40AF]" /> Earnings — last 30 days</h2>
             <p className="text-sm text-neutral-500">Net of platform fees. Points show daily net earnings.</p>
           </div>
           <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200"><ArrowUpRight className="h-3 w-3 mr-1" /> Live</Badge>
@@ -388,8 +388,8 @@ const StoreAnalytics = () => {
       <div className="mt-6 grid md:grid-cols-[1fr_320px] gap-6">
         <div className="bg-white border border-neutral-200 rounded-2xl p-5">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-bold flex items-center gap-2"><Clock className="h-5 w-5 text-[#FF7A18]" /> Latest orders</h2>
-            <Link to="/profile?tab=sales" className="text-sm text-[#FF7A18] hover:underline">See all</Link>
+            <h2 className="text-lg font-bold flex items-center gap-2"><Clock className="h-5 w-5 text-[#1E40AF]" /> Latest orders</h2>
+            <Link to="/profile?tab=sales" className="text-sm text-[#1E40AF] hover:underline">See all</Link>
           </div>
           {data.recent_orders.length === 0 ? (
             <div className="text-sm text-neutral-500 py-6 text-center">No sales yet. List an item to get started.</div>
@@ -453,7 +453,7 @@ const StoreAnalytics = () => {
           </div>
 
           <div className="bg-gradient-to-br from-[#FFF7EF] to-white border border-orange-100 rounded-2xl p-5">
-            <div className="flex items-center gap-2 text-[#FF211F] font-bold">
+            <div className="flex items-center gap-2 text-[#DC2626] font-bold">
               <Sparkles className="h-5 w-5" /> Pro tips
             </div>
             <ul className="mt-3 space-y-2 text-sm text-neutral-700">
@@ -461,7 +461,7 @@ const StoreAnalytics = () => {
               <li>• Reply to messages within 1 hour to boost your rating</li>
               <li>• Verified sellers show a gold badge across the platform</li>
             </ul>
-            <Link to="/verify"><Button variant="outline" className="mt-4 w-full border-[#FF7A18] text-[#FF7A18] hover:bg-[#FFF3F2]">Get verified →</Button></Link>
+            <Link to="/verify"><Button variant="outline" className="mt-4 w-full border-[#1E40AF] text-[#1E40AF] hover:bg-[#FFF3F2]">Get verified →</Button></Link>
           </div>
           <div className="bg-white border border-neutral-200 rounded-2xl p-5">
             <div className="flex items-center gap-2 font-bold">
@@ -479,7 +479,7 @@ const StoreAnalytics = () => {
 
       {/* Floating quick-action — mobile-friendly */}
       <Link to="/sell" className="fixed bottom-6 right-6 z-40 sm:hidden" data-testid="dash-fab-new">
-        <div className="h-14 w-14 rounded-full bg-gradient-to-br from-[#FF7A18] to-[#FF211F] text-white shadow-2xl grid place-items-center hover:scale-105 active:scale-95 transition-transform">
+        <div className="h-14 w-14 rounded-full bg-gradient-to-br from-[#1E40AF] to-[#3B82F6] text-white shadow-2xl grid place-items-center hover:scale-105 active:scale-95 transition-transform">
           <Plus className="h-6 w-6" />
         </div>
       </Link>

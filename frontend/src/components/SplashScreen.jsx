@@ -40,7 +40,7 @@ const SplashScreen = () => {
       };
     }
     return {
-      headline: "Welcome to Ocean",
+      headline: "Welcome to BlueOcean",
       sub: "Millions of items · Verified sellers · Buyer protection",
       isReturning: false,
     };
@@ -72,15 +72,15 @@ const SplashScreen = () => {
     <div
       className={`fixed inset-0 z-[9999] flex items-center justify-center transition-opacity duration-500 ${fadeOut ? "opacity-0 pointer-events-none" : "opacity-100"}`}
       style={{
-        background: "radial-gradient(circle at 50% 40%, #FFF7ED 0%, #FFE4D6 45%, #FFD5C1 100%)",
+        background: "radial-gradient(circle at 50% 40%, #EFF6FF 0%, #DBEAFE 45%, #BFDBFE 100%)",
       }}
       data-testid="splash-screen"
       aria-hidden={fadeOut}
     >
       {/* Decorative blobs */}
-      <div className="absolute -top-24 -left-24 h-72 w-72 rounded-full bg-[#FF7A18] opacity-20 blur-3xl" />
-      <div className="absolute -bottom-24 -right-24 h-80 w-80 rounded-full bg-[#FF211F] opacity-15 blur-3xl" />
-      <div className="absolute top-1/3 right-1/4 h-40 w-40 rounded-full bg-[#2563EB] opacity-10 blur-3xl" />
+      <div className="absolute -top-24 -left-24 h-72 w-72 rounded-full bg-[#1E40AF] opacity-25 blur-3xl" />
+      <div className="absolute -bottom-24 -right-24 h-80 w-80 rounded-full bg-[#3B82F6] opacity-20 blur-3xl" />
+      <div className="absolute top-1/3 right-1/4 h-40 w-40 rounded-full bg-[#60A5FA] opacity-15 blur-3xl" />
 
       <div className="relative flex flex-col items-center gap-6 animate-hero-in text-center px-6">
         <BrandMark size={160} animated />

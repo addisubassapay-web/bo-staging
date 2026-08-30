@@ -62,7 +62,7 @@ const AdminLedgerAudit = () => {
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Wallet className="h-6 w-6 text-[#FF211F]" /> Ledger audit
+            <Wallet className="h-6 w-6 text-[#DC2626]" /> Ledger audit
           </h1>
           <p className="text-sm text-neutral-500 mt-1">
             Users whose current wallet balance drifted from the sum of their transaction ledger.

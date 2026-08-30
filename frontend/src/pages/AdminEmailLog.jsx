@@ -104,7 +104,7 @@ const AdminEmailLog = () => {
             className="max-w-sm"
             data-testid="admin-email-test-to"
           />
-          <Button onClick={sendTest} disabled={sending} className="bg-[#FF211F] hover:bg-[#e01d1b]" data-testid="admin-email-test-send">
+          <Button onClick={sendTest} disabled={sending} className="bg-[#DC2626] hover:bg-[#e01d1b]" data-testid="admin-email-test-send">
             {sending ? "Sending…" : "Send test"}
           </Button>
         </div>
@@ -132,7 +132,7 @@ const AdminEmailLog = () => {
             type="checkbox"
             checked={showFailedOnly}
             onChange={(e) => setShowFailedOnly(e.target.checked)}
-            className="accent-[#FF211F]"
+            className="accent-[#DC2626]"
             data-testid="admin-email-failed-only"
           />
           <span className="inline-flex items-center gap-1"><AlertCircle className="h-3.5 w-3.5 text-red-500" /> Failed only</span>

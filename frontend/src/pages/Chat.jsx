@@ -132,7 +132,7 @@ export const ChatRoom = () => {
             const mine = m.sender_id === user?.id;
             return (
               <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
-                <div className={`max-w-[75%] rounded-2xl px-4 py-2 text-sm ${mine ? "bg-[#FF211F] text-white" : "bg-white border border-neutral-200 text-neutral-900"}`}>
+                <div className={`max-w-[75%] rounded-2xl px-4 py-2 text-sm ${mine ? "bg-[#DC2626] text-white" : "bg-white border border-neutral-200 text-neutral-900"}`}>
                   <div>{m.content}</div>
                   <div className={`text-[10px] mt-0.5 ${mine ? "text-white/70" : "text-neutral-400"}`}>
                     {new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
@@ -144,7 +144,7 @@ export const ChatRoom = () => {
         </div>
         <form onSubmit={send} className="border-t border-neutral-200 bg-white p-3 flex gap-2">
           <Input value={input} onChange={(e) => setInput(e.target.value)} placeholder="Type a message…" />
-          <Button type="submit" disabled={sending || !input.trim()} className="bg-[#FF211F] hover:bg-[#e01d1b]">
+          <Button type="submit" disabled={sending || !input.trim()} className="bg-[#DC2626] hover:bg-[#e01d1b]">
             <Send className="h-4 w-4" />
           </Button>
         </form>

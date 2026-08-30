@@ -6,14 +6,14 @@ import { ShieldCheck, ArrowLeft } from "lucide-react";
  * Legal — a single component that renders either Terms of Service or
  * Privacy Policy based on the `mode` prop. Copy is deliberately concise,
  * plain-English, and references the new production domain
- * `ocean.com` + support mailbox `support@ocean.com`.
+ * `blueocean.com` + support mailbox `support@blueocean.com`.
  * Nothing here is legal advice; the operator should still have a lawyer
  * review before launch.
  */
 const CONTACT = {
-  brand: "Ocean",
-  domain: "ocean.com",
-  email: "support@ocean.com",
+  brand: "BlueOcean",
+  domain: "blueocean.com",
+  email: "support@blueocean.com",
 };
 
 const TERMS_SECTIONS = [
@@ -50,15 +50,15 @@ const Legal = ({ mode = "terms" }) => {
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-10" data-testid={`legal-${mode}-page`}>
-      <Link to="/" className="inline-flex items-center gap-1 text-sm text-neutral-500 hover:text-[#FF211F] mb-6">
+      <Link to="/" className="inline-flex items-center gap-1 text-sm text-neutral-500 hover:text-[#DC2626] mb-6">
         <ArrowLeft className="h-4 w-4" /> Back to marketplace
       </Link>
       <div className="flex items-center gap-3">
-        <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-[#FF7A18] to-[#FF211F] text-white grid place-items-center">
+        <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-[#1E40AF] to-[#3B82F6] text-white grid place-items-center">
           <ShieldCheck className="h-6 w-6" />
         </div>
         <div>
-          <div className="text-xs uppercase tracking-[0.2em] font-semibold text-[#FF7A18]">Legal</div>
+          <div className="text-xs uppercase tracking-[0.2em] font-semibold text-[#1E40AF]">Legal</div>
           <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">
             {title}
           </h1>
@@ -77,7 +77,7 @@ const Legal = ({ mode = "terms" }) => {
       </div>
       <div className="mt-10 rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 p-5 text-sm text-neutral-600 dark:text-neutral-300">
         Need to reach us? Email{" "}
-        <a href={`mailto:${CONTACT.email}`} className="text-[#FF211F] font-semibold underline" data-testid="legal-contact-email">
+        <a href={`mailto:${CONTACT.email}`} className="text-[#DC2626] font-semibold underline" data-testid="legal-contact-email">
           {CONTACT.email}
         </a>.
       </div>

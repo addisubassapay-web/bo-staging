@@ -97,7 +97,7 @@ const R2StorageTicker = () => {
           onClick={rehostBatch}
           disabled={busy || state.remaining === 0 || !enabled}
           data-testid="r2-rehost-batch-btn"
-          className="text-sm font-medium px-3 h-9 rounded-full bg-[#FF211F] text-white hover:bg-[#e01a19] transition-colors disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center gap-2"
+          className="text-sm font-medium px-3 h-9 rounded-full bg-[#DC2626] text-white hover:bg-[#e01a19] transition-colors disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center gap-2"
         >
           {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <CloudUpload className="w-4 h-4" />}
           {state.remaining === 0 ? "All rehosted" : "Rehost next 25"}

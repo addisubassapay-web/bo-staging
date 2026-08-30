@@ -13,7 +13,7 @@ import { Rocket, Loader2, ArrowRight, Sparkles, ExternalLink } from "lucide-reac
 const PROVIDERS = [
   { id: "amazon_search",       label: "Amazon — search results", example: "wireless headphones" },
   { id: "amazon_bestsellers",  label: "Amazon — bestsellers category", example: "electronics" },
-  { id: "mercari-global_search",      label: "Ocean — search results", example: "vintage denim" },
+  { id: "mercari-global_search",      label: "BlueOcean — search results", example: "vintage denim" },
 ];
 
 const PaginatedSeedScrape = () => {
@@ -97,7 +97,7 @@ const PaginatedSeedScrape = () => {
           <Rocket className="h-5 w-5" />
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="text-lg font-bold">Paginated seed — Amazon &amp; Ocean at scale</h3>
+          <h3 className="text-lg font-bold">Paginated seed — Amazon &amp; BlueOcean at scale</h3>
           <p className="text-sm text-neutral-600 mt-1">
             Enter a keyword, pick how many pages to crawl, and we&apos;ll walk them all. Each page is <span className="font-semibold text-emerald-700">1 Zyte credit</span> and typically yields 30-60 live products — 10 pages ≈ 300-600 listings.
           </p>
@@ -165,7 +165,7 @@ const PaginatedSeedScrape = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <Label className="text-sm">Target category {autoPublish && <span className="text-[#FF211F]">*</span>}</Label>
+              <Label className="text-sm">Target category {autoPublish && <span className="text-[#DC2626]">*</span>}</Label>
               <Select value={categoryId} onValueChange={setCategoryId}>
                 <SelectTrigger className="mt-1 h-10" data-testid="seed-category-select"><SelectValue placeholder="Choose a category" /></SelectTrigger>
                 <SelectContent>
@@ -194,7 +194,7 @@ const PaginatedSeedScrape = () => {
           <Button
             onClick={submit}
             disabled={submitting}
-            className="bg-[#FF211F] hover:bg-[#e01d1b] h-11 w-full sm:w-auto"
+            className="bg-[#DC2626] hover:bg-[#e01d1b] h-11 w-full sm:w-auto"
             data-testid="seed-submit"
           >
             {submitting

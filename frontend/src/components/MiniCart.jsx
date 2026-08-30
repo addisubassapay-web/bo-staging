@@ -56,12 +56,12 @@ const MiniCart = ({ cartCount, onCountChange }) => {
       <Link to="/cart" onClick={() => setOpen(false)}>
         <button
           aria-label="Cart"
-          className="h-10 w-10 sm:h-11 sm:w-11 rounded-full border border-neutral-200 dark:border-neutral-700 hover:border-[#FF7A18] grid place-items-center transition relative text-neutral-700 dark:text-neutral-200"
+          className="h-10 w-10 sm:h-11 sm:w-11 rounded-full border border-neutral-200 dark:border-neutral-700 hover:border-[#1E40AF] grid place-items-center transition relative text-neutral-700 dark:text-neutral-200"
           data-testid="header-cart-btn"
         >
           <ShoppingCart className="h-5 w-5" />
           {cartCount > 0 && (
-            <span className="absolute -top-1 -right-1 bg-[#FF211F] text-white text-[10px] font-semibold rounded-full h-4 min-w-4 px-1 grid place-items-center leading-none tabular-nums">
+            <span className="absolute -top-1 -right-1 bg-[#DC2626] text-white text-[10px] font-semibold rounded-full h-4 min-w-4 px-1 grid place-items-center leading-none tabular-nums">
               {cartCount > 99 ? "99+" : cartCount}
             </span>
           )}
@@ -81,7 +81,7 @@ const MiniCart = ({ cartCount, onCountChange }) => {
           </div>
           {!user ? (
             <div className="p-6 text-center text-sm text-neutral-500 dark:text-neutral-400">
-              <Link to="/login" onClick={() => setOpen(false)} className="text-[#FF7A18] font-semibold hover:underline">Sign in</Link> to see your cart.
+              <Link to="/login" onClick={() => setOpen(false)} className="text-[#1E40AF] font-semibold hover:underline">Sign in</Link> to see your cart.
             </div>
           ) : loading ? (
             <div className="p-6 text-center text-sm text-neutral-500 dark:text-neutral-400">Loading…</div>
@@ -102,7 +102,7 @@ const MiniCart = ({ cartCount, onCountChange }) => {
                     <button
                       onClick={() => removeItem(it.id)}
                       aria-label="Remove"
-                      className="h-7 w-7 rounded-full text-neutral-400 hover:text-[#FF211F] hover:bg-neutral-100 dark:hover:bg-neutral-800 grid place-items-center transition"
+                      className="h-7 w-7 rounded-full text-neutral-400 hover:text-[#DC2626] hover:bg-neutral-100 dark:hover:bg-neutral-800 grid place-items-center transition"
                       data-testid={`mini-cart-remove-${it.id}`}
                     >
                       <X className="h-4 w-4" />
@@ -117,13 +117,13 @@ const MiniCart = ({ cartCount, onCountChange }) => {
                 </div>
                 <div className="flex items-center gap-2">
                   <Link to="/cart" onClick={() => setOpen(false)} className="flex-1">
-                    <button className="w-full h-10 rounded-full border border-neutral-200 dark:border-neutral-700 hover:border-[#FF7A18] text-sm font-semibold text-neutral-800 dark:text-neutral-100 transition" data-testid="mini-cart-view-cart">
+                    <button className="w-full h-10 rounded-full border border-neutral-200 dark:border-neutral-700 hover:border-[#1E40AF] text-sm font-semibold text-neutral-800 dark:text-neutral-100 transition" data-testid="mini-cart-view-cart">
                       {t("cart.viewCart")}
                     </button>
                   </Link>
                   {items.length > 0 && (
                     <Link to={`/checkout/${items[0].id}`} onClick={() => setOpen(false)} className="flex-1">
-                      <button className="w-full h-10 rounded-full bg-gradient-to-r from-[#FF7A18] to-[#FF211F] hover:brightness-110 text-white text-sm font-semibold shadow-sm transition" data-testid="mini-cart-checkout">
+                      <button className="w-full h-10 rounded-full bg-gradient-to-r from-[#1E40AF] to-[#3B82F6] hover:brightness-110 text-white text-sm font-semibold shadow-sm transition" data-testid="mini-cart-checkout">
                         {t("cart.checkout")}
                       </button>
                     </Link>

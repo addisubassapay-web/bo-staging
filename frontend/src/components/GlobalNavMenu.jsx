@@ -20,7 +20,7 @@ const NavItem = ({ to, icon: Icon, children, onClose, testid }) => (
     className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-neutral-800 dark:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition"
     data-testid={testid}
   >
-    <span className="h-8 w-8 rounded-lg bg-[#FF7A18]/10 text-[#FF7A18] grid place-items-center shrink-0">
+    <span className="h-8 w-8 rounded-lg bg-[#1E40AF]/10 text-[#1E40AF] grid place-items-center shrink-0">
       <Icon className="h-4 w-4" />
     </span>
     <span className="text-sm font-medium">{children}</span>
@@ -49,7 +49,7 @@ const GlobalNavMenu = () => {
         ref={btnRef}
         onClick={() => setOpen(true)}
         aria-label="Open main menu"
-        className="h-10 w-10 sm:h-11 sm:w-11 rounded-full border border-neutral-200 dark:border-neutral-700 hover:border-[#FF7A18] grid place-items-center transition text-neutral-700 dark:text-neutral-200 shrink-0"
+        className="h-10 w-10 sm:h-11 sm:w-11 rounded-full border border-neutral-200 dark:border-neutral-700 hover:border-[#1E40AF] grid place-items-center transition text-neutral-700 dark:text-neutral-200 shrink-0"
         data-testid="global-nav-btn"
       >
         <MenuIcon className="h-5 w-5" />
@@ -68,9 +68,9 @@ const GlobalNavMenu = () => {
       >
         <div className="flex items-center justify-between px-4 h-16 border-b border-neutral-200 dark:border-neutral-800 shrink-0">
           <div className="flex items-center gap-2">
-            <img src="/logo-mark.png" alt="Ocean" className="h-9 w-9 shrink-0" />
+            <img src="/logo-mark.png" alt="BlueOcean" className="h-9 w-9 shrink-0" />
             <div className="leading-tight">
-              <div className="text-base font-bold text-neutral-900 dark:text-neutral-100">Ocean</div>
+              <div className="text-base font-bold text-neutral-900 dark:text-neutral-100">BlueOcean</div>
               <div className="text-[10px] text-neutral-500 dark:text-neutral-400 -mt-0.5">{t("menu.mainPages")}</div>
             </div>
           </div>

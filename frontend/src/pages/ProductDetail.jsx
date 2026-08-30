@@ -23,7 +23,7 @@ const ProductDescription = ({ description }) => {
         <button
           type="button"
           onClick={() => setOpen(!open)}
-          className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-[#B85C38] hover:text-[#93441e] transition"
+          className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-[#1E40AF] hover:text-[#93441e] transition"
           data-testid="product-description-toggle"
           aria-expanded={open}
         >
@@ -120,7 +120,7 @@ const ProductDetail = () => {
     <div className="max-w-6xl mx-auto px-4 py-8" data-testid="product-detail-page">
       <Link
         to="/products"
-        className="inline-flex items-center gap-1 text-sm text-neutral-500 hover:text-[#FF211F] mb-4"
+        className="inline-flex items-center gap-1 text-sm text-neutral-500 hover:text-[#DC2626] mb-4"
         data-testid="product-back-link"
       >
         <ArrowLeft className="h-4 w-4" /> Back to catalog
@@ -171,7 +171,7 @@ const ProductDetail = () => {
                   onClick={() => setActiveImg(i)}
                   className={`h-16 w-16 shrink-0 rounded-lg overflow-hidden border-2 transition ${
                     i === activeImg
-                      ? "border-[#FF211F]"
+                      ? "border-[#DC2626]"
                       : "border-transparent hover:border-neutral-300"
                   }`}
                   data-testid={`product-thumb-${i}`}
@@ -223,7 +223,7 @@ const ProductDetail = () => {
               </span>
             ) : (
               <>
-                <span className="text-3xl font-bold text-[#FF211F]" data-testid="product-price">
+                <span className="text-3xl font-bold text-[#DC2626]" data-testid="product-price">
                   {formatMoney(product.price, product.currency)}
                 </span>
                 <span className="text-sm text-neutral-400">{product.currency}</span>
@@ -278,7 +278,7 @@ const ProductDetail = () => {
               href={product.source_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-6 inline-flex items-center gap-1 text-sm text-neutral-500 hover:text-[#FF211F]"
+              className="mt-6 inline-flex items-center gap-1 text-sm text-neutral-500 hover:text-[#DC2626]"
               data-testid="product-source-link"
             >
               View original source <ExternalLink className="h-3.5 w-3.5" />

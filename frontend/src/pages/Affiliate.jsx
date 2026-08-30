@@ -41,7 +41,7 @@ const Affiliate = () => {
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
       <div className="flex items-center gap-2 mb-6">
-        <LinkIcon className="h-6 w-6 text-[#FF211F]" />
+        <LinkIcon className="h-6 w-6 text-[#DC2626]" />
         <h1 className="text-3xl font-bold">Affiliate program</h1>
       </div>
       <p className="text-neutral-600 mb-6">Earn a commission every time someone buys through your link. No inventory, no fulfillment — just share.</p>
@@ -53,8 +53,8 @@ const Affiliate = () => {
         <StatBox icon={DollarSign} label="Earnings" value={formatPrice(stats.earnings)} tone="good" />
       </div>
 
-      <div className="bg-[#FFF3F2] border border-[#FF211F]/20 rounded-lg p-5 mb-8">
-        <h3 className="font-semibold flex items-center gap-2"><TrendingUp className="h-4 w-4 text-[#FF211F]" /> How it works</h3>
+      <div className="bg-[#FFF3F2] border border-[#DC2626]/20 rounded-lg p-5 mb-8">
+        <h3 className="font-semibold flex items-center gap-2"><TrendingUp className="h-4 w-4 text-[#DC2626]" /> How it works</h3>
         <ol className="text-sm text-neutral-700 mt-2 space-y-1 list-decimal list-inside">
           <li>Browse any listing and click “Share as affiliate” on the product page.</li>
           <li>Copy your unique tracking link and share it anywhere — social, blog, email.</li>
@@ -66,7 +66,7 @@ const Affiliate = () => {
       {links.length === 0 ? (
         <div className="text-center py-10 border border-dashed rounded-xl">
           <p className="text-neutral-600">No links yet.</p>
-          <Link to="/search"><Button className="mt-3 bg-[#FF211F] hover:bg-[#e01d1b]">Browse products</Button></Link>
+          <Link to="/search"><Button className="mt-3 bg-[#DC2626] hover:bg-[#e01d1b]">Browse products</Button></Link>
         </div>
       ) : (
         <div className="space-y-2">
@@ -75,7 +75,7 @@ const Affiliate = () => {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 text-xs text-neutral-500">
                   {l.listing_id && (
-                    <Link to={`/listing/${l.listing_id}`} className="hover:text-[#FF211F]">View product →</Link>
+                    <Link to={`/listing/${l.listing_id}`} className="hover:text-[#DC2626]">View product →</Link>
                   )}
                   {l.store_id && <span>Store link</span>}
                 </div>

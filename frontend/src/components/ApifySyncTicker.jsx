@@ -134,7 +134,7 @@ const ApifySyncTicker = () => {
             type="button"
             onClick={rebalance}
             disabled={rebalancing}
-            className="inline-flex items-center gap-1.5 text-sm text-neutral-700 dark:text-neutral-300 border border-neutral-200 dark:border-neutral-700 rounded-full px-3 py-1 hover:border-[#FF211F] hover:text-[#FF211F] transition-colors disabled:opacity-60"
+            className="inline-flex items-center gap-1.5 text-sm text-neutral-700 dark:text-neutral-300 border border-neutral-200 dark:border-neutral-700 rounded-full px-3 py-1 hover:border-[#DC2626] hover:text-[#DC2626] transition-colors disabled:opacity-60"
             data-testid="apify-ticker-rebalance-btn"
           >
             {rebalancing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <LayoutGrid className="h-3.5 w-3.5" />}
@@ -142,7 +142,7 @@ const ApifySyncTicker = () => {
           </button>
           <Link
             to="/admin/apify-sync"
-            className="inline-flex items-center gap-1 text-sm text-[#FF211F] hover:underline"
+            className="inline-flex items-center gap-1 text-sm text-[#DC2626] hover:underline"
             data-testid="apify-ticker-open-link"
           >
             Open <ArrowRight className="h-3.5 w-3.5" />
@@ -204,7 +204,7 @@ const ApifySyncTicker = () => {
             data-testid="apify-ticker-progress"
           >
             <div
-              className="h-full bg-gradient-to-r from-[#FF7A18] to-[#FF211F] transition-all duration-500 ease-out"
+              className="h-full bg-gradient-to-r from-[#1E40AF] to-[#3B82F6] transition-all duration-500 ease-out"
               style={{ width: `${pct}%` }}
             />
           </div>

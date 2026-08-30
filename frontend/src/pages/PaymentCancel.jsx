@@ -16,10 +16,10 @@ const PaymentCancel = () => {
       <div className="mt-6 flex gap-2 justify-center">
         {listingId ? (
           <Link to={`/checkout/${listingId}`}>
-            <Button className="bg-[#FF211F] hover:bg-[#e01d1b]" data-testid="payment-cancel-retry">Try again</Button>
+            <Button className="bg-[#DC2626] hover:bg-[#e01d1b]" data-testid="payment-cancel-retry">Try again</Button>
           </Link>
         ) : (
-          <Link to="/"><Button className="bg-[#FF211F] hover:bg-[#e01d1b]">Back to home</Button></Link>
+          <Link to="/"><Button className="bg-[#DC2626] hover:bg-[#e01d1b]">Back to home</Button></Link>
         )}
         <Link to="/"><Button variant="outline">Keep browsing</Button></Link>
       </div>

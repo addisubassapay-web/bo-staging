@@ -7,7 +7,7 @@ It logs in as the demo buyer, adds one live listing to the cart, and measures
 """
 
 async def run(page):
-    base = "https://marketplace-dropship.preview.emergentagent.com"
+    base = "https://ocean-marketplace.preview.emergentagent.com"
     widths = [
         {"width": 320, "height": 568},
         {"width": 375, "height": 812},

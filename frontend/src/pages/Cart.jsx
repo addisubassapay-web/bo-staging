@@ -37,7 +37,7 @@ const Cart = () => {
   return (
     <div className="max-w-5xl w-full mx-auto px-3 sm:px-4 py-8 min-w-0" data-testid="cart-page">
       <div className="mb-8">
-        <span className="inline-block text-[10px] uppercase tracking-[0.2em] font-semibold text-[#FF7A18] bg-[#FF7A18]/10 border border-[#FF7A18]/20 rounded-full px-3 py-1">
+        <span className="inline-block text-[10px] uppercase tracking-[0.2em] font-semibold text-[#1E40AF] bg-[#1E40AF]/10 border border-[#1E40AF]/20 rounded-full px-3 py-1">
           {t("cart.kicker")}
         </span>
         <h1 className="mt-2 text-3xl sm:text-4xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">{t("cart.title")}</h1>
@@ -52,7 +52,7 @@ const Cart = () => {
         <div className="text-center py-20 rounded-2xl border border-dashed border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900" data-testid="cart-empty">
           <ShoppingBag className="h-12 w-12 mx-auto text-neutral-300 dark:text-neutral-600 mb-3" />
           <p className="text-neutral-600 dark:text-neutral-300">{t("cart.emptyLong")}</p>
-          <Link to="/search"><Button className="mt-4 bg-[#FF211F] hover:bg-[#e01d1b] rounded-full h-11 px-6">{t("cta.startShopping")}</Button></Link>
+          <Link to="/search"><Button className="mt-4 bg-[#DC2626] hover:bg-[#e01d1b] rounded-full h-11 px-6">{t("cta.startShopping")}</Button></Link>
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_360px] gap-6 lg:gap-8 min-w-0">
@@ -60,14 +60,14 @@ const Cart = () => {
             {items.map((item) => (
               <div
                 key={item.id}
-                className="flex gap-3 sm:gap-4 rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-3 shadow-[0_1px_2px_rgba(0,0,0,0.04)] hover:border-[#FF7A18]/40 hover:shadow-[0_10px_24px_-14px_rgba(255,33,31,0.2)] transition-all duration-300 min-w-0"
+                className="flex gap-3 sm:gap-4 rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-3 shadow-[0_1px_2px_rgba(0,0,0,0.04)] hover:border-[#1E40AF]/40 hover:shadow-[0_10px_24px_-14px_rgba(255,33,31,0.2)] transition-all duration-300 min-w-0"
                 data-testid={`cart-item-${item.id}`}
               >
                 <Link to={`/listing/${item.id}`} className="h-20 w-20 sm:h-24 sm:w-24 rounded-xl overflow-hidden bg-neutral-100 dark:bg-neutral-800 shrink-0 ring-1 ring-black/[0.04] dark:ring-white/10">
                   <img src={item.images?.[0]} alt="" className="w-full h-full object-cover" />
                 </Link>
                 <div className="flex-1 min-w-0">
-                  <Link to={`/listing/${item.id}`} className="font-semibold text-neutral-900 dark:text-neutral-100 line-clamp-2 hover:text-[#FF211F] transition">{item.title}</Link>
+                  <Link to={`/listing/${item.id}`} className="font-semibold text-neutral-900 dark:text-neutral-100 line-clamp-2 hover:text-[#DC2626] transition">{item.title}</Link>
                   <div className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
                     {t("cart.soldBy")}{" "}
                     <Link
@@ -86,7 +86,7 @@ const Cart = () => {
                   <div className="font-extrabold text-neutral-900 dark:text-neutral-100 tabular-nums text-sm sm:text-base whitespace-nowrap">{format(item.price)}</div>
                   <button
                     onClick={() => remove(item.id)}
-                    className="text-neutral-400 hover:text-[#FF211F] transition"
+                    className="text-neutral-400 hover:text-[#DC2626] transition"
                     aria-label="Remove from cart"
                     data-testid={`cart-remove-${item.id}`}
                   >
@@ -120,7 +120,7 @@ const Cart = () => {
             </div>
             <Button
               onClick={() => navigate(`/checkout/${items[0].id}`)}
-              className="w-full mt-5 bg-[#FF211F] hover:bg-[#e01d1b] rounded-full h-11 shadow-lg shadow-[#FF211F]/20"
+              className="w-full mt-5 bg-[#DC2626] hover:bg-[#e01d1b] rounded-full h-11 shadow-lg shadow-[#DC2626]/20"
               data-testid="checkout-btn"
             >
               {t("cart.checkout")} ({items.length})

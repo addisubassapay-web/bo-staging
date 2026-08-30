@@ -30,19 +30,19 @@ const Referrals = () => {
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       <div className="flex items-center gap-2 mb-6">
-        <Users className="h-6 w-6 text-[#FF211F]" />
+        <Users className="h-6 w-6 text-[#DC2626]" />
         <h1 className="text-3xl font-bold">Referral program</h1>
       </div>
-      <p className="text-neutral-600 mb-6">Invite friends to Ocean and earn from their activity across 3 levels of your network.</p>
+      <p className="text-neutral-600 mb-6">Invite friends to BlueOcean and earn from their activity across 3 levels of your network.</p>
 
-      <div className="bg-gradient-to-br from-[#FF211F] to-[#c81816] text-white rounded-xl p-6 mb-8">
+      <div className="bg-gradient-to-br from-[#DC2626] to-[#c81816] text-white rounded-xl p-6 mb-8">
         <div className="text-sm opacity-90">Your referral code</div>
         <div className="text-4xl font-bold font-mono mt-2 tracking-wider">{data.referral_code}</div>
         <div className="mt-4 flex flex-col sm:flex-row gap-2">
           <div className="flex-1 bg-white/10 border border-white/20 rounded px-3 py-2 text-sm font-mono truncate">
             {referralLink}
           </div>
-          <Button variant="secondary" className="bg-white text-[#FF211F] hover:bg-neutral-100" onClick={() => copy(referralLink)}>
+          <Button variant="secondary" className="bg-white text-[#DC2626] hover:bg-neutral-100" onClick={() => copy(referralLink)}>
             <Copy className="h-4 w-4 mr-1" /> Copy link
           </Button>
         </div>
@@ -58,7 +58,7 @@ const Referrals = () => {
           { level: 3, count: data.counts.l3, pct: "0.5%" },
         ].map((tier) => (
           <div key={tier.level} className="bg-white border border-neutral-200 rounded-lg p-5 text-center">
-            <Award className="h-6 w-6 mx-auto text-[#FF211F]" />
+            <Award className="h-6 w-6 mx-auto text-[#DC2626]" />
             <div className="text-xs text-neutral-500 uppercase mt-2">Level {tier.level}</div>
             <div className="text-3xl font-bold mt-1">{tier.count}</div>
             <div className="text-xs text-neutral-500 mt-1">{tier.pct} of platform fees</div>

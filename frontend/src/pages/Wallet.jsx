@@ -69,7 +69,7 @@ const CopyBtn = ({ text, testid }) => {
     <button
       type="button"
       onClick={doCopy}
-      className="min-h-[44px] min-w-[44px] px-3 rounded-lg border border-neutral-200 bg-white hover:border-[#FF211F] hover:text-[#FF211F] active:scale-95 transition-all flex items-center gap-1.5 text-sm font-medium"
+      className="min-h-[44px] min-w-[44px] px-3 rounded-lg border border-neutral-200 bg-white hover:border-[#DC2626] hover:text-[#DC2626] active:scale-95 transition-all flex items-center gap-1.5 text-sm font-medium"
       data-testid={testid}
       aria-label="Copy"
     >
@@ -177,7 +177,7 @@ const DepositDialog = ({ open, onOpenChange, onSubmitted, suggestedAmount = "" }
                 <button
                   type="button"
                   onClick={() => setTab("crypto")}
-                  className={`flex-1 sm:flex-none min-h-[44px] px-4 rounded-full text-sm font-medium transition-colors flex items-center justify-center gap-1.5 ${tab === "crypto" ? "bg-white text-[#FF211F] shadow-sm" : "text-neutral-700"}`}
+                  className={`flex-1 sm:flex-none min-h-[44px] px-4 rounded-full text-sm font-medium transition-colors flex items-center justify-center gap-1.5 ${tab === "crypto" ? "bg-white text-[#DC2626] shadow-sm" : "text-neutral-700"}`}
                   data-testid="deposit-tab-crypto"
                 >
                   <Bitcoin className="h-4 w-4" /> Crypto
@@ -187,7 +187,7 @@ const DepositDialog = ({ open, onOpenChange, onSubmitted, suggestedAmount = "" }
                 <button
                   type="button"
                   onClick={() => setTab("manual")}
-                  className={`flex-1 sm:flex-none min-h-[44px] px-4 rounded-full text-sm font-medium transition-colors flex items-center justify-center gap-1.5 ${tab === "manual" ? "bg-white text-[#FF211F] shadow-sm" : "text-neutral-700"}`}
+                  className={`flex-1 sm:flex-none min-h-[44px] px-4 rounded-full text-sm font-medium transition-colors flex items-center justify-center gap-1.5 ${tab === "manual" ? "bg-white text-[#DC2626] shadow-sm" : "text-neutral-700"}`}
                   data-testid="deposit-tab-manual"
                 >
                   <Building2 className="h-4 w-4" /> Bank / Other
@@ -318,7 +318,7 @@ const DepositDialog = ({ open, onOpenChange, onSubmitted, suggestedAmount = "" }
                   ><XIcon className="h-4 w-4" /></button>
                 </div>
               ) : (
-                <label className="flex items-center justify-center gap-2 min-h-[52px] rounded-lg border-2 border-dashed border-neutral-300 hover:border-[#FF211F] hover:bg-[#FFF3F2] transition cursor-pointer text-sm text-neutral-600" data-testid="deposit-screenshot-upload">
+                <label className="flex items-center justify-center gap-2 min-h-[52px] rounded-lg border-2 border-dashed border-neutral-300 hover:border-[#DC2626] hover:bg-[#FFF3F2] transition cursor-pointer text-sm text-neutral-600" data-testid="deposit-screenshot-upload">
                   <Upload className="h-4 w-4" />
                   <span>{uploading ? "Uploading…" : "Tap to upload payment proof"}</span>
                   <input
@@ -341,7 +341,7 @@ const DepositDialog = ({ open, onOpenChange, onSubmitted, suggestedAmount = "" }
         <DialogFooter className="gap-2 flex-col sm:flex-row">
           <Button variant="outline" onClick={() => onOpenChange(false)} className="min-h-[44px] w-full sm:w-auto">Cancel</Button>
           {(hasCrypto || hasManual) && (
-            <Button onClick={submit} disabled={submitting} className="min-h-[44px] bg-[#FF211F] hover:bg-[#e01d1b] w-full sm:w-auto" data-testid="deposit-submit">
+            <Button onClick={submit} disabled={submitting} className="min-h-[44px] bg-[#DC2626] hover:bg-[#e01d1b] w-full sm:w-auto" data-testid="deposit-submit">
               {submitting ? "Submitting…" : "Submit deposit"}
             </Button>
           )}
@@ -411,14 +411,14 @@ const WithdrawDialog = ({ open, onOpenChange, methods, onSubmitted }) => {
               <button
                 type="button"
                 onClick={() => setTab("crypto")}
-                className={`flex-1 sm:flex-none min-h-[44px] px-4 rounded-full text-sm font-medium transition-colors flex items-center justify-center gap-1.5 ${tab === "crypto" ? "bg-white text-[#FF211F] shadow-sm" : "text-neutral-700"}`}
+                className={`flex-1 sm:flex-none min-h-[44px] px-4 rounded-full text-sm font-medium transition-colors flex items-center justify-center gap-1.5 ${tab === "crypto" ? "bg-white text-[#DC2626] shadow-sm" : "text-neutral-700"}`}
                 data-testid="withdraw-tab-crypto"
               ><Bitcoin className="h-4 w-4" /> Crypto</button>
             )}
             <button
               type="button"
               onClick={() => setTab("manual")}
-              className={`flex-1 sm:flex-none min-h-[44px] px-4 rounded-full text-sm font-medium transition-colors flex items-center justify-center gap-1.5 ${tab === "manual" ? "bg-white text-[#FF211F] shadow-sm" : "text-neutral-700"}`}
+              className={`flex-1 sm:flex-none min-h-[44px] px-4 rounded-full text-sm font-medium transition-colors flex items-center justify-center gap-1.5 ${tab === "manual" ? "bg-white text-[#DC2626] shadow-sm" : "text-neutral-700"}`}
               data-testid="withdraw-tab-manual"
             ><Building2 className="h-4 w-4" /> Bank / Other</button>
           </div>
@@ -461,7 +461,7 @@ const WithdrawDialog = ({ open, onOpenChange, methods, onSubmitted }) => {
 
         <DialogFooter className="gap-2 flex-col sm:flex-row">
           <Button variant="outline" onClick={() => onOpenChange(false)} className="min-h-[44px] w-full sm:w-auto">Cancel</Button>
-          <Button onClick={submit} disabled={submitting} className="min-h-[44px] bg-[#FF211F] hover:bg-[#e01d1b] w-full sm:w-auto" data-testid="withdraw-submit">
+          <Button onClick={submit} disabled={submitting} className="min-h-[44px] bg-[#DC2626] hover:bg-[#e01d1b] w-full sm:w-auto" data-testid="withdraw-submit">
             {submitting ? "Submitting…" : "Request payout"}
           </Button>
         </DialogFooter>
@@ -613,11 +613,11 @@ const RefundsDialog = ({ open, onOpenChange, transactions }) => {
             </div>
           )}
           <div className="text-xs text-neutral-500">
-            {t("wallet.refunds.disputeHint") || "Need a refund on a recent order?"} <Link to="/disputes" className="text-[#FF211F] font-medium hover:underline">{t("wallet.refunds.openDispute") || "Open a dispute →"}</Link>
+            {t("wallet.refunds.disputeHint") || "Need a refund on a recent order?"} <Link to="/disputes" className="text-[#DC2626] font-medium hover:underline">{t("wallet.refunds.openDispute") || "Open a dispute →"}</Link>
           </div>
         </div>
         <DialogFooter>
-          <Button onClick={() => onOpenChange(false)} className="min-h-[44px] w-full sm:w-auto bg-[#FF211F] hover:bg-[#e01d1b]" data-testid="refunds-close">{t("wallet.close") || "Close"}</Button>
+          <Button onClick={() => onOpenChange(false)} className="min-h-[44px] w-full sm:w-auto bg-[#DC2626] hover:bg-[#e01d1b]" data-testid="refunds-close">{t("wallet.close") || "Close"}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -700,12 +700,12 @@ const Wallet = () => {
   return (
     <div className="max-w-4xl mx-auto px-4 py-6 sm:py-8">
       <div className="flex items-center gap-2 mb-6">
-        <WalletIcon className="h-6 w-6 text-[#FF211F]" />
+        <WalletIcon className="h-6 w-6 text-[#DC2626]" />
         <h1 className="text-2xl sm:text-3xl font-bold">{t("wallet.title") || "Wallet"}</h1>
       </div>
 
       <div className="grid md:grid-cols-3 gap-4 mb-8">
-        <div className="md:col-span-2 bg-gradient-to-br from-[#FF211F] to-[#c81816] text-white rounded-xl p-5 sm:p-6">
+        <div className="md:col-span-2 bg-gradient-to-br from-[#DC2626] to-[#c81816] text-white rounded-xl p-5 sm:p-6">
           <div className="flex items-center justify-between">
             <div className="text-sm opacity-90">{t("wallet.available") || "Available balance"}</div>
             <BalanceEyeToggle visible={balanceVisible} onToggle={toggleBalance} testId="wallet-balance-toggle" />
@@ -723,7 +723,7 @@ const Wallet = () => {
           <div className="mt-4 flex gap-2 flex-wrap">
             <Button
               onClick={() => setDpOpen(true)}
-              className="min-h-[44px] bg-white text-[#FF211F] hover:bg-neutral-100 font-semibold"
+              className="min-h-[44px] bg-white text-[#DC2626] hover:bg-neutral-100 font-semibold"
               data-testid="wallet-deposit-btn"
             ><Plus className="h-4 w-4 mr-1" /> {t("wallet.deposit") || "Deposit"}</Button>
             <Button

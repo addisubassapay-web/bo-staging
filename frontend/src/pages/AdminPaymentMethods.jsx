@@ -86,17 +86,17 @@ const AdminPaymentMethods = () => {
       <div className="inline-flex bg-neutral-100 rounded-full p-1">
         <button
           onClick={() => setTab("methods")}
-          className={`min-h-[44px] px-4 rounded-full text-sm font-medium transition-colors ${tab === "methods" ? "bg-white text-[#FF211F] shadow-sm" : "text-neutral-700"}`}
+          className={`min-h-[44px] px-4 rounded-full text-sm font-medium transition-colors ${tab === "methods" ? "bg-white text-[#DC2626] shadow-sm" : "text-neutral-700"}`}
           data-testid="admin-pay-tab-methods"
         >Methods</button>
         <button
           onClick={() => setTab("pending")}
-          className={`min-h-[44px] px-4 rounded-full text-sm font-medium transition-colors relative ${tab === "pending" ? "bg-white text-[#FF211F] shadow-sm" : "text-neutral-700"}`}
+          className={`min-h-[44px] px-4 rounded-full text-sm font-medium transition-colors relative ${tab === "pending" ? "bg-white text-[#DC2626] shadow-sm" : "text-neutral-700"}`}
           data-testid="admin-pay-tab-pending"
         >
           Pending
           {pendingCount > 0 && (
-            <span className="ml-2 inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-[#FF211F] text-white text-[10px] font-bold tabular-nums">{pendingCount}</span>
+            <span className="ml-2 inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-[#DC2626] text-white text-[10px] font-bold tabular-nums">{pendingCount}</span>
           )}
         </button>
       </div>
@@ -105,7 +105,7 @@ const AdminPaymentMethods = () => {
         <div className="space-y-6">
           <section className="border border-neutral-200 rounded-xl bg-white p-5">
             <div className="flex items-center gap-2 mb-4">
-              <div className="h-9 w-9 rounded-lg bg-[#FFF3F2] grid place-items-center"><Bitcoin className="h-4 w-4 text-[#FF211F]" /></div>
+              <div className="h-9 w-9 rounded-lg bg-[#FFF3F2] grid place-items-center"><Bitcoin className="h-4 w-4 text-[#DC2626]" /></div>
               <h3 className="font-semibold text-lg">Crypto assets &amp; networks</h3>
             </div>
             <p className="text-xs text-neutral-500 mb-4">Each row is one (asset · network · address) deposit slot. Toggle Active to hide from checkout. Blank addresses are auto-hidden.</p>
@@ -119,7 +119,7 @@ const AdminPaymentMethods = () => {
                     <button type="button" onClick={() => { const cp = [...assets]; cp[i].active = !cp[i].active; setAssets(cp); }} className={`min-h-[44px] px-3 rounded-full text-xs font-semibold border transition ${a.active ? "bg-green-50 text-green-700 border-green-200" : "bg-neutral-100 text-neutral-500 border-neutral-200"}`} data-testid={`asset-toggle-${i}`}>
                       {a.active ? "Active" : "Off"}
                     </button>
-                    <button type="button" onClick={() => setAssets(assets.filter((_, j) => j !== i))} className="min-h-[44px] min-w-[44px] rounded-full border border-neutral-200 hover:border-[#FF211F] hover:text-[#FF211F] grid place-items-center transition" aria-label="Delete" data-testid={`asset-delete-${i}`}>
+                    <button type="button" onClick={() => setAssets(assets.filter((_, j) => j !== i))} className="min-h-[44px] min-w-[44px] rounded-full border border-neutral-200 hover:border-[#DC2626] hover:text-[#DC2626] grid place-items-center transition" aria-label="Delete" data-testid={`asset-delete-${i}`}>
                       <Trash2 className="h-4 w-4" />
                     </button>
                   </div>
@@ -156,7 +156,7 @@ const AdminPaymentMethods = () => {
                       <button
                         type="button"
                         onClick={() => setManual(manual.filter((_, j) => j !== i))}
-                        className="min-h-[44px] min-w-[44px] rounded-full border border-neutral-200 hover:border-[#FF211F] hover:text-[#FF211F] grid place-items-center transition-colors"
+                        className="min-h-[44px] min-w-[44px] rounded-full border border-neutral-200 hover:border-[#DC2626] hover:text-[#DC2626] grid place-items-center transition-colors"
                         aria-label="Delete method"
                         data-testid={`admin-manual-delete-${i}`}
                       ><Trash2 className="h-4 w-4" /></button>
@@ -186,7 +186,7 @@ const AdminPaymentMethods = () => {
             <Button
               onClick={save}
               disabled={saving}
-              className="min-h-[44px] h-11 px-8 rounded-full bg-[#FF211F] hover:bg-[#e01d1b] text-white font-semibold"
+              className="min-h-[44px] h-11 px-8 rounded-full bg-[#DC2626] hover:bg-[#e01d1b] text-white font-semibold"
               data-testid="admin-payments-save"
             >{saving ? "Saving…" : "Save changes"}</Button>
           </div>

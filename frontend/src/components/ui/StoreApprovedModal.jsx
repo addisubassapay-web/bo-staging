@@ -58,7 +58,7 @@ export const StoreApprovedModal = ({
         data-testid="store-approved-modal"
       >
         {/* Aurora header */}
-        <div className="relative bg-gradient-to-br from-[#FF7A18] via-[#FF211F] to-[#c1197c] px-6 pt-6 pb-14 text-white">
+        <div className="relative bg-gradient-to-br from-[#1E40AF] via-[#3B82F6] to-[#60A5FA] px-6 pt-6 pb-14 text-white">
           {confetti && (
             <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden>
               {Array.from({ length: 24 }).map((_, i) => (
@@ -87,7 +87,7 @@ export const StoreApprovedModal = ({
                 Your store is live!
               </DialogTitle>
               <DialogDescription className="text-white/90 text-sm mt-1">
-                Welcome to Ocean, {user?.first_name || user?.username || "seller"}.
+                Welcome to BlueOcean, {user?.first_name || user?.username || "seller"}.
               </DialogDescription>
             </div>
           </div>
@@ -108,7 +108,7 @@ export const StoreApprovedModal = ({
                   {storeName}
                 </div>
                 <div className="text-xs text-neutral-500 truncate font-mono">
-                  ocean.com/store/{storeSlug || "your-slug"}
+                  blueocean.com/store/{storeSlug || "your-slug"}
                 </div>
               </div>
               <Badge
@@ -123,7 +123,7 @@ export const StoreApprovedModal = ({
             {/* Storefront theme + perks */}
             <div className="mt-4 grid grid-cols-3 gap-2 text-center">
               <div className="rounded-xl bg-neutral-50 dark:bg-neutral-800/60 p-3">
-                <Sparkles className="h-4 w-4 mx-auto text-[#FF7A18]" />
+                <Sparkles className="h-4 w-4 mx-auto text-[#1E40AF]" />
                 <div className="text-[10px] uppercase tracking-wider text-neutral-500 mt-1">Theme</div>
                 <div className="text-xs font-semibold mt-0.5 truncate" title={theme}>{theme}</div>
               </div>
@@ -145,7 +145,7 @@ export const StoreApprovedModal = ({
         <div className="px-6 py-5 flex flex-col sm:flex-row gap-2">
           <Button
             onClick={goDashboard}
-            className="flex-1 bg-[#FF211F] hover:bg-[#e01d1b] rounded-full h-11 shadow-lg shadow-[#FF211F]/25"
+            className="flex-1 bg-[#1E40AF] hover:bg-[#1E3A8A] rounded-full h-11 shadow-lg shadow-[#1E40AF]/25"
             data-testid="store-approved-primary-cta"
           >
             Manage storefront <ArrowRight className="h-4 w-4 ml-1.5" />

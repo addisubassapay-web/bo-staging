@@ -64,7 +64,7 @@ const OrderWalletTimeline = ({ orderId, initialOpen = false }) => {
       <button
         type="button"
         onClick={toggle}
-        className="inline-flex items-center gap-1.5 text-xs font-medium text-neutral-600 dark:text-neutral-300 hover:text-[#FF211F] transition"
+        className="inline-flex items-center gap-1.5 text-xs font-medium text-neutral-600 dark:text-neutral-300 hover:text-[#DC2626] transition"
         data-testid={`wallet-timeline-toggle-${orderId}`}
       >
         <Coins className="h-3.5 w-3.5" />

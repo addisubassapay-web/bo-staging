@@ -16,7 +16,7 @@ const buildUrls = ({ listing, storeSlug }) => {
   const storeUrl = storeSlug ? `${origin}/store/${storeSlug}?ref=push` : null;
   const price = formatPrice(listing.price);
   const caption = `🔥 Just added: ${listing.title} — ${price}. Grab it before it's gone!`;
-  const tag = "#Ocean #Resell";
+  const tag = "#BlueOcean #Resell";
   const share = `${caption}\n${listingUrl}\n${tag}`;
   return {
     listingUrl,
@@ -76,7 +76,7 @@ export const StorefrontShareDialog = ({ open, onOpenChange, listing, storeSlug, 
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto" data-testid="storefront-share-dialog">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2"><Share2 className="h-5 w-5 text-[#FF211F]" />{headline}</DialogTitle>
+          <DialogTitle className="flex items-center gap-2"><Share2 className="h-5 w-5 text-[#DC2626]" />{headline}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -87,7 +87,7 @@ export const StorefrontShareDialog = ({ open, onOpenChange, listing, storeSlug, 
             ) : null}
             <div className="min-w-0 flex-1">
               <div className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 line-clamp-2">{listing.title}</div>
-              <div className="text-sm text-[#FF211F] font-bold mt-0.5 tabular-nums">{formatPrice(listing.price)}</div>
+              <div className="text-sm text-[#DC2626] font-bold mt-0.5 tabular-nums">{formatPrice(listing.price)}</div>
             </div>
           </div>
 
@@ -105,7 +105,7 @@ export const StorefrontShareDialog = ({ open, onOpenChange, listing, storeSlug, 
                 <button
                   type="button"
                   onClick={() => copy(urls.storeUrl, "store")}
-                  className="min-h-[44px] min-w-[44px] px-3 rounded-lg border border-neutral-200 dark:border-neutral-800 hover:border-[#FF211F] hover:text-[#FF211F] active:scale-95 transition-all flex items-center gap-1.5 text-sm font-medium"
+                  className="min-h-[44px] min-w-[44px] px-3 rounded-lg border border-neutral-200 dark:border-neutral-800 hover:border-[#DC2626] hover:text-[#DC2626] active:scale-95 transition-all flex items-center gap-1.5 text-sm font-medium"
                   data-testid="storefront-copy-store"
                 >
                   {copied === "store" ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
@@ -128,7 +128,7 @@ export const StorefrontShareDialog = ({ open, onOpenChange, listing, storeSlug, 
               <button
                 type="button"
                 onClick={() => copy(urls.listingUrl, "listing")}
-                className="min-h-[44px] min-w-[44px] px-3 rounded-lg border border-neutral-200 dark:border-neutral-800 hover:border-[#FF211F] hover:text-[#FF211F] active:scale-95 transition-all flex items-center gap-1.5 text-sm font-medium"
+                className="min-h-[44px] min-w-[44px] px-3 rounded-lg border border-neutral-200 dark:border-neutral-800 hover:border-[#DC2626] hover:text-[#DC2626] active:scale-95 transition-all flex items-center gap-1.5 text-sm font-medium"
                 data-testid="storefront-copy-listing"
               >
                 {copied === "listing" ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
@@ -150,7 +150,7 @@ export const StorefrontShareDialog = ({ open, onOpenChange, listing, storeSlug, 
             <button
               type="button"
               onClick={() => copy(urls.share, "caption")}
-              className="mt-2 min-h-[44px] px-4 rounded-full border border-neutral-200 dark:border-neutral-800 hover:border-[#FF211F] hover:text-[#FF211F] active:scale-95 transition-all flex items-center gap-1.5 text-sm font-medium"
+              className="mt-2 min-h-[44px] px-4 rounded-full border border-neutral-200 dark:border-neutral-800 hover:border-[#DC2626] hover:text-[#DC2626] active:scale-95 transition-all flex items-center gap-1.5 text-sm font-medium"
               data-testid="storefront-copy-caption"
             >
               {copied === "caption" ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
@@ -166,7 +166,7 @@ export const StorefrontShareDialog = ({ open, onOpenChange, listing, storeSlug, 
               <Channel testid="storefront-share-facebook" icon={Facebook} label="Facebook" href={urls.facebook} color="bg-blue-700" />
               <Channel testid="storefront-share-whatsapp" icon={MessageCircle} label="WhatsApp" href={urls.whatsapp} color="bg-emerald-600" />
               <Channel testid="storefront-share-telegram" icon={Send} label="Telegram" href={urls.telegram} color="bg-sky-600" />
-              <Channel testid="storefront-share-native" icon={Share2} label="More…" onClick={nativeShare} color="bg-[#FF211F]" />
+              <Channel testid="storefront-share-native" icon={Share2} label="More…" onClick={nativeShare} color="bg-[#DC2626]" />
             </div>
           </div>
         </div>
@@ -174,7 +174,7 @@ export const StorefrontShareDialog = ({ open, onOpenChange, listing, storeSlug, 
         <DialogFooter>
           <Button
             onClick={() => onOpenChange(false)}
-            className="min-h-[44px] w-full sm:w-auto bg-[#FF211F] hover:bg-[#e01d1b] text-white"
+            className="min-h-[44px] w-full sm:w-auto bg-[#DC2626] hover:bg-[#e01d1b] text-white"
             data-testid="storefront-share-close"
           >Done</Button>
         </DialogFooter>
@@ -193,7 +193,7 @@ export const StorefrontShareButton = ({ listing, storeSlug, label = "Share to st
       <Button
         type="button"
         onClick={() => setOpen(true)}
-        className={`min-h-[44px] rounded-full gap-1.5 bg-gradient-to-r from-[#FF7A18] to-[#FF211F] hover:brightness-110 text-white ${className}`}
+        className={`min-h-[44px] rounded-full gap-1.5 bg-gradient-to-r from-[#1E40AF] to-[#3B82F6] hover:brightness-110 text-white ${className}`}
         data-testid={testid}
       >
         <Share2 className="h-4 w-4" /> {label}

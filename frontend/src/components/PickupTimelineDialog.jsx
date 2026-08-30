@@ -59,7 +59,7 @@ const PickupTimelineDialog = ({ orderId, open, onClose }) => {
       <DialogContent className="max-w-lg" data-testid="pickup-timeline-dialog">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Timer className="w-5 h-5 text-[#FF211F]" /> Pickup timeline
+            <Timer className="w-5 h-5 text-[#DC2626]" /> Pickup timeline
           </DialogTitle>
         </DialogHeader>
         {loading || !data ? (

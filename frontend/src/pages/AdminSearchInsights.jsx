@@ -50,7 +50,7 @@ export default function AdminSearchInsights() {
                 onClick={() => setHours(w.hours)}
                 className={`px-3 h-8 text-xs font-medium transition ${
                   hours === w.hours
-                    ? "bg-[#FF211F] text-white"
+                    ? "bg-[#DC2626] text-white"
                     : "bg-white dark:bg-neutral-900 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800/60"
                 }`}
                 data-testid={`admin-search-window-${w.label}`}
@@ -62,7 +62,7 @@ export default function AdminSearchInsights() {
           <button
             type="button"
             onClick={load}
-            className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 dark:border-neutral-800 px-3 h-8 text-xs text-neutral-600 dark:text-neutral-300 hover:border-[#FF211F]/50"
+            className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 dark:border-neutral-800 px-3 h-8 text-xs text-neutral-600 dark:text-neutral-300 hover:border-[#DC2626]/50"
             data-testid="admin-search-refresh"
           >
             <RefreshCcw className={`h-3 w-3 ${loading ? "animate-spin" : ""}`} /> Refresh
@@ -77,7 +77,7 @@ export default function AdminSearchInsights() {
                 toast.error("Vocab refresh failed");
               }
             }}
-            className="inline-flex items-center gap-1.5 rounded-full bg-[#FF211F] text-white px-3 h-8 text-xs font-medium hover:bg-[#e01d1b]"
+            className="inline-flex items-center gap-1.5 rounded-full bg-[#DC2626] text-white px-3 h-8 text-xs font-medium hover:bg-[#e01d1b]"
             data-testid="admin-search-vocab-refresh"
             title="Rebuild the fuzzy-correction vocabulary from the past week of high-signal searches"
           >

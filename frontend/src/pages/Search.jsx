@@ -115,14 +115,14 @@ const Search = () => {
           onClick={() => setVibeMode((v) => !v)}
           className={`inline-flex items-center gap-1.5 px-4 h-9 rounded-full text-xs font-semibold transition ${
             vibeMode
-              ? "bg-gradient-to-r from-[#FF7A18] to-[#FF211F] text-white shadow-sm"
+              ? "bg-gradient-to-r from-[#1E40AF] to-[#3B82F6] text-white shadow-sm"
               : "bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-100"
           }`}
           data-testid="vibe-mode-toggle"
         >
           <Wand2 className="h-3.5 w-3.5" />
           {vibeMode ? "Vibe search on" : "Try Vibe search"}
-          <span className={`text-[9px] px-1.5 rounded-full ${vibeMode ? "bg-white/25" : "bg-[#FF7A18] text-white"}`}>AI</span>
+          <span className={`text-[9px] px-1.5 rounded-full ${vibeMode ? "bg-white/25" : "bg-[#1E40AF] text-white"}`}>AI</span>
         </button>
       </div>
 
@@ -130,7 +130,7 @@ const Search = () => {
 
       <div className="flex items-center justify-between gap-4 mb-8 flex-wrap">
         <div>
-          <span className="inline-block text-[10px] uppercase tracking-[0.2em] font-semibold text-[#FF7A18] bg-[#FF7A18]/10 border border-[#FF7A18]/20 rounded-full px-3 py-1">
+          <span className="inline-block text-[10px] uppercase tracking-[0.2em] font-semibold text-[#1E40AF] bg-[#1E40AF]/10 border border-[#1E40AF]/20 rounded-full px-3 py-1">
             {q ? "Search" : categoryName ? "Category" : "Catalog"}
           </span>
           <h1 className="mt-2 text-2xl sm:text-4xl font-extrabold text-neutral-900 dark:text-neutral-100 tracking-tight flex items-center gap-2">
@@ -172,7 +172,7 @@ const Search = () => {
           <div className="flex items-center justify-between">
             <h3 className="font-semibold">Filters</h3>
             {activeFilters > 0 && (
-              <button onClick={clearAll} className="text-xs text-[#FF211F] hover:underline flex items-center gap-1" data-testid="clear-filters-btn">
+              <button onClick={clearAll} className="text-xs text-[#DC2626] hover:underline flex items-center gap-1" data-testid="clear-filters-btn">
                 <X className="h-3 w-3" /> Clear
               </button>
             )}
@@ -321,10 +321,10 @@ const Pagination = ({ page, totalPages, pageWindow, goToPage }) => {
   const cls = (active, disabled) =>
     `h-10 min-w-10 sm:h-9 sm:min-w-9 px-2.5 rounded-md text-sm font-medium border transition inline-flex items-center justify-center gap-1 ${
       active
-        ? "bg-[#FF211F] text-white border-[#FF211F] shadow-sm"
+        ? "bg-[#DC2626] text-white border-[#DC2626] shadow-sm"
         : disabled
           ? "bg-neutral-50 dark:bg-neutral-900 text-neutral-300 dark:text-neutral-600 border-neutral-200 dark:border-neutral-800 cursor-not-allowed"
-          : "bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-200 border-neutral-200 dark:border-neutral-800 hover:border-[#FF7A18]"
+          : "bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-200 border-neutral-200 dark:border-neutral-800 hover:border-[#1E40AF]"
     }`;
 
   return (

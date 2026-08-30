@@ -36,7 +36,7 @@ const SidebarLink = ({ to, icon: Icon, children }) => (
     to={to}
     end
     className={({ isActive }) =>
-      `flex items-center gap-2 px-3 py-2 rounded-md text-sm ${isActive ? "bg-[#FFF3F2] text-[#FF211F] font-medium" : "text-neutral-700 hover:bg-neutral-100"}`
+      `flex items-center gap-2 px-3 py-2 rounded-md text-sm ${isActive ? "bg-[#FFF3F2] text-[#DC2626] font-medium" : "text-neutral-700 hover:bg-neutral-100"}`
     }
   >
     <Icon className="h-4 w-4" /> {children}
@@ -62,7 +62,7 @@ const SidebarSupportLink = () => {
       to="/admin/support-tickets"
       end
       className={({ isActive }) =>
-        `flex items-center gap-2 px-3 py-2 rounded-md text-sm ${isActive ? "bg-[#FFF3F2] text-[#FF211F] font-medium" : "text-neutral-700 hover:bg-neutral-100"}`
+        `flex items-center gap-2 px-3 py-2 rounded-md text-sm ${isActive ? "bg-[#FFF3F2] text-[#DC2626] font-medium" : "text-neutral-700 hover:bg-neutral-100"}`
       }
       data-testid="admin-sidebar-support"
     >
@@ -155,7 +155,7 @@ const WalletAdjustDialog = ({ user, onClose, onDone }) => {
       <DialogContent className="max-w-md" data-testid="wallet-adjust-dialog">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Wallet className="h-5 w-5 text-[#FF211F]" /> Adjust wallet — {user.username}
+            <Wallet className="h-5 w-5 text-[#DC2626]" /> Adjust wallet — {user.username}
           </DialogTitle>
         </DialogHeader>
         <div className="grid grid-cols-2 gap-3 text-sm">
@@ -830,7 +830,7 @@ const OrdersMgr = () => {
                   type="checkbox"
                   checked={allSelected}
                   onChange={toggleAll}
-                  className="h-4 w-4 rounded border-neutral-300 accent-[#FF211F] cursor-pointer"
+                  className="h-4 w-4 rounded border-neutral-300 accent-[#DC2626] cursor-pointer"
                   aria-label="Select all orders"
                   data-testid="orders-select-all"
                 />
@@ -864,7 +864,7 @@ const OrdersMgr = () => {
                         checked={isSel}
                         onChange={(e) => { e.stopPropagation(); toggleOne(o.id); }}
                         onClick={(e) => e.stopPropagation()}
-                        className="h-4 w-4 rounded border-neutral-300 accent-[#FF211F] cursor-pointer"
+                        className="h-4 w-4 rounded border-neutral-300 accent-[#DC2626] cursor-pointer"
                         aria-label={`Select order ${o.id.slice(0,8)}`}
                         data-testid={`orders-select-${o.id}`}
                       />
@@ -931,7 +931,7 @@ const CategoriesMgr = () => {
         <h2 className="text-2xl font-bold">Categories</h2>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-[#FF211F] hover:bg-[#e01d1b]"><Plus className="h-4 w-4 mr-1" /> New</Button>
+            <Button className="bg-[#DC2626] hover:bg-[#e01d1b]"><Plus className="h-4 w-4 mr-1" /> New</Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader><DialogTitle>New category</DialogTitle></DialogHeader>
@@ -943,7 +943,7 @@ const CategoriesMgr = () => {
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-              <Button className="bg-[#FF211F] hover:bg-[#e01d1b]" onClick={create}>Create</Button>
+              <Button className="bg-[#DC2626] hover:bg-[#e01d1b]" onClick={create}>Create</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -1027,7 +1027,7 @@ const SettingsMgr = () => {
     <div>
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-2xl font-bold">Platform settings</h2>
-        <Button onClick={save} disabled={saving} className="bg-[#FF211F] hover:bg-[#e01d1b]">
+        <Button onClick={save} disabled={saving} className="bg-[#DC2626] hover:bg-[#e01d1b]">
           <Save className="h-4 w-4 mr-1" /> {saving ? "Saving…" : "Save"}
         </Button>
       </div>
@@ -1102,7 +1102,7 @@ const SettingsMgr = () => {
             <Users className="h-4 w-4 text-amber-500" /> Signup access control
           </h3>
           <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-4">
-            When enabled, new accounts can only register with a valid invitation code (an existing member&apos;s referral code). This turns Ocean into a closed, invite-only community until you flip it back off.
+            When enabled, new accounts can only register with a valid invitation code (an existing member&apos;s referral code). This turns BlueOcean into a closed, invite-only community until you flip it back off.
           </p>
           <div className="flex items-center justify-between gap-4 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-950 p-4">
             <div className="flex-1 min-w-0">
@@ -1132,7 +1132,7 @@ const SettingsMgr = () => {
 
         <section className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg p-5" data-testid="settings-disputes-section">
           <h3 className="font-semibold mb-1 flex items-center gap-2">
-            <AlertCircle className="h-4 w-4 text-[#FF211F]" /> Disputes automation
+            <AlertCircle className="h-4 w-4 text-[#DC2626]" /> Disputes automation
           </h3>
           <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-3">
             Auto-refund any incoming dispute whose order amount is at or below this threshold, so your team only reviews the high-value cases. Set to 0 to disable and review every dispute manually.
@@ -1183,8 +1183,8 @@ const SettingsMgr = () => {
                     }}
                     className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border transition ${
                       excluded
-                        ? "bg-[#FF211F] text-white border-[#FF211F] shadow-sm"
-                        : "bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-200 border-neutral-200 dark:border-neutral-700 hover:border-[#FF7A18]"
+                        ? "bg-[#DC2626] text-white border-[#DC2626] shadow-sm"
+                        : "bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-200 border-neutral-200 dark:border-neutral-700 hover:border-[#1E40AF]"
                     }`}
                     data-testid={`exclusion-toggle-${r.value}`}
                   >
@@ -1396,7 +1396,7 @@ const StoresMgr = () => {
         <Button
           onClick={saveOrder}
           disabled={saving || !dirty}
-          className="bg-[#FF211F] hover:bg-[#e01d1b] gap-1.5 disabled:opacity-40"
+          className="bg-[#DC2626] hover:bg-[#e01d1b] gap-1.5 disabled:opacity-40"
           data-testid="save-store-order"
         >
           <Save className="h-4 w-4" /> {saving ? "Saving…" : dirty ? "Save order" : "Saved"}
@@ -1416,7 +1416,7 @@ const StoresMgr = () => {
                       <div
                         ref={prov.innerRef}
                         {...prov.draggableProps}
-                        className={`flex items-center gap-3 bg-white border rounded-lg p-3 ${snapshot.isDragging ? "border-[#FF7A18] shadow-lg" : "border-neutral-200"}`}
+                        className={`flex items-center gap-3 bg-white border rounded-lg p-3 ${snapshot.isDragging ? "border-[#1E40AF] shadow-lg" : "border-neutral-200"}`}
                         data-testid={`store-row-${s.id}`}
                       >
                         <span
@@ -1698,7 +1698,7 @@ const DisputesMgr = () => {
       <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
         <div>
           <h2 className="text-2xl font-bold flex items-center gap-2">
-            <AlertCircle className="h-5 w-5 text-[#FF211F]" /> Disputes
+            <AlertCircle className="h-5 w-5 text-[#DC2626]" /> Disputes
           </h2>
           <p className="text-sm text-neutral-500">Review buyer disputes. Refund credits the buyer wallet and cancels the order.</p>
         </div>
@@ -1760,7 +1760,7 @@ const DisputesMgr = () => {
                         key={i}
                         href={url.startsWith("http") ? url : `${process.env.REACT_APP_BACKEND_URL}${url}?auth=${localStorage.getItem("mercari-global_token") || ""}`}
                         target="_blank" rel="noreferrer"
-                        className="block aspect-square rounded-lg overflow-hidden bg-neutral-100 hover:ring-2 hover:ring-[#FF7A18]"
+                        className="block aspect-square rounded-lg overflow-hidden bg-neutral-100 hover:ring-2 hover:ring-[#1E40AF]"
                         data-testid={`admin-dispute-photo-${d.id}-${i}`}
                       >
                         <img
@@ -1869,7 +1869,7 @@ const AdminDisputeThread = ({ disputeId, closed }) => {
     <div className="mt-3 border-t border-neutral-200 dark:border-neutral-800 pt-3">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="inline-flex items-center gap-1.5 text-sm font-medium text-[#FF7A18] hover:text-[#FF211F] transition"
+        className="inline-flex items-center gap-1.5 text-sm font-medium text-[#1E40AF] hover:text-[#DC2626] transition"
         data-testid={`admin-dispute-thread-toggle-${disputeId}`}
       >
         <MessageCircle className="h-4 w-4" />
@@ -1889,7 +1889,7 @@ const AdminDisputeThread = ({ disputeId, closed }) => {
                 <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
                   <div className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm ${
                     mine
-                      ? "bg-[#FF211F] text-white rounded-br-md"
+                      ? "bg-[#DC2626] text-white rounded-br-md"
                       : role === "seller"
                         ? "bg-emerald-50 dark:bg-emerald-500/15 text-neutral-900 dark:text-neutral-100 rounded-bl-md"
                         : "bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 rounded-bl-md"
@@ -1924,7 +1924,7 @@ const AdminDisputeThread = ({ disputeId, closed }) => {
               <Button
                 onClick={send}
                 disabled={sending || !body.trim()}
-                className="bg-[#FF211F] hover:bg-[#e01d1b] shrink-0"
+                className="bg-[#DC2626] hover:bg-[#e01d1b] shrink-0"
                 data-testid={`admin-dispute-msg-send-${disputeId}`}
               >
                 <MessageCircle className="h-4 w-4" />

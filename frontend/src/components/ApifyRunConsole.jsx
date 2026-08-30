@@ -150,7 +150,7 @@ const ApifyRunConsole = () => {
     >
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-2">
-          <Terminal className="h-5 w-5 text-[#FF211F]" />
+          <Terminal className="h-5 w-5 text-[#DC2626]" />
           <h3 className="font-semibold">Run Console</h3>
           <span className="text-xs text-neutral-500">
             Inspect · abort · resurrect any Apify actor run
@@ -189,7 +189,7 @@ const ApifyRunConsole = () => {
                   onClick={() => setSelectedRunId(r.id)}
                   className={`text-left px-3 py-2 rounded-lg border transition ${
                     active
-                      ? "border-[#FF211F] bg-red-50 dark:bg-red-950/20"
+                      ? "border-[#DC2626] bg-red-50 dark:bg-red-950/20"
                       : "border-neutral-200 dark:border-neutral-800 hover:border-neutral-400"
                   }`}
                   data-testid={`apify-run-chip-${r.id}`}

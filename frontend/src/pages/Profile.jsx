@@ -163,7 +163,7 @@ const Profile = () => {
 
   const shareProfile = async () => {
     const url = `${window.location.origin}/store/${user.username}`;
-    const text = `Check out ${user.username}'s store on Ocean`;
+    const text = `Check out ${user.username}'s store on BlueOcean`;
     if (navigator.share) {
       try { await navigator.share({ title: text, url }); }
       catch (e) { if (e?.name !== "AbortError") console.warn("[share] failed:", e); }
@@ -187,7 +187,7 @@ const Profile = () => {
       {/* Modern gradient hero */}
       <div className="relative rounded-3xl overflow-hidden mb-8 shadow-[0_20px_50px_-25px_rgba(255,33,31,0.35)]" data-testid="profile-hero">
         {/* Decorative gradient background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[#FF7A18] via-[#FF5722] to-[#FF211F]" />
+        <div className="absolute inset-0 bg-gradient-to-br from-[#1E40AF] via-[#FF5722] to-[#DC2626]" />
         <div className="absolute -top-24 -right-24 h-72 w-72 rounded-full bg-white/20 blur-3xl pointer-events-none" />
         <div className="absolute -bottom-20 -left-16 h-64 w-64 rounded-full bg-black/25 blur-3xl pointer-events-none" />
         {/* Subtle grid pattern */}
@@ -203,7 +203,7 @@ const Profile = () => {
           <div className="flex items-start gap-4 sm:gap-6 flex-wrap">
             {/* Avatar with ring */}
             <div className="relative">
-              <div className="h-20 w-20 sm:h-24 sm:w-24 rounded-2xl bg-white text-[#FF211F] grid place-items-center text-3xl sm:text-4xl font-extrabold shadow-xl ring-4 ring-white/40" data-testid="profile-avatar">
+              <div className="h-20 w-20 sm:h-24 sm:w-24 rounded-2xl bg-white text-[#DC2626] grid place-items-center text-3xl sm:text-4xl font-extrabold shadow-xl ring-4 ring-white/40" data-testid="profile-avatar">
                 {user.username[0].toUpperCase()}
               </div>
               {user.role === "admin" && (
@@ -240,17 +240,17 @@ const Profile = () => {
               {/* Quick action buttons */}
               <div className="mt-4 flex items-center gap-2 flex-wrap" data-testid="profile-quick-actions">
                 <Link to="/sell">
-                  <Button className="h-9 rounded-full bg-white text-[#FF211F] hover:bg-neutral-100 font-semibold gap-1.5 px-4 shadow-sm" data-testid="profile-cta-sell">
+                  <Button className="h-9 rounded-full bg-white text-[#DC2626] hover:bg-neutral-100 font-semibold gap-1.5 px-4 shadow-sm" data-testid="profile-cta-sell">
                     <PackageIcon className="h-4 w-4" /> Sell an item
                   </Button>
                 </Link>
                 <Link to="/seller/payouts">
-                  <Button variant="outline" className="h-9 rounded-full bg-white/10 backdrop-blur-sm border-white/40 text-white hover:bg-white hover:text-[#FF211F] font-semibold gap-1.5 px-4" data-testid="profile-cta-payouts">
+                  <Button variant="outline" className="h-9 rounded-full bg-white/10 backdrop-blur-sm border-white/40 text-white hover:bg-white hover:text-[#DC2626] font-semibold gap-1.5 px-4" data-testid="profile-cta-payouts">
                     <BarChart3 className="h-4 w-4" /> Payout dashboard
                   </Button>
                 </Link>
                 <Link to="/wallet">
-                  <Button variant="outline" className="h-9 rounded-full bg-white/10 backdrop-blur-sm border-white/40 text-white hover:bg-white hover:text-[#FF211F] font-semibold gap-1.5 px-4" data-testid="profile-cta-wallet">
+                  <Button variant="outline" className="h-9 rounded-full bg-white/10 backdrop-blur-sm border-white/40 text-white hover:bg-white hover:text-[#DC2626] font-semibold gap-1.5 px-4" data-testid="profile-cta-wallet">
                     <WalletIcon className="h-4 w-4" /> Wallet
                   </Button>
                 </Link>
@@ -314,7 +314,7 @@ const Profile = () => {
               </div>
               <button
                 onClick={copyReferral}
-                className={`h-9 px-4 rounded-full font-semibold text-sm transition inline-flex items-center gap-1.5 ${copied ? "bg-emerald-400 text-emerald-900" : "bg-white text-[#FF211F] hover:bg-neutral-100"}`}
+                className={`h-9 px-4 rounded-full font-semibold text-sm transition inline-flex items-center gap-1.5 ${copied ? "bg-emerald-400 text-emerald-900" : "bg-white text-[#DC2626] hover:bg-neutral-100"}`}
                 data-testid="referral-copy-btn"
               >
                 {copied ? <><Check className="h-4 w-4" /> Copied!</> : <><Copy className="h-4 w-4" /> Copy link</>}
@@ -335,7 +335,7 @@ const Profile = () => {
           <div className="pointer-events-none absolute -bottom-14 -left-10 h-40 w-40 rounded-full bg-purple-100/70 blur-3xl" />
           <div className="relative flex items-start justify-between gap-3 flex-wrap">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#FF7A18] to-[#FF211F] grid place-items-center shrink-0 shadow-sm">
+              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#1E40AF] to-[#3B82F6] grid place-items-center shrink-0 shadow-sm">
                 <Share2 className="h-5 w-5 text-white" />
               </div>
               <div>
@@ -356,8 +356,8 @@ const Profile = () => {
               <div className="text-xl sm:text-2xl font-extrabold text-neutral-900 tabular-nums mt-0.5">{pushStats.share_reach_followers.toLocaleString()}</div>
               <div className="text-[10px] text-neutral-500">followers</div>
             </div>
-            <div className="rounded-xl border border-[#FF7A18]/30 bg-[#FFF3F2] p-3 text-center" data-testid="push-stat-sales">
-              <div className="text-[10px] uppercase tracking-wider text-[#FF211F] font-semibold">Sales</div>
+            <div className="rounded-xl border border-[#1E40AF]/30 bg-[#FFF3F2] p-3 text-center" data-testid="push-stat-sales">
+              <div className="text-[10px] uppercase tracking-wider text-[#DC2626] font-semibold">Sales</div>
               <div className="text-xl sm:text-2xl font-extrabold text-neutral-900 tabular-nums mt-0.5">{pushStats.share_attributed_sales.toLocaleString()}</div>
               <div className="text-[10px] text-neutral-500">from shares</div>
             </div>
@@ -398,7 +398,7 @@ const Profile = () => {
             <div className="text-center py-16 border border-dashed rounded-xl">
               <PackageIcon className="h-10 w-10 mx-auto text-neutral-300 mb-2" />
               <p className="text-neutral-600">No listings yet.</p>
-              <Link to="/sell"><Button className="mt-4 bg-[#FF211F] hover:bg-[#e01d1b]">List your first item</Button></Link>
+              <Link to="/sell"><Button className="mt-4 bg-[#DC2626] hover:bg-[#e01d1b]">List your first item</Button></Link>
             </div>
           ) : (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -450,7 +450,7 @@ const Profile = () => {
                   <div className="flex gap-4 p-4">
                     <img src={o.listing_image} alt="" className="h-20 w-20 rounded object-cover bg-neutral-100" />
                     <div className="flex-1">
-                      <Link to={`/listing/${o.listing_id}`} className="font-medium hover:text-[#FF211F]">{o.listing_title}</Link>
+                      <Link to={`/listing/${o.listing_id}`} className="font-medium hover:text-[#DC2626]">{o.listing_title}</Link>
                       <div className="text-sm text-neutral-500">Seller: {o.seller_name} · {new Date(o.created_at).toLocaleDateString()}</div>
                       <div className="mt-1 flex items-center gap-2 flex-wrap">
                         <Badge variant="secondary" className="capitalize">{o.status}</Badge>

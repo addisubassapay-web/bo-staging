@@ -79,7 +79,7 @@ const BestSellersRotation = () => {
         <Button
           onClick={refreshNow}
           disabled={refreshing}
-          className="bg-[#FF211F] hover:bg-[#e01d1b]"
+          className="bg-[#DC2626] hover:bg-[#e01d1b]"
           data-testid="best-sellers-refresh"
         >
           {refreshing ? <><Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> Rotating…</> : <><RefreshCw className="h-4 w-4 mr-1.5" /> Rotate now (top 20)</>}

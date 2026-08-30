@@ -55,7 +55,7 @@ const GeoCurrencyPrompt = () => {
             {(t("geo.body") || "Switch prices to {ccy}?").replace("{ccy}", suggestion.currency)}
           </div>
           <div className="mt-3 flex gap-2">
-            <Button size="sm" onClick={accept} className="bg-[#FF211F] hover:bg-[#e01d1b] h-8" data-testid="geo-accept-btn">
+            <Button size="sm" onClick={accept} className="bg-[#DC2626] hover:bg-[#e01d1b] h-8" data-testid="geo-accept-btn">
               {(t("geo.switch") || "Switch to {ccy}").replace("{ccy}", suggestion.currency)}
             </Button>
             <Button size="sm" variant="outline" onClick={dismiss} className="h-8" data-testid="geo-dismiss-btn">

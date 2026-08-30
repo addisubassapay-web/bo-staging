@@ -51,7 +51,7 @@ const ShelfAdmin = () => {
           <h2 className="text-2xl font-bold">Homepage shelves</h2>
           <p className="text-sm text-neutral-500">Drag to reorder, toggle to hide.</p>
         </div>
-        <Button onClick={saveOrder} disabled={saving || !dirty} className="bg-[#FF211F] hover:bg-[#e01d1b] gap-1.5 disabled:opacity-40" data-testid="save-shelf-order">
+        <Button onClick={saveOrder} disabled={saving || !dirty} className="bg-[#DC2626] hover:bg-[#e01d1b] gap-1.5 disabled:opacity-40" data-testid="save-shelf-order">
           <Save className="h-4 w-4" /> {saving ? "Saving…" : dirty ? "Save order" : "Saved"}
         </Button>
       </div>
@@ -65,7 +65,7 @@ const ShelfAdmin = () => {
                     <div
                       ref={prov.innerRef}
                       {...prov.draggableProps}
-                      className={`flex items-center gap-3 bg-white border rounded-lg p-3 ${snapshot.isDragging ? "border-[#FF7A18] shadow-lg" : "border-neutral-200"}`}
+                      className={`flex items-center gap-3 bg-white border rounded-lg p-3 ${snapshot.isDragging ? "border-[#1E40AF] shadow-lg" : "border-neutral-200"}`}
                       data-testid={`shelf-row-${s.id}`}
                     >
                       <span {...prov.dragHandleProps} className="cursor-grab active:cursor-grabbing text-neutral-400 hover:text-neutral-600" data-testid={`shelf-drag-${s.id}`}>

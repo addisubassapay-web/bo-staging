@@ -110,16 +110,16 @@ const PWAInstallPrompt = () => {
     <div
       className="fixed inset-x-3 bottom-3 z-50 sm:hidden animate-in slide-in-from-bottom-6 fade-in duration-500"
       role="dialog"
-      aria-label="Add Ocean to your home screen"
+      aria-label="Add BlueOcean to your home screen"
       data-testid="pwa-install-prompt"
     >
       <div className="mx-auto max-w-md rounded-2xl shadow-2xl border border-neutral-200 bg-white overflow-hidden">
         <div className="flex items-start gap-3 p-4">
-          <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-[#FF7A18] to-[#FF211F] grid place-items-center shrink-0 shadow-lg">
+          <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-[#1E40AF] to-[#3B82F6] grid place-items-center shrink-0 shadow-lg">
             <img src="/logo-mark.png" alt="" className="h-7 w-7 object-contain" />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-sm font-bold text-neutral-900">Install Ocean</div>
+            <div className="text-sm font-bold text-neutral-900">Install BlueOcean</div>
             <div className="text-[12px] text-neutral-500 mt-0.5">
               {iosMode
                 ? "Add to your home screen for one-tap access — no App Store required."
@@ -158,7 +158,7 @@ const PWAInstallPrompt = () => {
             <button
               type="button"
               onClick={install}
-              className="w-full min-h-[44px] rounded-xl bg-gradient-to-r from-[#FF7A18] to-[#FF211F] text-white font-semibold text-sm inline-flex items-center justify-center gap-2 shadow hover:brightness-105 transition"
+              className="w-full min-h-[44px] rounded-xl bg-gradient-to-r from-[#1E40AF] to-[#3B82F6] text-white font-semibold text-sm inline-flex items-center justify-center gap-2 shadow hover:brightness-105 transition"
               data-testid="pwa-install-cta"
             >
               <Download className="h-4 w-4" /> Install app

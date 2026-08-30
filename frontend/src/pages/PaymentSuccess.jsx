@@ -22,7 +22,7 @@ const PaymentSuccess = () => (
     </p>
     <div className="mt-6 flex gap-2 justify-center">
       <Link to="/profile?tab=orders">
-        <Button className="bg-[#FF211F] hover:bg-[#e01d1b]" data-testid="ps-view-orders">
+        <Button className="bg-[#DC2626] hover:bg-[#e01d1b]" data-testid="ps-view-orders">
           View my orders
         </Button>
       </Link>

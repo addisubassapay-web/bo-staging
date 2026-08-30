@@ -2,7 +2,7 @@
 
 async def run(page):
     await page.set_viewport_size({"width": 1920, "height": 1080})
-    base = "https://marketplace-dropship.preview.emergentagent.com"
+    base = "https://ocean-marketplace.preview.emergentagent.com"
 
     # Admin UI: login, verify sidebar, verify old Zyte routes do not render legacy pages.
     await page.goto(f"{base}/login")

@@ -95,7 +95,7 @@ export const ReviewOrderCard = ({ order, onReviewed }) => {
 
   return (
     <div className="border border-neutral-200 rounded-lg p-4">
-      <Link to={`/listing/${order.listing_id}`} className="font-medium hover:text-[#FF211F]">{order.listing_title}</Link>
+      <Link to={`/listing/${order.listing_id}`} className="font-medium hover:text-[#DC2626]">{order.listing_title}</Link>
       <div className="text-xs text-neutral-500 mb-3">Seller: {order.seller_name}</div>
       {submitted ? (
         <div>
@@ -110,7 +110,7 @@ export const ReviewOrderCard = ({ order, onReviewed }) => {
           </div>
           <Textarea rows={2} value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Share your experience (optional)…" />
           <div className="mt-2 flex justify-end">
-            <Button size="sm" onClick={submit} disabled={busy} className="bg-[#FF211F] hover:bg-[#e01d1b]">
+            <Button size="sm" onClick={submit} disabled={busy} className="bg-[#DC2626] hover:bg-[#e01d1b]">
               {busy ? "Submitting…" : "Submit review"}
             </Button>
           </div>

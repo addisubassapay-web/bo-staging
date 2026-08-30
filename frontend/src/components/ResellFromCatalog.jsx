@@ -18,7 +18,7 @@ const BADGE_META = {
   bronze: { label: "Bronze", color: "bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-200" },
   silver: { label: "Silver", color: "bg-neutral-200 text-neutral-800 dark:bg-neutral-700 dark:text-neutral-100" },
   gold: { label: "Gold", color: "bg-yellow-100 text-yellow-800 dark:bg-yellow-500/20 dark:text-yellow-200" },
-  override: { label: "Admin cap", color: "bg-[#FF7A18]/15 text-[#FF211F]" },
+  override: { label: "Admin cap", color: "bg-[#1E40AF]/15 text-[#DC2626]" },
 };
 
 const ProductRow = ({ p, picked, onSelect, wholesaleDiscount, selectable, isChecked, onToggleCheck }) => {
@@ -57,7 +57,7 @@ const ProductRow = ({ p, picked, onSelect, wholesaleDiscount, selectable, isChec
         <Button
           size="sm"
           onClick={() => onSelect({ ...p, image: img })}
-          className={`min-h-[44px] rounded-full shrink-0 ${isPicked ? "bg-emerald-600 hover:bg-emerald-700" : "bg-[#FF211F] hover:bg-[#e01d1b]"} text-white`}
+          className={`min-h-[44px] rounded-full shrink-0 ${isPicked ? "bg-emerald-600 hover:bg-emerald-700" : "bg-[#DC2626] hover:bg-[#e01d1b]"} text-white`}
           data-testid={`resell-select-${p.id}`}
         >
           {isPicked ? "Selected" : "Select"}
@@ -237,7 +237,7 @@ const ResellFromCatalog = () => {
         <button
           type="button"
           onClick={() => { setMode("category"); setPicked(null); }}
-          className={`flex-1 sm:flex-none min-h-[44px] px-4 rounded-full text-sm font-medium transition-colors flex items-center justify-center gap-1.5 ${mode === "category" ? "bg-white dark:bg-neutral-900 text-[#FF211F] shadow-sm" : "text-neutral-700 dark:text-neutral-300"}`}
+          className={`flex-1 sm:flex-none min-h-[44px] px-4 rounded-full text-sm font-medium transition-colors flex items-center justify-center gap-1.5 ${mode === "category" ? "bg-white dark:bg-neutral-900 text-[#DC2626] shadow-sm" : "text-neutral-700 dark:text-neutral-300"}`}
           data-testid="resell-mode-category"
         >
           <FolderTree className="h-4 w-4" /> By category
@@ -245,7 +245,7 @@ const ResellFromCatalog = () => {
         <button
           type="button"
           onClick={() => { setMode("search"); setPicked(null); }}
-          className={`flex-1 sm:flex-none min-h-[44px] px-4 rounded-full text-sm font-medium transition-colors flex items-center justify-center gap-1.5 ${mode === "search" ? "bg-white dark:bg-neutral-900 text-[#FF211F] shadow-sm" : "text-neutral-700 dark:text-neutral-300"}`}
+          className={`flex-1 sm:flex-none min-h-[44px] px-4 rounded-full text-sm font-medium transition-colors flex items-center justify-center gap-1.5 ${mode === "search" ? "bg-white dark:bg-neutral-900 text-[#DC2626] shadow-sm" : "text-neutral-700 dark:text-neutral-300"}`}
           data-testid="resell-mode-search"
         >
           <Search className="h-4 w-4" /> Search
@@ -253,7 +253,7 @@ const ResellFromCatalog = () => {
         <button
           type="button"
           onClick={() => { setMode("suggested"); setPicked(null); setBulkResult(null); loadSuggestions(); }}
-          className={`flex-1 sm:flex-none min-h-[44px] px-4 rounded-full text-sm font-medium transition-colors flex items-center justify-center gap-1.5 ${mode === "suggested" ? "bg-white dark:bg-neutral-900 text-[#FF211F] shadow-sm" : "text-neutral-700 dark:text-neutral-300"}`}
+          className={`flex-1 sm:flex-none min-h-[44px] px-4 rounded-full text-sm font-medium transition-colors flex items-center justify-center gap-1.5 ${mode === "suggested" ? "bg-white dark:bg-neutral-900 text-[#DC2626] shadow-sm" : "text-neutral-700 dark:text-neutral-300"}`}
           data-testid="resell-mode-suggested"
         >
           <Wand2 className="h-4 w-4" /> For me
@@ -420,9 +420,9 @@ const ResellFromCatalog = () => {
       {/* Suggested-for-me mode */}
       {mode === "suggested" && (
         <div className="space-y-3">
-          <div className="rounded-2xl border border-[#FF7A18]/30 bg-gradient-to-br from-[#FF7A18]/5 to-[#FF211F]/5 dark:from-[#FF7A18]/10 dark:to-[#FF211F]/10 p-4 sm:p-5" data-testid="resell-suggested-card">
+          <div className="rounded-2xl border border-[#1E40AF]/30 bg-gradient-to-br from-[#1E40AF]/5 to-[#DC2626]/5 dark:from-[#1E40AF]/10 dark:to-[#DC2626]/10 p-4 sm:p-5" data-testid="resell-suggested-card">
             <div className="flex items-start gap-3">
-              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#FF7A18] to-[#FF211F] grid place-items-center shrink-0 shadow-sm">
+              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#1E40AF] to-[#3B82F6] grid place-items-center shrink-0 shadow-sm">
                 <Wand2 className="h-5 w-5 text-white" />
               </div>
               <div className="flex-1 min-w-0">
@@ -444,7 +444,7 @@ const ResellFromCatalog = () => {
                 type="button"
                 onClick={loadSuggestions}
                 disabled={sugLoading}
-                className="min-h-[36px] px-3 rounded-full text-xs font-semibold border border-neutral-300 dark:border-neutral-700 hover:border-[#FF211F] hover:text-[#FF211F] transition disabled:opacity-40 shrink-0"
+                className="min-h-[36px] px-3 rounded-full text-xs font-semibold border border-neutral-300 dark:border-neutral-700 hover:border-[#DC2626] hover:text-[#DC2626] transition disabled:opacity-40 shrink-0"
                 data-testid="resell-suggested-refresh"
               >
                 {sugLoading ? "…" : "Refresh"}
@@ -464,7 +464,7 @@ const ResellFromCatalog = () => {
           ) : (
             <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 overflow-hidden" data-testid="resell-suggestions-list">
               <div className="px-4 py-2 border-b border-neutral-100 dark:border-neutral-800 text-xs text-neutral-500 flex items-center justify-between gap-2">
-                <span className="flex items-center gap-1.5"><Sparkles className="h-3.5 w-3.5 text-[#FF7A18]" /> {suggestions.suggestions.length} picks · pre-selected</span>
+                <span className="flex items-center gap-1.5"><Sparkles className="h-3.5 w-3.5 text-[#1E40AF]" /> {suggestions.suggestions.length} picks · pre-selected</span>
                 <span className="font-semibold text-emerald-600">{bulkSelected.length} selected</span>
               </div>
               <ul className="max-h-[500px] overflow-y-auto">
@@ -488,7 +488,7 @@ const ResellFromCatalog = () => {
                           <span className="font-semibold text-neutral-800 dark:text-neutral-200 tabular-nums">{formatPrice(s.price)}</span>
                           <span className="text-[10px] text-neutral-500">· {s.category_name}</span>
                         </div>
-                        <div className="mt-1 text-[10px] font-medium text-[#FF7A18] flex items-center gap-1">
+                        <div className="mt-1 text-[10px] font-medium text-[#1E40AF] flex items-center gap-1">
                           <Wand2 className="h-3 w-3" /> {s.reason}
                         </div>
                       </div>
@@ -523,7 +523,7 @@ const ResellFromCatalog = () => {
                   type="button"
                   onClick={doBulkPublish}
                   disabled={bulkPublishing || bulkSelected.length === 0 || bulkSelected.length > 20 || Number(bulkMarkup) < 0 || Number(bulkMarkup) > maxMk}
-                  className="min-h-[44px] bg-gradient-to-r from-[#FF7A18] to-[#FF211F] hover:brightness-110 text-white gap-1.5 rounded-full px-5"
+                  className="min-h-[44px] bg-gradient-to-r from-[#1E40AF] to-[#3B82F6] hover:brightness-110 text-white gap-1.5 rounded-full px-5"
                   data-testid="suggested-publish-btn"
                 >
                   {bulkPublishing ? (<><Loader2 className="h-4 w-4 animate-spin" /> Publishing…</>) : (<><Rocket className="h-4 w-4" /> Publish picks</>)}
@@ -558,7 +558,7 @@ const ResellFromCatalog = () => {
             <button
               type="button"
               onClick={() => setPicked(null)}
-              className="min-h-[44px] px-2 text-xs text-neutral-500 hover:text-[#FF211F] transition"
+              className="min-h-[44px] px-2 text-xs text-neutral-500 hover:text-[#DC2626] transition"
               data-testid="resell-change-picked"
             >
               Change
@@ -587,7 +587,7 @@ const ResellFromCatalog = () => {
                   key={v}
                   type="button"
                   onClick={() => setMarkup(v)}
-                  className={`min-h-[36px] px-3 rounded-full text-xs font-semibold transition ${Number(markup) === v ? "bg-[#FF211F] text-white" : "bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-200 dark:hover:bg-neutral-700"}`}
+                  className={`min-h-[36px] px-3 rounded-full text-xs font-semibold transition ${Number(markup) === v ? "bg-[#DC2626] text-white" : "bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-200 dark:hover:bg-neutral-700"}`}
                   data-testid={`resell-preset-${v}`}
                 >
                   {v}%
@@ -612,7 +612,7 @@ const ResellFromCatalog = () => {
                 <span>Your wholesale cost ({wholesaleDiscount}% off)</span>
                 <span className="tabular-nums font-semibold">{formatPrice(preview.wholesale)}</span>
               </div>
-              <div className="flex justify-between text-[#FF7A18]">
+              <div className="flex justify-between text-[#1E40AF]">
                 <span>Your markup (+{cappedMarkup}%)</span>
                 <span className="tabular-nums font-semibold">+{formatPrice(preview.salePrice - preview.retail)}</span>
               </div>
@@ -648,7 +648,7 @@ const ResellFromCatalog = () => {
               type="button"
               onClick={doPublish}
               disabled={submitting || overCap || !preview || preview.yours <= 0}
-              className="min-h-[44px] w-full sm:w-auto bg-gradient-to-r from-[#FF7A18] to-[#FF211F] hover:brightness-110 text-white gap-1.5"
+              className="min-h-[44px] w-full sm:w-auto bg-gradient-to-r from-[#1E40AF] to-[#3B82F6] hover:brightness-110 text-white gap-1.5"
               data-testid="resell-publish-btn"
             >
               {submitting ? "Publishing…" : (

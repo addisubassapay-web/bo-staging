@@ -45,7 +45,7 @@ const Verification = () => {
   if (!user) {
     return (
       <div className="max-w-3xl mx-auto px-4 py-12">
-        <p className="text-neutral-700">Please <Link to="/login" className="text-[#FF211F] underline">log in</Link> to access verification.</p>
+        <p className="text-neutral-700">Please <Link to="/login" className="text-[#DC2626] underline">log in</Link> to access verification.</p>
       </div>
     );
   }
@@ -148,7 +148,7 @@ const Verification = () => {
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-lg bg-[#FFF3F2] grid place-items-center">
-              <Mail className="h-5 w-5 text-[#FF211F]" />
+              <Mail className="h-5 w-5 text-[#DC2626]" />
             </div>
             <div>
               <h2 className="font-semibold text-lg">Email verification</h2>
@@ -159,7 +159,7 @@ const Verification = () => {
         </div>
         {!user.email_verified && (
           <div className="mt-4 space-y-3">
-            <Button onClick={sendEmail} disabled={emailSending} className="bg-[#FF211F] hover:bg-[#e01d1b]" data-testid="verify-email-send-btn">
+            <Button onClick={sendEmail} disabled={emailSending} className="bg-[#DC2626] hover:bg-[#e01d1b]" data-testid="verify-email-send-btn">
               {emailSending ? "Sending…" : "Send magic link"}
             </Button>
             <div>
@@ -180,7 +180,7 @@ const Verification = () => {
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-lg bg-[#FFF3F2] grid place-items-center">
-              <Phone className="h-5 w-5 text-[#FF211F]" />
+              <Phone className="h-5 w-5 text-[#DC2626]" />
             </div>
             <div>
               <h2 className="font-semibold text-lg">Phone verification</h2>
@@ -197,7 +197,7 @@ const Verification = () => {
               <Label>Phone number (E.164 format)</Label>
               <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+15551234567" className="mt-1 font-mono" data-testid="verify-phone-input" />
             </div>
-            <Button onClick={sendPhone} disabled={phoneSending || !phone.trim()} className="bg-[#FF211F] hover:bg-[#e01d1b]" data-testid="verify-phone-send-btn">
+            <Button onClick={sendPhone} disabled={phoneSending || !phone.trim()} className="bg-[#DC2626] hover:bg-[#e01d1b]" data-testid="verify-phone-send-btn">
               {phoneSending ? "Sending…" : "Send code"}
             </Button>
             <div>
@@ -231,7 +231,7 @@ const Verification = () => {
         </div>
         {canApply && (
           <Link to="/seller/apply">
-            <Button className="mt-4 bg-[#FF211F] hover:bg-[#e01d1b]" data-testid="seller-apply-cta">
+            <Button className="mt-4 bg-[#DC2626] hover:bg-[#e01d1b]" data-testid="seller-apply-cta">
               Apply to sell
             </Button>
           </Link>

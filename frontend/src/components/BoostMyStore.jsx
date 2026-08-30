@@ -82,7 +82,7 @@ const BoostMyStore = () => {
           <button
             key={id}
             onClick={() => setTier(id)}
-            className={`text-start rounded-xl p-4 border-2 transition ${tier === id ? "border-[#FF211F] bg-[#FFF6F5]" : "border-neutral-200 hover:border-neutral-300"}`}
+            className={`text-start rounded-xl p-4 border-2 transition ${tier === id ? "border-[#DC2626] bg-[#FFF6F5]" : "border-neutral-200 hover:border-neutral-300"}`}
             data-testid={`boost-tier-${id}`}
           >
             <div className="flex items-center justify-between">
@@ -113,7 +113,7 @@ const BoostMyStore = () => {
           <Button
             onClick={buy}
             disabled={loading}
-            className="w-full h-10 bg-[#FF211F] hover:bg-[#e01d1b]"
+            className="w-full h-10 bg-[#DC2626] hover:bg-[#e01d1b]"
             data-testid="boost-buy-btn"
           >
             {loading

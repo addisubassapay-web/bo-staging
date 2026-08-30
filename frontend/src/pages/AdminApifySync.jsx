@@ -61,7 +61,7 @@ const CategoryBreakdownCard = ({ perCategory, running }) => {
       <div className="flex items-start justify-between gap-3 flex-wrap mb-4">
         <div>
           <h3 className="font-bold text-lg flex items-center gap-2">
-            <Package className="h-5 w-5 text-[#FF7A18]" /> Distribution by department
+            <Package className="h-5 w-5 text-[#1E40AF]" /> Distribution by department
           </h3>
           <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-0.5">
             {running
@@ -163,7 +163,7 @@ const ApifySync = () => {
   return (
     <div>
       <div className="flex items-center gap-2 mb-4">
-        <Database className="h-6 w-6 text-[#FF211F]" />
+        <Database className="h-6 w-6 text-[#DC2626]" />
         <h2 className="text-2xl font-bold">Apify Amazon Sync</h2>
       </div>
       <p className="text-neutral-600 mb-6">
@@ -187,7 +187,7 @@ const ApifySync = () => {
               <input type="checkbox" checked={replace} onChange={(e) => setReplace(e.target.checked)} className="h-4 w-4" />
               Replace all existing listings (recommended)
             </label>
-            <Button onClick={runSync} disabled={syncing || status.sync_running} className="w-full bg-[#FF211F] hover:bg-[#e01d1b]">
+            <Button onClick={runSync} disabled={syncing || status.sync_running} className="w-full bg-[#DC2626] hover:bg-[#e01d1b]">
               <RefreshCw className={`h-4 w-4 mr-1 ${status.sync_running ? "animate-spin" : ""}`} />
               {status.sync_running ? "Sync running…" : "Sync now"}
             </Button>
@@ -244,7 +244,7 @@ const ApifySync = () => {
                       toast({ title: "Update failed", description: err.response?.data?.detail || "Try again", variant: "destructive" });
                     }
                   }}
-                  className="text-[11px] font-semibold px-2 py-0.5 rounded-full border border-neutral-200 hover:border-[#FF211F] hover:text-[#FF211F] transition"
+                  className="text-[11px] font-semibold px-2 py-0.5 rounded-full border border-neutral-200 hover:border-[#DC2626] hover:text-[#DC2626] transition"
                   data-testid="apify-schedule-toggle"
                 >
                   {status.auto_schedule_enabled ? "Pause" : "Resume"}

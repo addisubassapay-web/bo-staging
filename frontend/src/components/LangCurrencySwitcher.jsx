@@ -47,7 +47,7 @@ const LangCurrencySwitcher = () => {
               <button
                 key={l.code}
                 onClick={() => { setLang(l.code); setOpenLang(false); }}
-                className={`w-full text-left px-3 py-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800 flex items-center gap-2 text-sm ${l.code === lang ? "font-semibold text-[#FF211F]" : ""}`}
+                className={`w-full text-left px-3 py-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800 flex items-center gap-2 text-sm ${l.code === lang ? "font-semibold text-[#DC2626]" : ""}`}
                 data-testid={`lang-opt-${l.code}`}
               >
                 <span>{l.flag}</span>
@@ -76,7 +76,7 @@ const LangCurrencySwitcher = () => {
               <button
                 key={c}
                 onClick={() => { setCurrency(c); setOpenCur(false); }}
-                className={`w-full text-left px-3 py-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-sm ${c === currency ? "font-semibold text-[#FF211F]" : ""}`}
+                className={`w-full text-left px-3 py-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-sm ${c === currency ? "font-semibold text-[#DC2626]" : ""}`}
                 data-testid={`currency-opt-${c}`}
               >
                 <span className="font-mono tracking-wider">{c}</span>

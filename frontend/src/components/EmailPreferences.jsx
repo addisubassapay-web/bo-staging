@@ -59,13 +59,13 @@ const EmailPreferences = () => {
     <div className="space-y-5 max-w-2xl" data-testid="email-preferences">
       <div className="rounded-2xl border border-neutral-200 bg-white p-5 sm:p-6">
         <div className="flex items-start gap-3">
-          <div className="h-10 w-10 rounded-full bg-gradient-to-br from-[#FFE9E7] to-[#FFC9C4] text-[#FF211F] grid place-items-center shrink-0">
+          <div className="h-10 w-10 rounded-full bg-gradient-to-br from-[#FFE9E7] to-[#FFC9C4] text-[#DC2626] grid place-items-center shrink-0">
             <Mail className="h-5 w-5" />
           </div>
           <div className="flex-1">
             <h3 className="text-lg font-bold">Email preferences</h3>
             <p className="text-sm text-neutral-600 mt-1">
-              Choose which transactional emails you want to receive from Ocean. You can change this any time. Account safety alerts always send even if disabled elsewhere.
+              Choose which transactional emails you want to receive from BlueOcean. You can change this any time. Account safety alerts always send even if disabled elsewhere.
             </p>
           </div>
         </div>

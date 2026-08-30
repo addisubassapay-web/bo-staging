@@ -91,7 +91,7 @@ const PickupOrderDialog = ({ orderId, trigger, onPicked, autoOpen = false, onAut
         {trigger || (
           <Button
             size="sm"
-            className="bg-[#FF211F] hover:bg-[#e01a19] text-white rounded-full"
+            className="bg-[#DC2626] hover:bg-[#e01a19] text-white rounded-full"
             data-testid={`pickup-btn-${orderId}`}
           >
             <PackageCheck className="h-4 w-4 mr-1.5" /> Pick & Deliver
@@ -103,7 +103,7 @@ const PickupOrderDialog = ({ orderId, trigger, onPicked, autoOpen = false, onAut
         <DialogContent className="max-w-md" data-testid="pickup-dialog">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <PackageCheck className="h-5 w-5 text-[#FF211F]" />
+              <PackageCheck className="h-5 w-5 text-[#DC2626]" />
               Pick & Deliver order
             </DialogTitle>
             <DialogDescription>
@@ -202,7 +202,7 @@ const PickupOrderDialog = ({ orderId, trigger, onPicked, autoOpen = false, onAut
                   <Link
                     to="/wallet"
                     onClick={() => setOpen(false)}
-                    className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#FF211F] hover:underline"
+                    className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#DC2626] hover:underline"
                     data-testid="pickup-deposit-link"
                   >
                     Deposit into wallet →
@@ -224,7 +224,7 @@ const PickupOrderDialog = ({ orderId, trigger, onPicked, autoOpen = false, onAut
             <Button
               onClick={pick}
               disabled={busy || !quote || !affordable}
-              className="bg-[#FF211F] hover:bg-[#e01a19] text-white"
+              className="bg-[#DC2626] hover:bg-[#e01a19] text-white"
               data-testid="pickup-confirm-btn"
             >
               {busy ? (

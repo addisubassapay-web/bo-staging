@@ -73,7 +73,7 @@ const Login = () => {
           }}
         >
           <div className="pointer-events-none absolute -top-24 -right-24 h-96 w-96 rounded-full bg-[#7DD3FC] opacity-20 blur-3xl" />
-          <div className="pointer-events-none absolute -bottom-24 -left-24 h-96 w-96 rounded-full bg-[#FF7A18] opacity-20 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-24 -left-24 h-96 w-96 rounded-full bg-[#1E40AF] opacity-20 blur-3xl" />
 
           <BrandMark size={64} showWordmark animated wordmarkClassName="text-white" />
 
@@ -89,7 +89,7 @@ const Login = () => {
             </ul>
           </div>
 
-          <div className="text-xs text-white/60">© {new Date().getFullYear()} Ocean · All rights reserved.</div>
+          <div className="text-xs text-white/60">© {new Date().getFullYear()} BlueOcean · All rights reserved.</div>
         </div>
 
         {/* Right — form pane */}
@@ -107,7 +107,7 @@ const Login = () => {
                 <ShieldCheck className="h-3 w-3" /> Secure sign-in
               </div>
               <h1 className="mt-3 text-2xl sm:text-3xl font-extrabold text-neutral-900 dark:text-neutral-100">Welcome back</h1>
-              <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">Sign in to continue to your Ocean account.</p>
+              <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">Sign in to continue to your BlueOcean account.</p>
 
               <form onSubmit={submit} className="mt-6 space-y-4" data-testid="login-form">
                 <div>
@@ -188,7 +188,7 @@ const Login = () => {
                   </>
                 ) : (
                   <>
-                    New to Ocean? <Link to="/register" className="text-[#2563EB] dark:text-[#7DD3FC] font-semibold hover:underline" data-testid="login-to-register">Create your account</Link>
+                    New to BlueOcean? <Link to="/register" className="text-[#2563EB] dark:text-[#7DD3FC] font-semibold hover:underline" data-testid="login-to-register">Create your account</Link>
                   </>
                 )}
               </p>

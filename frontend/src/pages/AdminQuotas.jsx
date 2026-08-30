@@ -79,7 +79,7 @@ const AdminQuotas = () => {
             className="w-32 h-10 tabular-nums"
             data-testid="admin-global-cap-input"
           />
-          <Button onClick={saveGlobal} className="h-10 bg-[#FF211F] hover:bg-[#e01d1b]" data-testid="admin-global-cap-save">
+          <Button onClick={saveGlobal} className="h-10 bg-[#DC2626] hover:bg-[#e01d1b]" data-testid="admin-global-cap-save">
             <Save className="h-4 w-4 mr-1.5" /> Save
           </Button>
           <span className="text-xs text-neutral-500 ml-2">Current: <span className="font-semibold">{globalCap}</span> credits</span>

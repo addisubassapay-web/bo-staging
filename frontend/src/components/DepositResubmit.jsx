@@ -132,7 +132,7 @@ const DepositResubmit = ({ deposit, onSuccess }) => {
               type="button"
               onClick={() => fileRef.current?.click()}
               disabled={uploading}
-              className="mt-1 w-full min-h-[44px] rounded-lg border-2 border-dashed border-neutral-300 dark:border-neutral-700 hover:border-[#FF211F] hover:bg-neutral-50 dark:hover:bg-neutral-900 transition inline-flex items-center justify-center gap-2 text-sm font-medium text-neutral-700 dark:text-neutral-300 disabled:opacity-60"
+              className="mt-1 w-full min-h-[44px] rounded-lg border-2 border-dashed border-neutral-300 dark:border-neutral-700 hover:border-[#DC2626] hover:bg-neutral-50 dark:hover:bg-neutral-900 transition inline-flex items-center justify-center gap-2 text-sm font-medium text-neutral-700 dark:text-neutral-300 disabled:opacity-60"
               data-testid={`deposit-resubmit-upload-${deposit.id}`}
             >
               <ImagePlus className="h-4 w-4" />
