@@ -15,7 +15,7 @@ Security additions (Feb 2026):
 from __future__ import annotations
 from datetime import datetime, timezone, timedelta
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from .deps import (
     get_db,
@@ -122,11 +122,12 @@ async def register(payload: dict):
         await credit_wallet(user.id, settings["signup_bonus"], "bonus", "Signup bonus")
     token = create_token(user.id, user.role)
     fresh = await db.users.find_one({"id": user.id}, {"_id": 0, "password_hash": 0})
-    return AuthResponse(token=token, user=UserPublic(**fresh))
+    resp = AuthResponse(token=token, user=UserPublic(**fresh))
+    return resp
 
 
 @router.post("/auth/login")
-async def login(payload: dict, request: Request):
+async def login(payload: dict, request: Request, response: Response):
     _U, _UC, UserLogin, UserPublic, AuthResponse = _models()
     body = UserLogin(**payload)
     db = get_db()
@@ -226,6 +227,22 @@ async def login(payload: dict, request: Request):
 
     await _clear_failed(db, user["id"])
     token = create_token(user["id"], user["role"])
+    # Dual-mode auth: also set an HTTPOnly cookie so future clients (and
+    # once the frontend migrates fully) can drop reading the token from
+    # localStorage. Cookie flags: Secure (HTTPS-only) + SameSite=Lax so
+    # normal navigations attach it but cross-site POSTs don't.
+    try:
+        response.set_cookie(  # noqa: F821 (response is the FastAPI-injected param above)
+            key="bo_token",
+            value=token,
+            httponly=True,
+            secure=True,
+            samesite="lax",
+            max_age=60 * 60 * 24 * 30,  # 30 days
+            path="/",
+        )
+    except Exception:
+        pass
     return AuthResponse(
         token=token,
         user=UserPublic(**to_public_user(user)),

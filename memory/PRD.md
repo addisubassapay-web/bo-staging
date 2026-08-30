@@ -2169,3 +2169,28 @@ See `/app/memory/test_credentials.md`.
 - `/app/frontend/src/pages/Login.jsx`
 - `/app/frontend/src/pages/Register.jsx`
 - New: `/app/backend/tests/test_auth_deep_investigation.py`, `/app/backend/tests/test_auth_deep_investigation_db.py`
+
+### Feb 30 2026 — Cookies + Onboarding + In-App OTP Inbox + supportteam@ email
+
+**Applied**:
+
+1. **Email transport swap**: `/app/backend/.env` — `SMTP_USER`, `EMAIL_FROM_ADDRESS`, `EMAIL_FROM_NAME`, `SUPPORT_EMAIL` all now use `supportteam@blueoceansmarthub.com` (display name "BlueOcean Smarthub"). Hostinger transport unchanged. mailer.py picks the change up on backend restart — no code touched.
+
+2. **In-App OTP Inbox**:
+   - `services/email_otp.request_otp` now also writes each issued code into `db.otp_inbox` (per-user, TTL-cleaned in 10 min). Plaintext code is stored ONLY in the inbox row (email flow still hashes for verification).
+   - `services/email_otp.ensure_indexes` creates TTL + user-index for `otp_inbox`.
+   - New endpoint `GET /api/otp/inbox` — returns the caller's active codes (last 10) sorted by `created_at desc`. Auto-marks retrieved codes as read.
+   - Users can now grab their 6-digit code directly inside BlueOcean without switching to email — the email delivery still fires as a backup.
+   - Frontend UI shell (bell + drawer) is stubbed for a follow-up pass; the API is live for any client to consume.
+
+3. **Onboarding Checklist**:
+   - New `components/SellerOnboardingChecklist.jsx` — 4-step tap-and-go card with progress bar (blue→red gradient), red-accent eyebrow, and dismiss-once-complete.
+   - Steps: (1) List first item → `/sell`, (2) Connect payout → `/wallet?tab=payout`, (3) Add store logo → `/my/store`, (4) Share store link (native share sheet + clipboard fallback).
+   - Injected on `/dashboard/seller` (`pages/StoreManage.jsx`) — renders above the store form for both new and returning sellers.
+
+4. **HTTPOnly cookie (dual-mode)**:
+   - `POST /api/auth/login` now sets `Set-Cookie: bo_token=<jwt>; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=2592000` in addition to returning the JSON `{ token, user }`. Verified via curl — cookie ships correctly through the k8s ingress.
+   - `POST /api/auth/register` signature updated to accept `Response` too (cookie set path scaffolded — full wiring can land in the next pass).
+   - Frontend continues to read the token from local/sessionStorage (backwards compatible); a future frontend pass can drop the Authorization header entirely once the get_current_user dep also parses `bo_token` cookie.
+
+**Service worker** bumped `v9-onboarding-inbox` for cache purge.

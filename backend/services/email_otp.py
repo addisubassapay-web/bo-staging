@@ -42,6 +42,9 @@ async def ensure_indexes(db):
     await db.email_otps.create_index("expires_at", expireAfterSeconds=0)
     await db.email_otps.create_index([("user_id", 1), ("purpose", 1)])
     await db.otp_tokens.create_index("expires_at", expireAfterSeconds=0)
+    # In-platform OTP inbox — user reads their code inside BlueOcean.
+    await db.otp_inbox.create_index("expires_at", expireAfterSeconds=0)
+    await db.otp_inbox.create_index([("user_id", 1), ("created_at", -1)])
 
 
 async def request_otp(db, user: dict, purpose: str) -> dict:
@@ -77,6 +80,23 @@ async def request_otp(db, user: dict, purpose: str) -> dict:
         {"$set": {"used_at": now, "superseded": True}},
     )
     await db.email_otps.insert_one(otp_doc)
+
+    # Persist the OTP code into an in-platform inbox so users don't have to
+    # dig through email — they can grab the code from the bell icon /
+    # /inbox route inside BlueOcean itself. Email is still sent as a backup.
+    try:
+        await db.otp_inbox.insert_one({
+            "id": otp_doc["id"],
+            "user_id": user["id"],
+            "purpose": purpose,
+            "label": PURPOSE_LABELS[purpose],
+            "code": code,           # plaintext ONLY here — inbox is per-user, requires auth
+            "created_at": now,
+            "expires_at": otp_doc["expires_at"],
+            "read": False,
+        })
+    except Exception as e:
+        logger.warning(f"otp_inbox insert failed for {user['id']}: {e}")
 
     # Send the email — never block on failure
     label = PURPOSE_LABELS[purpose]

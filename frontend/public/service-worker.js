@@ -2,7 +2,7 @@
  * - App shell + navigation offline fallback
  * - Cache-first for static assets, network-first for API
  */
-const VERSION = "v8-heading-accents";
+const VERSION = "v9-onboarding-inbox";
 const APP_SHELL_CACHE = `blueocean-shell-${VERSION}`;
 const RUNTIME_CACHE   = `blueocean-runtime-${VERSION}`;
 

@@ -10,6 +10,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { Store as StoreIcon, ExternalLink, Save, Tag, Upload, Loader2, Image as ImageIcon, Globe, Mail, MapPin, Trash2 } from "lucide-react";
 import { COUNTRIES, flagEmoji, countryName } from "@/constants/countries";
+import SellerOnboardingChecklist from "@/components/SellerOnboardingChecklist";
 
 const MAX_STORE_CATEGORIES = 3;
 
@@ -147,6 +148,10 @@ const StoreManage = () => {
         )}
       </div>
       <p className="text-neutral-600 mb-6">Your storefront is your brand. Add a cover image, logo, and country so shoppers know exactly who they&apos;re buying from.</p>
+
+      <div className="mb-6">
+        <SellerOnboardingChecklist storeSlug={existing?.slug} />
+      </div>
 
       <form onSubmit={submit} className="space-y-6">
         {/* Cover / Banner uploader */}
