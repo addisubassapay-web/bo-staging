@@ -2080,3 +2080,38 @@ See `/app/memory/test_credentials.md`.
 - Primary indigo `#5459E8`  ·  light `#818CF8`  ·  dark `#4045C7`
 - Accent red `#FF0515`  ·  light `#FF5B6B`
 - Danger `#DC2626`  ·  Success `#16A34A`
+
+### Feb 30 2026 — Aurora Marketplace Design System
+
+**User asked** for a creative, vibrant composition applied platform-wide. Response: introduced a four-primitive design system + global CSS utilities that any page can compose without touching low-level code.
+
+**New reusable primitives** (all typed, testid-friendly, tree-shakeable):
+- `components/ui/AuroraBackdrop.jsx` — fixed/absolute gradient blobs with slow drift animation and grain overlay. Variants: `indigo`, `warm`.
+- `components/ui/RibbonBadge.jsx` — SVG corner-flag stamp for cards. Variants: `hot`, `trending`, `new`, `sale`, `flash`.
+- `components/ui/StickerChip.jsx` — tilted, gradient-filled sticker with optional heartbeat pulse. Tones: `red`, `indigo`, `success`, `warn`, `candy`.
+- `components/ui/WaveDivider.jsx` — SVG wave section transition matching the BlueOcean logo motif; can flip for section tops.
+
+**Global CSS utilities added** (`index.css`):
+- `.animate-aurora-drift` — 14s ease-in-out drift for backdrop blobs
+- `.sticker-pulse` — 2.4s pulse for time-sensitive stickers (honours reduced-motion)
+- `.card-lift` — universal hover translate + indigo shadow
+- `.mesh-gradient-indigo` / `.mesh-gradient-warm` — premium ambient background paints
+- `.gradient-border-conic` + `@property --angle` — animated conic-gradient border ring on hover for featured cards
+
+**Applied throughout Home page**:
+- `AuroraBackdrop variant="warm"` wraps the Home root (900px tall aurora zone behind hero)
+- Hero slide accents refactored to indigo/red brand palette; `RibbonBadge` stamps each slide with the correct variant (`hot`/`new`/`trending`); replaced the plain hero-tag pill with a pulsing `StickerChip`
+- `WaveDivider` transitions the hero into the content sections
+- Welcome greeting chip rebranded to indigo tint (was orange/rose)
+- `FeatureCards` upgraded: coloured icon tiles, `card-lift` hover, `gradient-border-conic` on hover — reads as premium
+- `RequestBanner` gradient re-tuned to `#5459E8 → #818CF8 → #FF0515` with a pulsing sparkle badge and pink midblob
+- `FeaturedStoresStrip` banner gradient rebalanced; each store card uses `card-lift`
+- Category shelf accents refreshed to indigo/red instead of orange/rose
+
+**Product cards platform-wide** (`ProductCard.jsx`):
+- Hover shadow now uses indigo tone `rgba(84,89,232,0.32)` and lifts `-translate-y-1` for a more tactile bounce
+
+**Footer** (`Footer.jsx`):
+- New `WaveDivider flip` sits above the newsletter strip — cohesive brand transition into the dark footer
+
+**Service worker** bumped to `v6-aurora-marketplace` to purge the PWA cache and reveal the new visual layer on next visit.

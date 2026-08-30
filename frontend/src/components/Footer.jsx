@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { Facebook, Twitter, Instagram, Youtube, Mail, ArrowRight } from "lucide-react";
 import BrandMark from "@/components/BrandMark";
+import WaveDivider from "@/components/ui/WaveDivider";
 import api from "@/lib/api";
 
 const NewsletterStrip = () => {
@@ -68,7 +69,8 @@ const NewsletterStrip = () => {
 };
 
 const Footer = () => (
-  <footer className="bg-[#0F1113] text-neutral-300 mt-16">
+  <footer className="bg-[#0F1113] text-neutral-300 mt-16 relative">
+    <WaveDivider flip fill="#5459E8" height="h-14 sm:h-20" className="absolute inset-x-0 -top-14 sm:-top-20 pointer-events-none" data-testid="footer-wave" />
     <NewsletterStrip />
     <div className="max-w-7xl mx-auto px-4 py-14 grid grid-cols-2 md:grid-cols-4 gap-8">
       <div>

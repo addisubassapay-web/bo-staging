@@ -10,6 +10,10 @@ import {
   ArrowRight, ShieldCheck, Truck, Headphones, RotateCcw, Flame, Zap,
   CheckCircle2, Lock, Globe, Heart, Sparkles, Store as StoreIcon, BadgeCheck,
 } from "lucide-react";
+import AuroraBackdrop from "@/components/ui/AuroraBackdrop";
+import RibbonBadge from "@/components/ui/RibbonBadge";
+import StickerChip from "@/components/ui/StickerChip";
+import WaveDivider from "@/components/ui/WaveDivider";
 
 const money = (n) => `$${Number(n).toFixed(2)}`;
 
@@ -17,27 +21,33 @@ const money = (n) => `$${Number(n).toFixed(2)}`;
 const HERO_SLIDES = [
   {
     tag: "HOT DEALS",
+    tone: "red",
+    ribbon: "hot",
     title: "Big Fashion Sale",
     subtitle: "Up to 50% OFF Premium Styles",
     img: "https://images.unsplash.com/photo-1483985988355-763728e1935b?w=1600&auto=format&fit=crop&q=80",
     ctaLink: "/search?category_slug=women",
-    accent: "from-rose-500/60 via-orange-400/40 to-transparent",
+    accent: "from-[#FF0515]/55 via-[#FF5B6B]/30 to-transparent",
   },
   {
     tag: "NEW IN",
+    tone: "indigo",
+    ribbon: "new",
     title: "Electronics that spark joy",
     subtitle: "Verified sellers · Fast delivery",
     img: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=1600&auto=format&fit=crop&q=80",
     ctaLink: "/search?category_slug=electronics",
-    accent: "from-sky-500/60 via-indigo-400/30 to-transparent",
+    accent: "from-[#5459E8]/55 via-[#818CF8]/30 to-transparent",
   },
   {
     tag: "TRENDING",
+    tone: "candy",
+    ribbon: "trending",
     title: "Vintage finds you'll love",
     subtitle: "One-of-a-kind pieces from real people",
     img: "https://images.unsplash.com/photo-1445205170230-053b83016050?w=1600&auto=format&fit=crop&q=80",
     ctaLink: "/search?category_slug=vintage",
-    accent: "from-amber-500/60 via-orange-500/40 to-transparent",
+    accent: "from-[#F0ABFC]/50 via-[#5459E8]/25 to-transparent",
   },
 ];
 
@@ -74,7 +84,7 @@ const HeroCarousel = () => {
       {/* Warm welcome ribbon */}
       <div className="mb-3 sm:mb-4 flex items-center justify-between flex-wrap gap-2 px-1">
         <div className="flex items-center gap-2 text-sm sm:text-base">
-          <span className="inline-flex h-6 sm:h-7 items-center gap-1.5 rounded-full bg-gradient-to-r from-[#5459E8]/10 to-[#DC2626]/10 dark:from-[#5459E8]/20 dark:to-[#DC2626]/20 border border-orange-200/70 dark:border-orange-500/30 px-2.5 text-[#DC2626] dark:text-orange-300 font-medium">
+          <span className="inline-flex h-6 sm:h-7 items-center gap-1.5 rounded-full bg-gradient-to-r from-[#5459E8]/10 to-[#FF0515]/10 dark:from-[#5459E8]/20 dark:to-[#FF0515]/20 border border-[#5459E8]/25 dark:border-[#818CF8]/30 px-2.5 text-[#5459E8] dark:text-[#818CF8] font-semibold">
             <Sparkles className="h-3.5 w-3.5" /> {greeting}
           </span>
           <span className="text-neutral-500 dark:text-neutral-400 hidden sm:inline">{t("home.greeting.suffix")}</span>
@@ -85,7 +95,7 @@ const HeroCarousel = () => {
       </div>
 
       <div
-        className="relative rounded-2xl sm:rounded-3xl overflow-hidden aspect-[16/10] sm:aspect-[21/9] bg-gradient-to-br from-orange-100 via-rose-50 to-white dark:from-neutral-900 dark:via-neutral-900 dark:to-neutral-950 shadow-lg ring-1 ring-black/5 dark:ring-white/10"
+        className="relative rounded-2xl sm:rounded-3xl overflow-hidden aspect-[16/10] sm:aspect-[21/9] bg-gradient-to-br from-[#E0E7FF] via-white to-[#FEE2E2] dark:from-neutral-900 dark:via-neutral-900 dark:to-neutral-950 shadow-lg ring-1 ring-black/5 dark:ring-white/10"
       >
         {/* Background image with soft ken-burns */}
         <img
@@ -102,16 +112,23 @@ const HeroCarousel = () => {
 
         {/* Decorative blobs */}
         <div className="pointer-events-none absolute -top-16 -right-16 h-56 w-56 rounded-full bg-[#5459E8]/40 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-20 left-1/3 h-56 w-56 rounded-full bg-[#DC2626]/30 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-20 left-1/3 h-56 w-56 rounded-full bg-[#FF0515]/30 blur-3xl" />
+
+        {/* Corner ribbon flag — brand-coloured stamp per slide */}
+        <RibbonBadge variant={s.ribbon} data-testid={`hero-ribbon-${idx}`} />
 
         {/* Content */}
         <div className="absolute inset-0 flex flex-col justify-center gap-3 sm:gap-4 p-5 sm:p-10 md:p-14 max-w-2xl">
-          <span
+          <StickerChip
             key={`${s.tag}-${idx}`}
-            className="inline-flex items-center gap-1.5 self-start bg-white/95 text-[#DC2626] text-[10px] sm:text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full shadow-sm animate-hero-in"
+            tone={s.tone}
+            size="sm"
+            pulse
+            className="self-start animate-hero-in"
+            data-testid="hero-sticker"
           >
             <Flame className="h-3 w-3" /> {s.tag}
-          </span>
+          </StickerChip>
 
           <h1
             key={`${s.title}-${idx}`}
@@ -130,7 +147,7 @@ const HeroCarousel = () => {
           <div className="flex gap-2 sm:gap-3 flex-wrap">
             <Link to={s.ctaLink}>
               <Button
-                className="bg-white text-[#DC2626] hover:bg-[#5459E8] hover:text-white h-11 sm:h-12 px-5 sm:px-6 rounded-full font-semibold shadow-lg gap-2 transition-all group"
+                className="bg-white text-[#5459E8] hover:bg-[#FF0515] hover:text-white h-11 sm:h-12 px-5 sm:px-6 rounded-full font-semibold shadow-lg gap-2 transition-all group"
                 data-testid="hero-shop-now"
               >
                 {t("cta.shopNow")}
@@ -337,19 +354,20 @@ const RequestBanner = () => {
   const { t } = useLang();
   return (
   <section className="max-w-7xl mx-auto px-4 mt-16 sm:mt-20">
-    <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-[#5459E8] via-[#FF5722] to-[#DC2626] text-white text-center px-6 py-14 shadow-[0_20px_50px_-20px_rgba(255,33,31,0.55)]">
+    <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-[#5459E8] via-[#818CF8] to-[#FF0515] text-white text-center px-6 py-14 shadow-[0_20px_50px_-20px_rgba(84,89,232,0.55)]">
       {/* Decorative blobs */}
       <div className="pointer-events-none absolute -top-16 -left-10 h-52 w-52 rounded-full bg-white/15 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-20 -right-16 h-64 w-64 rounded-full bg-black/20 blur-3xl" />
+      <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-72 w-72 rounded-full bg-[#F0ABFC]/25 blur-3xl" />
       <div className="relative">
-        <div className="mx-auto h-14 w-14 rounded-2xl bg-white/20 backdrop-blur grid place-items-center mb-4 ring-1 ring-white/30">
+        <div className="mx-auto h-14 w-14 rounded-2xl bg-white/20 backdrop-blur grid place-items-center mb-4 ring-1 ring-white/30 sticker-pulse" style={{ "--tilt": "0deg" }}>
           <Sparkles className="h-7 w-7" />
         </div>
         <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight">{t("home.cantFind")}</h2>
         <p className="mt-3 text-white/90 max-w-2xl mx-auto text-sm sm:text-base">{t("home.requestBody")}</p>
         <div className="mt-7 flex items-center justify-center gap-3 flex-wrap">
           <Link to="/chat">
-            <Button className="bg-white text-[#DC2626] hover:bg-neutral-100 h-11 px-6 rounded-full font-semibold shadow-lg gap-1.5 group" data-testid="cta-request-product">
+            <Button className="bg-white text-[#FF0515] hover:bg-neutral-100 h-11 px-6 rounded-full font-semibold shadow-lg gap-1.5 group" data-testid="cta-request-product">
               {t("cta.requestProduct")} <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
             </Button>
           </Link>
@@ -370,14 +388,16 @@ const FeatureCards = () => (
   <section className="max-w-7xl mx-auto px-4 mt-14">
     <div className="grid md:grid-cols-3 gap-4">
       {[
-        { icon: Headphones, title: "24/7 Customer Support", body: "Fast help from our support team anytime.", tone: "text-orange-500" },
-        { icon: Truck, title: "Global Delivery", body: "Shipping to many countries worldwide.", tone: "text-orange-500" },
-        { icon: ShieldCheck, title: "Buyer Protection", body: "Secure payments and trusted checkout.", tone: "text-orange-500" },
+        { icon: Headphones, title: "24/7 Customer Support", body: "Fast help from our support team anytime.", tone: "text-[#5459E8]", bg: "bg-[#E0E7FF]" },
+        { icon: Truck, title: "Global Delivery", body: "Shipping to many countries worldwide.", tone: "text-[#FF0515]", bg: "bg-[#FEE2E2]" },
+        { icon: ShieldCheck, title: "Buyer Protection", body: "Secure payments and trusted checkout.", tone: "text-[#5459E8]", bg: "bg-[#E0E7FF]" },
       ].map((f, i) => (
-        <div key={f.title} className="bg-white border border-neutral-200 rounded-xl p-6" data-testid={`feature-${i}`}>
-          <f.icon className={`h-9 w-9 ${f.tone}`} />
-          <div className="mt-3 font-semibold text-lg text-neutral-900">{f.title}</div>
-          <div className="text-sm text-neutral-500 mt-1">{f.body}</div>
+        <div key={f.title} className="relative bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-6 card-lift gradient-border-conic overflow-hidden" data-testid={`feature-${i}`}>
+          <div className={`inline-grid place-items-center h-11 w-11 rounded-xl ${f.bg}`}>
+            <f.icon className={`h-6 w-6 ${f.tone}`} />
+          </div>
+          <div className="mt-4 font-bold text-lg text-neutral-900 dark:text-neutral-100 tracking-tight">{f.title}</div>
+          <div className="text-sm text-neutral-500 dark:text-neutral-400 mt-1 leading-relaxed">{f.body}</div>
         </div>
       ))}
     </div>
@@ -417,8 +437,8 @@ const FeaturedStoresStrip = ({ stores }) => {
               className="snap-start shrink-0 w-64 group"
               data-testid={`featured-store-${s.slug}`}
             >
-              <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 overflow-hidden hover:shadow-lg hover:border-[#5459E8] transition h-full">
-                <div className="h-24 bg-gradient-to-br from-[#5459E8] via-[#FF5B22] to-[#DC2626] relative">
+              <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 overflow-hidden card-lift hover:border-[#5459E8] h-full">
+                <div className="h-24 bg-gradient-to-br from-[#5459E8] via-[#818CF8] to-[#FF0515] relative">
                   {s.banner && (
                     <img src={s.banner} alt="" className="absolute inset-0 h-full w-full object-cover opacity-70" />
                   )}
@@ -500,8 +520,12 @@ const Home = () => {
   const flashItems = useMemo(() => (flash.length ? flash : recent).slice(0, 10), [flash, recent]);
 
   return (
-    <div className="bg-white dark:bg-neutral-950">
+    <div className="relative bg-white dark:bg-neutral-950 overflow-hidden">
+      <AuroraBackdrop variant="warm" className="h-[900px] -top-8" data-testid="home-aurora" />
+      <div className="relative z-10">
       <HeroCarousel />
+
+      <WaveDivider fill="#5459E8" height="h-10 sm:h-14" className="mt-6 opacity-70" data-testid="hero-wave-divider" />
 
       {/* Recently Viewed (only for logged-in users with history) */}
       {recentlyViewed.length > 0 && (
@@ -658,6 +682,7 @@ const Home = () => {
       <FeatureCards />
 
       <div className="h-14" />
+      </div>
     </div>
   );
 };

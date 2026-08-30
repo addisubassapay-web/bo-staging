@@ -187,11 +187,107 @@ code {
 @media (prefers-reduced-motion: reduce) {
     .brand-mark-animated,
     .animate-hero-zoom,
-    .animate-hero-in {
+    .animate-hero-in,
+    .animate-aurora-drift,
+    .sticker-pulse {
         animation: none !important;
         transition: none !important;
         transform: none !important;
     }
+}
+
+/* ---------- Aurora Marketplace design tokens ---------- */
+/* Aurora blob drift — gentle floating so the ambient light never feels static */
+@keyframes aurora-drift {
+    0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+    50%      { transform: translate3d(2%, -3%, 0) scale(1.08); }
+}
+.animate-aurora-drift {
+    animation: aurora-drift 14s ease-in-out infinite;
+    transform-origin: center;
+    will-change: transform;
+}
+
+/* Sticker heartbeat — used on time-sensitive promo stickers */
+@keyframes sticker-pulse {
+    0%, 100% { transform: rotate(var(--tilt, -6deg)) scale(1); box-shadow: 0 4px 14px rgba(255, 5, 21, 0.18); }
+    50%      { transform: rotate(var(--tilt, -6deg)) scale(1.06); box-shadow: 0 8px 22px rgba(255, 5, 21, 0.32); }
+}
+.sticker-pulse {
+    animation: sticker-pulse 2.4s ease-in-out infinite;
+    transform-origin: center;
+}
+
+/* Card lift — universal micro-interaction for any elevated card */
+.card-lift {
+    transition: transform 300ms cubic-bezier(0.2, 0.8, 0.2, 1),
+                box-shadow 300ms ease,
+                border-color 300ms ease;
+    will-change: transform;
+}
+.card-lift:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 14px 34px -12px rgba(84, 89, 232, 0.28), 0 4px 10px -4px rgba(0, 0, 0, 0.08);
+}
+
+/* Mesh gradients — premium ambient backgrounds without imagery */
+.mesh-gradient-indigo {
+    background-color: #EEF2FF;
+    background-image:
+        radial-gradient(at 12% 22%, rgba(84, 89, 232, 0.22) 0px, transparent 50%),
+        radial-gradient(at 88% 8%,  rgba(129, 140, 248, 0.22) 0px, transparent 50%),
+        radial-gradient(at 62% 92%, rgba(224, 231, 255, 0.9) 0px, transparent 55%);
+}
+.dark .mesh-gradient-indigo {
+    background-color: #0B1220;
+    background-image:
+        radial-gradient(at 12% 22%, rgba(84, 89, 232, 0.30) 0px, transparent 50%),
+        radial-gradient(at 88% 8%,  rgba(129, 140, 248, 0.18) 0px, transparent 50%),
+        radial-gradient(at 62% 92%, rgba(15, 23, 42, 0.9) 0px, transparent 55%);
+}
+.mesh-gradient-warm {
+    background-color: #FFF7F7;
+    background-image:
+        radial-gradient(at 8% 10%,  rgba(255, 5, 21, 0.18) 0px, transparent 50%),
+        radial-gradient(at 92% 20%, rgba(84, 89, 232, 0.22) 0px, transparent 50%),
+        radial-gradient(at 50% 92%, rgba(255, 91, 107, 0.16) 0px, transparent 55%);
+}
+.dark .mesh-gradient-warm {
+    background-color: #140A0B;
+    background-image:
+        radial-gradient(at 8% 10%,  rgba(255, 5, 21, 0.25) 0px, transparent 50%),
+        radial-gradient(at 92% 20%, rgba(84, 89, 232, 0.30) 0px, transparent 50%),
+        radial-gradient(at 50% 92%, rgba(20, 10, 11, 0.9) 0px, transparent 55%);
+}
+
+/* Conic gradient border — animated rainbow ring on hover for featured cards */
+@keyframes gradient-border-spin {
+    0%   { --angle: 0deg;   }
+    100% { --angle: 360deg; }
+}
+@property --angle {
+    syntax: '<angle>';
+    initial-value: 0deg;
+    inherits: false;
+}
+.gradient-border-conic {
+    position: relative;
+    isolation: isolate;
+}
+.gradient-border-conic::before {
+    content: "";
+    position: absolute;
+    inset: -2px;
+    z-index: -1;
+    border-radius: inherit;
+    background: conic-gradient(from var(--angle, 0deg), #5459E8, #FF0515, #F0ABFC, #818CF8, #5459E8);
+    opacity: 0;
+    transition: opacity 300ms ease;
+    animation: gradient-border-spin 6s linear infinite;
+}
+.gradient-border-conic:hover::before,
+.gradient-border-conic:focus-visible::before {
+    opacity: 1;
 }
 
 /* -------------------------------------------------------------------------- */
