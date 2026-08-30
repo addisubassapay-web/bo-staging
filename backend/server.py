@@ -68,7 +68,7 @@ AI_MODEL_NAME = "gpt-5.4"  # Set to gpt-5.6-luna, gpt-5.6-terra, gpt-5.6-sol etc
 # Emergent object storage
 STORAGE_BASE = (os.environ.get("INTEGRATION_PROXY_URL") or "").strip() or "https://integrations.emergentagent.com"
 STORAGE_URL = STORAGE_BASE.rstrip("/") + "/objstore/api/v1/storage"
-APP_NAME = "mercari-global-clone"
+APP_NAME = "ocean"
 _storage_key: Optional[str] = None
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")

@@ -24,6 +24,31 @@ Full-stack ecommerce marketplace **Mercari-Global** — same color scheme (`#FF2
 
 ---
 
+### Feb 27 2026 — Rebrand Verification (deep audit + testing_agent)
+
+**User asked** to re-check whether the earlier rebrand actually completed. Deep grep found leaked "Mercari" strings the first sweep missed.
+
+**Second-pass fixes**:
+- `components/BrandMark.jsx:110` — hardcoded lowercase wordmark "mercari-smarthub" → "ocean" (also updated the JSDoc comment on line 12).
+- `public/service-worker.js` banner comment → "Ocean — Service Worker".
+- `backend/server.py:71` — `APP_NAME = "mercari-global-clone"` → `"ocean"`.
+
+**Deliberately preserved** (each would break something):
+- `admin@mercari.local` — admin login credential, changing = lockout.
+- MongoDB `DB_NAME=merchari_global` — DB rename = data loss.
+- localStorage prefix `mercari-global_*` — key rename = every user logged out.
+- Synthetic seller username `mercari_store` in `services/listing_mirror.py` — every catalog listing's `seller_username` points to this row; rename = orphaned listings.
+- `jp.mercari.com` URL pattern in country-detection helpers — external supplier surface, not our brand.
+- Tailwind class names `bg-mercari-global-red` in WalletDialogs — not user-visible; Tailwind config doesn't define them so they no-op anyway; low value to touch.
+
+**Testing-agent (iteration_67.json)**: **100% pass** on both backend (4/4) and frontend (all routes clean). Zero issues, zero action items. Confirmed:
+- Every meta tag, wordmark, footer, Terms/Privacy page, and SellerApplyQuick hero reads "Ocean".
+- `admin@mercari.local` login still returns 200.
+- `/api/categories` still returns 200 after the backend restart.
+- No user-visible "Mercari" string remains.
+
+
+
 ### Feb 27 2026 — Platform-Wide Rebrand: Mercari → Ocean
 
 **Scope**: swap every user-facing "Mercari-Smarthub" / "Mercari-Global" / "Mercari" string across the entire repo → **Ocean**. Email identity → `support@ocean.com`. Domain refs → `ocean.com`.

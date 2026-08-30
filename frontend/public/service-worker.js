@@ -1,4 +1,4 @@
-/* Mercari-Smarthub — Service Worker
+/* Ocean — Service Worker
  * - App shell + navigation offline fallback
  * - Cache-first for static assets, network-first for API
  */
