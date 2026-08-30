@@ -16,7 +16,7 @@ const buildUrls = ({ listing, storeSlug }) => {
   const storeUrl = storeSlug ? `${origin}/store/${storeSlug}?ref=push` : null;
   const price = formatPrice(listing.price);
   const caption = `🔥 Just added: ${listing.title} — ${price}. Grab it before it's gone!`;
-  const tag = "#Mercari-Smarthub #Resell";
+  const tag = "#Ocean #Resell";
   const share = `${caption}\n${listingUrl}\n${tag}`;
   return {
     listingUrl,

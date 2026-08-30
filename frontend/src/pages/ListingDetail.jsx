@@ -24,7 +24,7 @@ const SellerBlock = ({ sellerId, sellerName, sellerCountry, views }) => {
     api.get(`/users/${sellerId}/public`).then((r) => setSeller(r.data)).catch(() => {});
   }, [sellerId]);
   // Fall back to the listing's own country when the fresher public-user
-  // record doesn't carry one; on the storefront this covers Mercari-Smarthub
+  // record doesn't carry one; on the storefront this covers Ocean
   // Store dropship items (seller country lives on the listing, not the user).
   const country = seller?.country || sellerCountry;
   return (

@@ -13,7 +13,7 @@ Strategy:
     remove the rest. This nukes triplicate Eddy-Boss BIODANCE rows.
 
   Pass 3 (cross-seller dedupe): for every title, if a seller-owned
-    listing exists, DELETE the Mercari Store mirror. Peer-to-peer
+    listing exists, DELETE the Catalog mirror. Peer-to-peer
     sellers get priority since they add trust + variety.
 
 Usage:
@@ -100,13 +100,13 @@ async def dedupe_same_seller_listings(db, execute: bool) -> int:
 
 async def dedupe_cross_seller_mirror(db, execute: bool) -> int:
     """When a peer-to-peer seller listing already exists for a title,
-    delete the Mercari Store mirror. Peer listings add trust/variety."""
+    delete the Catalog mirror. Peer listings add trust/variety."""
     merchari = await db.users.find_one({"username": "mercari_store"})
     if not merchari:
         print("[mirror] mercari_store seller not found — skipping")
         return 0
 
-    # Collect all non-Mercari active titles
+    # Collect all non-catalog active titles
     peer_titles: set = set()
     async for l in db.listings.find(
         {"status": "active", "seller_id": {"$ne": merchari["id"]}},
@@ -116,7 +116,7 @@ async def dedupe_cross_seller_mirror(db, execute: bool) -> int:
         if t:
             peer_titles.add(t)
 
-    # Mercari mirrors that share a title with a peer seller
+    # Catalog mirrors that share a title with a peer seller
     delete_ids: list = []
     async for l in db.listings.find(
         {"seller_id": merchari["id"], "status": "active"},
@@ -125,7 +125,7 @@ async def dedupe_cross_seller_mirror(db, execute: bool) -> int:
         if (l.get("title") or "").strip().lower() in peer_titles:
             delete_ids.append(l["id"])
 
-    print(f"[mirror] Mercari duplicates of peer listings to remove: {len(delete_ids)}")
+    print(f"[mirror] Catalog duplicates of peer listings to remove: {len(delete_ids)}")
     if execute and delete_ids:
         # Soft-remove so future mirror syncs don't re-recreate them
         await db.listings.update_many(

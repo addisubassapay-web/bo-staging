@@ -6,14 +6,14 @@ import { ShieldCheck, ArrowLeft } from "lucide-react";
  * Legal — a single component that renders either Terms of Service or
  * Privacy Policy based on the `mode` prop. Copy is deliberately concise,
  * plain-English, and references the new production domain
- * `mercarismarthub.com` + support mailbox `support@mercarismarthub.com`.
+ * `ocean.com` + support mailbox `support@ocean.com`.
  * Nothing here is legal advice; the operator should still have a lawyer
  * review before launch.
  */
 const CONTACT = {
-  brand: "Mercari-Smarthub",
-  domain: "mercarismarthub.com",
-  email: "support@mercarismarthub.com",
+  brand: "Ocean",
+  domain: "ocean.com",
+  email: "support@ocean.com",
 };
 
 const TERMS_SECTIONS = [

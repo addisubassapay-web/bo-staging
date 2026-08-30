@@ -1102,7 +1102,7 @@ const SettingsMgr = () => {
             <Users className="h-4 w-4 text-amber-500" /> Signup access control
           </h3>
           <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-4">
-            When enabled, new accounts can only register with a valid invitation code (an existing member&apos;s referral code). This turns Mercari-Smarthub into a closed, invite-only community until you flip it back off.
+            When enabled, new accounts can only register with a valid invitation code (an existing member&apos;s referral code). This turns Ocean into a closed, invite-only community until you flip it back off.
           </p>
           <div className="flex items-center justify-between gap-4 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-950 p-4">
             <div className="flex-1 min-w-0">

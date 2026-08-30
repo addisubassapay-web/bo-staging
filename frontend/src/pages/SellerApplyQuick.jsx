@@ -259,7 +259,7 @@ const SellerApplyQuick = () => {
           <Zap className="h-3 w-3" /> Quick apply · 60 seconds
         </span>
         <h1 className="mt-2 text-3xl sm:text-4xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">
-          Open your store on Mercari-Smarthub
+          Open your store on Ocean
         </h1>
         <p className="text-neutral-500 dark:text-neutral-400 mt-1">
           Four fields, instant setup. We&apos;ll spin up your storefront on our best-selling <b>Modern Storefront</b> template.

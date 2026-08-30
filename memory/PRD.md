@@ -24,6 +24,38 @@ Full-stack ecommerce marketplace **Mercari-Global** — same color scheme (`#FF2
 
 ---
 
+### Feb 27 2026 — Platform-Wide Rebrand: Mercari → Ocean
+
+**Scope**: swap every user-facing "Mercari-Smarthub" / "Mercari-Global" / "Mercari" string across the entire repo → **Ocean**. Email identity → `support@ocean.com`. Domain refs → `ocean.com`.
+
+**Executed via a controlled `sed` sweep** on:
+- `/app/frontend/src/**/*.{js,jsx,json}` — every UI label, button, page title, modal, footer text, meta tag.
+- `/app/frontend/public/**/*.{html,json,webmanifest}` — index.html, manifest, meta tags.
+- `/app/backend/**/*.py` (excluding `tests/`, `cleanup_backups/`, `__pycache__`) — server logs, notification templates, email subjects, dropship copy.
+- Header/GlobalNavMenu wordmarks patched separately (split-tag markup the sed regex couldn't catch).
+- `dedupe_products_and_listings.py` — internal "Mercari Store" business-logic term renamed to "Catalog" to remove trademark residue.
+
+**Environment** (`backend/.env`):
+- `SMTP_USER` / `EMAIL_FROM_ADDRESS` / `SUPPORT_EMAIL` → `support@ocean.com`.
+- `EMAIL_FROM_NAME` → `"Ocean"`.
+
+**Intentionally NOT touched** (would break auth or DB integrity):
+- MongoDB collection name (`merchari_global` — internal DB name, no user impact).
+- localStorage key prefix (`mercari-global_token` etc. — changing = logs everyone out).
+- `admin@mercari.local` admin login (test creds).
+- Test files (`/tests/*` — historical fixtures).
+
+**Verification**:
+- Snapshot count: **43 → 0** production Mercari refs (0 after excluding auth/DB/tests).
+- Backend restart clean, `/api/categories` → HTTP 200.
+- Home-page screenshot shows "Ocean" wordmark, "Ocean Marketplace" strip, "Ocean Smart Hub" tagline. Zero Mercari text visible.
+
+**Production build (for Hostinger)**: Preview env runs the CRA dev server; a real production bundle is produced on your deploy target. On your Hostinger box run `cd frontend && rm -rf build node_modules/.cache && yarn install && yarn build` to emit a clean `frontend/build/` with only Ocean strings.
+
+**⚠️ SMTP note**: You'll now need to provision `support@ocean.com` on Hostinger (or move the mailer to a different provider). Until then the mailer will hard-fail (as intended by the recent refactor).
+
+
+
 ### Feb 27 2026 — Hook Deps Triage on the review's called-out spots
 
 **Method**: Manually inspected each of the specifically flagged locations the review said had "real stale-closure bugs": Wallet.jsx (5 spots), StorePage.jsx (5 spots), StoresMarketplace.jsx (4 spots) — 14 candidates total.

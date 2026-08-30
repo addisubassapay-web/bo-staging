@@ -34,7 +34,7 @@ def _cfg():
         "user": os.environ.get("SMTP_USER", ""),
         "password": os.environ.get("SMTP_PASSWORD", ""),
         "from_addr": os.environ.get("EMAIL_FROM_ADDRESS", ""),
-        "from_name": os.environ.get("EMAIL_FROM_NAME", "Mercari-Smarthub"),
+        "from_name": os.environ.get("EMAIL_FROM_NAME", "Ocean"),
     }
 
 
@@ -71,7 +71,7 @@ async def send_email(
     msg["To"] = to
     msg["Subject"] = subject
     if tags:
-        msg["X-Mercari-Smarthub-Tags"] = ",".join(tags)
+        msg["X-Ocean-Tags"] = ",".join(tags)
     msg.set_content(text or "Please view this email in an HTML-capable client.")
     msg.add_alternative(html, subtype="html")
 

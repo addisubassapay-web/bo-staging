@@ -65,7 +65,7 @@ const EmailPreferences = () => {
           <div className="flex-1">
             <h3 className="text-lg font-bold">Email preferences</h3>
             <p className="text-sm text-neutral-600 mt-1">
-              Choose which transactional emails you want to receive from Mercari-Smarthub. You can change this any time. Account safety alerts always send even if disabled elsewhere.
+              Choose which transactional emails you want to receive from Ocean. You can change this any time. Account safety alerts always send even if disabled elsewhere.
             </p>
           </div>
         </div>

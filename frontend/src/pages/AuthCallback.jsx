@@ -52,7 +52,7 @@ const AuthCallback = () => {
         } catch { /* ignore storage errors */ }
         // Clear the hash so back-nav doesn't re-run this
         window.history.replaceState(null, "", "/");
-        setState({ status: "ok", message: data.created ? "Welcome to Mercari-Smarthub!" : "Welcome back!" });
+        setState({ status: "ok", message: data.created ? "Welcome to Ocean!" : "Welcome back!" });
         // Full reload so AuthProvider picks up the fresh token
         setTimeout(() => { window.location.href = "/"; }, 600);
       } catch (err) {

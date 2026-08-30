@@ -129,10 +129,10 @@ const Checkout = () => {
 
   if (done) {
     const shareUrl = `${window.location.origin}/listing/${done.listing_id || done.listing?.id || id}`;
-    const shareText = `I just scored "${done.listing_title}" on Mercari-Smarthub! 🎉`;
+    const shareText = `I just scored "${done.listing_title}" on Ocean! 🎉`;
     const doShare = async () => {
       if (navigator.share) {
-        try { await navigator.share({ title: "Mercari-Smarthub", text: shareText, url: shareUrl }); }
+        try { await navigator.share({ title: "Ocean", text: shareText, url: shareUrl }); }
         catch (e) { if (e?.name !== "AbortError") console.warn("[share] failed:", e); }
       } else {
         try {
@@ -247,7 +247,7 @@ const Checkout = () => {
               </span>
             </div>
 
-            {/* Wallet-only payment — Mercari-Smarthub orders debit the wallet
+            {/* Wallet-only payment — Ocean orders debit the wallet
                 directly. Top up first via /wallet (crypto or bank transfer,
                 admin-approved) if the balance is short. */}
             <div className="mb-4 rounded-xl border border-emerald-200 dark:border-emerald-500/30 bg-emerald-50/60 dark:bg-emerald-500/10 px-4 py-3 flex items-start gap-3" data-testid="pay-method-wallet-only">

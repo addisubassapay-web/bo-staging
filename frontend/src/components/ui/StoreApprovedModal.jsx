@@ -87,7 +87,7 @@ export const StoreApprovedModal = ({
                 Your store is live!
               </DialogTitle>
               <DialogDescription className="text-white/90 text-sm mt-1">
-                Welcome to Mercari-Smarthub, {user?.first_name || user?.username || "seller"}.
+                Welcome to Ocean, {user?.first_name || user?.username || "seller"}.
               </DialogDescription>
             </div>
           </div>
@@ -108,7 +108,7 @@ export const StoreApprovedModal = ({
                   {storeName}
                 </div>
                 <div className="text-xs text-neutral-500 truncate font-mono">
-                  mercarismarthub.com/store/{storeSlug || "your-slug"}
+                  ocean.com/store/{storeSlug || "your-slug"}
                 </div>
               </div>
               <Badge

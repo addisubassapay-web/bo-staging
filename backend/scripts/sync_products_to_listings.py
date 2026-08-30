@@ -38,7 +38,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from pymongo import UpdateOne
 
 MERCHARI_SELLER_USERNAME = "mercari_store"
-MERCHARI_SELLER_DISPLAY = "Mercari-Smarthub Store"
+MERCHARI_SELLER_DISPLAY = "Ocean Store"
 
 # Canonical product category -> (category_id, category_name) tuples used
 # on listings. Category IDs are looked up dynamically so we tolerate any
@@ -73,7 +73,7 @@ async def ensure_merchari_seller(db) -> dict:
         "seller_status": "active",
         "email_verified": True,
         "avatar": None,
-        "bio": "The official Mercari-Smarthub catalog.",
+        "bio": "The official Ocean catalog.",
         "wallet_balance": 0.0,
         "wallet_frozen_balance": 0.0,
         "created_at": now,

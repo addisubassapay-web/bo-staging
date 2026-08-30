@@ -40,7 +40,7 @@ const SplashScreen = () => {
       };
     }
     return {
-      headline: "Welcome to Mercari-Smarthub",
+      headline: "Welcome to Ocean",
       sub: "Millions of items · Verified sellers · Buyer protection",
       isReturning: false,
     };
