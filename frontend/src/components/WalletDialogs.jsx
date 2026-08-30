@@ -11,6 +11,7 @@ import {
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Bitcoin, Copy, Check, Building2, Info, Send } from "lucide-react";
+import CryptoIcon from "@/components/ui/CryptoIcon";
 
 /**
  * Deposit dialog with two methods:
@@ -339,14 +340,15 @@ export const WithdrawDialog = ({ open, onOpenChange, onSubmitted }) => {
                     key={c}
                     type="button"
                     onClick={() => setCryptoCurrency(c)}
-                    className={`min-h-[44px] px-4 rounded-full text-sm font-semibold transition-colors duration-200 border ${
+                    className={`min-h-[44px] px-3 rounded-full text-sm font-semibold transition-all duration-200 border inline-flex items-center gap-2 ${
                       c === cryptoCurrency
-                        ? "bg-ocean-red text-canvas-0 border-ocean-red shadow-brand-sm"
-                        : "bg-canvas-0 text-ink-body border-hairline hover:border-ink"
+                        ? "bg-gradient-to-r from-[#FF0515] to-[#FF5B6B] text-white border-transparent shadow-md shadow-[#FF0515]/25 scale-[1.02]"
+                        : "bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-100 border-neutral-200 dark:border-neutral-700 hover:border-[#5459E8] hover:shadow-sm"
                     }`}
                     data-testid={`withdraw-currency-${c}`}
                   >
-                    {c}
+                    <CryptoIcon symbol={c} size={22} data-testid={`withdraw-currency-icon-${c}`} />
+                    <span className="tabular-nums">{c}</span>
                   </button>
                 ))}
               </div>

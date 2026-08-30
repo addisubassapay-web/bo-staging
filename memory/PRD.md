@@ -2115,3 +2115,21 @@ See `/app/memory/test_credentials.md`.
 - New `WaveDivider flip` sits above the newsletter strip — cohesive brand transition into the dark footer
 
 **Service worker** bumped to `v6-aurora-marketplace` to purge the PWA cache and reveal the new visual layer on next visit.
+
+### Feb 30 2026 — Real Crypto Icons on all Payment Surfaces
+
+**User asked** for real crypto brand icons (not letter placeholders) plus a nicer, more colourful design across payment-related pages.
+
+**New primitive** — `components/ui/CryptoIcon.jsx`:
+- Inline SVG marks + brand colours for 20 coins: BTC, ETH, USDT, USDC, BNB, SOL (gradient), XRP, TRX, MATIC/POL, LTC, DOGE, ADA, DOT, AVAX, LINK, ATOM, XLM, BCH, DAI, TON.
+- Coloured disc + white glyph, optional `flat` mode (currentColor) for dark backdrops, optional `showTicker` for label pairing.
+- Graceful fallback: unknown symbols render a gradient chip with the ticker string so the UI never breaks.
+- Exports `SUPPORTED_CRYPTOS` list for pickers that want to gate on shipped-icon coins.
+
+**Applied**:
+- `components/WalletDialogs.jsx` withdraw dialog — coin picker chips now show real brand marks; active pill switched to red gradient with red drop-shadow + subtle scale-up.
+- `pages/Wallet.jsx` withdraw dialog — SelectValue + SelectItems render the CryptoIcon inline, so the dropdown lists Bitcoin (orange ₿), Ethereum (blue diamond), Tether (green T), USDC (blue $), etc.
+- `pages/AdminPaymentMethods.jsx` — added a live SVG preview column that mirrors whatever ticker the admin types; header upgraded with an indigo-to-red gradient tile, mesh-gradient-warm section background, and rounded card styling. Add-asset button switched to indigo outline.
+- `pages/SellerApplyQuick.jsx` — payout method cards get a coin-chip row for crypto/crypto_alt options (BTC/ETH/USDT and SOL/ETH/USDT/USDC respectively). Active state uses indigo gradient, mesh tint background, and a bigger 76px tap target.
+
+**Service worker** bumped `v7-crypto-icons` to purge PWA cache.

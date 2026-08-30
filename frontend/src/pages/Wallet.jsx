@@ -22,6 +22,7 @@ import BalanceHealthTile from "@/components/BalanceHealthTile";
 import StuckEscrowAlerts from "@/components/StuckEscrowAlerts";
 import DepositResubmit from "@/components/DepositResubmit";
 import { useNotificationStream } from "@/hooks/useNotificationStream";
+import CryptoIcon from "@/components/ui/CryptoIcon";
 
 const typeMetaKeys = {
   sale: { key: "wallet.type.sale", color: "text-green-600" },
@@ -434,11 +435,21 @@ const WithdrawDialog = ({ open, onOpenChange, methods, onSubmitted }) => {
                 <Label className="text-sm">Cryptocurrency</Label>
                 <Select value={cryptoCcy} onValueChange={setCryptoCcy}>
                   <SelectTrigger className="h-11 mt-1.5" data-testid="withdraw-currency-select">
-                    <SelectValue placeholder="Choose currency" />
+                    <SelectValue placeholder="Choose currency">
+                      <span className="inline-flex items-center gap-2">
+                        <CryptoIcon symbol={cryptoCcy} size={20} />
+                        <span className="font-semibold">{cryptoCcy}</span>
+                      </span>
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     {(hasCrypto ? cryptoList : ["USDT", "USDC", "BTC", "ETH"]).map((k) => (
-                      <SelectItem key={k} value={k}>{k}</SelectItem>
+                      <SelectItem key={k} value={k}>
+                        <span className="inline-flex items-center gap-2">
+                          <CryptoIcon symbol={k} size={20} data-testid={`wallet-crypto-option-${k}`} />
+                          <span>{k}</span>
+                        </span>
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>

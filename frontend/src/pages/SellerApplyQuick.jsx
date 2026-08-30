@@ -22,6 +22,7 @@ import {
   Mail,
   RefreshCw,
 } from "lucide-react";
+import CryptoIcon from "@/components/ui/CryptoIcon";
 
 /**
  * SellerApplyQuick — a one-step, streamlined seller application with
@@ -53,6 +54,7 @@ const PAYOUT_METHODS = [
     tagline: "Recommended · fast & secure",
     icon: Bitcoin,
     tone: "text-amber-500",
+    coins: ["BTC", "ETH", "USDT"],
     recommended: true,
     hint: "Instant settlement in BTC.",
   },
@@ -86,6 +88,7 @@ const PAYOUT_METHODS = [
     tagline: "Alt-networks",
     icon: Coins,
     tone: "text-fuchsia-600",
+    coins: ["SOL", "ETH", "USDT", "USDC"],
     hint: "Solana · Ethereum · Tether.",
   },
 ];
@@ -347,15 +350,15 @@ const SellerApplyQuick = () => {
                     type="button"
                     key={m.key}
                     onClick={() => setPayout(m.key)}
-                    className={`relative flex items-start gap-3 rounded-xl border p-3 text-left transition-all min-h-[68px] ${
+                    className={`relative flex items-start gap-3 rounded-2xl border p-3.5 text-left transition-all min-h-[76px] ${
                       active
-                        ? "border-[#DC2626] bg-[#FFF3F2] shadow-[0_2px_16px_-8px_rgba(255,33,31,0.35)]"
-                        : "border-neutral-200 dark:border-neutral-700 hover:border-neutral-400 dark:hover:border-neutral-500 bg-white dark:bg-neutral-900"
+                        ? "border-[#5459E8] bg-gradient-to-br from-[#E0E7FF]/60 to-[#FEE2E2]/40 dark:from-[#5459E8]/15 dark:to-[#FF0515]/10 shadow-[0_6px_24px_-10px_rgba(84,89,232,0.45)] scale-[1.02]"
+                        : "border-neutral-200 dark:border-neutral-700 hover:border-[#5459E8]/60 dark:hover:border-[#818CF8]/60 hover:shadow-sm bg-white dark:bg-neutral-900"
                     }`}
                     data-testid={`payout-${m.key}`}
                     aria-pressed={active}
                   >
-                    <div className={`h-9 w-9 rounded-lg bg-neutral-100 dark:bg-neutral-800 grid place-items-center shrink-0 ${m.tone}`}>
+                    <div className={`h-10 w-10 rounded-xl grid place-items-center shrink-0 ${active ? "bg-gradient-to-br from-[#5459E8] to-[#818CF8] text-white shadow-md" : `bg-neutral-100 dark:bg-neutral-800 ${m.tone}`}`}>
                       <m.icon className="h-5 w-5" />
                     </div>
                     <div className="min-w-0 flex-1">
@@ -369,9 +372,16 @@ const SellerApplyQuick = () => {
                       </div>
                       <div className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5">{m.tagline}</div>
                       <div className="text-[10px] text-neutral-400 dark:text-neutral-500 mt-1">{m.hint}</div>
+                      {m.coins && (
+                        <div className="flex items-center gap-1 mt-2" data-testid={`payout-coins-${m.key}`}>
+                          {m.coins.map((c) => (
+                            <CryptoIcon key={c} symbol={c} size={18} />
+                          ))}
+                        </div>
+                      )}
                     </div>
                     {active && (
-                      <CheckCircle2 className="absolute top-2 right-2 h-4 w-4 text-[#DC2626]" />
+                      <CheckCircle2 className="absolute top-2 right-2 h-4 w-4 text-[#5459E8]" />
                     )}
                   </button>
                 );

@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
 import { Trash2, Plus, CheckCircle2, XCircle, Clock, Bitcoin, Building2 } from "lucide-react";
+import CryptoIcon from "@/components/ui/CryptoIcon";
 
 const emptyManual = () => ({
   id: Math.random().toString(36).slice(2, 10),
@@ -103,29 +104,35 @@ const AdminPaymentMethods = () => {
 
       {tab === "methods" && (
         <div className="space-y-6">
-          <section className="border border-neutral-200 rounded-xl bg-white p-5">
+          <section className="border border-neutral-200 rounded-2xl bg-white p-5 mesh-gradient-warm">
             <div className="flex items-center gap-2 mb-4">
-              <div className="h-9 w-9 rounded-lg bg-[#FFF3F2] grid place-items-center"><Bitcoin className="h-4 w-4 text-[#DC2626]" /></div>
-              <h3 className="font-semibold text-lg">Crypto assets &amp; networks</h3>
+              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#5459E8] to-[#FF0515] grid place-items-center shadow-md shadow-[#5459E8]/25"><Bitcoin className="h-5 w-5 text-white" /></div>
+              <div>
+                <h3 className="font-bold text-lg text-neutral-900">Crypto assets &amp; networks</h3>
+                <p className="text-xs text-neutral-600">Configure the coins you accept</p>
+              </div>
             </div>
             <p className="text-xs text-neutral-500 mb-4">Each row is one (asset · network · address) deposit slot. Toggle Active to hide from checkout. Blank addresses are auto-hidden.</p>
             <div className="space-y-3">
               {assets.map((a, i) => (
-                <div key={a.id} className="grid grid-cols-1 sm:grid-cols-[110px_140px_1fr_auto] gap-2 sm:items-center border border-neutral-200 rounded-lg p-2.5 bg-neutral-50">
+                <div key={a.id} className="grid grid-cols-1 sm:grid-cols-[44px_110px_140px_1fr_auto] gap-2 sm:items-center border border-neutral-200 rounded-xl p-2.5 bg-white/80 backdrop-blur-sm">
+                  <div className="grid place-items-center bg-neutral-50 rounded-lg h-11 w-11" data-testid={`asset-preview-${i}`}>
+                    <CryptoIcon symbol={a.symbol || "BTC"} size={30} />
+                  </div>
                   <Input value={a.symbol} onChange={(e) => { const cp = [...assets]; cp[i].symbol = e.target.value.toUpperCase(); setAssets(cp); }} placeholder="ETH" className="h-11 text-base font-mono uppercase" data-testid={`asset-symbol-${i}`} />
                   <Input value={a.network} onChange={(e) => { const cp = [...assets]; cp[i].network = e.target.value; setAssets(cp); }} placeholder="Ethereum" className="h-11 text-base" data-testid={`asset-network-${i}`} />
                   <Input value={a.address} onChange={(e) => { const cp = [...assets]; cp[i].address = e.target.value; setAssets(cp); }} placeholder="Deposit address" className="h-11 text-base font-mono text-xs" data-testid={`asset-address-${i}`} />
                   <div className="flex gap-2">
-                    <button type="button" onClick={() => { const cp = [...assets]; cp[i].active = !cp[i].active; setAssets(cp); }} className={`min-h-[44px] px-3 rounded-full text-xs font-semibold border transition ${a.active ? "bg-green-50 text-green-700 border-green-200" : "bg-neutral-100 text-neutral-500 border-neutral-200"}`} data-testid={`asset-toggle-${i}`}>
+                    <button type="button" onClick={() => { const cp = [...assets]; cp[i].active = !cp[i].active; setAssets(cp); }} className={`min-h-[44px] px-3 rounded-full text-xs font-semibold border transition ${a.active ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-neutral-100 text-neutral-500 border-neutral-200"}`} data-testid={`asset-toggle-${i}`}>
                       {a.active ? "Active" : "Off"}
                     </button>
-                    <button type="button" onClick={() => setAssets(assets.filter((_, j) => j !== i))} className="min-h-[44px] min-w-[44px] rounded-full border border-neutral-200 hover:border-[#DC2626] hover:text-[#DC2626] grid place-items-center transition" aria-label="Delete" data-testid={`asset-delete-${i}`}>
+                    <button type="button" onClick={() => setAssets(assets.filter((_, j) => j !== i))} className="min-h-[44px] min-w-[44px] rounded-full border border-neutral-200 hover:border-[#FF0515] hover:text-[#FF0515] grid place-items-center transition" aria-label="Delete" data-testid={`asset-delete-${i}`}>
                       <Trash2 className="h-4 w-4" />
                     </button>
                   </div>
                 </div>
               ))}
-              <Button type="button" variant="outline" onClick={addAsset} className="min-h-[44px] w-full sm:w-auto rounded-full gap-1.5" data-testid="asset-add"><Plus className="h-4 w-4" /> Add asset / network</Button>
+              <Button type="button" variant="outline" onClick={addAsset} className="min-h-[44px] w-full sm:w-auto rounded-full gap-1.5 border-[#5459E8] text-[#5459E8] hover:bg-[#5459E8] hover:text-white transition" data-testid="asset-add"><Plus className="h-4 w-4" /> Add asset / network</Button>
             </div>
           </section>
 
