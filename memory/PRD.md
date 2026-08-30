@@ -2133,3 +2133,13 @@ See `/app/memory/test_credentials.md`.
 - `pages/SellerApplyQuick.jsx` — payout method cards get a coin-chip row for crypto/crypto_alt options (BTC/ETH/USDT and SOL/ETH/USDT/USDC respectively). Active state uses indigo gradient, mesh tint background, and a bigger 76px tap target.
 
 **Service worker** bumped `v7-crypto-icons` to purge PWA cache.
+
+### Feb 30 2026 — Section-heading color hierarchy (blue primary, red accent)
+
+**User pointed at** the Preferences popover and asked for section labels in the primary blue with red accents where suitable.
+
+**Applied**:
+- `HeaderSettingsMenu.jsx`: "Preferences" uppercase eyebrow recoloured to `#FF0515` extrabold with wider letter-spacing; each row label (Appearance / Text size / Currency / Language) now renders in `#5459E8` (dark-mode `#818CF8`) bold with tightened tracking. Row hints stay neutral for legibility.
+- `GlobalNavMenu.jsx`: the drawer's "Language", "Currency" and "Your account" section eyebrows recoloured to `#FF0515` uppercase extrabold; select values themselves rendered in indigo bold.
+
+**Service worker** bumped `v8-heading-accents` for cache purge.

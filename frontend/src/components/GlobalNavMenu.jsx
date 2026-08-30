@@ -93,11 +93,11 @@ const GlobalNavMenu = () => {
                 <Globe className="h-4 w-4" />
               </span>
               <div className="flex-1 min-w-0">
-                <div className="text-[10px] uppercase tracking-wider text-neutral-500 font-semibold">Language</div>
+                <div className="text-[10px] uppercase tracking-[0.2em] text-[#FF0515] font-extrabold">Language</div>
                 <select
                   value={lang}
                   onChange={(e) => setLang(e.target.value)}
-                  className="mt-0.5 w-full bg-transparent text-sm font-semibold text-neutral-900 dark:text-neutral-100 focus:outline-none cursor-pointer"
+                  className="mt-0.5 w-full bg-transparent text-sm font-bold text-[#5459E8] dark:text-[#818CF8] focus:outline-none cursor-pointer"
                   data-testid="gnav-lang-select"
                   aria-label="Choose language"
                 >
@@ -112,11 +112,11 @@ const GlobalNavMenu = () => {
                 <DollarSign className="h-4 w-4" />
               </span>
               <div className="flex-1 min-w-0">
-                <div className="text-[10px] uppercase tracking-wider text-neutral-500 font-semibold">Currency</div>
+                <div className="text-[10px] uppercase tracking-[0.2em] text-[#FF0515] font-extrabold">Currency</div>
                 <select
                   value={currency}
                   onChange={(e) => setCurrency(e.target.value)}
-                  className="mt-0.5 w-full bg-transparent text-sm font-semibold text-neutral-900 dark:text-neutral-100 focus:outline-none cursor-pointer"
+                  className="mt-0.5 w-full bg-transparent text-sm font-bold text-[#5459E8] dark:text-[#818CF8] focus:outline-none cursor-pointer"
                   data-testid="gnav-currency-select"
                   aria-label="Choose currency"
                 >
@@ -138,7 +138,7 @@ const GlobalNavMenu = () => {
           <NavItem to="/favorites" icon={Heart} onClose={close} testid="gnav-favorites">{t("menu.favorites")}</NavItem>
           {user ? (
             <>
-              <div className="my-2 px-4 text-[10px] uppercase tracking-wider text-neutral-500 dark:text-neutral-400 font-semibold">Your account</div>
+              <div className="my-2 px-4 text-[10px] uppercase tracking-[0.2em] text-[#FF0515] font-extrabold">Your account</div>
               <NavItem to="/sell" icon={Package} onClose={close} testid="gnav-sell">{t("nav.sell")}</NavItem>
               <NavItem to="/chat" icon={MessageSquare} onClose={close} testid="gnav-chat">{t("menu.messages")}</NavItem>
               <NavItem to="/wallet" icon={Wallet} onClose={close} testid="gnav-wallet">{t("menu.wallet")}</NavItem>

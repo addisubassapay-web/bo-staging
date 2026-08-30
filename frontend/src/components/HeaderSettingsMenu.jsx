@@ -35,7 +35,7 @@ const HeaderSettingsMenu = () => {
         data-testid="header-settings-menu"
       >
         <div className="p-4 border-b border-neutral-100 dark:border-neutral-800">
-          <div className="text-xs font-semibold uppercase tracking-wider text-neutral-400">Preferences</div>
+          <div className="text-xs font-extrabold uppercase tracking-[0.2em] text-[#FF0515]">Preferences</div>
         </div>
         <div className="divide-y divide-neutral-100 dark:divide-neutral-800">
           <SettingRow label="Appearance" hint="Light or dark mode">
@@ -59,7 +59,7 @@ const HeaderSettingsMenu = () => {
 const SettingRow = ({ label, hint, children }) => (
   <div className="p-4 flex items-center justify-between gap-3">
     <div className="min-w-0">
-      <div className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">{label}</div>
+      <div className="text-sm font-bold text-[#5459E8] dark:text-[#818CF8] tracking-tight">{label}</div>
       {hint ? <div className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5 truncate">{hint}</div> : null}
     </div>
     <div className="shrink-0">{children}</div>
