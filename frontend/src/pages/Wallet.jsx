@@ -369,7 +369,11 @@ const WithdrawDialog = ({ open, onOpenChange, methods, onSubmitted }) => {
     setWalletAddress("");
     setAmount("");
     setAccountInfo("");
-  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+    // `hasCrypto` / `cryptoList` intentionally excluded — we only want to
+    // reset the withdraw form when the modal opens, not every time the
+    // parent's methods list re-renders (which would clobber user input).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   const submit = async () => {
     const amt = parseFloat(amount);

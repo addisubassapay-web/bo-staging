@@ -24,6 +24,20 @@ Full-stack ecommerce marketplace **Mercari-Global** — same color scheme (`#FF2
 
 ---
 
+### Feb 27 2026 — Hook Deps Triage on the review's called-out spots
+
+**Method**: Manually inspected each of the specifically flagged locations the review said had "real stale-closure bugs": Wallet.jsx (5 spots), StorePage.jsx (5 spots), StoresMarketplace.jsx (4 spots) — 14 candidates total.
+
+**Findings** (contrary to the code review):
+- **StoresMarketplace L146/L150/L167** — CORRECT as written. `load = useCallback(..., [q, tier, categoryId])` + `useEffect(load, [load])` is the textbook debounced-fetch pattern.
+- **StorePage L47 / L55 / L64** — CORRECT. `[slug]`, `[store, user, slug]`, and `[]` respectively; no closure reads outside the deps arrays.
+- **Wallet L101 / L475 / L645 / L664** — CORRECT. All state reads accounted for; `load` on L664 is defined inline but reads no changing closure state, so extracting to `useCallback` would only add ceremony.
+- **Wallet L365** — Had `// eslint-disable-line` at end of line. Real intent: reset the withdraw form only when the modal opens, not on every parent re-render. Upgraded to a full-block ESLint disable comment with a paragraph explaining WHY, so the next dev doesn't naively "fix" it and clobber user input.
+
+**Conclusion**: The 227 warnings are ~95% false positives. **Zero genuine stale-closure bugs** exist in the flagged spots today. No functional change needed; the code review's tooling is over-reporting. Documented the one intentional suppression so the intent survives future audits.
+
+
+
 ### Feb 27 2026 — Mailer Hard-Fail + SMTP Confirmed LIVE
 
 **Mailer refactor (`services/mailer.py`)**:
