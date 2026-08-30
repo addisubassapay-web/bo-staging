@@ -68,7 +68,7 @@ const CategoryMegaMenu = ({ categories = [] }) => {
             <Link
               to="/search?sort=trending"
               onClick={() => setOpen(false)}
-              className="inline-flex items-center gap-1.5 px-3 h-8 rounded-full bg-gradient-to-r from-[#1E40AF] to-[#3B82F6] text-white text-xs font-semibold shadow-sm hover:shadow-md transition"
+              className="inline-flex items-center gap-1.5 px-3 h-8 rounded-full bg-gradient-to-r from-[#5459E8] to-[#818CF8] text-white text-xs font-semibold shadow-sm hover:shadow-md transition"
               data-testid="mega-quick-trending"
             >
               <TrendingUp className="h-3.5 w-3.5" /> Trending
@@ -79,7 +79,7 @@ const CategoryMegaMenu = ({ categories = [] }) => {
               className="inline-flex items-center gap-1.5 px-3 h-8 rounded-full bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-100 text-xs font-semibold transition"
               data-testid="mega-quick-new"
             >
-              <Sparkles className="h-3.5 w-3.5 text-[#1E40AF]" /> New arrivals
+              <Sparkles className="h-3.5 w-3.5 text-[#5459E8]" /> New arrivals
             </Link>
             <Link
               to="/search?sort=price_asc&max=25"
@@ -87,7 +87,7 @@ const CategoryMegaMenu = ({ categories = [] }) => {
               className="inline-flex items-center gap-1.5 px-3 h-8 rounded-full bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-100 text-xs font-semibold transition"
               data-testid="mega-quick-under25"
             >
-              <Percent className="h-3.5 w-3.5 text-[#1E40AF]" /> Under $25
+              <Percent className="h-3.5 w-3.5 text-[#5459E8]" /> Under $25
             </Link>
             <Link
               to="/search?sort=popular"
@@ -95,7 +95,7 @@ const CategoryMegaMenu = ({ categories = [] }) => {
               className="inline-flex items-center gap-1.5 px-3 h-8 rounded-full bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-100 text-xs font-semibold transition"
               data-testid="mega-quick-popular"
             >
-              <Flame className="h-3.5 w-3.5 text-[#1E40AF]" /> Most loved
+              <Flame className="h-3.5 w-3.5 text-[#5459E8]" /> Most loved
             </Link>
           </div>
 
@@ -108,11 +108,11 @@ const CategoryMegaMenu = ({ categories = [] }) => {
                   key={c.id}
                   to={`/search?category=${c.id}`}
                   onClick={() => setOpen(false)}
-                  className="group flex items-center gap-2.5 px-3 py-2.5 rounded-xl border border-transparent hover:border-[#1E40AF]/30 hover:bg-[#FFF3F2] dark:hover:bg-[#3a1817]/40 transition"
+                  className="group flex items-center gap-2.5 px-3 py-2.5 rounded-xl border border-transparent hover:border-[#5459E8]/30 hover:bg-[#FFF3F2] dark:hover:bg-[#3a1817]/40 transition"
                   data-testid={`mega-cat-${c.slug}`}
                   role="menuitem"
                 >
-                  <span className="h-9 w-9 shrink-0 rounded-lg bg-gradient-to-br from-[#1E40AF]/10 to-[#DC2626]/10 grid place-items-center text-[#1E40AF] group-hover:from-[#1E40AF]/20 group-hover:to-[#DC2626]/20 transition">
+                  <span className="h-9 w-9 shrink-0 rounded-lg bg-gradient-to-br from-[#5459E8]/10 to-[#DC2626]/10 grid place-items-center text-[#5459E8] group-hover:from-[#5459E8]/20 group-hover:to-[#DC2626]/20 transition">
                     <Icon className="h-4.5 w-4.5" />
                   </span>
                   <span className="text-sm font-medium text-neutral-800 dark:text-neutral-100 group-hover:text-[#DC2626] transition truncate">

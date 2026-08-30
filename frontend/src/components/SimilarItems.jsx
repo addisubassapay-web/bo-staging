@@ -35,7 +35,7 @@ const SimilarItems = ({ listingId }) => {
     <div className="mt-16 sm:mt-20" data-testid="similar-items-section">
       <div className="flex items-end justify-between gap-3 flex-wrap">
         <div>
-          <span className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.2em] font-semibold text-[#1E40AF] bg-[#1E40AF]/10 border border-[#1E40AF]/20 rounded-full px-3 py-1">
+          <span className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.2em] font-semibold text-[#5459E8] bg-[#5459E8]/10 border border-[#5459E8]/20 rounded-full px-3 py-1">
             <Sparkles className="h-3 w-3" /> {t("similar.kicker")}
           </span>
           <h2 className="mt-2 text-2xl sm:text-3xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">
@@ -49,7 +49,7 @@ const SimilarItems = ({ listingId }) => {
           <button
             onClick={() => scrollBy(-1)}
             aria-label="Scroll left"
-            className="h-10 w-10 rounded-full border border-neutral-200 dark:border-neutral-700 hover:border-[#1E40AF] grid place-items-center transition text-neutral-700 dark:text-neutral-200"
+            className="h-10 w-10 rounded-full border border-neutral-200 dark:border-neutral-700 hover:border-[#5459E8] grid place-items-center transition text-neutral-700 dark:text-neutral-200"
             data-testid="similar-scroll-left"
           >
             <ChevronLeft className="h-4 w-4" />
@@ -57,7 +57,7 @@ const SimilarItems = ({ listingId }) => {
           <button
             onClick={() => scrollBy(1)}
             aria-label="Scroll right"
-            className="h-10 w-10 rounded-full border border-neutral-200 dark:border-neutral-700 hover:border-[#1E40AF] grid place-items-center transition text-neutral-700 dark:text-neutral-200"
+            className="h-10 w-10 rounded-full border border-neutral-200 dark:border-neutral-700 hover:border-[#5459E8] grid place-items-center transition text-neutral-700 dark:text-neutral-200"
             data-testid="similar-scroll-right"
           >
             <ChevronRight className="h-4 w-4" />

@@ -313,7 +313,7 @@ const Sell = () => {
             <button
               type="button"
               onClick={() => setMode("resell")}
-              className="mt-4 min-h-[44px] px-5 rounded-full bg-gradient-to-r from-[#1E40AF] to-[#3B82F6] text-white font-semibold hover:brightness-110"
+              className="mt-4 min-h-[44px] px-5 rounded-full bg-gradient-to-r from-[#5459E8] to-[#818CF8] text-white font-semibold hover:brightness-110"
               data-testid="import-deprecated-cta"
             >
               Browse the catalog
@@ -352,7 +352,7 @@ const Sell = () => {
                   onClick={() => enhancePhoto(i)}
                   disabled={enhancingIdx === i}
                   aria-label="Enhance photo with AI"
-                  className="absolute bottom-1 left-1 h-7 w-7 rounded-full bg-[#1E40AF] hover:bg-[#e86a10] disabled:opacity-60 text-white grid place-items-center shadow-md"
+                  className="absolute bottom-1 left-1 h-7 w-7 rounded-full bg-[#5459E8] hover:bg-[#e86a10] disabled:opacity-60 text-white grid place-items-center shadow-md"
                   data-testid={`enhance-photo-${i}`}
                   title="Enhance with AI (Nano Banana)"
                 >
@@ -497,7 +497,7 @@ const Sell = () => {
         <div className="fixed inset-0 z-50 bg-black/40 grid place-items-center px-4" onClick={() => !enhanceAllBusy && setPrePublishOpen(false)} data-testid="pre-publish-modal">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-start gap-3">
-              <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-[#1E40AF] to-[#3B82F6] grid place-items-center text-white">
+              <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-[#5459E8] to-[#818CF8] grid place-items-center text-white">
                 <Sparkles className="h-5 w-5" />
               </div>
               <div className="flex-1">
@@ -523,7 +523,7 @@ const Sell = () => {
                 Skip &amp; publish
               </Button>
               <Button
-                className="flex-1 bg-[#1E40AF] hover:bg-[#e86a10] gap-1.5"
+                className="flex-1 bg-[#5459E8] hover:bg-[#e86a10] gap-1.5"
                 disabled={enhanceAllBusy}
                 onClick={async () => { await enhanceAll(); await doPublish(); }}
                 data-testid="publish-enhance-all"

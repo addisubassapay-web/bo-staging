@@ -18,7 +18,7 @@ const BADGE_META = {
   bronze: { label: "Bronze", color: "bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-200" },
   silver: { label: "Silver", color: "bg-neutral-200 text-neutral-800 dark:bg-neutral-700 dark:text-neutral-100" },
   gold: { label: "Gold", color: "bg-yellow-100 text-yellow-800 dark:bg-yellow-500/20 dark:text-yellow-200" },
-  override: { label: "Admin cap", color: "bg-[#1E40AF]/15 text-[#DC2626]" },
+  override: { label: "Admin cap", color: "bg-[#5459E8]/15 text-[#DC2626]" },
 };
 
 const ProductRow = ({ p, picked, onSelect, wholesaleDiscount, selectable, isChecked, onToggleCheck }) => {
@@ -420,9 +420,9 @@ const ResellFromCatalog = () => {
       {/* Suggested-for-me mode */}
       {mode === "suggested" && (
         <div className="space-y-3">
-          <div className="rounded-2xl border border-[#1E40AF]/30 bg-gradient-to-br from-[#1E40AF]/5 to-[#DC2626]/5 dark:from-[#1E40AF]/10 dark:to-[#DC2626]/10 p-4 sm:p-5" data-testid="resell-suggested-card">
+          <div className="rounded-2xl border border-[#5459E8]/30 bg-gradient-to-br from-[#5459E8]/5 to-[#DC2626]/5 dark:from-[#5459E8]/10 dark:to-[#DC2626]/10 p-4 sm:p-5" data-testid="resell-suggested-card">
             <div className="flex items-start gap-3">
-              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#1E40AF] to-[#3B82F6] grid place-items-center shrink-0 shadow-sm">
+              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#5459E8] to-[#818CF8] grid place-items-center shrink-0 shadow-sm">
                 <Wand2 className="h-5 w-5 text-white" />
               </div>
               <div className="flex-1 min-w-0">
@@ -464,7 +464,7 @@ const ResellFromCatalog = () => {
           ) : (
             <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 overflow-hidden" data-testid="resell-suggestions-list">
               <div className="px-4 py-2 border-b border-neutral-100 dark:border-neutral-800 text-xs text-neutral-500 flex items-center justify-between gap-2">
-                <span className="flex items-center gap-1.5"><Sparkles className="h-3.5 w-3.5 text-[#1E40AF]" /> {suggestions.suggestions.length} picks · pre-selected</span>
+                <span className="flex items-center gap-1.5"><Sparkles className="h-3.5 w-3.5 text-[#5459E8]" /> {suggestions.suggestions.length} picks · pre-selected</span>
                 <span className="font-semibold text-emerald-600">{bulkSelected.length} selected</span>
               </div>
               <ul className="max-h-[500px] overflow-y-auto">
@@ -488,7 +488,7 @@ const ResellFromCatalog = () => {
                           <span className="font-semibold text-neutral-800 dark:text-neutral-200 tabular-nums">{formatPrice(s.price)}</span>
                           <span className="text-[10px] text-neutral-500">· {s.category_name}</span>
                         </div>
-                        <div className="mt-1 text-[10px] font-medium text-[#1E40AF] flex items-center gap-1">
+                        <div className="mt-1 text-[10px] font-medium text-[#5459E8] flex items-center gap-1">
                           <Wand2 className="h-3 w-3" /> {s.reason}
                         </div>
                       </div>
@@ -523,7 +523,7 @@ const ResellFromCatalog = () => {
                   type="button"
                   onClick={doBulkPublish}
                   disabled={bulkPublishing || bulkSelected.length === 0 || bulkSelected.length > 20 || Number(bulkMarkup) < 0 || Number(bulkMarkup) > maxMk}
-                  className="min-h-[44px] bg-gradient-to-r from-[#1E40AF] to-[#3B82F6] hover:brightness-110 text-white gap-1.5 rounded-full px-5"
+                  className="min-h-[44px] bg-gradient-to-r from-[#5459E8] to-[#818CF8] hover:brightness-110 text-white gap-1.5 rounded-full px-5"
                   data-testid="suggested-publish-btn"
                 >
                   {bulkPublishing ? (<><Loader2 className="h-4 w-4 animate-spin" /> Publishing…</>) : (<><Rocket className="h-4 w-4" /> Publish picks</>)}
@@ -612,7 +612,7 @@ const ResellFromCatalog = () => {
                 <span>Your wholesale cost ({wholesaleDiscount}% off)</span>
                 <span className="tabular-nums font-semibold">{formatPrice(preview.wholesale)}</span>
               </div>
-              <div className="flex justify-between text-[#1E40AF]">
+              <div className="flex justify-between text-[#5459E8]">
                 <span>Your markup (+{cappedMarkup}%)</span>
                 <span className="tabular-nums font-semibold">+{formatPrice(preview.salePrice - preview.retail)}</span>
               </div>
@@ -648,7 +648,7 @@ const ResellFromCatalog = () => {
               type="button"
               onClick={doPublish}
               disabled={submitting || overCap || !preview || preview.yours <= 0}
-              className="min-h-[44px] w-full sm:w-auto bg-gradient-to-r from-[#1E40AF] to-[#3B82F6] hover:brightness-110 text-white gap-1.5"
+              className="min-h-[44px] w-full sm:w-auto bg-gradient-to-r from-[#5459E8] to-[#818CF8] hover:brightness-110 text-white gap-1.5"
               data-testid="resell-publish-btn"
             >
               {submitting ? "Publishing…" : (

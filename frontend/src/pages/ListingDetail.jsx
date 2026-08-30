@@ -29,7 +29,7 @@ const SellerBlock = ({ sellerId, sellerName, sellerCountry, views }) => {
   const country = seller?.country || sellerCountry;
   return (
     <div className="flex items-start gap-3" data-testid="seller-block">
-      <div className="h-11 w-11 rounded-full bg-gradient-to-br from-[#1E40AF] to-[#3B82F6] text-white grid place-items-center font-bold shadow-sm shrink-0">
+      <div className="h-11 w-11 rounded-full bg-gradient-to-br from-[#5459E8] to-[#818CF8] text-white grid place-items-center font-bold shadow-sm shrink-0">
         {sellerName?.[0]?.toUpperCase()}
       </div>
       <div className="flex-1 min-w-0">
@@ -208,7 +208,7 @@ const DropshipImportButton = ({ listing, onImported }) => {
         {/* Earnings preview */}
         <div className="mt-3 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-gradient-to-br from-neutral-50 to-white dark:from-neutral-900 dark:to-neutral-950 p-4 space-y-1.5" data-testid="dropship-earnings-preview">
           <RowLine label="Original seller price" value={formatPrice(basePrice)} />
-          <RowLine label={`Your markup (+${markupNum}%)`} value={`+${formatPrice(salePrice - basePrice)}`} tone="text-[#1E40AF]" />
+          <RowLine label={`Your markup (+${markupNum}%)`} value={`+${formatPrice(salePrice - basePrice)}`} tone="text-[#5459E8]" />
           <div className="h-px bg-neutral-200 dark:bg-neutral-800 my-1.5" />
           <RowLine label="Buyer pays (your listing)" value={formatPrice(salePrice)} tone="font-semibold text-neutral-900 dark:text-neutral-100" />
           <RowLine label={`Platform fee (${platformFeePct}%)`} value={`−${formatPrice(platformFee)}`} tone="text-neutral-500" />
@@ -384,14 +384,14 @@ const ListingDetail = () => {
 
         {/* Info column */}
         <div>
-          <span className="inline-block text-[10px] uppercase tracking-[0.2em] font-semibold text-[#1E40AF] bg-[#1E40AF]/10 border border-[#1E40AF]/20 rounded-full px-3 py-1">
+          <span className="inline-block text-[10px] uppercase tracking-[0.2em] font-semibold text-[#5459E8] bg-[#5459E8]/10 border border-[#5459E8]/20 rounded-full px-3 py-1">
             {listing.category_name}
           </span>
           <div className="mt-2 flex items-start justify-between gap-4">
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">{listing.title}</h1>
             <button
               onClick={() => { navigator.clipboard.writeText(window.location.href); toast({ title: t("listing.linkCopied") }); }}
-              className="h-10 w-10 rounded-full grid place-items-center border border-neutral-200 dark:border-neutral-800 text-neutral-500 dark:text-neutral-300 hover:text-[#DC2626] hover:border-[#1E40AF] transition shrink-0"
+              className="h-10 w-10 rounded-full grid place-items-center border border-neutral-200 dark:border-neutral-800 text-neutral-500 dark:text-neutral-300 hover:text-[#DC2626] hover:border-[#5459E8] transition shrink-0"
               aria-label={t("listing.share")}
               data-testid="share-btn"
             >
@@ -433,7 +433,7 @@ const ListingDetail = () => {
             <div className="mt-6 space-y-2.5">
               <Button
                 onClick={buyNow}
-                className="w-full h-12 bg-gradient-to-r from-[#1E40AF] to-[#3B82F6] hover:brightness-105 text-white text-base font-bold rounded-full shadow-lg shadow-[#DC2626]/25"
+                className="w-full h-12 bg-gradient-to-r from-[#5459E8] to-[#818CF8] hover:brightness-105 text-white text-base font-bold rounded-full shadow-lg shadow-[#DC2626]/25"
                 data-testid="buy-now-btn"
               >
                 {t("listing.buyNow")} · {formatPrice(listing.price)}
@@ -457,7 +457,7 @@ const ListingDetail = () => {
             </div>
           )}
           {isOwn && (
-            <div className="mt-6 p-4 rounded-2xl bg-orange-50 dark:bg-[#1E40AF]/10 border border-orange-200 dark:border-orange-500/30 space-y-3">
+            <div className="mt-6 p-4 rounded-2xl bg-orange-50 dark:bg-[#5459E8]/10 border border-orange-200 dark:border-orange-500/30 space-y-3">
               <div className="text-sm text-neutral-700 dark:text-neutral-200">
                 {t("listing.yourListing")} <Link to="/profile?tab=listings" className="text-[#DC2626] font-semibold hover:underline">{t("listing.profile")}</Link>.
               </div>
@@ -489,7 +489,7 @@ const ListingDetail = () => {
       {/* Smart Bundles */}
       {bundle.length > 0 && (
         <div className="mt-16 sm:mt-20" data-testid="bundles-section">
-          <span className="inline-block text-[10px] uppercase tracking-[0.2em] font-semibold text-[#1E40AF] bg-[#1E40AF]/10 border border-[#1E40AF]/20 rounded-full px-3 py-1">
+          <span className="inline-block text-[10px] uppercase tracking-[0.2em] font-semibold text-[#5459E8] bg-[#5459E8]/10 border border-[#5459E8]/20 rounded-full px-3 py-1">
             Bundle & save
           </span>
           <h2 className="mt-2 text-2xl sm:text-3xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">Complete the look</h2>

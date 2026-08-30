@@ -45,8 +45,8 @@ const CATEGORY_STYLES = {
   Home: {
     frame: "bg-[#F5F1EA] dark:bg-[#1F1B15] border-[#E1D6C4] dark:border-[#3A311F]",
     accent: "text-[#7B5D2E]",
-    priceColor: "text-[#1E40AF]",
-    tag: "bg-[#1E40AF]/10 text-[#1E40AF]",
+    priceColor: "text-[#5459E8]",
+    tag: "bg-[#5459E8]/10 text-[#5459E8]",
     titleFont: "",
   },
   Sports: {
@@ -59,7 +59,7 @@ const CATEGORY_STYLES = {
 };
 const DEFAULT_STYLE = {
   frame: "bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800",
-  priceColor: "text-[#1E40AF]",
+  priceColor: "text-[#5459E8]",
   tag: "bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300",
   titleFont: "",
 };
@@ -252,18 +252,18 @@ const Products = () => {
     <div className="max-w-7xl mx-auto px-4 py-8" data-testid="products-catalog-page">
       {/* Editorial-boutique hero — warm cream field, terracotta accents, serif display */}
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#FBF6EF] via-[#F5ECE0] to-[#EBDFD0] dark:from-[#1C1712] dark:via-[#231C15] dark:to-[#2A2119] p-8 sm:p-10 mb-6 border border-[#E7D9C6] dark:border-[#3A2E23]">
-        <div className="absolute -top-16 -right-16 h-56 w-56 rounded-full bg-[#1E40AF]/15 blur-3xl pointer-events-none" />
+        <div className="absolute -top-16 -right-16 h-56 w-56 rounded-full bg-[#5459E8]/15 blur-3xl pointer-events-none" />
         <div className="absolute -bottom-20 -left-10 h-64 w-64 rounded-full bg-[#3A5A40]/10 blur-3xl pointer-events-none" />
         <div className="relative flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/70 dark:bg-neutral-900/50 backdrop-blur px-3 py-1 text-[10px] uppercase tracking-[0.2em] font-semibold text-[#1E40AF] mb-3">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#1E40AF]" /> Curated for you
+            <div className="inline-flex items-center gap-2 rounded-full bg-white/70 dark:bg-neutral-900/50 backdrop-blur px-3 py-1 text-[10px] uppercase tracking-[0.2em] font-semibold text-[#5459E8] mb-3">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#5459E8]" /> Curated for you
             </div>
             <h1
               className="font-serif text-4xl sm:text-5xl lg:text-6xl leading-[1.05] tracking-tight text-neutral-900 dark:text-neutral-50"
               style={{ fontFamily: "'Playfair Display', 'DM Serif Display', Georgia, serif" }}
             >
-              The <em className="italic text-[#1E40AF]">BlueOcean</em> catalogue
+              The <em className="italic text-[#5459E8]">BlueOcean</em> catalogue
             </h1>
             <p className="mt-3 text-neutral-700 dark:text-neutral-300 max-w-xl leading-relaxed">
               Every category, every drop — curated from real supply.{" "}

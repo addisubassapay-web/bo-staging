@@ -187,7 +187,7 @@ const Profile = () => {
       {/* Modern gradient hero */}
       <div className="relative rounded-3xl overflow-hidden mb-8 shadow-[0_20px_50px_-25px_rgba(255,33,31,0.35)]" data-testid="profile-hero">
         {/* Decorative gradient background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[#1E40AF] via-[#FF5722] to-[#DC2626]" />
+        <div className="absolute inset-0 bg-gradient-to-br from-[#5459E8] via-[#FF5722] to-[#DC2626]" />
         <div className="absolute -top-24 -right-24 h-72 w-72 rounded-full bg-white/20 blur-3xl pointer-events-none" />
         <div className="absolute -bottom-20 -left-16 h-64 w-64 rounded-full bg-black/25 blur-3xl pointer-events-none" />
         {/* Subtle grid pattern */}
@@ -335,7 +335,7 @@ const Profile = () => {
           <div className="pointer-events-none absolute -bottom-14 -left-10 h-40 w-40 rounded-full bg-purple-100/70 blur-3xl" />
           <div className="relative flex items-start justify-between gap-3 flex-wrap">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#1E40AF] to-[#3B82F6] grid place-items-center shrink-0 shadow-sm">
+              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#5459E8] to-[#818CF8] grid place-items-center shrink-0 shadow-sm">
                 <Share2 className="h-5 w-5 text-white" />
               </div>
               <div>
@@ -356,7 +356,7 @@ const Profile = () => {
               <div className="text-xl sm:text-2xl font-extrabold text-neutral-900 tabular-nums mt-0.5">{pushStats.share_reach_followers.toLocaleString()}</div>
               <div className="text-[10px] text-neutral-500">followers</div>
             </div>
-            <div className="rounded-xl border border-[#1E40AF]/30 bg-[#FFF3F2] p-3 text-center" data-testid="push-stat-sales">
+            <div className="rounded-xl border border-[#5459E8]/30 bg-[#FFF3F2] p-3 text-center" data-testid="push-stat-sales">
               <div className="text-[10px] uppercase tracking-wider text-[#DC2626] font-semibold">Sales</div>
               <div className="text-xl sm:text-2xl font-extrabold text-neutral-900 tabular-nums mt-0.5">{pushStats.share_attributed_sales.toLocaleString()}</div>
               <div className="text-[10px] text-neutral-500">from shares</div>

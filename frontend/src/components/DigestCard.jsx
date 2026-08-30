@@ -35,7 +35,7 @@ const DigestCard = () => {
       </div>
       <div className="mt-3 flex items-center justify-between text-xs text-neutral-600">
         <span>{data.drops.length} drop{data.drops.length === 1 ? "" : "s"} this week · {data.total_favorites} favourites</span>
-        <button onClick={() => setOpen(true)} className="text-[#1E40AF] font-medium hover:underline" data-testid="digest-preview-btn">Preview</button>
+        <button onClick={() => setOpen(true)} className="text-[#5459E8] font-medium hover:underline" data-testid="digest-preview-btn">Preview</button>
       </div>
 
       {open && (
@@ -43,7 +43,7 @@ const DigestCard = () => {
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl" onClick={(e) => e.stopPropagation()} data-testid="digest-preview-modal">
             <div className="flex items-start justify-between">
               <div>
-                <div className="text-xs uppercase tracking-wider text-[#1E40AF] font-semibold">Preview · BlueOcean</div>
+                <div className="text-xs uppercase tracking-wider text-[#5459E8] font-semibold">Preview · BlueOcean</div>
                 <h3 className="text-xl font-bold mt-1">Price drops on your wishlist</h3>
                 <p className="text-sm text-neutral-500">Sent to <span className="font-mono">{data.email}</span></p>
               </div>

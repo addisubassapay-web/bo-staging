@@ -65,7 +65,7 @@ const ShelfAdmin = () => {
                     <div
                       ref={prov.innerRef}
                       {...prov.draggableProps}
-                      className={`flex items-center gap-3 bg-white border rounded-lg p-3 ${snapshot.isDragging ? "border-[#1E40AF] shadow-lg" : "border-neutral-200"}`}
+                      className={`flex items-center gap-3 bg-white border rounded-lg p-3 ${snapshot.isDragging ? "border-[#5459E8] shadow-lg" : "border-neutral-200"}`}
                       data-testid={`shelf-row-${s.id}`}
                     >
                       <span {...prov.dragHandleProps} className="cursor-grab active:cursor-grabbing text-neutral-400 hover:text-neutral-600" data-testid={`shelf-drag-${s.id}`}>

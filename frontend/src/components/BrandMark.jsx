@@ -3,21 +3,21 @@ import React from "react";
 /**
  * BrandMark — reusable inline SVG brand logo for BlueOcean.
  *
- * The mark is a stylised wave/ocean-drop composed of two overlapping arcs
- * inside a rounded-square container. It reads as "water + motion" on the
- * marketplace's blue palette (#1E40AF primary, #3B82F6 secondary).
+ * Design: a geometric shopping-bag silhouette carrying a stylised wave —
+ * fusing e-commerce (bag + tag dot) with the "Ocean" motion motif. Sits on
+ * a rounded-square tile filled with the indigo brand gradient (#5459E8 →
+ * #818CF8). The wave crest cuts through the bag from left to right, so
+ * "commerce + flow" reads at any size from favicon to hero.
  *
  * Props:
  *  - size: number | string (px or CSS size, default 40)
- *  - variant: "default" | "mono" | "outline" (default "default")
- *      • default → blue gradient tile with white waves
- *      • mono    → transparent tile + white waves (for dark hero backdrops)
- *      • outline → transparent tile + blue-stroked waves (for footers/stamps)
- *  - showWordmark: boolean (default false) — renders the "BlueOcean" wordmark
- *  - wordmarkClassName: extra classes for the wordmark
- *  - className: extra classes on the wrapper
- *  - animated: boolean — adds a subtle draw/pulse on mount
- *  - "data-testid": string
+ *  - variant: "default" | "mono" | "outline"
+ *      • default → indigo tile, white bag + wave, indigo accent dot
+ *      • mono    → transparent tile, white outlines (dark backdrops)
+ *      • outline → transparent tile, indigo outlines (light stamps)
+ *  - showWordmark: boolean — renders "Blue" + coloured "Ocean" wordmark
+ *  - wordmarkClassName / className: extra classes
+ *  - animated: boolean — subtle pulse on mount
  */
 export const BrandMark = ({
   size = 40,
@@ -30,15 +30,16 @@ export const BrandMark = ({
 }) => {
   const uid = React.useId();
   const tileGrad = `bm-tile-${uid}`;
-  const waveGrad = `bm-wave-${uid}`;
+  const dotGrad = `bm-dot-${uid}`;
 
   const isOutline = variant === "outline";
   const isMono = variant === "mono";
+  const isDefault = variant === "default";
 
-  const tileFill = isOutline || isMono ? "none" : `url(#${tileGrad})`;
-  const tileStroke = isOutline ? "#1E40AF" : "none";
-  const waveStroke = isMono ? "#ffffff" : isOutline ? "#1E40AF" : "#ffffff";
-  const dropFill = isMono ? "#ffffff" : isOutline ? "#1E40AF" : `url(#${waveGrad})`;
+  const tileFill = isDefault ? `url(#${tileGrad})` : "none";
+  const tileStroke = isOutline ? "#5459E8" : "none";
+  const strokeColor = isMono ? "#ffffff" : isOutline ? "#5459E8" : "#ffffff";
+  const dotFill = isMono ? "#ffffff" : isOutline ? "#5459E8" : `url(#${dotGrad})`;
 
   return (
     <span
@@ -56,16 +57,16 @@ export const BrandMark = ({
       >
         <defs>
           <linearGradient id={tileGrad} x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#1E40AF" />
-            <stop offset="100%" stopColor="#3B82F6" />
+            <stop offset="0%" stopColor="#5459E8" />
+            <stop offset="100%" stopColor="#818CF8" />
           </linearGradient>
-          <linearGradient id={waveGrad} x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="#ffffff" />
-            <stop offset="100%" stopColor="#DBEAFE" />
+          <linearGradient id={dotGrad} x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#F0ABFC" />
+            <stop offset="100%" stopColor="#F472B6" />
           </linearGradient>
         </defs>
 
-        {/* Rounded-square tile — the brand container */}
+        {/* Rounded tile — the brand container */}
         <rect
           x="6"
           y="6"
@@ -78,28 +79,57 @@ export const BrandMark = ({
           strokeWidth={isOutline ? 6 : 0}
         />
 
-        {/* Water drop — top accent */}
+        {/* Shopping bag body — geometric trapezoid with a subtle taper */}
         <path
-          d="M60 22 C 52 34, 46 42, 46 52 C 46 60, 52 66, 60 66 C 68 66, 74 60, 74 52 C 74 42, 68 34, 60 22 Z"
-          fill={dropFill}
-          opacity={isOutline ? 1 : 0.95}
+          d="M36 50 L84 50 L88 96 Q88 100 84 100 L36 100 Q32 100 32 96 Z"
+          fill="none"
+          stroke={strokeColor}
+          strokeWidth="6"
+          strokeLinejoin="round"
         />
 
-        {/* Two stacked wave crests below the drop */}
+        {/* Bag handles — twin arches sitting on the bag top edge */}
         <path
-          d="M20 82 C 32 72, 44 92, 60 82 C 76 72, 88 92, 100 82"
+          d="M46 50 L46 40 Q46 30 54 30 Q62 30 62 40 L62 50"
           fill="none"
-          stroke={waveStroke}
-          strokeWidth="7"
+          stroke={strokeColor}
+          strokeWidth="5"
           strokeLinecap="round"
         />
         <path
-          d="M20 98 C 32 88, 44 108, 60 98 C 76 88, 88 108, 100 98"
+          d="M58 50 L58 40 Q58 30 66 30 Q74 30 74 40 L74 50"
           fill="none"
-          stroke={waveStroke}
-          strokeWidth="7"
+          stroke={strokeColor}
+          strokeWidth="5"
           strokeLinecap="round"
-          opacity="0.7"
+          opacity="0.85"
+        />
+
+        {/* Signature wave crest running through the bag — "ocean flow" */}
+        <path
+          d="M34 78 Q46 70 58 78 T82 78"
+          fill="none"
+          stroke={strokeColor}
+          strokeWidth="5"
+          strokeLinecap="round"
+        />
+        <path
+          d="M34 90 Q46 82 58 90 T82 90"
+          fill="none"
+          stroke={strokeColor}
+          strokeWidth="5"
+          strokeLinecap="round"
+          opacity="0.55"
+        />
+
+        {/* Accent price-tag dot — top-right geometric flourish */}
+        <circle
+          cx="92"
+          cy="28"
+          r="11"
+          fill={dotFill}
+          stroke={isMono ? "rgba(255,255,255,0.7)" : "#ffffff"}
+          strokeWidth="3"
         />
       </svg>
 
@@ -108,7 +138,7 @@ export const BrandMark = ({
           className={`font-bold tracking-tight ${wordmarkClassName}`}
           style={{ fontSize: typeof size === "number" ? size * 0.5 : "1rem" }}
         >
-          Blue<span style={{ color: "#1E40AF" }}>Ocean</span>
+          Blue<span style={{ color: "#5459E8" }}>Ocean</span>
         </span>
       )}
     </span>

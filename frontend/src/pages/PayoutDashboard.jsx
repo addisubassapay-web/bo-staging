@@ -29,7 +29,7 @@ const StatCard = ({ icon: Icon, label, value, sub, tone = "neutral", testid }) =
     neutral: "from-neutral-100 to-neutral-50 text-neutral-800 dark:from-neutral-800 dark:to-neutral-900 dark:text-neutral-100 border-neutral-200 dark:border-neutral-800",
     green: "from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-500/25 border-transparent",
     amber: "from-amber-400 to-orange-500 text-white shadow-lg shadow-amber-500/25 border-transparent",
-    red: "from-[#1E40AF] to-[#3B82F6] text-white shadow-lg shadow-[#DC2626]/25 border-transparent",
+    red: "from-[#5459E8] to-[#818CF8] text-white shadow-lg shadow-[#DC2626]/25 border-transparent",
     blue: "from-sky-500 to-indigo-500 text-white shadow-lg shadow-sky-500/25 border-transparent",
   };
   return (
@@ -100,7 +100,7 @@ const PayoutDashboard = () => {
           <Link to="/wallet" className="inline-flex items-center gap-1 text-sm text-neutral-500 dark:text-neutral-400 hover:text-[#DC2626] transition mb-2">
             <ChevronLeft className="h-4 w-4" /> Back to wallet
           </Link>
-          <span className="inline-block text-[10px] uppercase tracking-[0.2em] font-semibold text-[#1E40AF] bg-[#1E40AF]/10 border border-[#1E40AF]/20 rounded-full px-3 py-1">
+          <span className="inline-block text-[10px] uppercase tracking-[0.2em] font-semibold text-[#5459E8] bg-[#5459E8]/10 border border-[#5459E8]/20 rounded-full px-3 py-1">
             Seller payouts
           </span>
           <h1 className="mt-2 text-3xl sm:text-4xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">
@@ -278,7 +278,7 @@ const PayoutDashboard = () => {
             <h3 className="font-bold text-neutral-900 dark:text-neutral-100">Ready to cash out?</h3>
             <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">You can withdraw available funds anytime — frozen and pending don&apos;t count.</p>
             <Link to="/wallet">
-              <Button className="mt-3 w-full h-10 rounded-full bg-gradient-to-r from-[#1E40AF] to-[#3B82F6] hover:brightness-110 text-white font-semibold shadow-sm" data-testid="cta-withdraw">
+              <Button className="mt-3 w-full h-10 rounded-full bg-gradient-to-r from-[#5459E8] to-[#818CF8] hover:brightness-110 text-white font-semibold shadow-sm" data-testid="cta-withdraw">
                 <ArrowUpRight className="h-4 w-4 mr-1.5" /> Request withdrawal
               </Button>
             </Link>

@@ -71,7 +71,7 @@ const ProductCard = ({ listing, isFavorite = false, onFavoriteChange }) => {
   return (
     <Link
       to={`/listing/${listing.id}`}
-      className="group block rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-[#1E40AF]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-neutral-950"
+      className="group block rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-[#5459E8]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-neutral-950"
       data-testid={`product-card-${listing.id}`}
     >
       <div className="relative aspect-square rounded-2xl overflow-hidden bg-neutral-100 dark:bg-neutral-800 ring-1 ring-black/[0.04] dark:ring-white/10 shadow-[0_1px_2px_rgba(0,0,0,0.04)] group-hover:shadow-[0_10px_30px_-12px_rgba(255,33,31,0.28)] group-hover:-translate-y-0.5 transition-all duration-300 ease-out">

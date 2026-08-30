@@ -48,14 +48,14 @@ const VibeSearch = () => {
   return (
     <div className="mb-8" data-testid="vibe-search">
       {/* Input pill */}
-      <div className="rounded-3xl border border-[#1E40AF]/30 bg-gradient-to-br from-[#1E40AF]/5 via-white to-[#DC2626]/5 dark:from-[#3a1817]/40 dark:via-neutral-900 dark:to-[#3a1817]/40 p-4 sm:p-6 shadow-sm">
+      <div className="rounded-3xl border border-[#5459E8]/30 bg-gradient-to-br from-[#5459E8]/5 via-white to-[#DC2626]/5 dark:from-[#3a1817]/40 dark:via-neutral-900 dark:to-[#3a1817]/40 p-4 sm:p-6 shadow-sm">
         <div className="flex items-start gap-3 sm:gap-4">
-          <div className="h-11 w-11 shrink-0 rounded-2xl bg-gradient-to-br from-[#1E40AF] to-[#3B82F6] text-white grid place-items-center shadow-md">
+          <div className="h-11 w-11 shrink-0 rounded-2xl bg-gradient-to-br from-[#5459E8] to-[#818CF8] text-white grid place-items-center shadow-md">
             <Wand2 className="h-5 w-5" />
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-[10px] uppercase tracking-[0.2em] font-semibold text-[#1E40AF]">Search by vibe</span>
+              <span className="text-[10px] uppercase tracking-[0.2em] font-semibold text-[#5459E8]">Search by vibe</span>
               <span className="text-[11px] px-2 h-5 rounded-full bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900 font-semibold grid place-items-center">AI</span>
             </div>
             <h3 className="mt-1 text-xl sm:text-2xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">
@@ -74,14 +74,14 @@ const VibeSearch = () => {
                 value={vibe}
                 onChange={(e) => setVibe(e.target.value)}
                 placeholder="e.g. cozy minimalist home, y2k glam, gamer desk setup…"
-                className="flex-1 h-full px-4 rounded-full border-2 border-[#1E40AF]/60 focus:border-[#1E40AF] bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 focus:outline-none"
+                className="flex-1 h-full px-4 rounded-full border-2 border-[#5459E8]/60 focus:border-[#5459E8] bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 focus:outline-none"
                 data-testid="vibe-input"
                 autoComplete="off"
               />
               <button
                 type="submit"
                 disabled={loading || vibe.trim().length < 2}
-                className="h-full px-5 rounded-full bg-gradient-to-r from-[#1E40AF] to-[#3B82F6] hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-sm shadow-sm transition flex items-center gap-2"
+                className="h-full px-5 rounded-full bg-gradient-to-r from-[#5459E8] to-[#818CF8] hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-sm shadow-sm transition flex items-center gap-2"
                 data-testid="vibe-submit"
               >
                 {loading ? (<><Loader2 className="h-4 w-4 animate-spin" /> Reading the vibe…</>) : (<><Sparkles className="h-4 w-4" /> Find my vibe</>)}
@@ -107,7 +107,7 @@ const VibeSearch = () => {
                   <button
                     key={ex}
                     onClick={() => { setVibe(ex); runVibe(ex); }}
-                    className="px-3 h-7 rounded-full bg-white dark:bg-neutral-800 hover:bg-[#FFF3F2] dark:hover:bg-[#3a1817] border border-neutral-200 dark:border-neutral-700 text-xs text-neutral-700 dark:text-neutral-200 hover:text-[#DC2626] hover:border-[#1E40AF]/40 transition"
+                    className="px-3 h-7 rounded-full bg-white dark:bg-neutral-800 hover:bg-[#FFF3F2] dark:hover:bg-[#3a1817] border border-neutral-200 dark:border-neutral-700 text-xs text-neutral-700 dark:text-neutral-200 hover:text-[#DC2626] hover:border-[#5459E8]/40 transition"
                     data-testid={`vibe-example-${ex.replace(/\s+/g, '-')}`}
                   >
                     {ex}
@@ -131,7 +131,7 @@ const VibeSearch = () => {
         <div className="mt-6" data-testid="vibe-results">
           <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4 sm:p-5">
             <div className="flex items-start gap-2">
-              <Sparkles className="h-4 w-4 mt-0.5 text-[#1E40AF] shrink-0" />
+              <Sparkles className="h-4 w-4 mt-0.5 text-[#5459E8] shrink-0" />
               <div className="min-w-0">
                 <div className="text-sm text-neutral-900 dark:text-neutral-100" data-testid="vibe-explanation">
                   <span className="text-neutral-500 dark:text-neutral-400">Vibe read:</span>{" "}
@@ -142,7 +142,7 @@ const VibeSearch = () => {
                     <Link
                       key={c.id}
                       to={`/search?category=${c.id}`}
-                      className="px-2.5 h-6 rounded-full bg-[#1E40AF]/10 text-[#DC2626] text-[11px] font-semibold hover:bg-[#1E40AF]/20 transition inline-flex items-center"
+                      className="px-2.5 h-6 rounded-full bg-[#5459E8]/10 text-[#DC2626] text-[11px] font-semibold hover:bg-[#5459E8]/20 transition inline-flex items-center"
                       data-testid={`vibe-cat-${c.slug}`}
                     >
                       {c.name}

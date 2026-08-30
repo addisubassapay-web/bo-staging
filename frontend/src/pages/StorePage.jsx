@@ -167,7 +167,7 @@ const StorePage = () => {
 
       {/* Hero — vibrant animated gradient */}
       <div className="relative h-48 sm:h-64 md:h-80 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-[#1E40AF] via-[#FF3D66] to-[#7C3AED] animate-[gradient_10s_ease_infinite]" style={{ backgroundSize: "200% 200%" }} />
+        <div className="absolute inset-0 bg-gradient-to-br from-[#5459E8] via-[#FF3D66] to-[#7C3AED] animate-[gradient_10s_ease_infinite]" style={{ backgroundSize: "200% 200%" }} />
         {store.banner && (
           <img src={store.banner} alt="" className="absolute inset-0 h-full w-full object-cover opacity-60 mix-blend-multiply" />
         )}
@@ -230,7 +230,7 @@ const StorePage = () => {
                 <Button
                   onClick={toggleFollow}
                   disabled={followBusy}
-                  className={`min-h-[44px] rounded-full px-5 gap-1.5 ${following ? "bg-white text-[#DC2626] border border-[#DC2626] hover:bg-[#FFF3F2]" : "bg-gradient-to-r from-[#1E40AF] to-[#3B82F6] hover:brightness-110 text-white"}`}
+                  className={`min-h-[44px] rounded-full px-5 gap-1.5 ${following ? "bg-white text-[#DC2626] border border-[#DC2626] hover:bg-[#FFF3F2]" : "bg-gradient-to-r from-[#5459E8] to-[#818CF8] hover:brightness-110 text-white"}`}
                   data-testid="store-follow-btn"
                 >
                   {following ? <><HeartOff className="h-4 w-4" /> Following</> : <><Heart className="h-4 w-4" /> Follow</>}
@@ -264,14 +264,14 @@ const StorePage = () => {
         {/* Owner control panel — high-visibility Publish CTA */}
         {isOwn && (
           <div className="mt-6 rounded-3xl border-2 border-[#DC2626]/20 bg-gradient-to-br from-[#FFF3F2] via-white to-purple-50 dark:from-red-950/30 dark:via-neutral-900 dark:to-purple-950/30 p-5 sm:p-6 shadow-md relative overflow-hidden" data-testid="store-control-panel">
-            <div className="pointer-events-none absolute -top-16 -right-16 h-64 w-64 rounded-full bg-[#1E40AF]/15 blur-3xl" />
+            <div className="pointer-events-none absolute -top-16 -right-16 h-64 w-64 rounded-full bg-[#5459E8]/15 blur-3xl" />
             <div className="relative flex items-center justify-between gap-4 flex-wrap">
               <div className="flex items-center gap-3">
-                <div className="h-11 w-11 rounded-2xl bg-gradient-to-br from-[#1E40AF] to-[#3B82F6] grid place-items-center shrink-0 shadow-lg shadow-[#DC2626]/30">
+                <div className="h-11 w-11 rounded-2xl bg-gradient-to-br from-[#5459E8] to-[#818CF8] grid place-items-center shrink-0 shadow-lg shadow-[#DC2626]/30">
                   <PackagePlus className="h-5 w-5 text-white" />
                 </div>
                 <div>
-                  <div className="text-[10px] uppercase tracking-[0.2em] font-semibold text-[#1E40AF]">Owner controls</div>
+                  <div className="text-[10px] uppercase tracking-[0.2em] font-semibold text-[#5459E8]">Owner controls</div>
                   <h3 className="font-bold text-lg text-neutral-900 dark:text-neutral-100">Grow your store</h3>
                   <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-0.5">Publish new items to your storefront instantly.</p>
                 </div>
@@ -279,7 +279,7 @@ const StorePage = () => {
               <div className="flex gap-2 flex-wrap">
                 <Link to="/dashboard/list-product">
                   <Button
-                    className="min-h-[48px] px-6 rounded-full bg-gradient-to-r from-[#1E40AF] to-[#3B82F6] hover:brightness-110 text-white font-bold gap-2 shadow-lg shadow-[#DC2626]/30 hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 transition-all"
+                    className="min-h-[48px] px-6 rounded-full bg-gradient-to-r from-[#5459E8] to-[#818CF8] hover:brightness-110 text-white font-bold gap-2 shadow-lg shadow-[#DC2626]/30 hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 transition-all"
                     data-testid="store-publish-cta"
                   >
                     <PackagePlus className="h-5 w-5" /> Publish / List Products
@@ -340,7 +340,7 @@ const StorePage = () => {
           <section className="mt-8" data-testid="store-hot-picks">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-[#1E40AF] to-[#3B82F6] grid place-items-center shadow-sm">
+                <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-[#5459E8] to-[#818CF8] grid place-items-center shadow-sm">
                   <Flame className="h-4 w-4 text-white" />
                 </div>
                 <div>
@@ -366,11 +366,11 @@ const StorePage = () => {
         <section className="mt-10 pb-14 rounded-3xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5 sm:p-6 shadow-sm">
           <div className="flex items-end justify-between mb-4 gap-4 flex-wrap">
             <div>
-              <span className="inline-block text-[10px] uppercase tracking-[0.2em] font-semibold text-white bg-gradient-to-r from-[#1E40AF] to-[#3B82F6] rounded-full px-3 py-1 shadow-sm">
+              <span className="inline-block text-[10px] uppercase tracking-[0.2em] font-semibold text-white bg-gradient-to-r from-[#5459E8] to-[#818CF8] rounded-full px-3 py-1 shadow-sm">
                 Storefront
               </span>
               <h2 className="mt-2 text-2xl sm:text-3xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
-                <Zap className="h-6 w-6 text-[#1E40AF] fill-[#1E40AF]/20" /> Store listings
+                <Zap className="h-6 w-6 text-[#5459E8] fill-[#5459E8]/20" /> Store listings
               </h2>
               <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1 tabular-nums">
                 <b>{filteredAndSorted.length}</b> of {totalItems} items on offer
@@ -392,7 +392,7 @@ const StorePage = () => {
                 type="button"
                 onClick={() => setActiveCat("all")}
                 className={`min-h-[40px] shrink-0 px-4 rounded-full text-sm font-semibold transition-all active:scale-95 ${activeCat === "all"
-                  ? "bg-gradient-to-r from-[#1E40AF] to-[#3B82F6] text-white shadow-md shadow-[#DC2626]/25"
+                  ? "bg-gradient-to-r from-[#5459E8] to-[#818CF8] text-white shadow-md shadow-[#DC2626]/25"
                   : "bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:border-[#DC2626] hover:text-[#DC2626] hover:-translate-y-0.5"}`}
                 data-testid="store-cat-all"
               >
@@ -404,7 +404,7 @@ const StorePage = () => {
                   type="button"
                   onClick={() => setActiveCat(c.id)}
                   className={`min-h-[40px] shrink-0 px-4 rounded-full text-sm font-semibold transition-all active:scale-95 ${activeCat === c.id
-                    ? "bg-gradient-to-r from-[#1E40AF] to-[#3B82F6] text-white shadow-md shadow-[#DC2626]/25"
+                    ? "bg-gradient-to-r from-[#5459E8] to-[#818CF8] text-white shadow-md shadow-[#DC2626]/25"
                     : "bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:border-[#DC2626] hover:text-[#DC2626] hover:-translate-y-0.5"}`}
                   data-testid={`store-cat-${c.id}`}
                 >
@@ -422,7 +422,7 @@ const StorePage = () => {
                 {isOwn && (
                   <div className="mt-4">
                     <Link to="/dashboard/list-product">
-                      <Button className="min-h-[44px] rounded-full bg-gradient-to-r from-[#1E40AF] to-[#3B82F6] hover:brightness-110 text-white gap-1.5" data-testid="store-empty-publish">
+                      <Button className="min-h-[44px] rounded-full bg-gradient-to-r from-[#5459E8] to-[#818CF8] hover:brightness-110 text-white gap-1.5" data-testid="store-empty-publish">
                         <PackagePlus className="h-4 w-4" /> Publish your first item
                       </Button>
                     </Link>
@@ -447,7 +447,7 @@ const StorePage = () => {
 
 const StatPill = ({ icon: Icon, label, value, tone }) => {
   const tones = {
-    orange:  "text-[#1E40AF] bg-[#1E40AF]/10 border-[#1E40AF]/20",
+    orange:  "text-[#5459E8] bg-[#5459E8]/10 border-[#5459E8]/20",
     sky:     "text-sky-700 dark:text-sky-300 bg-sky-50 dark:bg-sky-500/15 border-sky-200 dark:border-sky-500/30",
     emerald: "text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-500/15 border-emerald-200 dark:border-emerald-500/30",
     purple:  "text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-500/15 border-purple-200 dark:border-purple-500/30",

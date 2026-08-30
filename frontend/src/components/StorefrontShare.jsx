@@ -193,7 +193,7 @@ export const StorefrontShareButton = ({ listing, storeSlug, label = "Share to st
       <Button
         type="button"
         onClick={() => setOpen(true)}
-        className={`min-h-[44px] rounded-full gap-1.5 bg-gradient-to-r from-[#1E40AF] to-[#3B82F6] hover:brightness-110 text-white ${className}`}
+        className={`min-h-[44px] rounded-full gap-1.5 bg-gradient-to-r from-[#5459E8] to-[#818CF8] hover:brightness-110 text-white ${className}`}
         data-testid={testid}
       >
         <Share2 className="h-4 w-4" /> {label}

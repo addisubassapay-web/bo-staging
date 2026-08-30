@@ -22,7 +22,7 @@ const HeaderSettingsMenu = () => {
           type="button"
           aria-label="Preferences"
           title="Preferences"
-          className="h-10 w-10 sm:h-11 sm:w-11 rounded-full border border-neutral-200 hover:border-[#1E40AF] dark:border-neutral-700 dark:hover:border-[#1E40AF] grid place-items-center transition"
+          className="h-10 w-10 sm:h-11 sm:w-11 rounded-full border border-neutral-200 hover:border-[#5459E8] dark:border-neutral-700 dark:hover:border-[#5459E8] grid place-items-center transition"
           data-testid="header-settings-btn"
         >
           <Settings className="h-5 w-5 text-neutral-600 dark:text-neutral-300" />

@@ -154,7 +154,7 @@ const SupportWidget = () => {
         type="button"
         onClick={openWidget}
         aria-label="Open customer support"
-        className={`fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[60] group h-14 w-14 rounded-full shadow-xl shadow-black/20 grid place-items-center bg-gradient-to-br from-[#1E40AF] to-[#3B82F6] text-white hover:scale-105 hover:shadow-2xl active:scale-95 transition-all ${open ? "opacity-0 pointer-events-none" : "opacity-100"}`}
+        className={`fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[60] group h-14 w-14 rounded-full shadow-xl shadow-black/20 grid place-items-center bg-gradient-to-br from-[#5459E8] to-[#818CF8] text-white hover:scale-105 hover:shadow-2xl active:scale-95 transition-all ${open ? "opacity-0 pointer-events-none" : "opacity-100"}`}
         data-testid="support-fab"
       >
         <MessageCircle className="h-6 w-6" />
@@ -167,7 +167,7 @@ const SupportWidget = () => {
           </span>
         )}
         {/* Subtle pulse ring */}
-        <span className="absolute inset-0 rounded-full bg-[#1E40AF]/40 animate-ping opacity-40 pointer-events-none" />
+        <span className="absolute inset-0 rounded-full bg-[#5459E8]/40 animate-ping opacity-40 pointer-events-none" />
       </button>
 
       {/* Support panel */}
@@ -180,7 +180,7 @@ const SupportWidget = () => {
         >
           {/* Header — gradient */}
           <div className="relative px-5 pt-5 pb-4 text-white overflow-hidden" style={{
-            background: "linear-gradient(135deg, #1E40AF 0%, #DC2626 55%, #7C3AED 130%)",
+            background: "linear-gradient(135deg, #5459E8 0%, #DC2626 55%, #7C3AED 130%)",
           }}>
             <div className="pointer-events-none absolute -top-10 -right-10 h-40 w-40 rounded-full bg-white/10 blur-3xl" />
             <div className="flex items-start justify-between gap-3">
@@ -231,7 +231,7 @@ const SupportWidget = () => {
                   className="w-full text-left group flex items-center gap-3 p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 hover:border-[#DC2626] hover:shadow-md transition-all"
                   data-testid="support-open-chat-btn"
                 >
-                  <div className="h-11 w-11 rounded-xl grid place-items-center bg-gradient-to-br from-[#1E40AF] to-[#3B82F6] text-white shadow-lg shadow-red-500/20 shrink-0">
+                  <div className="h-11 w-11 rounded-xl grid place-items-center bg-gradient-to-br from-[#5459E8] to-[#818CF8] text-white shadow-lg shadow-red-500/20 shrink-0">
                     <MessageCircle className="h-5 w-5" />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -272,7 +272,7 @@ const SupportWidget = () => {
                 <button
                   type="button"
                   onClick={createNewChat}
-                  className="w-full min-h-[44px] rounded-lg bg-gradient-to-r from-[#1E40AF] to-[#3B82F6] text-white text-sm font-semibold hover:brightness-110 transition-all"
+                  className="w-full min-h-[44px] rounded-lg bg-gradient-to-r from-[#5459E8] to-[#818CF8] text-white text-sm font-semibold hover:brightness-110 transition-all"
                   data-testid="support-new-chat-btn"
                 >
                   + Start a new chat
@@ -316,7 +316,7 @@ const SupportWidget = () => {
                     <div key={m.id} className={`flex ${m.sender === "user" ? "justify-end" : "justify-start"}`}>
                       <div className={`max-w-[80%] rounded-2xl px-3.5 py-2 text-sm leading-snug ${
                         m.sender === "user"
-                          ? "bg-gradient-to-br from-[#1E40AF] to-[#3B82F6] text-white rounded-br-sm"
+                          ? "bg-gradient-to-br from-[#5459E8] to-[#818CF8] text-white rounded-br-sm"
                           : "bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 rounded-bl-sm"
                       }`}>
                         <div className="text-[10px] uppercase tracking-wider font-semibold opacity-70 mb-0.5">
@@ -342,7 +342,7 @@ const SupportWidget = () => {
                       type="button"
                       onClick={sendChat}
                       disabled={sending || !msgDraft.trim()}
-                      className="h-10 w-10 rounded-full bg-gradient-to-br from-[#1E40AF] to-[#3B82F6] text-white grid place-items-center disabled:opacity-50 hover:brightness-110 active:scale-95 transition-all"
+                      className="h-10 w-10 rounded-full bg-gradient-to-br from-[#5459E8] to-[#818CF8] text-white grid place-items-center disabled:opacity-50 hover:brightness-110 active:scale-95 transition-all"
                       aria-label="Send"
                       data-testid="support-send-btn"
                     >

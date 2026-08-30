@@ -143,7 +143,7 @@ const NewDisputeDialog = ({ open, onOpenChange, orders, onCreated }) => {
           <div>
             <Label className="text-xs uppercase tracking-wider text-neutral-500 flex items-center justify-between">
               <span>Photo evidence <span className="text-neutral-400">(optional, up to 8)</span></span>
-              <label className="text-[#1E40AF] hover:underline cursor-pointer inline-flex items-center gap-1">
+              <label className="text-[#5459E8] hover:underline cursor-pointer inline-flex items-center gap-1">
                 <ImagePlus className="h-4 w-4" /> Add photos
                 <input
                   type="file" accept="image/*" multiple hidden
@@ -260,7 +260,7 @@ const DisputeChat = ({ disputeId, currentUserId, currentUserRole, closed }) => {
   return (
     <div className="mt-4 border-t border-neutral-200 dark:border-neutral-800 pt-3" data-testid={`dispute-chat-${disputeId}`}>
       <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-neutral-500 dark:text-neutral-400 font-medium mb-2">
-        <MessageCircle className="h-4 w-4 text-[#1E40AF]" /> Conversation
+        <MessageCircle className="h-4 w-4 text-[#5459E8]" /> Conversation
         <span className="ml-auto normal-case tracking-normal text-[11px] text-neutral-400">
           {messages.length} {messages.length === 1 ? "message" : "messages"}
         </span>
@@ -340,7 +340,7 @@ const DisputeChat = ({ disputeId, currentUserId, currentUserRole, closed }) => {
             </div>
           )}
           <div className="flex items-center gap-1 pt-2 border-t border-neutral-100 dark:border-neutral-800">
-            <label className="inline-flex items-center gap-1 text-xs text-neutral-500 dark:text-neutral-400 hover:text-[#1E40AF] cursor-pointer px-2 py-1 rounded-md">
+            <label className="inline-flex items-center gap-1 text-xs text-neutral-500 dark:text-neutral-400 hover:text-[#5459E8] cursor-pointer px-2 py-1 rounded-md">
               <ImagePlus className="h-4 w-4" /> Attach
               <input
                 type="file" accept="image/*" multiple hidden
@@ -412,7 +412,7 @@ const DisputeCard = ({ d, currentUserId }) => {
               key={i}
               href={url.startsWith("http") ? url : `${process.env.REACT_APP_BACKEND_URL}${url}?auth=${localStorage.getItem("mercari-global_token") || ""}`}
               target="_blank" rel="noreferrer"
-              className="block aspect-square rounded-lg overflow-hidden bg-neutral-100 dark:bg-neutral-800 hover:ring-2 hover:ring-[#1E40AF]"
+              className="block aspect-square rounded-lg overflow-hidden bg-neutral-100 dark:bg-neutral-800 hover:ring-2 hover:ring-[#5459E8]"
               data-testid={`dispute-photo-${d.id}-${i}`}
             >
               <img
@@ -433,7 +433,7 @@ const DisputeCard = ({ d, currentUserId }) => {
 
       <button
         onClick={() => setChatOpen((v) => !v)}
-        className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-[#1E40AF] hover:text-[#DC2626] transition"
+        className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-[#5459E8] hover:text-[#DC2626] transition"
         data-testid={`dispute-toggle-chat-${d.id}`}
       >
         <MessageCircle className="h-4 w-4" />
@@ -484,7 +484,7 @@ const Disputes = () => {
     return (
       <div className="max-w-3xl mx-auto px-4 py-16 text-center">
         <p className="text-neutral-700 dark:text-neutral-300">
-          Please <Link to="/login" className="text-[#1E40AF] underline">log in</Link> to view your disputes.
+          Please <Link to="/login" className="text-[#5459E8] underline">log in</Link> to view your disputes.
         </p>
       </div>
     );

@@ -59,7 +59,7 @@ const BuyerProgressToast = () => {
               action: n.link ? (
                 <button
                   onClick={() => navigate(n.link)}
-                  className="text-xs font-semibold text-[#1E40AF] hover:underline"
+                  className="text-xs font-semibold text-[#5459E8] hover:underline"
                 >
                   Track →
                 </button>

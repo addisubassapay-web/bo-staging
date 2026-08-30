@@ -204,7 +204,7 @@ const ApifySyncTicker = () => {
             data-testid="apify-ticker-progress"
           >
             <div
-              className="h-full bg-gradient-to-r from-[#1E40AF] to-[#3B82F6] transition-all duration-500 ease-out"
+              className="h-full bg-gradient-to-r from-[#5459E8] to-[#818CF8] transition-all duration-500 ease-out"
               style={{ width: `${pct}%` }}
             />
           </div>

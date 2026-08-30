@@ -163,7 +163,7 @@ const AdminCoupons = () => {
             <Switch checked={form.tier} onCheckedChange={(v) => setForm({ ...form, tier: v })} data-testid="new-coupon-tier" />
             Wholesale tier (auto: 5+ items 5%, 10+ items 10%)
           </label>
-          <Button onClick={create} disabled={creating} className="bg-gradient-to-r from-[#1E40AF] to-[#3B82F6] hover:brightness-110 text-white" data-testid="new-coupon-create">
+          <Button onClick={create} disabled={creating} className="bg-gradient-to-r from-[#5459E8] to-[#818CF8] hover:brightness-110 text-white" data-testid="new-coupon-create">
             <Plus className="h-4 w-4 mr-1" /> {creating ? "Creating…" : "Create coupon"}
           </Button>
         </div>

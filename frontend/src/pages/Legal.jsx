@@ -54,11 +54,11 @@ const Legal = ({ mode = "terms" }) => {
         <ArrowLeft className="h-4 w-4" /> Back to marketplace
       </Link>
       <div className="flex items-center gap-3">
-        <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-[#1E40AF] to-[#3B82F6] text-white grid place-items-center">
+        <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-[#5459E8] to-[#818CF8] text-white grid place-items-center">
           <ShieldCheck className="h-6 w-6" />
         </div>
         <div>
-          <div className="text-xs uppercase tracking-[0.2em] font-semibold text-[#1E40AF]">Legal</div>
+          <div className="text-xs uppercase tracking-[0.2em] font-semibold text-[#5459E8]">Legal</div>
           <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">
             {title}
           </h1>

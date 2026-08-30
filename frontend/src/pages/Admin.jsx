@@ -1184,7 +1184,7 @@ const SettingsMgr = () => {
                     className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border transition ${
                       excluded
                         ? "bg-[#DC2626] text-white border-[#DC2626] shadow-sm"
-                        : "bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-200 border-neutral-200 dark:border-neutral-700 hover:border-[#1E40AF]"
+                        : "bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-200 border-neutral-200 dark:border-neutral-700 hover:border-[#5459E8]"
                     }`}
                     data-testid={`exclusion-toggle-${r.value}`}
                   >
@@ -1416,7 +1416,7 @@ const StoresMgr = () => {
                       <div
                         ref={prov.innerRef}
                         {...prov.draggableProps}
-                        className={`flex items-center gap-3 bg-white border rounded-lg p-3 ${snapshot.isDragging ? "border-[#1E40AF] shadow-lg" : "border-neutral-200"}`}
+                        className={`flex items-center gap-3 bg-white border rounded-lg p-3 ${snapshot.isDragging ? "border-[#5459E8] shadow-lg" : "border-neutral-200"}`}
                         data-testid={`store-row-${s.id}`}
                       >
                         <span
@@ -1760,7 +1760,7 @@ const DisputesMgr = () => {
                         key={i}
                         href={url.startsWith("http") ? url : `${process.env.REACT_APP_BACKEND_URL}${url}?auth=${localStorage.getItem("mercari-global_token") || ""}`}
                         target="_blank" rel="noreferrer"
-                        className="block aspect-square rounded-lg overflow-hidden bg-neutral-100 hover:ring-2 hover:ring-[#1E40AF]"
+                        className="block aspect-square rounded-lg overflow-hidden bg-neutral-100 hover:ring-2 hover:ring-[#5459E8]"
                         data-testid={`admin-dispute-photo-${d.id}-${i}`}
                       >
                         <img
@@ -1869,7 +1869,7 @@ const AdminDisputeThread = ({ disputeId, closed }) => {
     <div className="mt-3 border-t border-neutral-200 dark:border-neutral-800 pt-3">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="inline-flex items-center gap-1.5 text-sm font-medium text-[#1E40AF] hover:text-[#DC2626] transition"
+        className="inline-flex items-center gap-1.5 text-sm font-medium text-[#5459E8] hover:text-[#DC2626] transition"
         data-testid={`admin-dispute-thread-toggle-${disputeId}`}
       >
         <MessageCircle className="h-4 w-4" />

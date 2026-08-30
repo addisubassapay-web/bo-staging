@@ -114,7 +114,7 @@ const Register = () => {
           }}
         >
           <div className="pointer-events-none absolute -top-24 -right-24 h-96 w-96 rounded-full bg-[#2563EB] opacity-20 blur-3xl animate-pulse" />
-          <div className="pointer-events-none absolute -bottom-24 -left-24 h-96 w-96 rounded-full bg-[#1E40AF] opacity-20 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-24 -left-24 h-96 w-96 rounded-full bg-[#5459E8] opacity-20 blur-3xl" />
 
           <BrandMark size={64} showWordmark animated wordmarkClassName="text-white" />
 

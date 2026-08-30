@@ -97,7 +97,7 @@ const Checkout = () => {
       // 🎉 Confetti burst on success
       requestAnimationFrame(() => {
         const end = Date.now() + 1500;
-        const colors = ["#DC2626", "#1E40AF", "#FFD166", "#06D6A0", "#118AB2"];
+        const colors = ["#DC2626", "#5459E8", "#FFD166", "#06D6A0", "#118AB2"];
         (function frame() {
           confetti({ particleCount: 5, angle: 60, spread: 55, startVelocity: 55, origin: { x: 0, y: 0.7 }, colors });
           confetti({ particleCount: 5, angle: 120, spread: 55, startVelocity: 55, origin: { x: 1, y: 0.7 }, colors });
@@ -204,7 +204,7 @@ const Checkout = () => {
   return (
     <div className="max-w-5xl w-full mx-auto px-3 sm:px-4 py-8 min-w-0 pb-28 lg:pb-8" data-testid="checkout-page">
       <div className="mb-8">
-        <span className="inline-block text-[10px] uppercase tracking-[0.2em] font-semibold text-[#1E40AF] bg-[#1E40AF]/10 border border-[#1E40AF]/20 rounded-full px-3 py-1">
+        <span className="inline-block text-[10px] uppercase tracking-[0.2em] font-semibold text-[#5459E8] bg-[#5459E8]/10 border border-[#5459E8]/20 rounded-full px-3 py-1">
           {t("checkout.kicker")}
         </span>
         <h1 className="mt-2 text-3xl sm:text-4xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">{t("checkout.title")}</h1>
@@ -429,7 +429,7 @@ const Checkout = () => {
           <Button
             type="submit"
             disabled={placing || (wallet && (wallet.balance ?? 0) < total)}
-            className="w-full mt-5 bg-gradient-to-r from-[#1E40AF] to-[#3B82F6] hover:brightness-110 rounded-full h-12 min-h-[48px] font-bold shadow-lg shadow-[#DC2626]/30 disabled:opacity-60 hover:-translate-y-0.5 active:translate-y-0 transition-all hidden lg:block"
+            className="w-full mt-5 bg-gradient-to-r from-[#5459E8] to-[#818CF8] hover:brightness-110 rounded-full h-12 min-h-[48px] font-bold shadow-lg shadow-[#DC2626]/30 disabled:opacity-60 hover:-translate-y-0.5 active:translate-y-0 transition-all hidden lg:block"
             data-testid="place-order-btn"
           >
             {placing ? t("checkout.placing") : `${t("checkout.pay")} ${format(total)}`}
@@ -450,7 +450,7 @@ const Checkout = () => {
           type="button"
           onClick={place}
           disabled={placing || (wallet && (wallet.balance ?? 0) < total)}
-          className="flex-1 max-w-[240px] bg-gradient-to-r from-[#1E40AF] to-[#3B82F6] hover:brightness-110 rounded-full h-12 min-h-[48px] font-bold shadow-lg shadow-[#DC2626]/30 disabled:opacity-60 transition-all"
+          className="flex-1 max-w-[240px] bg-gradient-to-r from-[#5459E8] to-[#818CF8] hover:brightness-110 rounded-full h-12 min-h-[48px] font-bold shadow-lg shadow-[#DC2626]/30 disabled:opacity-60 transition-all"
           data-testid="place-order-mobile-btn"
         >
           {placing ? t("checkout.placing") : t("checkout.pay")}

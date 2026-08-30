@@ -255,7 +255,7 @@ const SellerApplyQuick = () => {
     <div className="max-w-2xl mx-auto px-4 py-10 space-y-6" data-testid="seller-apply-quick-page">
       {/* Header */}
       <div>
-        <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-[0.2em] font-semibold text-[#1E40AF] bg-[#1E40AF]/10 border border-[#1E40AF]/20 rounded-full px-3 py-1">
+        <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-[0.2em] font-semibold text-[#5459E8] bg-[#5459E8]/10 border border-[#5459E8]/20 rounded-full px-3 py-1">
           <Zap className="h-3 w-3" /> Quick apply · 60 seconds
         </span>
         <h1 className="mt-2 text-3xl sm:text-4xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">
@@ -282,7 +282,7 @@ const SellerApplyQuick = () => {
         </div>
         <div className="mt-4 grid grid-cols-3 gap-2 text-center">
           {[
-            { icon: Sparkles, label: "Instant setup", tone: "text-[#1E40AF]" },
+            { icon: Sparkles, label: "Instant setup", tone: "text-[#5459E8]" },
             { icon: Truck, label: "Weekly payouts", tone: "text-sky-600" },
             { icon: ShieldCheck, label: "Escrow protected", tone: "text-emerald-600" },
           ].map((p, i) => (

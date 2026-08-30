@@ -151,7 +151,7 @@ const StoreManage = () => {
       <form onSubmit={submit} className="space-y-6">
         {/* Cover / Banner uploader */}
         <div>
-          <Label className="flex items-center gap-1.5"><ImageIcon className="h-4 w-4 text-[#1E40AF]" /> Cover image</Label>
+          <Label className="flex items-center gap-1.5"><ImageIcon className="h-4 w-4 text-[#5459E8]" /> Cover image</Label>
           <p className="text-xs text-neutral-500 mt-0.5 mb-2">Wide banner shown at the top of your storefront (recommended 1600×400).</p>
           <div className="relative rounded-xl border-2 border-dashed border-neutral-300 dark:border-neutral-700 overflow-hidden bg-neutral-50 dark:bg-neutral-900 aspect-[4/1] group" data-testid="store-banner-uploader">
             {form.banner ? (

@@ -78,8 +78,8 @@ const SplashScreen = () => {
       aria-hidden={fadeOut}
     >
       {/* Decorative blobs */}
-      <div className="absolute -top-24 -left-24 h-72 w-72 rounded-full bg-[#1E40AF] opacity-25 blur-3xl" />
-      <div className="absolute -bottom-24 -right-24 h-80 w-80 rounded-full bg-[#3B82F6] opacity-20 blur-3xl" />
+      <div className="absolute -top-24 -left-24 h-72 w-72 rounded-full bg-[#5459E8] opacity-25 blur-3xl" />
+      <div className="absolute -bottom-24 -right-24 h-80 w-80 rounded-full bg-[#818CF8] opacity-20 blur-3xl" />
       <div className="absolute top-1/3 right-1/4 h-40 w-40 rounded-full bg-[#60A5FA] opacity-15 blur-3xl" />
 
       <div className="relative flex flex-col items-center gap-6 animate-hero-in text-center px-6">

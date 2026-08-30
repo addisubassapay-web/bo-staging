@@ -2036,3 +2036,29 @@ See `/app/memory/test_credentials.md`.
 - `curl /api/categories` returns 12 categories → backend healthy after service string edits.
 - Python REPL confirms `services.email_templates.BRAND_NAME == "BlueOcean"`.
 
+
+### Feb 30 2026 — Palette v2 (Indigo #5459E8) + Logo Redesign
+
+**User asked** for a punchier brand blue and a logo that reads "e-commerce" more explicitly.
+
+**Palette v2**:
+- Primary: `#5459E8` (RGB 84,89,232 — vivid indigo)
+- Gradient partner: `#818CF8` (lighter indigo)
+- Dark hover: `#4045C7`
+- Soft tint: `#E0E7FF`
+- Error: `#DC2626` · Success: green (unchanged)
+
+**Logo redesign** (`BrandMark.jsx` + `public/logo-mark.svg`):
+- Rounded-square tile with indigo gradient fill
+- Geometric shopping-bag silhouette (trapezoidal body, twin arched handles)
+- Two stacked "ocean" wave crests flowing across the bag interior
+- Pink-magenta accent dot (top-right) as a "price-tag" flourish — adds e-commerce cue + geometric contrast
+
+**Files touched**:
+- Global sed swap `#1E40AF` → `#5459E8`, `#3B82F6` → `#818CF8`, `#1E3A8A` → `#4045C7`
+- `BrandMark.jsx` — full rewrite with new SVG composition
+- `public/logo-mark.svg` — matches inline BrandMark for PWA icons
+- `tailwind.config.js` — `brand.*` tokens updated
+- `index.css` — pulse drop-shadow rgba updated to indigo tint
+- `public/manifest.json` + `public/index.html` — `theme-color`/`theme_color` = `#5459E8`
+- `public/service-worker.js` — VERSION bumped `v4-blueocean-indigo` for cache purge

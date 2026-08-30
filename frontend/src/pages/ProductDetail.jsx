@@ -23,7 +23,7 @@ const ProductDescription = ({ description }) => {
         <button
           type="button"
           onClick={() => setOpen(!open)}
-          className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-[#1E40AF] hover:text-[#93441e] transition"
+          className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-[#5459E8] hover:text-[#93441e] transition"
           data-testid="product-description-toggle"
           aria-expanded={open}
         >

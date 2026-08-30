@@ -37,7 +37,7 @@ const Cart = () => {
   return (
     <div className="max-w-5xl w-full mx-auto px-3 sm:px-4 py-8 min-w-0" data-testid="cart-page">
       <div className="mb-8">
-        <span className="inline-block text-[10px] uppercase tracking-[0.2em] font-semibold text-[#1E40AF] bg-[#1E40AF]/10 border border-[#1E40AF]/20 rounded-full px-3 py-1">
+        <span className="inline-block text-[10px] uppercase tracking-[0.2em] font-semibold text-[#5459E8] bg-[#5459E8]/10 border border-[#5459E8]/20 rounded-full px-3 py-1">
           {t("cart.kicker")}
         </span>
         <h1 className="mt-2 text-3xl sm:text-4xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">{t("cart.title")}</h1>
@@ -60,7 +60,7 @@ const Cart = () => {
             {items.map((item) => (
               <div
                 key={item.id}
-                className="flex gap-3 sm:gap-4 rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-3 shadow-[0_1px_2px_rgba(0,0,0,0.04)] hover:border-[#1E40AF]/40 hover:shadow-[0_10px_24px_-14px_rgba(255,33,31,0.2)] transition-all duration-300 min-w-0"
+                className="flex gap-3 sm:gap-4 rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-3 shadow-[0_1px_2px_rgba(0,0,0,0.04)] hover:border-[#5459E8]/40 hover:shadow-[0_10px_24px_-14px_rgba(255,33,31,0.2)] transition-all duration-300 min-w-0"
                 data-testid={`cart-item-${item.id}`}
               >
                 <Link to={`/listing/${item.id}`} className="h-20 w-20 sm:h-24 sm:w-24 rounded-xl overflow-hidden bg-neutral-100 dark:bg-neutral-800 shrink-0 ring-1 ring-black/[0.04] dark:ring-white/10">

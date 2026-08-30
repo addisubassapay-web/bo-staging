@@ -61,7 +61,7 @@ const CategoryBreakdownCard = ({ perCategory, running }) => {
       <div className="flex items-start justify-between gap-3 flex-wrap mb-4">
         <div>
           <h3 className="font-bold text-lg flex items-center gap-2">
-            <Package className="h-5 w-5 text-[#1E40AF]" /> Distribution by department
+            <Package className="h-5 w-5 text-[#5459E8]" /> Distribution by department
           </h3>
           <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-0.5">
             {running

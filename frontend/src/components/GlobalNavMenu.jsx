@@ -20,7 +20,7 @@ const NavItem = ({ to, icon: Icon, children, onClose, testid }) => (
     className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-neutral-800 dark:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition"
     data-testid={testid}
   >
-    <span className="h-8 w-8 rounded-lg bg-[#1E40AF]/10 text-[#1E40AF] grid place-items-center shrink-0">
+    <span className="h-8 w-8 rounded-lg bg-[#5459E8]/10 text-[#5459E8] grid place-items-center shrink-0">
       <Icon className="h-4 w-4" />
     </span>
     <span className="text-sm font-medium">{children}</span>
@@ -49,7 +49,7 @@ const GlobalNavMenu = () => {
         ref={btnRef}
         onClick={() => setOpen(true)}
         aria-label="Open main menu"
-        className="h-10 w-10 sm:h-11 sm:w-11 rounded-full border border-neutral-200 dark:border-neutral-700 hover:border-[#1E40AF] grid place-items-center transition text-neutral-700 dark:text-neutral-200 shrink-0"
+        className="h-10 w-10 sm:h-11 sm:w-11 rounded-full border border-neutral-200 dark:border-neutral-700 hover:border-[#5459E8] grid place-items-center transition text-neutral-700 dark:text-neutral-200 shrink-0"
         data-testid="global-nav-btn"
       >
         <MenuIcon className="h-5 w-5" />

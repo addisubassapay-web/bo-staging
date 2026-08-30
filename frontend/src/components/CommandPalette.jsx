@@ -136,7 +136,7 @@ const CommandPalette = ({ open, onClose }) => {
                     className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition ${active_ ? "bg-neutral-100 dark:bg-neutral-800" : "hover:bg-neutral-50 dark:hover:bg-neutral-800/60"}`}
                     data-testid={`cp-page-${p.path.replace(/\//g, "-")}`}
                   >
-                    <span className="h-8 w-8 rounded-lg bg-[#1E40AF]/10 text-[#1E40AF] grid place-items-center shrink-0">
+                    <span className="h-8 w-8 rounded-lg bg-[#5459E8]/10 text-[#5459E8] grid place-items-center shrink-0">
                       <Icon className="h-4 w-4" />
                     </span>
                     <span className="flex-1 text-sm text-neutral-900 dark:text-neutral-100">{p.raw ? p.label : t(p.label)}</span>
@@ -174,7 +174,7 @@ const CommandPalette = ({ open, onClose }) => {
           {allRows.length === 0 && q.trim().length >= 2 && (
             <button
               onClick={submitQuery}
-              className="w-full text-center py-6 text-sm text-[#1E40AF] hover:bg-[#FFF3F2] dark:hover:bg-[#3a1817] font-semibold"
+              className="w-full text-center py-6 text-sm text-[#5459E8] hover:bg-[#FFF3F2] dark:hover:bg-[#3a1817] font-semibold"
               data-testid="cp-see-all"
             >
               See all results for &ldquo;{q}&rdquo; →

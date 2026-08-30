@@ -74,7 +74,7 @@ const Footer = () => (
       <div>
         <div className="flex items-center gap-2 mb-3">
           <BrandMark size={36} variant="outline" data-testid="footer-logo" />
-          <span className="font-bold text-lg text-[#1E40AF]">BlueOcean</span>
+          <span className="font-bold text-lg text-[#5459E8]">BlueOcean</span>
         </div>
         <p className="text-sm text-neutral-400 leading-relaxed">
           Your global marketplace for fashion, electronics, home & everyday essentials — millions of items, verified sellers, buyer protection.
@@ -89,29 +89,29 @@ const Footer = () => (
       <div>
         <h4 className="font-semibold text-white mb-3">Customer Service</h4>
         <ul className="space-y-2 text-sm text-neutral-400">
-          <li><Link to="/" className="hover:text-[#1E40AF]">Help Center</Link></li>
-          <li><Link to="/" className="hover:text-[#1E40AF]">Returns</Link></li>
-          <li><Link to="/" className="hover:text-[#1E40AF]">Shipping Info</Link></li>
-          <li><Link to="/" className="hover:text-[#1E40AF]">Buyer Protection</Link></li>
+          <li><Link to="/" className="hover:text-[#5459E8]">Help Center</Link></li>
+          <li><Link to="/" className="hover:text-[#5459E8]">Returns</Link></li>
+          <li><Link to="/" className="hover:text-[#5459E8]">Shipping Info</Link></li>
+          <li><Link to="/" className="hover:text-[#5459E8]">Buyer Protection</Link></li>
         </ul>
       </div>
       <div>
         <h4 className="font-semibold text-white mb-3">About Us</h4>
         <ul className="space-y-2 text-sm text-neutral-400">
-          <li><Link to="/" className="hover:text-[#1E40AF]">Company Info</Link></li>
-          <li><Link to="/" className="hover:text-[#1E40AF]">Careers</Link></li>
-          <li><Link to="/" className="hover:text-[#1E40AF]">Press &amp; News</Link></li>
-          <li><Link to="/terms" className="hover:text-[#1E40AF]" data-testid="footer-terms-link">Terms of Service</Link></li>
-          <li><Link to="/privacy" className="hover:text-[#1E40AF]" data-testid="footer-privacy-link">Privacy Policy</Link></li>
+          <li><Link to="/" className="hover:text-[#5459E8]">Company Info</Link></li>
+          <li><Link to="/" className="hover:text-[#5459E8]">Careers</Link></li>
+          <li><Link to="/" className="hover:text-[#5459E8]">Press &amp; News</Link></li>
+          <li><Link to="/terms" className="hover:text-[#5459E8]" data-testid="footer-terms-link">Terms of Service</Link></li>
+          <li><Link to="/privacy" className="hover:text-[#5459E8]" data-testid="footer-privacy-link">Privacy Policy</Link></li>
         </ul>
       </div>
       <div>
         <h4 className="font-semibold text-white mb-3">Quick Links</h4>
         <ul className="space-y-2 text-sm text-neutral-400">
-          <li><Link to="/" className="hover:text-[#1E40AF]">Gift Cards</Link></li>
-          <li><Link to="/search?sort=trending" className="hover:text-[#1E40AF]">Deals</Link></li>
-          <li><Link to="/search?sort=newest" className="hover:text-[#1E40AF]">Coupons</Link></li>
-          <li><Link to="/sell" className="hover:text-[#1E40AF]">Sell on BlueOcean</Link></li>
+          <li><Link to="/" className="hover:text-[#5459E8]">Gift Cards</Link></li>
+          <li><Link to="/search?sort=trending" className="hover:text-[#5459E8]">Deals</Link></li>
+          <li><Link to="/search?sort=newest" className="hover:text-[#5459E8]">Coupons</Link></li>
+          <li><Link to="/sell" className="hover:text-[#5459E8]">Sell on BlueOcean</Link></li>
         </ul>
       </div>
     </div>
@@ -119,9 +119,9 @@ const Footer = () => (
       <div className="max-w-7xl mx-auto px-4 py-5 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-neutral-500">
         <span>© {new Date().getFullYear()} BlueOcean. All rights reserved.</span>
         <div className="flex items-center gap-3">
-          <Link to="/terms" className="hover:text-[#1E40AF]" data-testid="footer-bottom-terms">Terms</Link>
+          <Link to="/terms" className="hover:text-[#5459E8]" data-testid="footer-bottom-terms">Terms</Link>
           <span aria-hidden>·</span>
-          <Link to="/privacy" className="hover:text-[#1E40AF]" data-testid="footer-bottom-privacy">Privacy</Link>
+          <Link to="/privacy" className="hover:text-[#5459E8]" data-testid="footer-bottom-privacy">Privacy</Link>
           <span aria-hidden className="hidden sm:inline">·</span>
           <span className="hidden sm:inline">Secure checkout · Global shipping · Buyer protection</span>
         </div>

@@ -119,7 +119,7 @@ const SellerApply = () => {
   return (
     <div className="max-w-3xl mx-auto px-4 py-10 space-y-6" data-testid="seller-apply-page">
       <div>
-        <span className="inline-block text-[10px] uppercase tracking-[0.2em] font-semibold text-[#1E40AF] bg-[#1E40AF]/10 border border-[#1E40AF]/20 rounded-full px-3 py-1">
+        <span className="inline-block text-[10px] uppercase tracking-[0.2em] font-semibold text-[#5459E8] bg-[#5459E8]/10 border border-[#5459E8]/20 rounded-full px-3 py-1">
           Become a seller
         </span>
         <h1 className="mt-2 text-3xl sm:text-4xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">Sell on BlueOcean</h1>
@@ -312,7 +312,7 @@ const PayoutPreviewCard = ({ tier, previewOnly = false }) => {
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <div className="text-xs uppercase tracking-wider text-neutral-500 dark:text-neutral-400 font-medium flex items-center gap-1.5">
-            <Zap className="h-3.5 w-3.5 text-[#1E40AF]" /> Weekly earnings preview
+            <Zap className="h-3.5 w-3.5 text-[#5459E8]" /> Weekly earnings preview
           </div>
           <div className="mt-1 text-3xl sm:text-4xl font-extrabold text-neutral-900 dark:text-neutral-100 tabular-nums" data-testid="payout-preview-range">
             ${scenarios.lo.toLocaleString()} – ${scenarios.hi.toLocaleString()}
@@ -332,7 +332,7 @@ const PayoutPreviewCard = ({ tier, previewOnly = false }) => {
       <div className="mt-4">
         <div className="h-2.5 rounded-full overflow-hidden bg-neutral-100 dark:bg-neutral-800 flex">
           <div className="h-full bg-gradient-to-r from-emerald-400 to-emerald-500" style={{ width: `${100 - feePct}%` }} />
-          <div className="h-full bg-gradient-to-r from-[#1E40AF] to-[#3B82F6]" style={{ width: `${feePct}%` }} />
+          <div className="h-full bg-gradient-to-r from-[#5459E8] to-[#818CF8]" style={{ width: `${feePct}%` }} />
         </div>
         <div className="mt-2 flex justify-between text-[11px] uppercase tracking-wider">
           <span className="text-emerald-700 dark:text-emerald-300 font-semibold">You keep {100 - feePct}%</span>
@@ -383,11 +383,11 @@ const BoostScoreHint = ({ trust }) => {
 
   return (
     <div
-      className="rounded-2xl border border-[#1E40AF]/25 bg-gradient-to-br from-[#FFF7EF] to-white dark:from-[#1E40AF]/10 dark:to-neutral-900 p-5 sm:p-6 shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
+      className="rounded-2xl border border-[#5459E8]/25 bg-gradient-to-br from-[#FFF7EF] to-white dark:from-[#5459E8]/10 dark:to-neutral-900 p-5 sm:p-6 shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
       data-testid="boost-score-hint"
     >
       <div className="flex items-start gap-3 flex-wrap">
-        <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#1E40AF] to-[#3B82F6] text-white grid place-items-center shadow-lg shadow-[#DC2626]/20 shrink-0">
+        <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#5459E8] to-[#818CF8] text-white grid place-items-center shadow-lg shadow-[#DC2626]/20 shrink-0">
           <Zap className="h-5 w-5" />
         </div>
         <div className="flex-1 min-w-0">
@@ -405,17 +405,17 @@ const BoostScoreHint = ({ trust }) => {
           <Link
             key={a.key}
             to={a.to}
-            className="group flex items-center gap-3 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-3 hover:border-[#1E40AF] hover:shadow-[0_10px_24px_-16px_rgba(255,33,31,0.28)] hover:-translate-y-0.5 transition-all duration-200"
+            className="group flex items-center gap-3 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-3 hover:border-[#5459E8] hover:shadow-[0_10px_24px_-16px_rgba(255,33,31,0.28)] hover:-translate-y-0.5 transition-all duration-200"
             data-testid={`boost-action-${a.key}`}
           >
-            <span className="inline-flex h-8 w-8 rounded-lg bg-[#1E40AF]/10 text-[#DC2626] items-center justify-center font-extrabold text-sm tabular-nums shrink-0">
+            <span className="inline-flex h-8 w-8 rounded-lg bg-[#5459E8]/10 text-[#DC2626] items-center justify-center font-extrabold text-sm tabular-nums shrink-0">
               +{a.gap}
             </span>
             <div className="flex-1 min-w-0">
               <div className="font-semibold text-neutral-900 dark:text-neutral-100 truncate">{a.label}</div>
               <div className="text-[11px] text-neutral-500 dark:text-neutral-400">Worth up to +{a.gap} pts</div>
             </div>
-            <span className="text-xs font-semibold text-[#1E40AF] group-hover:text-[#DC2626] whitespace-nowrap">{a.cta} →</span>
+            <span className="text-xs font-semibold text-[#5459E8] group-hover:text-[#DC2626] whitespace-nowrap">{a.cta} →</span>
           </Link>
         ))}
       </div>
@@ -440,7 +440,7 @@ const TrustScoreCard = ({ trust }) => {
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <div className="text-xs uppercase tracking-wider text-neutral-500 dark:text-neutral-400 font-medium flex items-center gap-1.5">
-            <Sparkles className="h-3.5 w-3.5 text-[#1E40AF]" /> Trust score
+            <Sparkles className="h-3.5 w-3.5 text-[#5459E8]" /> Trust score
           </div>
           <div className="flex items-baseline gap-3 mt-1">
             <div className="text-4xl sm:text-5xl font-extrabold text-neutral-900 dark:text-neutral-100 tabular-nums" data-testid="trust-score-value">
@@ -471,7 +471,7 @@ const TrustScoreCard = ({ trust }) => {
           className={`h-full rounded-full transition-all duration-700 ease-out ${
             eligible
               ? "bg-gradient-to-r from-emerald-400 to-emerald-500"
-              : "bg-gradient-to-r from-[#1E40AF] to-[#3B82F6]"
+              : "bg-gradient-to-r from-[#5459E8] to-[#818CF8]"
           }`}
           style={{ width: `${pct}%` }}
         />

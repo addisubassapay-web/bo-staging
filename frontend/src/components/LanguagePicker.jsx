@@ -42,7 +42,7 @@ const LanguagePicker = ({ variant = "compact" }) => {
               <button
                 key={l.code}
                 onClick={() => { setLang(l.code); setOpen(false); }}
-                className={`w-full flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-neutral-50 dark:hover:bg-neutral-800 transition text-left ${activeItem ? "font-semibold text-[#1E40AF]" : "text-neutral-800 dark:text-neutral-100"}`}
+                className={`w-full flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-neutral-50 dark:hover:bg-neutral-800 transition text-left ${activeItem ? "font-semibold text-[#5459E8]" : "text-neutral-800 dark:text-neutral-100"}`}
                 data-testid={`lang-option-${l.code}`}
               >
                 <span className="text-base leading-none">{l.flag}</span>
