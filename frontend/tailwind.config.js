@@ -27,6 +27,8 @@ module.exports = {
           dark: '#4045C7',
           soft: '#E0E7FF',
           ink: '#0B1220',
+          accent: '#FF0515',
+          accentLight: '#FF5B6B',
           danger: '#DC2626',
           success: '#16A34A',
         },

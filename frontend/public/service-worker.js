@@ -2,7 +2,7 @@
  * - App shell + navigation offline fallback
  * - Cache-first for static assets, network-first for API
  */
-const VERSION = "v4-blueocean-indigo";
+const VERSION = "v5-blueocean-red-accent";
 const APP_SHELL_CACHE = `blueocean-shell-${VERSION}`;
 const RUNTIME_CACHE   = `blueocean-runtime-${VERSION}`;
 

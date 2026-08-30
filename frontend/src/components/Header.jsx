@@ -69,7 +69,7 @@ const TopStrip = ({ user, onLogout }) => {
         <div className="flex items-center gap-3 whitespace-nowrap min-w-0 overflow-hidden">
           <span className="inline-flex items-center gap-1"><span className="text-cyan-400">◈</span><span className="truncate">{t("topstrip.marketplace")}</span></span>
           <span className="hidden sm:inline-flex items-center gap-1"><span className="text-emerald-400">◆</span>{t("topstrip.returns")}</span>
-          <span className="hidden md:inline-flex items-center gap-1"><span className="text-orange-400">◔</span>{t("topstrip.deals")}</span>
+          <span className="hidden md:inline-flex items-center gap-1"><span className="text-[#FF5B6B]">◔</span>{t("topstrip.deals")}</span>
         </div>
         <div className="flex items-center gap-1 shrink-0">
           <LangCurrencySwitcher />
@@ -227,7 +227,7 @@ const Header = () => {
 
             <Link to="/marketplace/stores" className="hidden md:block" data-testid="header-stores-nav">
               <button
-                className={`rounded-full border border-neutral-200 dark:border-neutral-700 hover:border-[#2563EB] hover:text-[#2563EB] dark:text-neutral-200 font-semibold text-sm transition-all flex items-center gap-1.5 ${compact ? "h-10 px-4" : "h-11 px-5"}`}
+                className={`rounded-full bg-gradient-to-r from-[#FF0515] to-[#FF5B6B] hover:brightness-110 text-white font-semibold text-sm shadow-sm hover:shadow-md transition-all flex items-center gap-1.5 shrink-0 ${compact ? "h-10 px-4" : "h-11 px-5"}`}
               >
                 <Store className="h-4 w-4" /> Stores
               </button>
@@ -235,7 +235,7 @@ const Header = () => {
 
             <Link to={user ? "/sell" : "/login"}>
               <button
-                className={`rounded-full bg-gradient-to-r from-[#7DD3FC] to-[#2563EB] hover:brightness-110 text-white font-semibold text-sm shadow-sm hover:shadow-md transition-all flex items-center gap-1.5 shrink-0 ${compact ? "h-10 px-3 sm:px-4" : "h-11 px-4 sm:px-5"}`}
+                className={`rounded-full bg-gradient-to-r from-[#FF0515] to-[#FF5B6B] hover:brightness-110 text-white font-semibold text-sm shadow-md shadow-[#FF0515]/20 hover:shadow-lg transition-all flex items-center gap-1.5 shrink-0 ${compact ? "h-10 px-3 sm:px-4" : "h-11 px-4 sm:px-5"}`}
                 data-testid="header-sell-btn"
               >
                 <Package className="h-4 w-4" /> <span className="hidden xs:inline">{t("nav.sell")}</span>
@@ -396,7 +396,7 @@ const Header = () => {
               </button>
             </Link>
             <Link to="/marketplace/stores" data-testid="cat-pill-stores">
-              <button className="whitespace-nowrap px-4 sm:px-5 h-8 sm:h-9 rounded-full bg-gradient-to-r from-[#7DD3FC] to-[#2563EB] text-white font-semibold text-xs sm:text-sm flex items-center gap-1.5 shrink-0 shadow-sm hover:brightness-110 transition">
+              <button className="whitespace-nowrap px-4 sm:px-5 h-8 sm:h-9 rounded-full bg-gradient-to-r from-[#FF0515] to-[#FF5B6B] text-white font-semibold text-xs sm:text-sm flex items-center gap-1.5 shrink-0 shadow-sm hover:brightness-110 transition">
                 <Store className="h-3.5 w-3.5" /> Stores
               </button>
             </Link>

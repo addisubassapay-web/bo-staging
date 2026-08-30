@@ -2062,3 +2062,21 @@ See `/app/memory/test_credentials.md`.
 - `index.css` — pulse drop-shadow rgba updated to indigo tint
 - `public/manifest.json` + `public/index.html` — `theme-color`/`theme_color` = `#5459E8`
 - `public/service-worker.js` — VERSION bumped `v4-blueocean-indigo` for cache purge
+
+### Feb 30 2026 — Vibrant Red Accent #FF0515 Layered On Palette
+
+**User pointed to** the "Stores" pill + desktop button and the "Sell" CTA in a screenshot and asked for a vibrant red accent + red gradients on select features.
+
+**Additions**:
+- Added `#FF0515` as `brand.accent` and `#FF5B6B` as `brand.accentLight` in `tailwind.config.js`.
+- Header "Sell" CTA: switched from blue gradient to `from-[#FF0515] to-[#FF5B6B]` with matching red drop-shadow.
+- Header "Stores" desktop button: switched from outlined blue-hover to solid red gradient (visual parity with Sell).
+- Header category ribbon "Stores" pill: swapped to red gradient.
+- Top strip "◔ Daily Flash Deals" icon: recoloured to `#FF5B6B` for a subtle red accent.
+- Footer wordmark: now reads `Blue<span style="color:#FF0515">Ocean</span>` — reinforces the two-tone identity.
+- Service worker VERSION bumped `v5-blueocean-red-accent` for cache purge.
+
+**Palette (final)**:
+- Primary indigo `#5459E8`  ·  light `#818CF8`  ·  dark `#4045C7`
+- Accent red `#FF0515`  ·  light `#FF5B6B`
+- Danger `#DC2626`  ·  Success `#16A34A`

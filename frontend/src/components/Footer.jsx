@@ -74,7 +74,7 @@ const Footer = () => (
       <div>
         <div className="flex items-center gap-2 mb-3">
           <BrandMark size={36} variant="outline" data-testid="footer-logo" />
-          <span className="font-bold text-lg text-[#5459E8]">BlueOcean</span>
+          <span className="font-bold text-lg tracking-tight text-white">Blue<span className="text-[#FF0515]">Ocean</span></span>
         </div>
         <p className="text-sm text-neutral-400 leading-relaxed">
           Your global marketplace for fashion, electronics, home & everyday essentials — millions of items, verified sellers, buyer protection.
