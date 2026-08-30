@@ -98,8 +98,15 @@ async def request_otp(db, user: dict, purpose: str) -> dict:
             tags=["email_otp", f"otp_{purpose}"],
         )
     except Exception as e:
+        # Roll back the DB row so a retry can create a fresh code, then
+        # surface the failure to the caller so the UI shows a real error
+        # instead of a false "code sent" success.
         logger.error(f"email_otp mailer failed for {user['id']}: {e}")
-        # We STILL return success — the row is in DB. Caller can retry later.
+        try:
+            await db.email_otps.update_one({"id": otp_doc["id"]}, {"$set": {"superseded": True, "used_at": now}})
+        except Exception:
+            pass
+        raise RuntimeError(f"Could not send the verification email: {e}") from e
     return {
         "ok": True,
         "purpose": purpose,

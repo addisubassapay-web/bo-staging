@@ -14,6 +14,10 @@ async def request_otp_endpoint(payload: dict = Body(...), user: dict = Depends(g
         return await email_otp.request_otp(get_db(), user, purpose)
     except ValueError as e:
         raise HTTPException(400, str(e))
+    except RuntimeError as e:
+        # Mailer failure — surface as 502 so the UI can show a real error
+        # instead of a false "code sent" toast.
+        raise HTTPException(502, str(e))
 
 
 @router.post("/otp/verify")

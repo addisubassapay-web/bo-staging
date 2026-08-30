@@ -24,6 +24,25 @@ Full-stack ecommerce marketplace **Mercari-Global** — same color scheme (`#FF2
 
 ---
 
+### Feb 27 2026 — Mailer Hard-Fail + SMTP Confirmed LIVE
+
+**Mailer refactor (`services/mailer.py`)**:
+- Added `MailerError` exception class.
+- `send_email` now **raises** `MailerError` when: (a) SMTP config incomplete, OR (b) `aiosmtplib.send` throws an auth/timeout error.
+- The old silent-mock success path is now **opt-in** — only reached when `EMAIL_ALLOW_MOCK=1` (dev-only escape hatch).
+- Rewrote the docstring to make the loud-fail behaviour explicit.
+
+**OTP flow tightened (`services/email_otp.py`, `routers/otp.py`)**:
+- On mailer failure, `email_otp.request_otp` now marks the freshly-inserted OTP row as `superseded=True` + `used_at=now` (so a client retry gets a fresh code) and **re-raises** as `RuntimeError`.
+- `POST /api/otp/request` catches `RuntimeError` and returns **HTTP 502** with a plain-string detail. UI toast now surfaces the real error instead of a false "code sent" success.
+
+**SMTP live-delivery confirmed**:
+- Direct `mailer.send_email("admin@mercari.local", …)` → `{'ok': True, 'provider': 'hostinger', 'to': 'admin@mercari.local'}`.
+- Live OTP endpoint round-trip → HTTP 200, OTP row `superseded=False` (i.e., not rolled back — mailer succeeded), zero `[email ERROR]` logs since the swap.
+- **`support@mercarismarthub.com` is now delivering real email** end-to-end. `mercariglobals.com` mailbox can safely be decommissioned along with the domain.
+
+
+
 ### Feb 27 2026 — Footer Legal Links + SMTP Mock-Fallback Discovery
 
 **What shipped** (`components/Footer.jsx`):
