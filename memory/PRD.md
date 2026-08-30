@@ -2214,3 +2214,23 @@ See `/app/memory/test_credentials.md`.
 **Testing agent iteration 71**: 5/5 new bug tests + 19/19 auth regression tests passed. E2E chain (register → otp/request → otp/inbox → otp/verify → auth/me shows email_verified=true → seller/apply returns 200 pending) verified.
 
 **Service worker** bumped `v10-inbox-bell`.
+
+### Feb 30 2026 — P0 Bug: "Not authenticated" toast on /apply-seller (Send verification code)
+
+**User report**: Clicking "Send verification code" on /apply-seller surfaced a red toast "Couldn't send code — Not authenticated" even though the user was clearly logged in (they were on the authed page).
+
+**Root cause**: server.py `get_current_user` and `get_current_user_optional` only extracted the JWT from the `Authorization: Bearer` header. When the frontend's localStorage token was missing / stale / wiped, the /api/otp/request call went out with no header and 401'd — even though the HTTPOnly `bo_token` cookie set at login was present.
+
+**Fix** — closed the dual-mode auth migration loop:
+- `server.py:609-669` — `get_current_user` and `get_current_user_optional` now fall back to `request.cookies.get("bo_token")` when the Authorization header is absent.
+- `routers/deps.py:47-107` — same fix applied to the extracted-router variant.
+
+**Verified by testing agent (iteration 72)** — 34/34 tests pass:
+- 10 new cookie-auth targeted tests: /auth/me + /otp/request + /seller/apply E2E all work with COOKIE ONLY (no header)
+- 19 auth-deep-investigation regression tests still pass
+- 5 iteration_71 seller-apply E2E tests still pass
+- Header-only Bearer flow unchanged, missing-both → 401, malformed cookie → 401 "Invalid token", admin gate enforced on cookie sessions, must_change_password allow-list preserved
+
+**Follow-up architecture notes from the review** (not this bug's scope, tracked for later):
+- `_resolve_token(request, credentials)` helper to eliminate the identical dual-mode block duplicated in server.py + routers/deps.py.
+- Continue extracting server.py (8054 lines) into routers/.

@@ -48,10 +48,21 @@ async def get_current_user(
     request: Request,
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
 ):
-    if not credentials:
+    # Dual-mode auth: accept EITHER the Authorization: Bearer header (legacy
+    # localStorage flow) OR the HTTPOnly `bo_token` cookie (issued on
+    # /auth/login). Falling back to the cookie means a session survives
+    # frontend cache clears / storage wipes / accidental log-outs, which
+    # otherwise surfaced as a scary "Not authenticated" toast on every
+    # authenticated action.
+    token = None
+    if credentials and credentials.credentials:
+        token = credentials.credentials
+    else:
+        token = request.cookies.get("bo_token")
+    if not token:
         raise HTTPException(401, "Not authenticated")
     try:
-        payload = jwt.decode(credentials.credentials, _jwt_secret(), algorithms=[JWT_ALG])
+        payload = jwt.decode(token, _jwt_secret(), algorithms=[JWT_ALG])
     except jwt.PyJWTError:
         raise HTTPException(401, "Invalid token")
     db = get_db()
@@ -77,13 +88,22 @@ async def require_admin(user: dict = Depends(get_current_user)):
     return user
 
 
-async def get_current_user_optional(credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)):
-    """Return the current user if a valid bearer is supplied, else None.
-    Never raises — used by endpoints that accept both authenticated and guest callers."""
-    if not credentials:
+async def get_current_user_optional(
+    request: Request,
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
+):
+    """Return the current user if a valid bearer OR cookie is supplied,
+    else None. Never raises — used by endpoints that accept both
+    authenticated and guest callers."""
+    token = None
+    if credentials and credentials.credentials:
+        token = credentials.credentials
+    else:
+        token = request.cookies.get("bo_token")
+    if not token:
         return None
     try:
-        payload = jwt.decode(credentials.credentials, _jwt_secret(), algorithms=[JWT_ALG])
+        payload = jwt.decode(token, _jwt_secret(), algorithms=[JWT_ALG])
     except jwt.PyJWTError:
         return None
     db = get_db()

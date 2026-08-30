@@ -1,0 +1,23 @@
+{
+  "summary": "Verified P0 dual-mode auth fix: get_current_user + get_current_user_optional now accept HTTPOnly bo_token cookie as fallback when Authorization header is absent. All targeted scenarios (auth/me, /otp/request seller_apply, full seller/apply E2E) pass with COOKIE-ONLY sessions, matching the user's screenshot repro. Regressions all green: header-only Bearer, missing both credentials -> 401, malformed cookie -> 401 'Invalid token', admin gate enforced on cookie sessions, optional auth handles unauth callers, must_change_password gate preserved (same allow-list in both server.py and routers/deps.py). New test file: test_iteration72_cookie_auth.py (10 tests, all pass). Full regression: 19 in test_auth_deep_investigation(_db).py + 5 in test_iteration71_seller_apply_otp_bug.py = 24/24 pass. Grand total 34/34.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_iteration72_cookie_auth.py",
+    "/app/test_reports/pytest/iter72_cookie.xml",
+    "/app/test_reports/pytest/iter72_regression.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Dual-mode auth logic is duplicated identically in server.py (lines 609-669) and routers/deps.py (lines 47-107). Consider extracting a shared _resolve_token(request, credentials) helper to prevent drift — the _PWD_CHANGE_ALLOWED_PATHS set is already declared twice and must be kept in sync manually.",
+    "server.py is 8054 lines — well past the 700-line guideline. This is a long-standing architectural item and the router extraction started in routers/deps.py should continue."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100%", "frontend": "N/A (skipped per request)"},
+  "test_credentials": "admin@mercari.local / admin123 (from /app/memory/test_credentials.md)",
+  "seed_data_creation": "TEST_iter72_* users created via /auth/register during test run",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Cookie-based auth is verified end-to-end at the API layer. If frontend testing follows, ensure the browser actually sends the bo_token cookie on cross-origin requests — verify axios/fetch is called with credentials:'include' / withCredentials:true and that Set-Cookie SameSite/Secure attributes work in the preview subdomain. Also check the frontend doesn't wipe/overwrite the cookie by re-issuing an empty auth header.",
+  "rca of the issue": "User's screenshot: 'Not authenticated' toast on /apply-seller when clicking Send verification code. Root cause: backend get_current_user only extracted the JWT from the Authorization: Bearer header; if the frontend's localStorage token was missing/stale (e.g. after cache clear), the /api/otp/request call had no Authorization header and 401'd — even though the HTTPOnly bo_token cookie was set at login time. Fix: get_current_user (server.py:609) and get_current_user_optional (server.py:653), plus their duplicates in routers/deps.py, now read request.cookies.get('bo_token') as a fallback. Verified: cookie-only /auth/me, /otp/request, /otp/inbox, /otp/verify, /seller/apply all return 200 without any Authorization header."
+}

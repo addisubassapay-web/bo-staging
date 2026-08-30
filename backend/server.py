@@ -610,10 +610,22 @@ async def get_current_user(
     request: Request,
     credentials: HTTPAuthorizationCredentials = Depends(security),
 ) -> dict:
-    if not credentials:
+    # Dual-mode auth: accept EITHER the Authorization: Bearer header (legacy
+    # localStorage flow) OR the HTTPOnly `bo_token` cookie (issued on
+    # /auth/login). Falling back to the cookie means a session survives
+    # frontend cache clears / storage wipes / accidental log-outs, which
+    # otherwise surfaced as a scary "Not authenticated" toast on every
+    # authenticated action (e.g. clicking "Send verification code" on
+    # /apply-seller after localStorage had been cleared).
+    token = None
+    if credentials and credentials.credentials:
+        token = credentials.credentials
+    else:
+        token = request.cookies.get("bo_token")
+    if not token:
         raise HTTPException(status_code=401, detail="Not authenticated")
     try:
-        payload = jwt.decode(credentials.credentials, JWT_SECRET, algorithms=[JWT_ALG])
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALG])
         user_id = payload.get("sub")
     except jwt.PyJWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
@@ -638,11 +650,19 @@ async def get_current_user(
     return user
 
 
-async def get_current_user_optional(credentials: HTTPAuthorizationCredentials = Depends(security)) -> Optional[dict]:
-    if not credentials:
+async def get_current_user_optional(
+    request: Request,
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+) -> Optional[dict]:
+    token = None
+    if credentials and credentials.credentials:
+        token = credentials.credentials
+    else:
+        token = request.cookies.get("bo_token")
+    if not token:
         return None
     try:
-        payload = jwt.decode(credentials.credentials, JWT_SECRET, algorithms=[JWT_ALG])
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALG])
         user = await db.users.find_one({"id": payload.get("sub")}, {"_id": 0, "password_hash": 0})
         return user
     except Exception:
