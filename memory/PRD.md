@@ -2234,3 +2234,19 @@ See `/app/memory/test_credentials.md`.
 **Follow-up architecture notes from the review** (not this bug's scope, tracked for later):
 - `_resolve_token(request, credentials)` helper to eliminate the identical dual-mode block duplicated in server.py + routers/deps.py.
 - Continue extracting server.py (8054 lines) into routers/.
+
+### Feb 30 2026 — P0 Bug: /verify/email/send was a silent MOCK stub
+
+**User report**: "6-digit email not sending to verify". Backend log revealed `[MOCK] Sent email verification to eldgetrades101@gmail.com ... token=...` — the endpoint the /verify page hits was inserting a token row and returning it in the JSON response BUT NEVER calling the mailer.
+
+**Fix** (`server.py:5258-5318`):
+- `/api/verify/email/send` now calls `services.mailer.send_email` with a real HTML magic-link email using the indigo brand palette + absolute link via `FRONTEND_ORIGIN`.
+- On mailer failure the endpoint returns HTTP 502 with the real error and marks the verification_tokens row `used=True, superseded=True` so retries create a fresh code (matching the OTP flow contract).
+- Response body cleaned: no more `dev_mock`, `token`, or `verify_link` keys — clients cannot rely on the token being exposed.
+- Helper log `[MOCK] Sent {kind} verification ...` renamed to `[verification] issued {kind} token`.
+
+**Verified by testing agent (iteration 73)** — 38/38 tests pass:
+- 7 new tests target the fix: real send returns 200; response has no dev fields; auth still enforced; already_verified short-circuit; cookie-only session works; token round-trip via /verify/email/confirm; mailer-failure path returns 502 and invalidates row.
+- 31 regression tests still pass: 19 auth-deep + 5 iter71 seller-apply + 7 (of 10) iter72 cookie-auth.
+
+**Follow-up notes**: extract inline HTML templates into `services/mailer_templates.py`; server.py at 8099 lines needs router extraction.

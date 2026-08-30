@@ -5251,24 +5251,69 @@ async def _create_verification_token(user_id: str, kind: str, target: str, ttl_m
         user_id=user_id, kind=kind, token=token_value, target=target, expires_at=expires
     ).model_dump()
     await db.verification_tokens.insert_one(doc)
-    logger.info(f"[MOCK] Sent {kind} verification to {target} for user {user_id}: token={token_value}")
+    logger.info(f"[verification] issued {kind} token for {target} user={user_id}")
     return doc
 
 
 @api_router.post("/verify/email/send")
 async def verify_email_send(payload: EmailSendRequest, user: dict = Depends(get_current_user)):
-    """Mocked email verification send. Returns the token in response for dev use."""
+    """Send a real email verification magic link via Hostinger SMTP.
+
+    Kept alongside the newer OTP flow because the /verify page still
+    speaks to this endpoint. Previously this stub only logged
+    `[MOCK]` and returned the token in the response — meaning no email
+    ever went out. That silently broke the /verify page for real users.
+    """
     if user.get("email_verified"):
         return {"ok": True, "already_verified": True}
     target_email = payload.email or user["email"]
     doc = await _create_verification_token(user["id"], "email", target_email, ttl_minutes=60)
-    verify_link = f"/verify?token={doc['token']}"
+    frontend_origin = os.environ.get("FRONTEND_ORIGIN") or os.environ.get("BACKEND_PUBLIC_URL") or ""
+    verify_link_path = f"/verify?token={doc['token']}"
+    absolute_link = f"{frontend_origin.rstrip('/')}{verify_link_path}" if frontend_origin else verify_link_path
+
+    subject = "Verify your BlueOcean email"
+    html = f"""
+    <div style="font-family:system-ui,Segoe UI,Arial,sans-serif;max-width:520px;margin:0 auto;color:#111">
+      <h2 style="color:#5459E8;margin:0 0 12px">Confirm your email</h2>
+      <p>Hi {user.get('username','there')},</p>
+      <p>Click the button below to confirm this email address on your BlueOcean account. The link is valid for 60 minutes.</p>
+      <p style="text-align:center;margin:24px 0">
+        <a href="{absolute_link}" style="display:inline-block;background:#5459E8;color:#fff;text-decoration:none;padding:14px 28px;border-radius:999px;font-weight:700">
+          Verify email
+        </a>
+      </p>
+      <p style="color:#666;font-size:13px">Or paste this link into your browser:<br><span style="word-break:break-all">{absolute_link}</span></p>
+      <p style="color:#666;font-size:12px;margin-top:20px">If you didn't request this, ignore this email — nothing will happen.</p>
+      <p style="color:#666;font-size:12px">— BlueOcean Trust &amp; Safety</p>
+    </div>
+    """
+    text = (
+        f"Verify your BlueOcean email by opening this link (60 min expiry):\n"
+        f"{absolute_link}\n\nIf you didn't request this, ignore this email."
+    )
+    try:
+        from services import mailer
+        await mailer.send_email(
+            to=target_email, subject=subject, html=html, text=text,
+            tags=["verify_email"],
+        )
+    except Exception as e:
+        # Real mailer failure — invalidate the token and surface a 502 so
+        # the UI doesn't show a false-positive "email sent" toast.
+        logger.error(f"verify/email/send mailer failed for user {user['id']}: {e}")
+        try:
+            await db.verification_tokens.update_one(
+                {"id": doc["id"]}, {"$set": {"used": True, "superseded": True}}
+            )
+        except Exception:
+            pass
+        raise HTTPException(502, f"Could not send the verification email: {e}")
+
     return {
         "ok": True,
-        "message": f"[MOCK] Magic link sent to {target_email}",
-        "dev_mock": True,
-        "token": doc["token"],
-        "verify_link": verify_link,
+        "message": f"Verification link sent to {target_email}",
+        "sent_to_email": target_email,
         "expires_at": doc["expires_at"],
     }
 

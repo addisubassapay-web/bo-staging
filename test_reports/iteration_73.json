@@ -1,0 +1,33 @@
+{
+  "summary": "Verified P0 fix on POST /api/verify/email/send. Endpoint no longer mock-stubs — it calls services.mailer.send_email (Hostinger SMTP). Response no longer includes dev_mock/token/verify_link. New '[verification] issued email token' log line present; no NEW '[MOCK] Sent email verification' lines appear after the fix (only a stale historic entry from 2026-08-30 21:25:41 remains in backend.err.log, from before the fix). Mailer path returned 200 in this pod — real send succeeded with current Hostinger creds. Full 24-test regression suite from iterations 71+72 plus new 7 tests for iter73 = 38/38 passed.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration73_verify_email_send_real_mailer.py",
+    "/app/test_reports/pytest/iter73_results.xml",
+    "/app/test_reports/pytest/iter73_regression.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "server.py is 8099 lines — well past the 700-line guideline. Verification endpoints, OTP, seller onboarding, admin, catalog etc. should be split into routers/*.py modules. Not blocking, but tech-debt accumulating.",
+    "verify_email_send now has 60+ lines of inline HTML template. Consider moving templates under services/mailer_templates.py for reuse (password reset, OTP, verify all follow similar shape).",
+    "In verify_email_send, on mailer failure the token row is set `used=True, superseded=True`. Consistent with intent, but the read side in verify_email_confirm only filters on `used`; superseded flag is orphaned. Fine, but flag for cleanup."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration73_verify_email_send_real_mailer.py"
+  ],
+  "success_rate": {"backend": "100% (38/38)", "frontend": "not tested (skipped per request)"},
+  "test_credentials": "admin@mercari.local / admin123 (verified). Fresh users registered inline via /auth/register.",
+  "seed_data_creation": "10+ TEST_iter73_* users created via /auth/register during test runs; each has a verification_tokens row. Safe to leave — they will not affect other tests.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Iteration 73 fix verified. The /verify/email/send endpoint now returns {ok, message, sent_to_email, expires_at} — no `token` / `verify_link` / `dev_mock`. Confirm endpoint /verify/email/confirm still consumes tokens (test pulls raw token from mongo since it's no longer returned to client). If SMTP creds break in future, /verify/email/send will return 502 with real error message and mark token row `used=True, superseded=True` (not silently a mock 200).",
+  "rca of the issue": "Root cause: /api/verify/email/send was a MOCK stub that inserted a verification_tokens row and returned the token to the caller, with only a logger.info('[MOCK] Sent email verification ... token=...') line — no SMTP call. Users going through /verify page saw an 'email sent' toast but never received an email. Fix (lines 5258-5318 in server.py) wires the endpoint to services.mailer.send_email with HTML+text bodies, an absolute magic-link URL from FRONTEND_ORIGIN, and a 502 fallback that invalidates the token row on mailer failure. The _create_verification_token helper log was also renamed to '[verification] issued email token'. Verified against Hostinger SMTP (smtp.hostinger.com:465, supportteam@blueoceansmarthub.com) — endpoint returns 200 on this pod so creds are live."
+}

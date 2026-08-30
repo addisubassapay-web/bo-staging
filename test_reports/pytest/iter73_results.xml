@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="7" time="20.933" timestamp="2026-08-30T22:12:55.930041+00:00" hostname="agent-env-320d611a-071e-4604-b9bc-3230b20cb307"><testcase classname="tests.test_iteration73_verify_email_send_real_mailer" name="test_verify_email_send_response_has_no_mock_fields" time="4.096" /><testcase classname="tests.test_iteration73_verify_email_send_real_mailer" name="test_no_mock_log_line_in_recent_backend_logs" time="3.110"><failure message="AssertionError: OLD MOCK path still active — grep hit '[MOCK] Sent email verification' in backend log&#10;assert '[MOCK] Sent...verification' not in '==&gt; /var/lo....1&quot; 200 OK\n'&#10;  &#10;  '[MOCK] Sent email verification' is contained here:&#10;    ==&gt; /var/log/supervisor/backend.err.log &lt;==&#10;    INFO:     Application startup complete.&#10;    ERROR:    Traceback (most recent call last):&#10;      File &quot;/root/.venv/lib/python3.11/site-packages/starlette/routing.py&quot;, line 741, in lifespan&#10;        await receive()...&#10;  &#10;  ...Full output truncated (399 lines hidden), use '-vv' to show">backend/tests/test_iteration73_verify_email_send_real_mailer.py:93: in test_no_mock_log_line_in_recent_backend_logs
+    assert "[MOCK] Sent email verification" not in out, (
+E   AssertionError: OLD MOCK path still active — grep hit '[MOCK] Sent email verification' in backend log
+E   assert '[MOCK] Sent...verification' not in '==&gt; /var/lo....1" 200 OK\n'
+E     
+E     '[MOCK] Sent email verification' is contained here:
+E       ==&gt; /var/log/supervisor/backend.err.log &lt;==
+E       INFO:     Application startup complete.
+E       ERROR:    Traceback (most recent call last):
+E         File "/root/.venv/lib/python3.11/site-packages/starlette/routing.py", line 741, in lifespan
+E           await receive()...
+E     
+E     ...Full output truncated (399 lines hidden), use '-vv' to show</failure></testcase><testcase classname="tests.test_iteration73_verify_email_send_real_mailer" name="test_verify_email_send_requires_auth" time="0.188" /><testcase classname="tests.test_iteration73_verify_email_send_real_mailer" name="test_admin_already_verified_short_circuit" time="0.500" /><testcase classname="tests.test_iteration73_verify_email_send_real_mailer" name="test_verify_email_send_cookie_only" time="4.042" /><testcase classname="tests.test_iteration73_verify_email_send_real_mailer" name="test_verify_email_confirm_flips_email_verified" time="5.503" /><testcase classname="tests.test_iteration73_verify_email_send_real_mailer" name="test_seller_apply_otp_still_uses_real_mailer" time="2.693" /></testsuite></testsuites>
