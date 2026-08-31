@@ -4,21 +4,33 @@
   "description": "Buy and sell fashion, electronics, home & everyday essentials. Verified sellers, buyer protection, global shipping.",
   "icons": [
     {
-      "src": "logo-mark.png",
+      "src": "logo-mark.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any"
+    },
+    {
+      "src": "logo-mark-96.png",
       "type": "image/png",
-      "sizes": "96x101",
+      "sizes": "96x96",
       "purpose": "any"
     },
     {
       "src": "icon-192.png",
       "type": "image/png",
       "sizes": "192x192",
-      "purpose": "any"
+      "purpose": "any maskable"
     },
     {
       "src": "icon-512.png",
       "type": "image/png",
       "sizes": "512x512",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-1024.png",
+      "type": "image/png",
+      "sizes": "1024x1024",
       "purpose": "any"
     }
   ],

@@ -2250,3 +2250,23 @@ See `/app/memory/test_credentials.md`.
 - 31 regression tests still pass: 19 auth-deep + 5 iter71 seller-apply + 7 (of 10) iter72 cookie-auth.
 
 **Follow-up notes**: extract inline HTML templates into `services/mailer_templates.py`; server.py at 8099 lines needs router extraction.
+
+### Feb 30 2026 — P0 Bug: Old logo showing everywhere (raster PNGs stale)
+
+**User report**: current logo not showing — old logo appearing across the platform (browser tab, share previews, PWA installs, iOS home screen).
+
+**Root cause**: `/app/frontend/public/*.png` (favicon.png, icon-192, icon-512, logo-mark.png, logo-mark-96, logo-mark-192) were dated **Aug 27** — from BEFORE the BlueOcean rebrand. Only `logo-mark.svg` had been updated. All raster surfaces (social crawlers, PWA installs, favicons, apple-touch-icons) rendered the stale PNGs.
+
+**Fix**:
+- Installed `cairosvg` and rasterised the current `logo-mark.svg` at 64 / 96 / 192 / 512 / 1024 sizes, overwriting all 7 raster PNGs.
+- `manifest.json` rewritten with 5 clean icon entries (SVG + 96 + 192 + 512 + 1024), `any maskable` purpose on 192/512, dropped the odd `96x101` legacy entry.
+- `index.html`: og:image + twitter:image now point at `/icon-1024.png?v=10` (larger, richer social preview), added `og:image:width/height/alt`, apple-touch-icon at both 192 and 512, `mask-icon` with `#5459E8`, every icon link/meta carries `?v=10` cache-buster.
+- `service-worker.js` VERSION bumped `v11-new-logo-icons` — purges old cached raster icons on next visit.
+- Frontend supervisor restarted so CRA dev server picks up the new index.html.
+
+**Verified by testing agent (iteration 74)** — 46/46 asset tests pass:
+- All 7 PNGs return HTTP 200 + image/png, byte-perfect match to disk, newer than the SVG source (SHA-256 verified).
+- `manifest.json` icons array has correct entries + purposes.
+- `index.html` served over public URL contains all new og/twitter/apple/mask tags with `?v=10`.
+- Service worker VERSION confirmed.
+- Also fixed a pre-existing test-isolation flake (module-scoped cx httpx client accumulated bo_token cookie from earlier tests): added `cx.cookies.clear()` to `test_auth_me_requires_token` + `test_auth_me_bad_token`.

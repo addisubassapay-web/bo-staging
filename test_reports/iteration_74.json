@@ -1,0 +1,34 @@
+{
+  "summary": "Iteration 74 — Verified P0 BlueOcean logo asset regeneration. All 7 raster PNGs (favicon/icon-192/512/1024/logo-mark/logo-mark-96/logo-mark-192) served publicly via REACT_APP_BACKEND_URL return HTTP 200 with Content-Type image/png, are valid PNG magic-byte files, are newer than the source logo-mark.svg, and their byte contents match /app/frontend/public/ exactly (SHA-256 verified). manifest.json contains 5 icons (svg + 96 + 192 + 512 + 1024) with 'any maskable' purpose on 192/512, no legacy '96x101' entries. index.html served over public URL now correctly points og:image + twitter:image to /icon-1024.png?v=10, og:image:width=1024 is present, apple-touch-icon at 192 and 512 present, mask-icon with color=#5459E8 present, and every icon link/meta carries the ?v=10 cache-buster. service-worker.js VERSION = 'v11-new-logo-icons' confirmed. 46/46 asset tests PASS. Regression suite (test_auth_deep_investigation + iter71/72/73): 37/38 pass; 1 pre-existing test-isolation flake (module-scoped cx fixture accumulates bo_token cookie set by earlier register/login tests → /auth/me returns 200 instead of 401). The underlying endpoint IS correct — verified via fresh curl (401 Not authenticated). Not caused by logo change.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "test_auth_deep_investigation.py::test_auth_me_requires_token", "issue": "Test-only flake (not a real backend bug). Module-scoped cx httpx.Client accumulates cookies from earlier register/login tests (which set bo_token cookie post iter72). /auth/me then sees a valid cookie and returns 200 instead of 401. Real endpoint works correctly (curl returns 401). Fix: make cx function-scoped OR call cx.cookies.clear() at start of test_auth_me_requires_token."}
+    ]
+  },
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_iteration74_logo_assets.py",
+    "/app/test_reports/pytest/iteration74_logo.xml",
+    "/app/test_reports/pytest/iteration74_regression.xml"
+  ],
+  "action_items": [
+    "IMPORTANT operational note: CRA dev server (yarn start managed by supervisor) does NOT hot-reload changes to /app/frontend/public/index.html. On initial verification the served index.html was stale (still pointed og:image at /icon-512.png with no ?v=10). I ran `sudo supervisorctl restart frontend` which picked up the new template — after restart all tests pass. Main agent should note: future edits to public/index.html require a frontend restart, and the deployed build (yarn build → /app/frontend/build/index.html) already contains the correct tags.",
+    "Optional cleanup: change `cx` fixture in test_auth_deep_investigation.py from scope='module' to scope='function' (or call cx.cookies.clear() inside the two auth_me_requires_token/bad_token tests) so the new cookie-auth from iter72 doesn't leak between tests."
+  ],
+  "critical_code_review_comments": [
+    "manifest.json + index.html + service-worker.js are cleanly aligned on the v10/v11 cache-buster + versioning story — this correctly forces browsers, PWA installs, and social crawlers to fetch the new indigo shopping-bag logo.",
+    "All 7 regenerated PNGs correctly served with byte-perfect match to disk (SHA-256 verified); Content-Type=image/png; sizes reasonable (favicon 3.2KB, icon-192 10.4KB, icon-512 34KB, icon-1024 84KB).",
+    "SVG source (logo-mark.svg) contains BlueOcean indigo (#5459E8) — confirmed served via public URL.",
+    "Non-blocking: the dev server hot-reload gap for public/index.html is an environment quirk, not a code bug — deployed build (/app/frontend/build/) is already correct."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration74_logo_assets.py (created)"
+  ],
+  "success_rate": {"backend": "100% (46/46 logo tests) + 97.4% (37/38 regression, 1 pre-existing test-isolation flake unrelated to logo fix)", "frontend": "not tested (skipped per request)"},
+  "seed_data_creation": "none",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Logo/icon fix is fully verified. All new BlueOcean logo raster PNGs are correctly served with byte-perfect match to /app/frontend/public/. index.html served over the public URL now carries icon-1024.png?v=10 og/twitter images, apple-touch 192+512, mask-icon w/ #5459E8, all cache-busted with ?v=10. service-worker VERSION=v11-new-logo-icons. Regression: 37/38; the one failure (test_auth_me_requires_token) is a pre-existing pytest cookie-jar contamination in module-scoped cx fixture and NOT a real backend bug — curl on /api/auth/me with no auth returns 401 as expected. If baseline claims of 38/38 in iteration_73 need reconciliation, tighten the cx fixture (scope='function').",
+  "rca of the issue": "P0 root cause exactly as main agent diagnosed: raster PNGs at /app/frontend/public were dated Aug 27 (pre-rebrand) while only logo-mark.svg had been updated to the BlueOcean shopping-bag design. All social preview surfaces, browser tabs, PWA install icons, iOS home-screen icons render the raster PNGs — hence the old logo appeared everywhere. Fix (cairosvg regeneration + manifest.json refresh + index.html og:image bump to icon-1024.png?v=10 + service-worker v11 cache-key bump) is complete and verified. Small operational discovery during verification: the CRA dev server does not hot-reload public/index.html changes — a `supervisorctl restart frontend` was required to pick up the new meta tags, but the built (production-served) /app/frontend/build/index.html was already correct."
+}

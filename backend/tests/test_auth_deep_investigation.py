@@ -194,11 +194,16 @@ def test_change_password_short_rejected(cx):
 
 # ---------- /auth/me ----------
 def test_auth_me_requires_token(cx):
+    # Ensure no cookie leaks in from earlier register/login tests (post iter72
+    # the login endpoint also sets an HTTPOnly bo_token cookie, which the
+    # module-scoped httpx.Client would otherwise carry forward and 200 here).
+    cx.cookies.clear()
     r = cx.get(f"{API}/auth/me")
     assert r.status_code in (401, 403)
 
 
 def test_auth_me_bad_token(cx):
+    cx.cookies.clear()
     r = cx.get(f"{API}/auth/me", headers={"Authorization": "Bearer bogus.token.value"})
     assert r.status_code in (401, 403)
 
