@@ -2,7 +2,8 @@
 
 Public API: `await send_email(to, subject, html, text=None, tags=[])`.
 Reads config from env: SMTP_HOST, SMTP_PORT (465=SSL, 587=STARTTLS), SMTP_USER,
-SMTP_PASSWORD, EMAIL_FROM_ADDRESS, EMAIL_FROM_NAME, EMAIL_PROVIDER.
+SMTP_PASS (or legacy SMTP_PASSWORD), SMTP_SECURE (true=SSL/STARTTLS wrapper,
+false=plaintext), EMAIL_FROM_ADDRESS, EMAIL_FROM_NAME, EMAIL_PROVIDER.
 
 By default the mailer HARD-FAILS if SMTP is not configured or the SMTP call
 raises — so misconfigurations surface loudly to callers instead of silently
@@ -32,7 +33,13 @@ def _cfg():
         "host": os.environ.get("SMTP_HOST", ""),
         "port": int(os.environ.get("SMTP_PORT", "465") or 465),
         "user": os.environ.get("SMTP_USER", ""),
-        "password": os.environ.get("SMTP_PASSWORD", ""),
+        # Prefer SMTP_PASS (new canonical name) with fallback to SMTP_PASSWORD
+        # so existing production envs keep working during rollout.
+        "password": os.environ.get("SMTP_PASS") or os.environ.get("SMTP_PASSWORD", ""),
+        # SMTP_SECURE controls the transport wrapper. At port 465 the connection
+        # starts in SSL; at 587 we upgrade via STARTTLS. `false` opts into
+        # plaintext SMTP (dev only). Defaults to true.
+        "secure": os.environ.get("SMTP_SECURE", "true").lower() not in ("0", "false", "no"),
         "from_addr": os.environ.get("EMAIL_FROM_ADDRESS", ""),
         "from_name": os.environ.get("EMAIL_FROM_NAME", "BlueOcean"),
     }
@@ -76,8 +83,11 @@ async def send_email(
     msg.add_alternative(html, subtype="html")
 
     try:
-        use_tls = c["port"] == 465
-        start_tls = c["port"] in (587, 25)
+        # SMTP_SECURE=true (default) — use SSL on 465, STARTTLS on 587/25.
+        # SMTP_SECURE=false — plaintext SMTP (dev/private-network only).
+        secure = c["secure"]
+        use_tls = secure and c["port"] == 465
+        start_tls = secure and c["port"] in (587, 25)
         await aiosmtplib.send(
             msg,
             hostname=c["host"],

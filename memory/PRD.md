@@ -2366,3 +2366,13 @@ See `/app/memory/test_credentials.md`.
 **Verified by testing agent (iteration 75)** — 39/39 tests pass:
 - 23 new asset tests: built bundle contains `logo-mark.svg?v=11`, NO stale `/logo-mark.png` reference, index.html cache-busters all `?v=12`, service worker VERSION correct, served `/logo-mark.svg` is HTTP 200 image/svg+xml and matches the new shopping-bag design (M36 50 path + accent circle cx=92 cy=28), manifest.json + all 5 referenced icons return correct content-types, all 7 raster PNGs on disk newer than Aug 30 cutoff.
 - 16 auth regression tests: unaffected.
+
+### Feb 30 2026 — SMTP env keys aligned to canonical spec
+
+User asked to verify their exact env keys land in backend/.env.
+
+**Applied**:
+- `.env` now carries both `SMTP_PASS` (new canonical) and `SMTP_PASSWORD` (legacy fallback), plus `SMTP_SECURE=true`.
+- `services/mailer.py` — `_cfg()` reads `SMTP_PASS` first with `SMTP_PASSWORD` fallback; `SMTP_SECURE` (default true) now gates the SSL/STARTTLS wrapper. When false, plaintext SMTP is used (dev/private only).
+
+**Verified**: REPL config dump matches user spec exactly; live `/verify/email/send` returned HTTP 200 with real "Verification link sent to..." body via the Hostinger transport.
