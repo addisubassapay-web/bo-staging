@@ -2350,3 +2350,19 @@ See `/app/memory/test_credentials.md`.
 - 16/16 auth regression tests still pass.
 
 **Result**: every outbound email — verification, OTP, password reset, welcome, order confirmation, deposit approval, account lock, catalog seed complete, both onboarding nudges — now uses one branded indigo envelope with the supportteam@blueoceansmarthub.com footer. Red accent is reserved for time-sensitive nudges (zero-listing, account-locked).
+
+### Feb 30 2026 — P0 Bug: PWA install prompt still showed old logo
+
+**User report**: "The logo when the download option comes is displaying the previous icon."
+
+**Root cause**: `PWAInstallPrompt.jsx:119` and `GlobalNavMenu.jsx:71` hard-linked `<img src="/logo-mark.png"/>` **with no cache-buster query string**. Browsers held the pre-rebrand bytes even after the PNG on disk was regenerated in iter74. When the browser fired the "Add to Home Screen" prompt, it rendered from that stale cached copy.
+
+**Fix**:
+- Both components now use `/logo-mark.svg?v=11` — the SVG is smaller, self-contained, and already carries the correct brand.
+- `public/index.html` — every icon cache-buster bumped `?v=10 → ?v=12` (favicon, icon-192, icon-512, apple-touch x2, mask-icon, og-banner, twitter-image).
+- `public/service-worker.js` — VERSION bumped `v12-logo-final` so the SW cache purges on next visit.
+- `yarn build` rerun, frontend supervisor restarted.
+
+**Verified by testing agent (iteration 75)** — 39/39 tests pass:
+- 23 new asset tests: built bundle contains `logo-mark.svg?v=11`, NO stale `/logo-mark.png` reference, index.html cache-busters all `?v=12`, service worker VERSION correct, served `/logo-mark.svg` is HTTP 200 image/svg+xml and matches the new shopping-bag design (M36 50 path + accent circle cx=92 cy=28), manifest.json + all 5 referenced icons return correct content-types, all 7 raster PNGs on disk newer than Aug 30 cutoff.
+- 16 auth regression tests: unaffected.

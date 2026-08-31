@@ -1,0 +1,30 @@
+{
+  "summary": "Backend-only verification of PWA logo fix (iter75). Confirmed the user-reported bug is resolved: PWAInstallPrompt.jsx and GlobalNavMenu.jsx now reference /logo-mark.svg?v=11 (verified in source AND in the built bundle at /app/frontend/build/static/js/main.e870688e.js). No stale /logo-mark.png reference remains in the bundle. index.html icon cache-busters are ALL at ?v=12 (favicon, icon-192, icon-512, logo-mark.svg, og-banner) with no stale ?v=10 / ?v=11. Service-worker VERSION = 'v12-logo-final'. Served /logo-mark.svg is 200 image/svg+xml and contains the new BlueOcean shopping-bag shape (M36 50) + accent-dot (circle cx=92 cy=28). manifest.json lists all 5 icons and each returns 200 with correct content-type. All 7 raster PNGs on disk have mtime newer than the Aug 30 2026 cutoff. 23/23 iter75 asset tests pass. Auth regression: 16/16 tests in test_auth_deep_investigation.py pass. Email endpoints /api/otp/request and /api/verify/email/send are reachable and correctly return 401 for unauthenticated calls (by design — both depend on get_current_user).",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration75_pwa_logo_fix.py",
+    "/app/test_reports/pytest/iter75_pwa_logo.xml",
+    "/app/test_reports/pytest/iter75_auth_regression.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Note: review-request text said 'POST /api/otp/request still 200' — this is imprecise. Both /api/otp/request and /api/verify/email/send have always required auth (Depends(get_current_user)) and correctly return 401 to unauthenticated callers. They remain reachable and behave identically to pre-fix. No regression."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration75_pwa_logo_fix.py (new)"
+  ],
+  "success_rate": {"backend": "100% (23/23 asset + 16/16 auth = 39/39)", "frontend": "N/A (skipped per request)"},
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Iter75 fixed the PWA install prompt showing the old logo. Root cause: PWAInstallPrompt.jsx line 119 and GlobalNavMenu.jsx line 71 hard-linked /logo-mark.png without a cache-buster. Fix swapped to /logo-mark.svg?v=11. index.html icons bumped to ?v=12, service-worker to v12-logo-final. Built bundle main.e870688e.js verified to contain 'logo-mark.svg?v=11' and NO stale '/logo-mark.png'. All served assets, manifest, and SW verified against the public URL. Next iteration can re-use /app/backend/tests/test_iteration75_pwa_logo_fix.py as regression coverage.",
+  "rca of the issue": "USER BUG: 'Add to Home Screen' PWA prompt showed the pre-rebrand logo. RCA: Two React components hard-referenced /logo-mark.png with no cache-buster query string, so browsers/PWA cache held onto pre-rebrand bytes even after the PNG on disk was regenerated. Mitigation applied by main agent: (1) switched both components to /logo-mark.svg?v=11 (self-contained SVG that already carries the new brand), (2) bumped every icon reference in index.html to ?v=12, (3) bumped service-worker VERSION to v12-logo-final so the SW cache purges on next visit, (4) rebuilt via `yarn build` and restarted frontend supervisor. Verified end-to-end via public URL."
+}

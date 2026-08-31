@@ -116,7 +116,7 @@ const PWAInstallPrompt = () => {
       <div className="mx-auto max-w-md rounded-2xl shadow-2xl border border-neutral-200 bg-white overflow-hidden">
         <div className="flex items-start gap-3 p-4">
           <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-[#5459E8] to-[#818CF8] grid place-items-center shrink-0 shadow-lg">
-            <img src="/logo-mark.png" alt="" className="h-7 w-7 object-contain" />
+            <img src="/logo-mark.svg?v=11" alt="" className="h-7 w-7 object-contain" />
           </div>
           <div className="flex-1 min-w-0">
             <div className="text-sm font-bold text-neutral-900">Install BlueOcean</div>
