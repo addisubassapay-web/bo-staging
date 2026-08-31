@@ -2270,3 +2270,25 @@ See `/app/memory/test_credentials.md`.
 - `index.html` served over public URL contains all new og/twitter/apple/mask tags with `?v=10`.
 - Service worker VERSION confirmed.
 - Also fixed a pre-existing test-isolation flake (module-scoped cx httpx client accumulated bo_token cookie from earlier tests): added `cx.cookies.clear()` to `test_auth_me_requires_token` + `test_auth_me_bad_token`.
+
+### Feb 30 2026 — Social Preview Card + Onboarding Nudges
+
+**1. Social Preview Card (1200×630)**
+- New `/app/frontend/public/og-banner.svg` — dedicated OG landscape artwork with indigo gradient background, floating BlueOcean brand tile (shopping bag + waves + pink accent dot), wordmark, tagline, and three feature chips including a red "Buyer protection" accent.
+- Rasterised via `cairosvg` to `og-banner.png` (104 KB).
+- `index.html` — og:image + twitter:image now point at `/og-banner.png?v=11` with `og:image:width=1200 og:image:height=630 og:image:alt` set. Twitter card stays `summary_large_image`.
+- Live test: `HEAD /og-banner.png?v=11` → 200 + `content-type: image/png`.
+
+**2. Onboarding Nudges** — sellers stuck at step 2 (no payout method) after 24h
+- New `routers/onboarding_nudges.py` (~110 lines). Idempotent job:
+  - Selects stores older than 24h whose owner has no `payout_method` / `crypto_addresses`, is active, has an email, and has NOT been nudged before (`onboarding_nudges` collection is the idempotency ledger).
+  - Sends a Hostinger SMTP email via `services.mailer` with a 60-second call-to-action linking to `/wallet?tab=payout`. HTML template uses the BlueOcean indigo palette.
+- Two entry points:
+  - `POST /api/admin/tasks/nudge-onboarding-payouts` — admin JWT gated (`require_admin`).
+  - `POST /api/tasks/nudge-onboarding-payouts?token=<CRON_TASK_TOKEN>` — cron-friendly with a shared secret in `backend/.env` (`CRON_TASK_TOKEN=bo-cron-3f9a2c1b7e4d`).
+- Returns `{tried, sent, skipped, kind}`. Verified 401 on bad token, 200 on good token / admin JWT.
+- Registered in `server.py` via `app.include_router(onboarding_nudges_router, prefix="/api")`.
+
+**Service worker** stays at `v11-new-logo-icons` (icons unchanged); no bump needed for the OG banner since it's a new asset, not a replaced one.
+
+**New env var**: `CRON_TASK_TOKEN=bo-cron-3f9a2c1b7e4d` — used only by the cron entry point.

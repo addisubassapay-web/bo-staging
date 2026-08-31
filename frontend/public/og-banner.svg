@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" role="img" aria-label="BlueOcean — Smart Ecommerce Platform">
+  <defs>
+    <linearGradient id="og-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4045C7"/>
+      <stop offset="55%" stop-color="#5459E8"/>
+      <stop offset="100%" stop-color="#818CF8"/>
+    </linearGradient>
+    <linearGradient id="og-tile" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.98"/>
+      <stop offset="100%" stop-color="#DBEAFE" stop-opacity="0.9"/>
+    </linearGradient>
+    <linearGradient id="og-accent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF0515"/>
+      <stop offset="100%" stop-color="#FF5B6B"/>
+    </linearGradient>
+    <linearGradient id="og-dot" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F0ABFC"/>
+      <stop offset="100%" stop-color="#F472B6"/>
+    </linearGradient>
+    <filter id="og-shadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="14" stdDeviation="18" flood-color="#0F172A" flood-opacity="0.28"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#og-bg)"/>
+
+  <!-- Decorative blobs -->
+  <circle cx="60" cy="60" r="220" fill="#FF0515" opacity="0.10"/>
+  <circle cx="1140" cy="590" r="260" fill="#F0ABFC" opacity="0.12"/>
+  <circle cx="960" cy="120" r="120" fill="#FFFFFF" opacity="0.10"/>
+
+  <!-- Logo tile (left side) -->
+  <g filter="url(#og-shadow)" transform="translate(80,155)">
+    <rect x="0" y="0" width="320" height="320" rx="72" ry="72" fill="url(#og-tile)"/>
+    <!-- Shopping bag body -->
+    <path d="M85 130 L235 130 L245 285 Q245 296 234 296 L86 296 Q75 296 75 285 Z"
+          fill="none" stroke="#5459E8" stroke-width="16" stroke-linejoin="round"/>
+    <!-- Bag handles -->
+    <path d="M115 130 L115 100 Q115 68 145 68 Q175 68 175 100 L175 130"
+          fill="none" stroke="#5459E8" stroke-width="14" stroke-linecap="round"/>
+    <path d="M155 130 L155 100 Q155 68 185 68 Q215 68 215 100 L215 130"
+          fill="none" stroke="#5459E8" stroke-width="14" stroke-linecap="round" opacity="0.85"/>
+    <!-- Wave crests inside the bag -->
+    <path d="M78 210 Q113 188 148 210 T218 210" fill="none" stroke="#5459E8" stroke-width="14" stroke-linecap="round"/>
+    <path d="M78 246 Q113 224 148 246 T218 246" fill="none" stroke="#5459E8" stroke-width="14" stroke-linecap="round" opacity="0.55"/>
+    <!-- Accent dot -->
+    <circle cx="255" cy="60" r="30" fill="url(#og-dot)" stroke="#FFFFFF" stroke-width="8"/>
+  </g>
+
+  <!-- Wordmark + copy (right side) -->
+  <g transform="translate(460,220)" fill="#FFFFFF" font-family="Poppins, DM Sans, Helvetica, Arial, sans-serif">
+    <text x="0" y="0" font-size="88" font-weight="800" letter-spacing="-2">Blue<tspan fill="#FFC7CB">Ocean</tspan></text>
+    <text x="0" y="72" font-size="34" font-weight="500" opacity="0.95">Smart Ecommerce Platform</text>
+    <!-- Feature chips -->
+    <g transform="translate(0,120)">
+      <rect x="0" y="0" width="188" height="52" rx="26" fill="#FFFFFF" fill-opacity="0.14" stroke="#FFFFFF" stroke-opacity="0.3"/>
+      <text x="94" y="34" font-size="21" font-weight="600" text-anchor="middle">Verified sellers</text>
+      <rect x="204" y="0" width="212" height="52" rx="26" fill="#FFFFFF" fill-opacity="0.14" stroke="#FFFFFF" stroke-opacity="0.3"/>
+      <text x="310" y="34" font-size="21" font-weight="600" text-anchor="middle">Global shipping</text>
+      <rect x="432" y="0" width="228" height="52" rx="26" fill="url(#og-accent)"/>
+      <text x="546" y="34" font-size="21" font-weight="700" text-anchor="middle" fill="#FFFFFF">Buyer protection</text>
+    </g>
+    <text x="0" y="220" font-size="22" font-weight="500" opacity="0.85">blueocean.com</text>
+  </g>
+</svg>

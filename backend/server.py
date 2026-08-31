@@ -30,6 +30,7 @@ from routers.users import router as users_router
 from routers.newsletter import router as newsletter_router
 from routers.google_auth import router as google_auth_router
 from routers.auth import router as auth_router
+from routers.onboarding_nudges import router as onboarding_nudges_router
 from routers.stores_search import router as stores_search_router
 from routers.shopping import router as shopping_router
 from routers.listings import router as listings_router
@@ -7830,6 +7831,7 @@ app.include_router(users_router, prefix="/api")
 app.include_router(newsletter_router, prefix="/api")
 app.include_router(google_auth_router, prefix="/api")
 app.include_router(auth_router, prefix="/api")
+app.include_router(onboarding_nudges_router, prefix="/api")
 app.include_router(stores_search_router, prefix="/api")
 app.include_router(shopping_router, prefix="/api")
 app.include_router(listings_router, prefix="/api")
