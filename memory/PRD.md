@@ -24,6 +24,32 @@ Full-stack ecommerce marketplace **Mercari-Global** — same color scheme (`#FF2
 
 ---
 
+### Aug 31 2026 — Admin Password Resets: centralized page
+
+**User asked** to "find all the accounts created previously and integrate it in the admin management for Password reset". Existing UsersMgr had per-row `resetPassword` + a "Bulk reset all non-admin" button but no way to search, filter, select subsets, or use the email-reset mode.
+
+**Delivered:**
+- New page `/app/frontend/src/pages/AdminPasswordResets.jsx` mounted at `/admin/password-resets`
+- Loads every account via `GET /admin/users` (1000 users confirmed) and paginates 50/page
+- 5-stat header (Total / Locked / Unverified / Must-change / Admins)
+- Search (email + username + id) plus 8-option filter dropdown (all, locked, unverified, must_change, no_hash proxy, admin, seller, user)
+- Per-row actions: "Email" (single-user `mode=email`) + "Set pwd" (dialog → `/admin/users/{id}/reset-password`)
+- Bulk toolbar with "Select all filtered", clear, and two bulk dispatchers:
+  - "Send reset emails (N)" → `/admin/users/bulk-password-reset` `{mode:"email", user_ids:[…]}`
+  - "Set temp password (N)" → `/admin/users/bulk-password-reset` `{mode:"temp", temp_password, user_ids:[…]}`
+- Sidebar link added under Admin panel (`KeyRound` icon)
+
+**Backend curl round-trip proven:**
+- `POST /admin/users/{id}/reset-password` → `{ok:true, must_change_password:true}`
+- `POST /admin/users/bulk-password-reset` mode=email → `{affected:1, emailed:1, skipped:0}`
+- `POST /admin/users/bulk-password-reset` mode=temp → `{affected:1, temp_password:"Welcome-2026"}`
+
+**Files touched:**
+- Created: `/app/frontend/src/pages/AdminPasswordResets.jsx`
+- Edited: `/app/frontend/src/pages/Admin.jsx` (import + sidebar link + route)
+
+---
+
 ### Aug 31 2026 — Master-Pass Override: Admin UI shipped
 
 **User asked** to "continue the password Bypass operation". Backend endpoints for the master-pass override toggle already existed (from the prior session) but the frontend admin page was never actually built (handoff summary was inaccurate).

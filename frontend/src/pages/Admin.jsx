@@ -25,6 +25,7 @@ import AdminLedgerAudit from "@/pages/AdminLedgerAudit";
 import AdminEmailLog from "@/pages/AdminEmailLog";
 import AdminLegacyBypassLog from "@/pages/AdminLegacyBypassLog";
 import AdminMasterPassOverride from "@/pages/AdminMasterPassOverride";
+import AdminPasswordResets from "@/pages/AdminPasswordResets";
 import ShippingTracker from "@/components/ShippingTracker";
 import AdminStoreBoosts from "@/pages/AdminStoreBoosts";
 import AdminSupport from "@/pages/AdminSupport";
@@ -1977,6 +1978,7 @@ const AdminSidebarNav = ({ compact = false }) => (
     <SidebarLink to="/admin/store-boosts" icon={StoreIcon}>Store boosts</SidebarLink>
     <SidebarSupportLink />
     <SidebarLink to="/admin/email-log" icon={Mail}>Email log</SidebarLink>
+    <SidebarLink to="/admin/password-resets" icon={KeyRound}>Password resets</SidebarLink>
     <SidebarLink to="/admin/legacy-bypass" icon={KeyRound}>Legacy bypass</SidebarLink>
     <SidebarLink to="/admin/master-pass-override" icon={ShieldAlert}>Master-pass override</SidebarLink>
     <SidebarLink to="/admin/settings" icon={SettingsIcon}>Settings</SidebarLink>
@@ -2034,6 +2036,7 @@ const AdminShell = () => {
             <Route path="store-boosts" element={<AdminStoreBoosts />} />
             <Route path="support-tickets" element={<AdminSupport />} />
             <Route path="email-log" element={<AdminEmailLog />} />
+            <Route path="password-resets" element={<AdminPasswordResets />} />
             <Route path="legacy-bypass" element={<AdminLegacyBypassLog />} />
             <Route path="master-pass-override" element={<AdminMasterPassOverride />} />
             <Route path="settings" element={<SettingsMgr />} />
