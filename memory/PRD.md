@@ -2292,3 +2292,21 @@ See `/app/memory/test_credentials.md`.
 **Service worker** stays at `v11-new-logo-icons` (icons unchanged); no bump needed for the OG banner since it's a new asset, not a replaced one.
 
 **New env var**: `CRON_TASK_TOKEN=bo-cron-3f9a2c1b7e4d` — used only by the cron entry point.
+
+### Feb 30 2026 — Second Nudge Kind: Zero-Listing (72h)
+
+**Added** to `routers/onboarding_nudges.py`:
+- Constants `ZERO_LISTING_KIND = "zero_listing_v1"`, `ZERO_LISTING_WINDOW_HOURS = 72`.
+- `_build_zero_listing_html(username, sell_url)` — red-CTA email template that asks the seller to list their first item; deliberately uses `#FF0515` red gradient to differentiate from the indigo payout nudge.
+- `_run_zero_listing_nudge_job()` — selects stores older than 72h whose owner is active, has an email, has NOT already received this nudge kind, AND whose `db.listings.find_one({seller_id})` returns nothing. Sends via Hostinger, records in the same `onboarding_nudges` ledger keyed by `(user_id, kind)`.
+- Two new endpoints:
+  - `POST /api/admin/tasks/nudge-zero-listings` (admin JWT)
+  - `POST /api/tasks/nudge-zero-listings?token=<CRON_TASK_TOKEN>` (cron shared secret)
+
+**Verified** end-to-end with curl:
+- Admin JWT → 200 `{tried:392, sent:0, skipped:392, kind:"zero_listing_v1"}` (0 sent means every seed store already has listings — gate working correctly)
+- Cron with bad token → 401
+- Cron with valid token → 200 (same body shape)
+- Payout nudge v1 still returns clean JSON — no regression
+
+**Shared ledger**: `onboarding_nudges` collection now stores two kinds; adding a third is a copy-paste of the pattern (constant + email builder + job function + admin/cron endpoints). Consider extracting the shared skeleton to `services/onboarding_nudges.py` if a fourth kind lands.

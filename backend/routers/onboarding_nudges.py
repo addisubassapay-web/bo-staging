@@ -25,6 +25,9 @@ router = APIRouter()
 NUDGE_KIND = "onboarding_payout_v1"
 NUDGE_WINDOW_HOURS = 24
 
+ZERO_LISTING_KIND = "zero_listing_v1"
+ZERO_LISTING_WINDOW_HOURS = 72
+
 
 def _cron_token() -> str:
     return os.environ.get("CRON_TASK_TOKEN", "")
@@ -124,3 +127,101 @@ async def cron_nudge_onboarding(token: str = Query(...)):
     if not expected or token != expected:
         raise HTTPException(401, "Invalid cron token")
     return await _run_nudge_job()
+
+
+# ---------------------------------------------------------------------------
+# 72-hour follow-up: sellers who still have zero listings.
+# ---------------------------------------------------------------------------
+def _build_zero_listing_html(username: str, sell_url: str) -> str:
+    return f"""
+    <div style="font-family:system-ui,Segoe UI,Arial,sans-serif;max-width:520px;margin:0 auto;color:#111">
+      <h2 style="color:#5459E8;margin:0 0 12px">Your store is empty — let's fix that</h2>
+      <p>Hi {username or 'there'},</p>
+      <p>Your BlueOcean store is set up, but there's nothing on the shelves yet. Shoppers are already browsing your category — the fastest way to your first sale is to list one item now.</p>
+      <p style="text-align:center;margin:24px 0">
+        <a href="{sell_url}" style="display:inline-block;background:#FF0515;color:#fff;text-decoration:none;padding:14px 28px;border-radius:999px;font-weight:700">
+          List your first item
+        </a>
+      </p>
+      <p style="color:#666;font-size:13px">Listing takes under a minute: photo, price, condition. You can edit anything later.</p>
+      <p style="color:#666;font-size:12px;margin-top:20px">— BlueOcean Trust &amp; Safety</p>
+    </div>
+    """
+
+
+async def _run_zero_listing_nudge_job() -> dict:
+    """Find sellers whose store is >72h old and who still have zero listings,
+    send one nudge each, record in the same onboarding_nudges ledger."""
+    db = get_db()
+    now = datetime.now(timezone.utc)
+    cutoff = now - timedelta(hours=ZERO_LISTING_WINDOW_HOURS)
+    frontend = (os.environ.get("FRONTEND_ORIGIN") or "").rstrip("/")
+    sell_url = f"{frontend}/sell" if frontend else "/sell"
+
+    tried = sent = skipped = 0
+    cursor = db.stores.find(
+        {"created_at": {"$lt": cutoff}},
+        {"_id": 0, "user_id": 1, "id": 1},
+    )
+    async for store in cursor:
+        tried += 1
+        user_id = store.get("user_id")
+        if not user_id:
+            skipped += 1
+            continue
+
+        exists = await db.onboarding_nudges.find_one(
+            {"user_id": user_id, "kind": ZERO_LISTING_KIND}, {"_id": 1}
+        )
+        if exists:
+            skipped += 1
+            continue
+
+        # Zero-listing gate: skip anyone who has any listing (any status).
+        has_listing = await db.listings.find_one(
+            {"seller_id": user_id}, {"_id": 1}
+        )
+        if has_listing:
+            skipped += 1
+            continue
+
+        user = await db.users.find_one(
+            {"id": user_id},
+            {"_id": 0, "email": 1, "username": 1, "is_active": 1},
+        )
+        if not user or not user.get("is_active", True) or not user.get("email"):
+            skipped += 1
+            continue
+
+        try:
+            await mailer.send_email(
+                to=user["email"],
+                subject="Your BlueOcean store is empty — list your first item",
+                html=_build_zero_listing_html(user.get("username", ""), sell_url),
+                tags=["onboarding_nudge", ZERO_LISTING_KIND],
+            )
+            await db.onboarding_nudges.insert_one({
+                "user_id": user_id,
+                "kind": ZERO_LISTING_KIND,
+                "sent_at": now,
+                "email": user["email"],
+            })
+            sent += 1
+        except Exception as e:
+            logger.warning(f"zero-listing nudge failed for {user_id}: {e}")
+            skipped += 1
+
+    return {"tried": tried, "sent": sent, "skipped": skipped, "kind": ZERO_LISTING_KIND}
+
+
+@router.post("/admin/tasks/nudge-zero-listings")
+async def admin_nudge_zero_listings(user: dict = Depends(require_admin)):
+    return await _run_zero_listing_nudge_job()
+
+
+@router.post("/tasks/nudge-zero-listings")
+async def cron_nudge_zero_listings(token: str = Query(...)):
+    expected = _cron_token()
+    if not expected or token != expected:
+        raise HTTPException(401, "Invalid cron token")
+    return await _run_zero_listing_nudge_job()
