@@ -157,3 +157,86 @@ def onboarding_zero_listing_nudge(username: str, sell_url: str):
         f"Start here: {sell_url}\n"
     )
     return subject, _shell("Your store is empty — let&apos;s fix that", body, sell_url, "List your first item", accent="red"), text
+
+
+# ---------------------------------------------------------------------------
+# Transactional templates (migrated from services.email_templates so every
+# outbound email now shares the indigo envelope).
+# ---------------------------------------------------------------------------
+def welcome(username: str):
+    subject = "Welcome to BlueOcean"
+    body = (
+        f"<p>Hi {username}, your account is ready. Your storefront is auto-provisioned "
+        "and you can list your first product right away.</p>"
+    )
+    text = f"Hi {username}, your BlueOcean account is ready. Open the marketplace: {FRONTEND}/marketplace"
+    return subject, _shell("Welcome aboard", body, f"{FRONTEND}/marketplace", "Open BlueOcean", accent="indigo"), text
+
+
+def order_confirmation(buyer_name: str, order_id: str, listing_title: str, amount_str: str):
+    subject = f"Order confirmed — #{order_id[:8]}"
+    body = (
+        f"<p>Hi {buyer_name}, thanks for your purchase.</p>"
+        f"<p><b>{listing_title}</b><br/>Total: {amount_str}<br/>Order ID: {order_id[:8]}</p>"
+    )
+    text = (
+        f"Hi {buyer_name}, your order is confirmed.\n"
+        f"{listing_title} — Total {amount_str} — Order {order_id[:8]}.\n"
+        f"Track it: {FRONTEND}/profile?tab=orders"
+    )
+    return subject, _shell("Order confirmed", body, f"{FRONTEND}/profile?tab=orders", "Track order", accent="indigo"), text
+
+
+def deposit_approved(username: str, amount_str: str):
+    subject = "Deposit credited to your wallet"
+    body = f"<p>Hi {username}, your deposit of <b>{amount_str}</b> has been reviewed and credited.</p>"
+    text = f"Hi {username}, your deposit of {amount_str} has been credited to your BlueOcean wallet: {FRONTEND}/wallet"
+    return subject, _shell("Deposit credited", body, f"{FRONTEND}/wallet", "Open wallet", accent="indigo"), text
+
+
+def account_locked(username: str, unlock_url: str):
+    subject = "Your BlueOcean account was temporarily locked"
+    body = (
+        f"<p>Hi {username}, your account was locked after too many failed sign-in attempts. "
+        "For your safety, we&apos;ve auto-unlocked it if this was you. If not, please reset your password.</p>"
+    )
+    text = (
+        f"Hi {username}, we locked your BlueOcean account after too many failed sign-ins.\n"
+        f"Reset your password if that wasn't you: {unlock_url}"
+    )
+    return subject, _shell("Account safety alert", body, unlock_url, "Reset password", accent="red"), text
+
+
+def catalog_seed_complete(username: str, provider: str, query: str, pages: int,
+                          products_total: int, products_published: int,
+                          duration_seconds: int, credits_spent: int):
+    subject = f"Your seed of \u201c{query}\u201d is live \u2014 {products_published} products added"
+    friendly_provider = {
+        "amazon_search": "Amazon search",
+        "amazon_bestsellers": "Amazon bestsellers",
+        "mercari-global_search": "BlueOcean search",
+    }.get(provider, provider)
+    minutes = max(1, duration_seconds // 60)
+    body = (
+        f"<p>Hi {username}, your automated catalog seed just finished.</p>"
+        "<table role='presentation' cellpadding='0' cellspacing='0' width='100%' "
+        "style='background:#F8FAFC;border-radius:12px;padding:14px;margin:12px 0;'>"
+        f"<tr><td style='padding:6px 0;'><b>Source</b></td><td>{friendly_provider}</td></tr>"
+        f"<tr><td style='padding:6px 0;'><b>Keyword</b></td><td>{query}</td></tr>"
+        f"<tr><td style='padding:6px 0;'><b>Pages crawled</b></td><td>{pages}</td></tr>"
+        f"<tr><td style='padding:6px 0;'><b>Products extracted</b></td><td>{products_total}</td></tr>"
+        f"<tr><td style='padding:6px 0;'><b>Published live</b></td>"
+        f"<td style='color:#059669;font-weight:700;'>{products_published}</td></tr>"
+        f"<tr><td style='padding:6px 0;'><b>Zyte credits used</b></td><td>{credits_spent}</td></tr>"
+        f"<tr><td style='padding:6px 0;'><b>Duration</b></td><td>~{minutes} min</td></tr>"
+        "</table>"
+        "<p>All items are already live in your storefront under the category you chose. "
+        "Tap below to review them or start another seed.</p>"
+    )
+    text = (
+        f"Hi {username}, your BlueOcean seed of \"{query}\" via {friendly_provider} finished.\n"
+        f"{products_published} of {products_total} products published in {minutes} min.\n"
+        f"Review your listings: {FRONTEND}/profile?tab=listings"
+    )
+    return subject, _shell("Seed complete", body, f"{FRONTEND}/profile?tab=listings", "Review your listings", accent="indigo"), text
+

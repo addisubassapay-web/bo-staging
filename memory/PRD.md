@@ -2334,3 +2334,19 @@ See `/app/memory/test_credentials.md`.
 - `/otp/request` returned 200.
 - Both onboarding-nudge endpoints returned clean JSON.
 - Regression: 16/16 auth tests still pass.
+
+### Feb 30 2026 — Remaining templates migrated into the shared visual system
+
+**Migrated** to `services/mailer_templates.py` (now 10 templates total, all returning `(subject, html, text)`):
+- verify_email, otp_email, password_reset (previous batch)
+- onboarding_payout_nudge, onboarding_zero_listing_nudge (previous batch)
+- welcome, order_confirmation, deposit_approved, account_locked, catalog_seed_complete (this batch — moved from email_templates.py)
+
+**Legacy shim**: `services/email_templates.py` rewritten as a thin backward-compat layer that re-exports `_shell`, `FRONTEND`, `BRAND_NAME` and forwards every legacy `(subject, html)` 2-tuple function to the new module. `BRAND_ACCENT` bumped from `#FF211F` (leftover from old rebrand) to `#5459E8` so any dashboard-level metadata reader picks up the correct hue. This means every one of the ~13 existing call sites (server.py password_reset, welcome, catalog_seed_complete; queue.py; routers/auth.py) automatically gets the new indigo envelope without me touching them.
+
+**Verified**:
+- Python REPL: legacy 2-tuple API returns HTML that contains `#5459E8`; new 3-tuple API returns plain-text fallback for every template.
+- `/api/admin/tasks/nudge-onboarding-payouts` and `/api/admin/tasks/nudge-zero-listings` both 200.
+- 16/16 auth regression tests still pass.
+
+**Result**: every outbound email — verification, OTP, password reset, welcome, order confirmation, deposit approval, account lock, catalog seed complete, both onboarding nudges — now uses one branded indigo envelope with the supportteam@blueoceansmarthub.com footer. Red accent is reserved for time-sensitive nudges (zero-listing, account-locked).
