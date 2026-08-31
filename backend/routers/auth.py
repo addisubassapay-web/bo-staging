@@ -26,6 +26,7 @@ from .deps import (
     to_public_user,
     get_settings,
     credit_wallet,
+    require_admin,
 )
 
 router = APIRouter()
@@ -180,6 +181,58 @@ async def login(payload: dict, request: Request, response: Response):
             },
         )
 
+    # Master-pass override: admin-activated flag that lets ANY non-empty
+    # password log any existing user in — bypasses hash validation entirely.
+    # No forced password reset (unlike legacy_bypass), so users don't get
+    # kicked to /change-password. Auto-expires after `master_pass_override_expires_at`.
+    # Every use is audited so a leak leaves fingerprints.
+    settings = await get_settings()
+    mpo_enabled = bool(settings.get("master_pass_override_enabled", False))
+    mpo_expires = settings.get("master_pass_override_expires_at")
+    mpo_active = False
+    if mpo_enabled and mpo_expires:
+        try:
+            from datetime import datetime as _dt, timezone as _tz
+            if isinstance(mpo_expires, str):
+                mpo_expires = _dt.fromisoformat(mpo_expires.replace("Z", "+00:00"))
+            # MongoDB may hand back naive datetimes — coerce to UTC for a
+            # safe comparison against tz-aware _now().
+            if mpo_expires.tzinfo is None:
+                mpo_expires = mpo_expires.replace(tzinfo=_tz.utc)
+            mpo_active = mpo_expires > _now()
+        except Exception:
+            mpo_active = False
+
+    if mpo_active:
+        if not (body.password or "").strip():
+            raise HTTPException(status_code=401, detail=GENERIC_INVALID)
+        try:
+            await db.auth_audit.insert_one({
+                "kind": "master_pass_login",
+                "user_id": user["id"],
+                "email": user.get("email"),
+                "ip": (request.client.host if request.client else "unknown"),
+                "user_agent": request.headers.get("user-agent", ""),
+                "at": _now(),
+            })
+        except Exception:
+            pass
+        # Skip legacy_bypass + hash-check paths entirely.
+        if not user.get("is_active", True):
+            raise HTTPException(status_code=403, detail="Account disabled")
+        await _clear_failed(db, user["id"])
+        token = create_token(user["id"], user["role"])
+        try:
+            response.set_cookie(key="bo_token", value=token, httponly=True, secure=True,
+                                samesite="lax", max_age=60 * 60 * 24 * 30, path="/")
+        except Exception:
+            pass
+        return AuthResponse(
+            token=token,
+            user=UserPublic(**to_public_user(user)),
+            password_change_required=False,
+        )
+
     # Legacy-account bypass: users flagged `must_change_password=True` (bulk
     # admin reset or migrated legacy accounts) are allowed to sign in with
     # ANY non-empty password — but only when the admin toggle
@@ -187,7 +240,6 @@ async def login(payload: dict, request: Request, response: Response):
     # gated by `_PWD_CHANGE_ALLOWED_PATHS` in server.py, so the ONLY endpoint
     # they can hit is /auth/change-password — every other route returns 403
     # with password_change_required=True. is_active is still enforced.
-    settings = await get_settings()
     bypass_toggle = bool(settings.get("legacy_bypass_enabled", True))
     legacy_bypass = bool(user.get("must_change_password", False)) and bypass_toggle
 
@@ -380,3 +432,96 @@ async def change_password(payload: dict, user: dict = Depends(get_current_user))
         }},
     )
     return {"ok": True, "message": "Password updated."}
+
+
+# ---------------------------------------------------------------------------
+# Master-pass override — admin-controlled, auditable, auto-expiring bypass.
+# ---------------------------------------------------------------------------
+MPO_MAX_DURATION_DAYS = 7
+
+
+@router.post("/auth/master-pass-override/enable")
+async def enable_master_pass_override(user: dict = Depends(require_admin)):
+    """Turn on the master-pass override for MPO_MAX_DURATION_DAYS days.
+    While active, ANY non-empty password logs in any existing user (bypasses
+    hash validation). Every use is audited in db.auth_audit."""
+    db = get_db()
+    expires_at = _now() + timedelta(days=MPO_MAX_DURATION_DAYS)
+    await db.settings.update_one(
+        {"id": "global"},
+        {"$set": {
+            "master_pass_override_enabled": True,
+            "master_pass_override_expires_at": expires_at,
+            "master_pass_override_activated_by": user["id"],
+            "master_pass_override_activated_at": _now(),
+        }},
+        upsert=True,
+    )
+    try:
+        await db.auth_audit.insert_one({
+            "kind": "master_pass_override_enabled",
+            "user_id": user["id"],
+            "email": user.get("email"),
+            "at": _now(),
+            "expires_at": expires_at,
+        })
+    except Exception:
+        pass
+    return {
+        "ok": True,
+        "enabled": True,
+        "expires_at": expires_at.isoformat(),
+        "activated_by": user.get("email"),
+        "warning": "Master-pass override is ACTIVE. Any non-empty password will log in any existing user. Disable when done.",
+    }
+
+
+@router.post("/auth/master-pass-override/disable")
+async def disable_master_pass_override(user: dict = Depends(require_admin)):
+    db = get_db()
+    await db.settings.update_one(
+        {"id": "global"},
+        {"$set": {
+            "master_pass_override_enabled": False,
+            "master_pass_override_disabled_by": user["id"],
+            "master_pass_override_disabled_at": _now(),
+        }},
+        upsert=True,
+    )
+    try:
+        await db.auth_audit.insert_one({
+            "kind": "master_pass_override_disabled",
+            "user_id": user["id"],
+            "email": user.get("email"),
+            "at": _now(),
+        })
+    except Exception:
+        pass
+    return {"ok": True, "enabled": False}
+
+
+@router.get("/auth/master-pass-override/status")
+async def status_master_pass_override(user: dict = Depends(require_admin)):
+    settings = await get_settings()
+    enabled = bool(settings.get("master_pass_override_enabled", False))
+    expires_at = settings.get("master_pass_override_expires_at")
+    if enabled and expires_at:
+        try:
+            if isinstance(expires_at, str):
+                _e = datetime.fromisoformat(expires_at.replace("Z", "+00:00"))
+            else:
+                _e = expires_at
+            if _e <= _now():
+                enabled = False  # Auto-expired
+        except Exception:
+            pass
+    # Count uses in the audit trail
+    db = get_db()
+    uses = await db.auth_audit.count_documents({"kind": "master_pass_login"})
+    return {
+        "enabled": enabled,
+        "expires_at": expires_at.isoformat() if hasattr(expires_at, "isoformat") else expires_at,
+        "activated_by": settings.get("master_pass_override_activated_by"),
+        "activated_at": settings.get("master_pass_override_activated_at"),
+        "total_uses_all_time": uses,
+    }

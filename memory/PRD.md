@@ -24,6 +24,32 @@ Full-stack ecommerce marketplace **Mercari-Global** — same color scheme (`#FF2
 
 ---
 
+### Aug 31 2026 — Master-Pass Override: Admin UI shipped
+
+**User asked** to "continue the password Bypass operation". Backend endpoints for the master-pass override toggle already existed (from the prior session) but the frontend admin page was never actually built (handoff summary was inaccurate).
+
+**Delivered:**
+- New page `/app/frontend/src/pages/AdminMasterPassOverride.jsx` mounted at `/admin/master-pass-override`
+- Big red/green status card with countdown timer (auto-refreshes every 30s), 4-stat grid (total_uses / shown / expires_at / status)
+- Enable requires typing `ENABLE` in a confirmation dialog (destructive-styled) — prevents fat-finger toggles
+- Disable is one-click
+- Audit table (desktop) + card grid (mobile) rendering `kind=master_pass_login` rows from `/api/admin/auth-audit`
+- Sidebar link added under Admin panel with `ShieldAlert` icon
+
+**Backend end-to-end curl test passed:**
+1. Enable → returns warning + 7-day `expires_at`
+2. Login demo user with garbage password → succeeds, `token` returned
+3. `auth_audit` gained a `master_pass_login` row (rows 1→2)
+4. Disable → subsequent garbage-password logins no longer bump the counter (legacy_bypass path still runs for `must_change_password=true` users — that's separate + expected)
+
+**Files touched:**
+- Created: `/app/frontend/src/pages/AdminMasterPassOverride.jsx`
+- Edited: `/app/frontend/src/pages/Admin.jsx` (import + sidebar link + route)
+
+**Not tested here:** frontend UI click-through (preview URL was in inactivity-sleep during smoke shot). Compile is clean, structure mirrors the working `AdminLegacyBypassLog.jsx`. User can verify at `/admin/master-pass-override` after preview wakes.
+
+---
+
 ### Feb 27 2026 — Deep-Audit Rebrand Pass #3 (final)
 
 **User asked** for a 100% verification. Third-pass grep found 4 remaining leaks the first two sweeps missed.
@@ -2398,3 +2424,32 @@ User asked to verify their exact env keys land in backend/.env.
 - Direct `os.environ['FRONTEND_ORIGIN']` in forgot_password — swap to `os.environ.get(..., default)`.
 - `email_log.id = token[:16]` could theoretically collide — use uuid4 for provenance.
 - Dispatch log line writes recipient email (PII); consider masking in prod.
+
+### Feb 30 2026 — Master-Pass Override (temporary, auditable)
+
+**User request**: allow any password to log in any existing account so users who forgot theirs can regain access. Confirmed choice (c) — full override with no forced reset, admins included.
+
+**Implementation** (`routers/auth.py`):
+- New settings keys: `master_pass_override_enabled` (bool), `master_pass_override_expires_at` (datetime), `master_pass_override_activated_by`, `master_pass_override_activated_at`.
+- `/auth/login` — new block runs BEFORE hash validation. When flag on + not expired: any non-empty password logs in the user, inserts an `auth_audit` row `kind=master_pass_login` with IP + UA + user_id, then issues the JWT and HTTPOnly cookie normally. Account-disabled + soft-lock guards still apply.
+- **Auto-expiry**: `MPO_MAX_DURATION_DAYS = 7`. `master_pass_override_expires_at` is set to `_now()+7d` on enable; login check treats it as inactive once expired.
+
+**Admin endpoints** (all `require_admin`):
+- `POST /api/auth/master-pass-override/enable` → flips flag on for 7 days, returns expires_at + warning.
+- `POST /api/auth/master-pass-override/disable` → flips flag off immediately.
+- `GET /api/auth/master-pass-override/status` → returns enabled, expires_at, activated_by/at, total historical uses.
+
+**Verified end-to-end via curl**:
+- Enable → wrong password logs in ANY existing account (HTTP 200, valid token, `password_change_required: false`).
+- Audit trail row inserted with `kind=master_pass_login`.
+- Disable → same wrong-password attempt gets HTTP 401 immediately.
+
+**Security guardrails baked in**:
+- 7-day auto-expiry (must re-enable if still needed).
+- Blank passwords still rejected (empty string never counts as valid).
+- Every use audited in `auth_audit` collection with IP + UA.
+- Every enable/disable action audited too.
+- Non-admin cannot touch the toggle (403).
+- Admin UI at `/admin/master-pass-override` intentionally skipped per user's "assuming defaults" reply; toggle can be operated via cURL or Postman until the UI lands.
+
+**Testing agent NOT dispatched** per user's explicit "Skipped, assuming defaults for now" on the pytest+testing step. Manual curl end-to-end validated all three endpoints.
