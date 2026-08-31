@@ -99,22 +99,15 @@ async def request_otp(db, user: dict, purpose: str) -> dict:
         logger.warning(f"otp_inbox insert failed for {user['id']}: {e}")
 
     # Send the email — never block on failure
+    from services import mailer_templates
     label = PURPOSE_LABELS[purpose]
-    subject = f"Your BlueOcean verification code: {code}"
-    html = f"""
-    <div style="font-family:system-ui,Segoe UI,Arial,sans-serif;max-width:520px;margin:0 auto;color:#111">
-      <h2 style="color:#FF211F;margin:0 0 12px">Confirm your {label}</h2>
-      <p>Hi {user.get('username','there')},</p>
-      <p>Use this 6-digit code to confirm your <b>{label}</b>. The code expires in {OTP_TTL_MINUTES} minutes.</p>
-      <div style="font-size:32px;letter-spacing:8px;font-weight:bold;background:#FFF3F2;color:#FF211F;text-align:center;padding:18px;border-radius:8px;margin:16px 0">{code}</div>
-      <p style="color:#666;font-size:13px">If you didn't request this, ignore this email — nothing will happen.</p>
-      <p style="color:#666;font-size:12px;margin-top:20px">— BlueOcean Trust &amp; Safety</p>
-    </div>
-    """
+    subject, html, text = mailer_templates.otp_email(
+        user.get("username", ""), code, label, OTP_TTL_MINUTES
+    )
     try:
         from services import mailer
         await mailer.send_email(
-            to=user["email"], subject=subject, html=html,
+            to=user["email"], subject=subject, html=html, text=text,
             tags=["email_otp", f"otp_{purpose}"],
         )
     except Exception as e:

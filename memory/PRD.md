@@ -2310,3 +2310,27 @@ See `/app/memory/test_credentials.md`.
 - Payout nudge v1 still returns clean JSON — no regression
 
 **Shared ledger**: `onboarding_nudges` collection now stores two kinds; adding a third is a copy-paste of the pattern (constant + email builder + job function + admin/cron endpoints). Consider extracting the shared skeleton to `services/onboarding_nudges.py` if a fourth kind lands.
+
+### Feb 30 2026 — Mailer templates extracted into one visual system
+
+**New**: `/app/backend/services/mailer_templates.py`
+- Shared `_shell(title, body_html, cta_url, cta_label, accent)` — one branded envelope: indigo header with wordmark, contact footer with `supportteam@blueoceansmarthub.com` mailto link. `accent="indigo"` for routine flows, `accent="red"` for time-sensitive nudges.
+- Five extracted templates, each returns `(subject, html, text)` for `mailer.send_email`:
+  - `verify_email(username, verify_url)` — magic link
+  - `otp_email(username, code, purpose_label, expires_minutes)` — 6-digit code, indigo mono-space chip
+  - `password_reset(username, reset_url)` — reset link
+  - `onboarding_payout_nudge(username, payout_url)` — indigo CTA
+  - `onboarding_zero_listing_nudge(username, sell_url)` — red CTA
+
+**Callers migrated**:
+- `server.py:5276` `/verify/email/send` — now calls `mailer_templates.verify_email(...)` and passes the tuple to `mailer.send_email`.
+- `services/email_otp.py:102` `request_otp` — inline template dropped, calls `mailer_templates.otp_email(...)`.
+- `services/email_templates.py` — `password_reset` is now a shim that forwards to `mailer_templates.password_reset` (all other legacy templates keep their old `_shell`; the accent inside is unchanged).
+- `routers/onboarding_nudges.py` — both `_run_nudge_job` (payout) and `_run_zero_listing_nudge_job` (zero-listing) call the shared templates. Legacy `_build_email_html` / `_build_zero_listing_html` helpers turned into thin shims for any test coverage that pins the old signature.
+
+**Verified**:
+- Python REPL: all 5 templates render valid HTML + plain-text (2000-2100 chars each).
+- Live curl: `/verify/email/send` on a fresh unverified user returned 200 with "Verification link sent to vfy_...@t.local" (real mailer path exercised end-to-end).
+- `/otp/request` returned 200.
+- Both onboarding-nudge endpoints returned clean JSON.
+- Regression: 16/16 auth tests still pass.

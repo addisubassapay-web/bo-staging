@@ -5273,26 +5273,9 @@ async def verify_email_send(payload: EmailSendRequest, user: dict = Depends(get_
     verify_link_path = f"/verify?token={doc['token']}"
     absolute_link = f"{frontend_origin.rstrip('/')}{verify_link_path}" if frontend_origin else verify_link_path
 
-    subject = "Verify your BlueOcean email"
-    html = f"""
-    <div style="font-family:system-ui,Segoe UI,Arial,sans-serif;max-width:520px;margin:0 auto;color:#111">
-      <h2 style="color:#5459E8;margin:0 0 12px">Confirm your email</h2>
-      <p>Hi {user.get('username','there')},</p>
-      <p>Click the button below to confirm this email address on your BlueOcean account. The link is valid for 60 minutes.</p>
-      <p style="text-align:center;margin:24px 0">
-        <a href="{absolute_link}" style="display:inline-block;background:#5459E8;color:#fff;text-decoration:none;padding:14px 28px;border-radius:999px;font-weight:700">
-          Verify email
-        </a>
-      </p>
-      <p style="color:#666;font-size:13px">Or paste this link into your browser:<br><span style="word-break:break-all">{absolute_link}</span></p>
-      <p style="color:#666;font-size:12px;margin-top:20px">If you didn't request this, ignore this email — nothing will happen.</p>
-      <p style="color:#666;font-size:12px">— BlueOcean Trust &amp; Safety</p>
-    </div>
-    """
-    text = (
-        f"Verify your BlueOcean email by opening this link (60 min expiry):\n"
-        f"{absolute_link}\n\nIf you didn't request this, ignore this email."
-    )
+    subject, html, text = None, None, None
+    from services import mailer_templates
+    subject, html, text = mailer_templates.verify_email(user.get("username", ""), absolute_link)
     try:
         from services import mailer
         await mailer.send_email(

@@ -45,14 +45,11 @@ def _shell(title: str, body_html: str, cta_url: str | None = None, cta_label: st
 
 
 def password_reset(reset_url: str, username: str | None = None):
-    subject = "Reset your BlueOcean password"
-    who = f"Hi {username}," if username else "Hi,"
-    body = (
-        f"<p>{who}</p><p>We received a request to reset your password. "
-        "This link is valid for 60 minutes and can be used once.</p>"
-        "<p>If you didn&apos;t request this, you can safely ignore the message.</p>"
-    )
-    return subject, _shell("Reset your password", body, reset_url, "Set new password")
+    """Legacy shim — the canonical implementation now lives in
+    services.mailer_templates. Kept here so existing callers keep working."""
+    from services.mailer_templates import password_reset as _pr
+    subject, html, _text = _pr(username or "", reset_url)
+    return subject, html
 
 
 def welcome(username: str):

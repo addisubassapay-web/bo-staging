@@ -34,20 +34,17 @@ def _cron_token() -> str:
 
 
 def _build_email_html(username: str, dashboard_url: str) -> str:
-    return f"""
-    <div style="font-family:system-ui,Segoe UI,Arial,sans-serif;max-width:520px;margin:0 auto;color:#111">
-      <h2 style="color:#5459E8;margin:0 0 12px">One tap to start earning</h2>
-      <p>Hi {username or 'there'},</p>
-      <p>Your BlueOcean store is live — but we can't send you any earnings until you connect a payout method. It takes 60 seconds.</p>
-      <p style="text-align:center;margin:24px 0">
-        <a href="{dashboard_url}" style="display:inline-block;background:#5459E8;color:#fff;text-decoration:none;padding:14px 28px;border-radius:999px;font-weight:700">
-          Connect payout method
-        </a>
-      </p>
-      <p style="color:#666;font-size:13px">Once your payout is on file, buyers can complete purchases and your first payout is auto-scheduled.</p>
-      <p style="color:#666;font-size:12px;margin-top:20px">— BlueOcean Trust &amp; Safety</p>
-    </div>
-    """
+    # Legacy shim kept for tests that pin the old signature. Prefer the
+    # shared services.mailer_templates.onboarding_payout_nudge helper.
+    from services import mailer_templates
+    _subject, html, _text = mailer_templates.onboarding_payout_nudge(username, dashboard_url)
+    return html
+
+
+def _build_zero_listing_html(username: str, sell_url: str) -> str:
+    from services import mailer_templates
+    _subject, html, _text = mailer_templates.onboarding_zero_listing_nudge(username, sell_url)
+    return html
 
 
 async def _run_nudge_job() -> dict:
@@ -93,10 +90,13 @@ async def _run_nudge_job() -> dict:
             continue
 
         try:
+            from services import mailer_templates
+            subject, html, text = mailer_templates.onboarding_payout_nudge(
+                user.get("username", ""), payout_link
+            )
             await mailer.send_email(
                 to=user["email"],
-                subject="Finish setting up your BlueOcean store (60 sec)",
-                html=_build_email_html(user.get("username", ""), payout_link),
+                subject=subject, html=html, text=text,
                 tags=["onboarding_nudge", NUDGE_KIND],
             )
             await db.onboarding_nudges.insert_one({
@@ -132,21 +132,11 @@ async def cron_nudge_onboarding(token: str = Query(...)):
 # ---------------------------------------------------------------------------
 # 72-hour follow-up: sellers who still have zero listings.
 # ---------------------------------------------------------------------------
-def _build_zero_listing_html(username: str, sell_url: str) -> str:
-    return f"""
-    <div style="font-family:system-ui,Segoe UI,Arial,sans-serif;max-width:520px;margin:0 auto;color:#111">
-      <h2 style="color:#5459E8;margin:0 0 12px">Your store is empty — let's fix that</h2>
-      <p>Hi {username or 'there'},</p>
-      <p>Your BlueOcean store is set up, but there's nothing on the shelves yet. Shoppers are already browsing your category — the fastest way to your first sale is to list one item now.</p>
-      <p style="text-align:center;margin:24px 0">
-        <a href="{sell_url}" style="display:inline-block;background:#FF0515;color:#fff;text-decoration:none;padding:14px 28px;border-radius:999px;font-weight:700">
-          List your first item
-        </a>
-      </p>
-      <p style="color:#666;font-size:13px">Listing takes under a minute: photo, price, condition. You can edit anything later.</p>
-      <p style="color:#666;font-size:12px;margin-top:20px">— BlueOcean Trust &amp; Safety</p>
-    </div>
-    """
+def _build_zero_listing_html_inline(username: str, sell_url: str) -> str:
+    # Removed inline template — kept here as a no-op reference. See
+    # services.mailer_templates.onboarding_zero_listing_nudge for the real one.
+    del username, sell_url
+    return ""
 
 
 async def _run_zero_listing_nudge_job() -> dict:
@@ -194,10 +184,13 @@ async def _run_zero_listing_nudge_job() -> dict:
             continue
 
         try:
+            from services import mailer_templates
+            subject, html, text = mailer_templates.onboarding_zero_listing_nudge(
+                user.get("username", ""), sell_url
+            )
             await mailer.send_email(
                 to=user["email"],
-                subject="Your BlueOcean store is empty — list your first item",
-                html=_build_zero_listing_html(user.get("username", ""), sell_url),
+                subject=subject, html=html, text=text,
                 tags=["onboarding_nudge", ZERO_LISTING_KIND],
             )
             await db.onboarding_nudges.insert_one({
