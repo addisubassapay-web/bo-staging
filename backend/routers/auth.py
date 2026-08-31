@@ -284,12 +284,17 @@ async def forgot_password(payload: dict):
         # mock fallback otherwise). Failures never break the request.
         try:
             from services import mailer
-            from services.email_templates import password_reset as tpl
-            subject, html = tpl(reset_url, username=user.get("username"))
+            from services.mailer_templates import password_reset as tpl
+            subject, html, text = tpl(user.get("username") or "", reset_url)
             result = await mailer.send_email(
-                to=email, subject=subject, html=html, tags=["password_reset"]
+                to=email, subject=subject, html=html, text=text,
+                tags=["password_reset"]
             )
             provider = result.get("provider", "mock")
+            logging.getLogger("email").info(
+                f"password_reset dispatched to={email} provider={provider} "
+                f"mocked={result.get('mocked', False)}"
+            )
         except Exception as e:
             provider = f"error: {e}"
             logging.getLogger("email").error(f"password_reset mailer failed: {e}")

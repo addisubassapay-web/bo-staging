@@ -1,0 +1,24 @@
+{
+  "summary": "P0 forgot-password fix VERIFIED. Ran 24 backend tests (16 test_auth_deep_investigation.py + 8 new test_iteration76_forgot_password_fix.py). All 24 pass. Confirmed: (1) /api/auth/forgot-password with registered lowercase email returns 200 and dispatches a real Hostinger SMTP email — backend log shows 'password_reset dispatched to=<email> provider=hostinger mocked=False'; (2) db.email_log has new row with kind=password_reset, provider=hostinger, sent_at within seconds; (3) template unpacks 3-tuple (subject, html, text) and mailer is invoked with plain-text alternative; (4) unknown email returns identical 200 body {ok:true, message:'If that email is registered, a reset link is on its way.'}; (5) missing email → 400 'Email is required'; (6) reset URL uses FRONTEND_ORIGIN and 43-char urlsafe token; (7) TTL is ~3600s; (8) reset-password consumes token, sets used_at, clears must_change_password, rejects reuse with 400, allows login with new password; (9) rapid repeated calls don't crash.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_iteration76_forgot_password_fix.py",
+    "/app/backend/tests/test_auth_deep_investigation.py",
+    "/app/test_reports/pytest/iteration_76.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "auth.py forgot_password uses os.environ['FRONTEND_ORIGIN'] with direct key access — would raise KeyError if env var were missing. FRONTEND_ORIGIN is set in backend/.env so fine today, but consider os.environ.get with a sane default or fail-fast at startup.",
+    "email_log 'id' is set to token[:16], which is not guaranteed unique across many resets. Not causing failures today (insert_one without unique index) but worth switching to uuid4 for provenance.",
+    "The dispatch log line writes email to logs (PII). Fine for internal debugging but consider masking in production."
+  ],
+  "updated_files": ["/app/backend/tests/test_iteration76_forgot_password_fix.py"],
+  "success_rate": {"backend": "100%", "frontend": "not tested (skipped per request)"},
+  "test_credentials": "admin@mercari.local / admin123 (read from /app/memory/test_credentials.md); ephemeral test users created per test via /auth/register.",
+  "seed_data_creation": "Ephemeral test users (fpfix_*@t.local) created via /auth/register during tests; no cleanup performed (tests are idempotent, unique UUIDs).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Iteration 76 confirms the P0 forgot-password fix: 3-tuple template + text alternative + dispatch log line + email_log row all in place. Log grep 'password_reset dispatched' in /var/log/supervisor/backend.*.log shows provider=hostinger mocked=False on every dispatch. Use test_iteration76_forgot_password_fix.py as the regression baseline going forward.",
+  "rca of the issue": "Fix verified: (a) routers/auth.py imports password_reset from services.mailer_templates (3-tuple returning subject, html, text) instead of the legacy 2-tuple shim in services.email_templates, so HTML-only spam-flag risk is eliminated; (b) mailer.send_email now receives text= kwarg alongside html=; (c) new INFO log 'password_reset dispatched to=... provider=... mocked=...' gives visible dispatch evidence. Confirmed end-to-end via db.email_log (provider=hostinger) and log grep."
+}

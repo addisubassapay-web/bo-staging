@@ -2376,3 +2376,25 @@ User asked to verify their exact env keys land in backend/.env.
 - `services/mailer.py` — `_cfg()` reads `SMTP_PASS` first with `SMTP_PASSWORD` fallback; `SMTP_SECURE` (default true) now gates the SSL/STARTTLS wrapper. When false, plaintext SMTP is used (dev/private only).
 
 **Verified**: REPL config dump matches user spec exactly; live `/verify/email/send` returned HTTP 200 with real "Verification link sent to..." body via the Hostinger transport.
+
+### Feb 30 2026 — P0 Bug: forgot-password not sending reliably
+
+**User report**: "It is not sending a one-time reset link for lost passwords."
+
+**Investigation**: `email_log` already showed 3 successful Hostinger sends — the transport itself was working. Real issues:
+1. `routers/auth.py` used the legacy `email_templates.password_reset` shim which drops the plain-text alternative — spam-flag risk on Gmail/Postmark.
+2. No dispatch log line, so we couldn't tell whether Hostinger accepted or bounced.
+
+**Fix** (`routers/auth.py` line 285-303):
+- Import `password_reset` directly from `services.mailer_templates` (3-tuple: subject, html, text).
+- Pass `text=` alongside `html=` to `mailer.send_email` so every reset email carries a plain-text fallback.
+- Added `logging.getLogger("email").info(f"password_reset dispatched to={email} provider={provider} mocked={result.get('mocked', False)}")` — visible evidence per dispatch.
+
+**Verified by testing agent (iteration 76)** — 24/24 tests pass:
+- 8 new forgot-password tests + 16 auth regressions.
+- Confirmed: HTTP 200 for registered email, real Hostinger send, dispatch log line, `email_log` row with `provider=hostinger`, no-enumeration preserved for unknown email, missing-email → 400, token 43-char urlsafe + 60-min TTL, reset consumption + used_at, must_change_password cleared, reuse rejected with 400, login with new password works, rapid repeated calls don't crash.
+
+**Follow-ups (code-review, non-blocking)**:
+- Direct `os.environ['FRONTEND_ORIGIN']` in forgot_password — swap to `os.environ.get(..., default)`.
+- `email_log.id = token[:16]` could theoretically collide — use uuid4 for provenance.
+- Dispatch log line writes recipient email (PII); consider masking in prod.
