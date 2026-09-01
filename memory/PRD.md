@@ -24,6 +24,22 @@ Full-stack ecommerce marketplace **Mercari-Global** — same color scheme (`#FF2
 
 ---
 
+### Sep 01 2026 — Seller applications "not showing" fix (perceived empty)
+
+**User report**: "The sellers application is [not] appearing on the admin panel find and fix the problem."
+
+**Root cause**: Backend was fine — `GET /admin/seller-applications` returned all 13 rows. But the admin page defaulted to `filter="pending"` and every row in the DB was already `approved`, so the list rendered empty and the admin thought the endpoint was broken. Not a data or endpoint bug — a **default-filter UX bug** that hid all applications on first load.
+
+**Fix (frontend only, `Admin.jsx`)**:
+1. **Default filter changed** from `"pending"` → `"all"`. First paint now surfaces every application.
+2. **Per-status count pills** in the header (`All: 13 · Pending: 0 · Approved: 13 · Rejected: 0`) — always fetched from the full list even when the filtered view is empty, so admins can't be fooled again.
+3. **Filter dropdown labels** include the counts inline (e.g. "Approved (13)") so it's obvious where data lives.
+4. **Empty-state text is context-aware**: when filter=pending and other statuses have rows, it says "all caught up — switch to All or Approved to see historical rows."
+
+**Verified**: pytest for seller apps still green (`test_seller_apps_legacy_payout.py`). Curl confirms endpoint healthy: 13 rows, all approved. New UI counts wire directly to the same endpoint response.
+
+---
+
 ### Sep 01 2026 — Mailbox swap to mailsupport@ + IMAP receive shipped
 
 **User asked**: "Use the email mailsupport@blueoceansmarthub.com password: 820707@Bit. Use the safest way to integrate the email, enable send and receive."

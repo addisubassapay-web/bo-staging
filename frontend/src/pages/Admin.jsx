@@ -1481,7 +1481,8 @@ const StoresMgr = () => {
 
 const SellerApplicationsMgr = () => {
   const [apps, setApps] = useState([]);
-  const [filter, setFilter] = useState("pending");
+  const [filter, setFilter] = useState("all");
+  const [counts, setCounts] = useState({ all: 0, pending: 0, approved: 0, rejected: 0 });
   const [notesById, setNotesById] = useState({});
   const [selected, setSelected] = useState(new Set());
   const [bulkNotes, setBulkNotes] = useState("");
@@ -1494,6 +1495,15 @@ const SellerApplicationsMgr = () => {
       setApps(r.data);
       setSelected(new Set());
     });
+    // Always refresh the per-status counts so the filter picker shows
+    // (pending 0 · approved 13) even when the current filter is empty.
+    // If pending is empty, we still fetch the full list once to compute counts.
+    api.get("/admin/seller-applications").then((r) => {
+      const rows = r.data || [];
+      const next = { all: rows.length, pending: 0, approved: 0, rejected: 0 };
+      rows.forEach((a) => { if (next[a.status] != null) next[a.status] += 1; });
+      setCounts(next);
+    }).catch(() => {});
   };
   useEffect(() => { load(); }, [filter]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -1544,15 +1554,21 @@ const SellerApplicationsMgr = () => {
     <div data-testid="admin-seller-apps">
       <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
         <h2 className="text-2xl font-bold">Seller applications</h2>
-        <Select value={filter} onValueChange={setFilter}>
-          <SelectTrigger className="w-40" data-testid="apps-filter"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All</SelectItem>
-            <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="approved">Approved</SelectItem>
-            <SelectItem value="rejected">Rejected</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="flex items-center gap-2 flex-wrap text-xs">
+          <span className="px-2 py-1 rounded-full bg-neutral-100 text-neutral-700" data-testid="apps-count-all">All: <b>{counts.all}</b></span>
+          <span className="px-2 py-1 rounded-full bg-amber-100 text-amber-800" data-testid="apps-count-pending">Pending: <b>{counts.pending}</b></span>
+          <span className="px-2 py-1 rounded-full bg-emerald-100 text-emerald-800" data-testid="apps-count-approved">Approved: <b>{counts.approved}</b></span>
+          <span className="px-2 py-1 rounded-full bg-red-100 text-red-800" data-testid="apps-count-rejected">Rejected: <b>{counts.rejected}</b></span>
+          <Select value={filter} onValueChange={setFilter}>
+            <SelectTrigger className="w-40" data-testid="apps-filter"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All ({counts.all})</SelectItem>
+              <SelectItem value="pending">Pending ({counts.pending})</SelectItem>
+              <SelectItem value="approved">Approved ({counts.approved})</SelectItem>
+              <SelectItem value="rejected">Rejected ({counts.rejected})</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {pendingApps.length > 0 && (
@@ -1597,7 +1613,15 @@ const SellerApplicationsMgr = () => {
         </div>
       )}
 
-      {apps.length === 0 && <div className="text-neutral-500 text-sm">No applications match this filter.</div>}
+      {apps.length === 0 && (
+        <div className="text-neutral-500 text-sm border border-dashed border-neutral-200 rounded-lg p-6 text-center" data-testid="apps-empty">
+          {filter === "pending" && counts.approved + counts.rejected > 0
+            ? <>No <b>pending</b> applications right now — all caught up. Switch the filter to <b>All</b> or <b>Approved</b> to see historical rows.</>
+            : filter === "all"
+              ? "No seller applications submitted yet."
+              : <>No {filter} applications. Try the <b>All</b> filter.</>}
+        </div>
+      )}
       <div className="space-y-3">
         {apps.map((a) => (
           <div key={a.id} className={`bg-white border rounded-lg p-4 transition ${selected.has(a.id) ? "border-emerald-500 ring-2 ring-emerald-500/20" : "border-neutral-200"}`} data-testid={`app-row-${a.id}`}>
