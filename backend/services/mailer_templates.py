@@ -245,6 +245,66 @@ def account_locked(username: str, unlock_url: str):
     return subject, _shell("Account safety alert", body, unlock_url, "Reset password", accent="red"), text
 
 
+def seller_application_approved(username: str, dashboard_url: str | None = None):
+    """Congratulate the applicant and point them at their new seller
+    dashboard so the first payout setup happens the same session."""
+    who = f"Hi {username}," if username else "Hi there,"
+    cta_url = dashboard_url or f"{FRONTEND}/dashboard/seller"
+    subject = "You're approved to sell on BlueOcean"
+    body = (
+        f"<p>{who}</p>"
+        "<p>Great news — your seller application is <b>approved</b>. Your BlueOcean store is now live "
+        "and you can list items, receive orders, and cash out earnings.</p>"
+        "<p style='color:#6B7280;font-size:13px;margin-top:16px;'>"
+        "Your next step: connect a payout method so we can send earnings the moment your first order is delivered."
+        "</p>"
+    )
+    text = (
+        f"Hi {username}, your BlueOcean seller application is approved.\n"
+        f"Open your seller dashboard and connect a payout method: {cta_url}\n"
+    )
+    return subject, _shell("Seller application approved", body, cta_url, "Open seller dashboard", accent="indigo"), text
+
+
+def seller_application_rejected(username: str, admin_notes: str = "", reapply_url: str | None = None):
+    """Explain the decision without shaming. Include admin notes verbatim
+    when present, and always offer a clear next step."""
+    who = f"Hi {username}," if username else "Hi there,"
+    cta_url = reapply_url or f"{FRONTEND}/apply-seller"
+    subject = "Update on your BlueOcean seller application"
+    notes_block = ""
+    if admin_notes and admin_notes.strip():
+        safe = (
+            admin_notes.replace("&", "&amp;")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;")
+            .replace("\n", "<br/>")
+        )[:2000]
+        notes_block = (
+            "<p style='margin-top:16px;font-size:13px;color:#374151;'>"
+            "<b>Notes from our team:</b><br/>"
+            f"<span style='color:#4B5563;'>{safe}</span></p>"
+        )
+    body = (
+        f"<p>{who}</p>"
+        "<p>Thanks for applying to sell on BlueOcean. After review we're <b>not able to approve</b> "
+        "this application right now.</p>"
+        f"{notes_block}"
+        "<p style='color:#6B7280;font-size:13px;margin-top:16px;'>"
+        "You can reply to this email if you'd like a second look, or update your details and re-apply below."
+        "</p>"
+    )
+    text_notes = f"\nNotes: {admin_notes}\n" if admin_notes and admin_notes.strip() else ""
+    text = (
+        f"Hi {username}, your BlueOcean seller application wasn't approved this time.{text_notes}\n"
+        f"Reply to this email to appeal, or re-apply: {cta_url}\n"
+    )
+    return subject, _shell(
+        "Application update", body, cta_url, "Update details & re-apply",
+        accent="indigo",
+    ), text
+
+
 def catalog_seed_complete(username: str, provider: str, query: str, pages: int,
                           products_total: int, products_published: int,
                           duration_seconds: int, credits_spent: int):

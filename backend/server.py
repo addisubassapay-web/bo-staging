@@ -5709,6 +5709,8 @@ async def seller_apply(
             f"Trust Score {ts['score']}/100 qualified you for instant approval. Start listing now.",
             "/sell",
         )
+        # Fire branded approval email (same template as the admin-approve path).
+        await _send_seller_review_email(app_doc.model_dump(), "approved", app_doc.admin_notes or "")
     else:
         await db.users.update_one({"id": user["id"]}, {"$set": {"seller_status": "pending"}})
         await notify(
@@ -5781,7 +5783,37 @@ async def admin_review_seller_app(app_id: str, updates: dict, admin: dict = Depe
     else:
         await notify(doc["user_id"], "system", "Seller application rejected",
                      notes or "See admin notes.", "/profile")
+    # Fire branded email — best-effort, don't block the admin's action on
+    # SMTP flakiness. SuppressedRecipient / MailerError are swallowed but
+    # logged for the health ticker.
+    await _send_seller_review_email(doc, new_status, notes)
     return {"ok": True, "status": new_status}
+
+
+async def _send_seller_review_email(app_doc: dict, new_status: str, admin_notes: str) -> None:
+    """Send the applicant a branded email announcing the decision.
+    Called from single-review AND bulk-review handlers. Safe on failure."""
+    try:
+        from services import mailer_templates as _tpl
+        from services import mailer as _mailer
+        user_email = app_doc.get("user_email")
+        username = app_doc.get("user_username") or app_doc.get("legal_name") or ""
+        if not user_email:
+            return
+        if new_status == "approved":
+            subject, html, text = _tpl.seller_application_approved(username)
+        else:
+            subject, html, text = _tpl.seller_application_rejected(username, admin_notes or "")
+        await _mailer.send_email(
+            to=user_email,
+            subject=subject, html=html, text=text,
+            tags=["seller_review", new_status],
+            is_transactional=True,  # account-status change — no unsubscribe.
+        )
+    except Exception as e:  # noqa: BLE001
+        logging.getLogger("seller_review").warning(
+            f"seller-review email skipped for {app_doc.get('id')}: {e}"
+        )
 
 
 @api_router.post("/admin/seller-applications/bulk-review")
@@ -5823,6 +5855,8 @@ async def admin_bulk_review_seller_apps(payload: dict, admin: dict = Depends(req
         else:
             await notify(doc["user_id"], "system", "Seller application rejected",
                          notes or "See admin notes.", "/profile")
+        # Branded email per applicant, safe on failure.
+        await _send_seller_review_email(doc, new_status, notes)
         processed += 1
     return {"processed": processed, "skipped_count": len(skipped), "skipped": skipped, "status": new_status}
 
