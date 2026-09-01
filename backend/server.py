@@ -5736,6 +5736,40 @@ async def my_seller_application(user: dict = Depends(get_current_user)):
 
 
 # ---------- Admin: Seller Application Queue ----------
+@api_router.get("/admin/seller-applications/{app_id}/preview-email")
+async def admin_seller_app_preview_email(
+    app_id: str,
+    review_status: str = "approved",
+    admin_notes: str = "",
+    _admin: dict = Depends(require_admin),
+):
+    """Return the exact subject/html/text an applicant will receive if
+    the admin flips their status to `review_status`. Used by the
+    "Preview email" button in /admin/seller-applications so admins can
+    eyeball tone, formatting, and — for rejects — how their notes
+    render."""
+    doc = await db.seller_applications.find_one({"id": app_id}, {"_id": 0})
+    if not doc:
+        raise HTTPException(404, "Application not found")
+    if review_status not in ("approved", "rejected"):
+        raise HTTPException(400, "review_status must be approved or rejected")
+    from services import mailer_templates as _tpl
+    username = doc.get("user_username") or doc.get("legal_name") or "there"
+    notes_effective = (admin_notes or doc.get("admin_notes") or "").strip()
+    if review_status == "approved":
+        subject, html, text = _tpl.seller_application_approved(username)
+    else:
+        subject, html, text = _tpl.seller_application_rejected(username, notes_effective)
+    return {
+        "ok": True,
+        "recipient": doc.get("user_email"),
+        "status": review_status,
+        "subject": subject,
+        "html": html,
+        "text": text,
+    }
+
+
 @api_router.get("/admin/seller-applications", response_model=List[SellerApplication])
 async def admin_seller_apps(_admin: dict = Depends(require_admin), status_filter: Optional[str] = None):
     q: dict = {}

@@ -204,7 +204,7 @@ async def send_email(
     msg.set_content(text or "Please view this email in an HTML-capable client.")
     msg.add_alternative(html, subtype="html")
 
-    # 5) Send.
+    # 5) Send via primary SMTP, with automatic Resend fallback on failure.
     try:
         secure = c["secure"]
         use_tls = secure and c["port"] == 465
@@ -222,11 +222,89 @@ async def send_email(
         _record_send_outcome(True, None)
         return {"ok": True, "provider": c["provider"], "to": to}
     except Exception as e:
-        logger.error(f"email send failed to={to} subject={subject!r}: {e}")
-        _record_send_outcome(False, str(e))
+        smtp_err = str(e)
+        logger.error(f"email send failed to={to} subject={subject!r}: {smtp_err}")
+        _record_send_outcome(False, smtp_err)
+        # Automatic Resend fallback — kicks in on ANY SMTP failure so a
+        # 554-outbound-disabled at Hostinger, an auth flake, a timeout,
+        # or a transient network drop can never break user-facing flows.
+        if _resend_enabled():
+            try:
+                result = await _send_via_resend(
+                    to=to, subject=subject, html=html, text=text,
+                    is_transactional=is_transactional,
+                    unsubscribe_url=unsubscribe_url,
+                    tags=tags,
+                )
+                _record_send_outcome(True, None)
+                logger.info(f"email delivered via Resend fallback to={to} (SMTP failed)")
+                return result
+            except Exception as re_err:  # noqa: BLE001
+                logger.error(f"Resend fallback ALSO failed to={to}: {re_err}")
+                _record_send_outcome(False, f"resend_fallback_failed: {re_err}")
         if _allow_mock():
-            return {"ok": False, "provider": c["provider"], "error": str(e)}
-        raise MailerError(f"SMTP delivery to {to} failed: {e}") from e
+            return {"ok": False, "provider": c["provider"], "error": smtp_err}
+        raise MailerError(f"SMTP delivery to {to} failed: {smtp_err}") from e
+
+
+# ---------------------------------------------------------------------------
+# Resend fallback ESP — activates only when the primary SMTP send raises.
+# ---------------------------------------------------------------------------
+def _resend_enabled() -> bool:
+    return (
+        os.environ.get("RESEND_ENABLED", "").lower() in ("1", "true", "yes")
+        and bool(os.environ.get("RESEND_API_KEY", ""))
+    )
+
+
+async def _send_via_resend(
+    to: str,
+    subject: str,
+    html: str,
+    text: Optional[str] = None,
+    is_transactional: bool = True,
+    unsubscribe_url: Optional[str] = None,
+    tags: Optional[List[str]] = None,
+) -> dict:
+    """Send a single email through Resend's HTTPS API. Sync SDK is
+    dispatched to a thread so it can't block the FastAPI event loop.
+    Adds Reply-To and (for marketing) List-Unsubscribe headers so parity
+    with the SMTP path is preserved."""
+    import resend  # local import — keeps startup lean when Resend is off
+    api_key = os.environ.get("RESEND_API_KEY", "")
+    resend.api_key = api_key
+    from_name = os.environ.get("RESEND_FROM_NAME") or os.environ.get("EMAIL_FROM_NAME", "BlueOcean")
+    from_addr = os.environ.get("RESEND_FROM_ADDRESS") or os.environ.get("EMAIL_FROM_ADDRESS", "")
+    reply_to = os.environ.get("EMAIL_REPLY_TO", "").strip()
+    headers: dict = {}
+    if not is_transactional and unsubscribe_url:
+        headers["List-Unsubscribe"] = (
+            f"<mailto:{reply_to or from_addr}?subject=unsubscribe>, "
+            f"<{unsubscribe_url}>"
+        )
+        headers["List-Unsubscribe-Post"] = "List-Unsubscribe=One-Click"
+    params: dict = {
+        "from": f"{from_name} <{from_addr}>",
+        "to": [to],
+        "subject": subject,
+        "html": html,
+    }
+    if text:
+        params["text"] = text
+    if reply_to:
+        params["reply_to"] = reply_to
+    if headers:
+        params["headers"] = headers
+    if tags:
+        # Resend requires unique tag names — give each a positional key.
+        params["tags"] = [{"name": f"tag_{i}", "value": str(t)} for i, t in enumerate(tags[:10])]
+    result = await asyncio.to_thread(resend.Emails.send, params)
+    return {
+        "ok": True,
+        "provider": "resend",
+        "to": to,
+        "message_id": (result or {}).get("id"),
+    }
 
 
 # ---------------------------------------------------------------------------

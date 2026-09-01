@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogT
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { LayoutDashboard, Users, Package, ShoppingBag, FolderTree, Trash2, Star, Plus, Settings as SettingsIcon, Wallet, Store as StoreIcon, Save, Check, X as XIcon, Database, IdCard, LayoutGrid, GripVertical, AlertCircle, ShieldAlert, CheckCircle2, XCircle, Clock, MessageCircle, ChevronDown, ChevronUp, Bitcoin, CheckSquare, Square as SquareIcon, Ticket, Mail, Zap, Menu, KeyRound, Download, Truck } from "lucide-react";
+import { LayoutDashboard, Users, Package, ShoppingBag, FolderTree, Trash2, Star, Plus, Settings as SettingsIcon, Wallet, Store as StoreIcon, Save, Check, X as XIcon, Database, IdCard, LayoutGrid, GripVertical, AlertCircle, ShieldAlert, CheckCircle2, XCircle, Clock, MessageCircle, ChevronDown, ChevronUp, Bitcoin, CheckSquare, Square as SquareIcon, Ticket, Mail, Mail as MailIcon, Zap, Menu, KeyRound, Download, Truck } from "lucide-react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import AdminShelves from "@/pages/AdminShelves";
 import AdminApifySync from "@/pages/AdminApifySync";
@@ -1487,6 +1487,9 @@ const SellerApplicationsMgr = () => {
   const [selected, setSelected] = useState(new Set());
   const [bulkNotes, setBulkNotes] = useState("");
   const [bulkBusy, setBulkBusy] = useState(false);
+  const [preview, setPreview] = useState(null); // { appId, status, notes }
+  const [previewData, setPreviewData] = useState(null); // { subject, html, text, recipient, status }
+  const [previewLoading, setPreviewLoading] = useState(false);
   const { toast } = useToast();
 
   const load = () => {
@@ -1622,6 +1625,36 @@ const SellerApplicationsMgr = () => {
               : <>No {filter} applications. Try the <b>All</b> filter.</>}
         </div>
       )}
+
+      <Dialog open={!!preview} onOpenChange={(o) => !o && setPreview(null)}>
+        <DialogContent className="max-w-3xl" data-testid="app-preview-dialog">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <MailIcon className="h-5 w-5" />
+              Email preview · <span className={preview?.status === "approved" ? "text-emerald-600" : "text-red-600"}>{preview?.status}</span>
+            </DialogTitle>
+          </DialogHeader>
+          {previewLoading && <div className="text-sm text-neutral-500 py-8 text-center">Rendering…</div>}
+          {previewData && (
+            <div className="space-y-2">
+              <div className="text-xs text-neutral-500">
+                <span className="font-mono">To:</span> {previewData.recipient}
+                &nbsp;·&nbsp;<span className="font-mono">Subject:</span> {previewData.subject}
+              </div>
+              <iframe
+                title="email-preview"
+                srcDoc={previewData.html}
+                className="w-full h-[520px] border border-neutral-200 rounded-md bg-white"
+                sandbox=""
+                data-testid="app-preview-iframe"
+              />
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPreview(null)} data-testid="app-preview-close">Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       <div className="space-y-3">
         {apps.map((a) => (
           <div key={a.id} className={`bg-white border rounded-lg p-4 transition ${selected.has(a.id) ? "border-emerald-500 ring-2 ring-emerald-500/20" : "border-neutral-200"}`} data-testid={`app-row-${a.id}`}>
@@ -1656,6 +1689,12 @@ const SellerApplicationsMgr = () => {
                   onChange={(e) => setNotesById({ ...notesById, [a.id]: e.target.value })}
                   data-testid={`app-notes-${a.id}`}
                 />
+                <Button size="sm" variant="outline" onClick={() => setPreview({ appId: a.id, status: "approved", notes: notesById[a.id] || "" })} data-testid={`app-preview-approve-${a.id}`}>
+                  <MailIcon className="h-4 w-4 mr-1" /> Preview approve
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => setPreview({ appId: a.id, status: "rejected", notes: notesById[a.id] || "" })} data-testid={`app-preview-reject-${a.id}`}>
+                  <MailIcon className="h-4 w-4 mr-1" /> Preview reject
+                </Button>
                 <Button size="sm" onClick={() => review(a.id, "approved")} className="bg-emerald-600 hover:bg-emerald-700" data-testid={`app-approve-${a.id}`}>
                   <Check className="h-4 w-4 mr-1" /> Approve
                 </Button>
