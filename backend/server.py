@@ -5283,8 +5283,11 @@ async def verify_email_send(payload: EmailSendRequest, user: dict = Depends(get_
             tags=["verify_email"],
         )
     except Exception as e:
-        # Real mailer failure — invalidate the token and surface a 502 so
-        # the UI doesn't show a false-positive "email sent" toast.
+        # Real mailer failure — invalidate the token and surface a 503 so
+        # the UI doesn't show a false-positive "email sent" toast. Use 503
+        # (not 502) so Cloudflare passes the JSON body through instead of
+        # rewriting it into a generic HTML edge error, and so it's clearly
+        # a transient origin-side issue rather than a gateway bug.
         logger.error(f"verify/email/send mailer failed for user {user['id']}: {e}")
         try:
             await db.verification_tokens.update_one(
@@ -5292,7 +5295,18 @@ async def verify_email_send(payload: EmailSendRequest, user: dict = Depends(get_
             )
         except Exception:
             pass
-        raise HTTPException(502, f"Could not send the verification email: {e}")
+        # Detect the specific Hostinger "outbound disabled" error so we can
+        # give the operator an actionable message instead of raw SMTP text.
+        err_str = str(e)
+        friendly = "Verification emails are temporarily unavailable. Please try again in a few minutes."
+        if "Outbound sending is disabled" in err_str or "5.7.1" in err_str:
+            friendly = (
+                "Email sending is disabled on the server's mailbox. "
+                "The site admin needs to re-enable outbound SMTP on "
+                "supportteam@blueoceansmarthub.com in Hostinger before "
+                "verification emails will send."
+            )
+        raise HTTPException(503, friendly)
 
     return {
         "ok": True,

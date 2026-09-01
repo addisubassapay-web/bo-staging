@@ -48,9 +48,21 @@ export const AuthProvider = ({ children }) => {
       const { data } = await api.get("/auth/me");
       setUser(data);
       try { localStorage.setItem(USERNAME_KEY, data.username || ""); } catch { /* ignore */ }
-    } catch {
-      clearToken();
-      setUser(null);
+    } catch (err) {
+      // Only clear the token when the server tells us the credential is bad
+      // (401 or 403). Any other error — 5xx gateway blip, Cloudflare edge
+      // rewrite, network drop, CORS during redeploys — leaves the token
+      // intact so we don't dump a signed-in user back to /login just because
+      // of a transient failure. Previously an unconditional catch here caused
+      // /apply-seller to render "Please log in to apply" whenever an OTP
+      // endpoint returned 5xx.
+      const status = err?.response?.status;
+      if (status === 401 || status === 403) {
+        clearToken();
+        setUser(null);
+      }
+      // else: keep the last-known user + token; the next real request will
+      // recover automatically if the backend comes back.
     } finally {
       setLoading(false);
     }

@@ -24,6 +24,32 @@ Full-stack ecommerce marketplace **Mercari-Global** — same color scheme (`#FF2
 
 ---
 
+### Aug 31 2026 — Seller-apply "please log in" logout bug + Hostinger SMTP block UX
+
+**User report** (with screenshot): On `/apply-seller`, clicking "Send verification code" showed a red toast: *"Couldn't send code — The origin web server returned an invalid or incomplete response to Cloudflare…"*, and immediately after the user was booted out with *"Please log in to apply"*.
+
+**Two independent root causes:**
+
+1. **Hostinger SMTP outbound sending is DISABLED at the provider.** Every mail attempt logs `(554, '5.7.1 Outbound sending is disabled for this account')` for `supportteam@blueoceansmarthub.com`. This is a mailbox-level block at Hostinger (unpaid bill, spam flag, or SMTP not enabled on the mailbox tier) — not a code bug. Admin must unblock in the Hostinger cPanel. Sending has been non-functional since at least 17:51 UTC on 2026-09-01.
+
+2. **AuthContext.fetchMe cleared the token on ANY error.** The 502 from `/otp/request` bled into the on-mount `refresh()` call in `SellerApplyQuick.jsx` and the unconditional catch wiped the token → `user` became `null` → page rendered the "Please log in" fallback.
+
+**Fixes shipped:**
+
+- **Frontend**: `AuthContext.fetchMe` now only clears the token on **401/403** (real auth failures). Any 5xx / network / Cloudflare edge blip leaves the last-known user + token intact so the next real request can recover.
+- **Backend**: `/otp/request` and `/verify/email/send` now raise **503** (not 502) with a plain-string `detail`. 503 passes through Cloudflare unmodified; 502 was being rewritten into a Cloudflare HTML edge page hiding the real error. When the underlying SMTP error is the Hostinger outbound-disabled `5.7.1`, the message is upgraded to an actionable operator hint pointing at the Hostinger panel.
+- **Test**: `/app/backend/tests/test_mailer_failure_ux.py` locks: (a) 502 never leaks from those endpoints, (b) response bodies are JSON with string `detail`, (c) `/auth/me` always 200s so `fetchMe` stays quiet.
+
+**Curl verification:**
+- `POST /api/otp/request` → 503 · `"Email sending is disabled on the server's mailbox. Site admin: re-enable outbound SMTP on supportteam@blueoceansmarthub.com in the Hostinger panel."`
+- `POST /api/verify/email/send` (already-verified admin) → 200 `{ok:true, already_verified:true}`
+- `GET /api/auth/me` → 200 (baseline for AuthContext)
+
+**Still requires user action (NOT a code fix):**
+- Log into Hostinger cPanel → Email Accounts → `supportteam@blueoceansmarthub.com` → verify outbound SMTP is enabled, billing is current, and the mailbox is not flagged. Until this is fixed, no verification codes / seller applications / password resets will actually reach users' inboxes — only the UX around the failure is improved.
+
+---
+
 ### Aug 31 2026 — Admin Seller Applications 500 fix
 
 **User report**: "Sellers Application of the users is not shown on the admin panel."

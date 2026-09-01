@@ -15,9 +15,21 @@ async def request_otp_endpoint(payload: dict = Body(...), user: dict = Depends(g
     except ValueError as e:
         raise HTTPException(400, str(e))
     except RuntimeError as e:
-        # Mailer failure — surface as 502 so the UI can show a real error
-        # instead of a false "code sent" toast.
-        raise HTTPException(502, str(e))
+        # Mailer failure — surface as 503 (transient origin-side) so
+        # Cloudflare passes the JSON body through instead of rewriting
+        # it into an HTML edge error, and the UI can show a real error
+        # instead of a false "code sent" toast. Detect the specific
+        # Hostinger "outbound disabled" message to give operators an
+        # actionable hint.
+        msg = str(e)
+        friendly = "Verification emails are temporarily unavailable. Please try again in a few minutes."
+        if "Outbound sending is disabled" in msg or "5.7.1" in msg:
+            friendly = (
+                "Email sending is disabled on the server's mailbox. "
+                "Site admin: re-enable outbound SMTP on "
+                "supportteam@blueoceansmarthub.com in the Hostinger panel."
+            )
+        raise HTTPException(503, friendly)
 
 
 @router.post("/otp/verify")
