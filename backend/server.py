@@ -5736,6 +5736,71 @@ async def my_seller_application(user: dict = Depends(get_current_user)):
 
 
 # ---------- Admin: Seller Application Queue ----------
+@api_router.get("/admin/mail/resend-domains")
+async def admin_resend_domains(_admin: dict = Depends(require_admin)):
+    """List every domain registered on the Resend account this API key
+    belongs to, plus each domain's verification status. Used by the
+    Admin dashboard to confirm blueoceansmarthub.com is verified before
+    we flip RESEND_FROM_ADDRESS off the onboarding@resend.dev fallback."""
+    api_key = os.environ.get("RESEND_API_KEY", "")
+    if not api_key:
+        raise HTTPException(400, "RESEND_API_KEY not set in backend/.env")
+    try:
+        import resend as _resend
+        _resend.api_key = api_key
+        raw = await asyncio.to_thread(_resend.Domains.list)
+        items = raw.get("data") if isinstance(raw, dict) else raw
+        out = []
+        for d in items or []:
+            out.append({
+                "id": d.get("id"),
+                "name": d.get("name"),
+                "region": d.get("region"),
+                "status": d.get("status"),
+                "created_at": d.get("created_at"),
+                "is_verified": d.get("status") == "verified",
+            })
+        current_from = os.environ.get("RESEND_FROM_ADDRESS", "")
+        return {
+            "domains": out,
+            "current_from_address": current_from,
+            "current_from_is_resend_dev": current_from.endswith("@resend.dev"),
+            "action_hint": (
+                "Add blueoceansmarthub.com in Resend Dashboard → Domains → Add, "
+                "paste the SPF + DKIM records into your Hostinger DNS, then "
+                "hit this endpoint again. Once status=verified, tell me and "
+                "I'll flip RESEND_FROM_ADDRESS to mailsupport@blueoceansmarthub.com."
+            ),
+        }
+    except HTTPException:
+        raise
+    except Exception as e:  # noqa: BLE001
+        err = str(e)
+        # The user's current API key is a "sending-only" restricted key,
+        # so the Domains endpoint returns 401. Return an actionable
+        # explanation instead of a raw 503 so operators know exactly
+        # what to do.
+        if "restricted" in err.lower() or "only send" in err.lower():
+            return {
+                "domains": [],
+                "current_from_address": os.environ.get("RESEND_FROM_ADDRESS", ""),
+                "current_from_is_resend_dev": os.environ.get("RESEND_FROM_ADDRESS", "").endswith("@resend.dev"),
+                "restricted_api_key": True,
+                "action_hint": (
+                    "Your RESEND_API_KEY is a 'sending-only' key and can't "
+                    "list domains from here. Manage domain verification "
+                    "directly in the Resend Dashboard: "
+                    "https://resend.com/domains → Add Domain → "
+                    "blueoceansmarthub.com. Copy the SPF and DKIM records "
+                    "into your Hostinger DNS panel (Domain → DNS Zone). "
+                    "Once the domain shows 'Verified' in the Resend UI, "
+                    "let me know and I'll flip RESEND_FROM_ADDRESS."
+                ),
+                "raw_error": err[:200],
+            }
+        raise HTTPException(503, f"Resend API lookup failed: {err}")
+
+
 @api_router.get("/admin/seller-applications/{app_id}/preview-email")
 async def admin_seller_app_preview_email(
     app_id: str,
