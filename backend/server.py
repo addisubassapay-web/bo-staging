@@ -535,7 +535,7 @@ class SellerApplication(BaseModel):
     state: str = ""
     postal_code: str = ""
     phone: str = ""
-    payout_method: Literal["crypto", "bank_transfer", "card", "paypal", "crypto_alt"] = "crypto"
+    payout_method: Literal["crypto", "bank_transfer", "card", "paypal", "crypto_alt", "stripe_connect"] = "crypto"
     id_document_note: Optional[str] = ""  # placeholder; real flow would upload
     id_document_file_id: Optional[str] = None  # points to /api/files/{id}
     status: Literal["pending", "approved", "rejected"] = "pending"
@@ -5572,7 +5572,20 @@ async def admin_seller_apps(_admin: dict = Depends(require_admin), status_filter
     if status_filter:
         q["status"] = status_filter
     docs = await db.seller_applications.find(q, {"_id": 0}).sort("created_at", -1).to_list(500)
-    return [SellerApplication(**d) for d in docs]
+    # Resilient deserialize: skip (and log) any single doc that fails Pydantic
+    # validation instead of nuking the whole admin list. Historically a legacy
+    # `payout_method="stripe_connect"` row broke this endpoint until the enum
+    # was widened — leave the belt-and-braces guard so future schema drift
+    # can't hide the queue from admins again.
+    out: List[SellerApplication] = []
+    for d in docs:
+        try:
+            out.append(SellerApplication(**d))
+        except Exception as e:  # noqa: BLE001
+            logging.getLogger("seller_apps").warning(
+                f"skip malformed seller_application {d.get('id')}: {e}"
+            )
+    return out
 
 @api_router.put("/admin/seller-applications/{app_id}")
 async def admin_review_seller_app(app_id: str, updates: dict, admin: dict = Depends(require_admin)):

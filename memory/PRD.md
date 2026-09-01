@@ -24,6 +24,28 @@ Full-stack ecommerce marketplace **Mercari-Global** — same color scheme (`#FF2
 
 ---
 
+### Aug 31 2026 — Admin Seller Applications 500 fix
+
+**User report**: "Sellers Application of the users is not shown on the admin panel."
+
+**Root cause**: `GET /api/admin/seller-applications` was returning HTTP 500. 12 of 13 legacy rows in Mongo carried `payout_method="stripe_connect"` — a value that had been removed from the `SellerApplication.payout_method` Literal when payout methods were consolidated to `[crypto, bank_transfer, card, paypal, crypto_alt]`. The response-model validator hit the first legacy row and killed the entire list, so the admin panel showed nothing.
+
+**Fix (2 layers of defence):**
+1. Widened `SellerApplication.payout_method` Literal to accept `"stripe_connect"` (legacy read-only value). `SellerApplicationCreate` still restricts new submissions to the modern 5-option set.
+2. Made `admin_seller_apps` resilient: any malformed doc is skipped with a warning log instead of failing the whole response, so future schema drift can't hide the queue again.
+
+**Verification (curl):**
+- `GET /admin/seller-applications` → HTTP 200 · 13 rows (12 approved, **1 pending** = `btest_1788125795@t.local`)
+- `GET /admin/seller-applications?status_filter=pending` → HTTP 200 · 1 row
+- Payout distribution now surfaces: crypto=10, stripe_connect=3
+
+**Test added:** `/app/backend/tests/test_seller_apps_legacy_payout.py` seeds one row per historical payout_method plus one intentionally-broken row and asserts the endpoint stays 200.
+
+**Files touched:**
+- `/app/backend/server.py` lines 538 (Literal widened) and 5569–5582 (resilient loop)
+
+---
+
 ### Aug 31 2026 — Admin Password Resets: centralized page
 
 **User asked** to "find all the accounts created previously and integrate it in the admin management for Password reset". Existing UsersMgr had per-row `resetPassword` + a "Bulk reset all non-admin" button but no way to search, filter, select subsets, or use the email-reset mode.
