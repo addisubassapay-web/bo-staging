@@ -249,3 +249,35 @@ async def admin_add_suppression(payload: dict = Body(...), _admin: dict = Depend
 async def admin_remove_suppression(payload: dict = Body(...), _admin: dict = Depends(require_admin)):
     n = await remove_suppression(payload.get("email", ""))
     return {"ok": True, "removed": n}
+
+
+# ---------------------------------------------------------------------------
+# IMAP receive endpoints — read-only inbox view + one-shot bounce processor.
+# Both admin-only so the mailbox contents never leak to unauthenticated users.
+# ---------------------------------------------------------------------------
+@router.get("/admin/mail/inbox")
+async def admin_mail_inbox(limit: int = 25, unseen_only: bool = False,
+                           _admin: dict = Depends(require_admin)):
+    from services import imap_receiver
+    if not imap_receiver.is_configured():
+        raise HTTPException(400, "IMAP not configured — set IMAP_HOST/USER/PASSWORD in backend/.env")
+    try:
+        rows = await imap_receiver.fetch_inbox(limit=max(1, min(100, limit)), unseen_only=unseen_only)
+        return {"items": rows, "count": len(rows)}
+    except Exception as e:  # noqa: BLE001
+        raise HTTPException(503, f"IMAP fetch failed: {e}")
+
+
+@router.post("/admin/mail/process-bounces")
+async def admin_mail_process_bounces(payload: dict = Body(default={}),
+                                     _admin: dict = Depends(require_admin)):
+    """Pull the last N messages from IMAP, add hard-bounce addresses to
+    the suppression list. Idempotent (upsert). Returns counts."""
+    from services import imap_receiver
+    if not imap_receiver.is_configured():
+        raise HTTPException(400, "IMAP not configured — set IMAP_HOST/USER/PASSWORD in backend/.env")
+    limit = int(payload.get("limit") or 50)
+    try:
+        return await imap_receiver.process_bounces(limit=max(1, min(200, limit)))
+    except Exception as e:  # noqa: BLE001
+        raise HTTPException(503, f"IMAP bounce scan failed: {e}")

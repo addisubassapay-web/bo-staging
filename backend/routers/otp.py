@@ -27,7 +27,7 @@ async def request_otp_endpoint(payload: dict = Body(...), user: dict = Depends(g
             friendly = (
                 "Email sending is disabled on the server's mailbox. "
                 "Site admin: re-enable outbound SMTP on "
-                "emailservice@blueoceansmarthub.com in the Hostinger panel."
+                "mailsupport@blueoceansmarthub.com in the Hostinger panel."
             )
         raise HTTPException(503, friendly)
 

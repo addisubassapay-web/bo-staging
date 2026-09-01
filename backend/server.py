@@ -5457,7 +5457,7 @@ async def verify_email_send(payload: EmailSendRequest, user: dict = Depends(get_
             friendly = (
                 "Email sending is disabled on the server's mailbox. "
                 "The site admin needs to re-enable outbound SMTP on "
-                "emailservice@blueoceansmarthub.com in Hostinger before "
+                "mailsupport@blueoceansmarthub.com in Hostinger before "
                 "verification emails will send."
             )
         raise HTTPException(503, friendly)

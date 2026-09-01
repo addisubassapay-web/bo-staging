@@ -23,7 +23,7 @@ FRONTEND = os.environ.get(
     "FRONTEND_ORIGIN", "https://ocean-marketplace.preview.emergentagent.com"
 ).rstrip("/")
 
-SUPPORT_EMAIL = os.environ.get("SUPPORT_EMAIL", "emailservice@blueoceansmarthub.com")
+SUPPORT_EMAIL = os.environ.get("SUPPORT_EMAIL", "mailsupport@blueoceansmarthub.com")
 BUSINESS_ADDRESS = os.environ.get(
     "EMAIL_BUSINESS_ADDRESS",
     "BlueOcean Smarthub · reply to this email for our mailing address",

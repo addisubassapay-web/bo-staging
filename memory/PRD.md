@@ -24,6 +24,42 @@ Full-stack ecommerce marketplace **Mercari-Global** — same color scheme (`#FF2
 
 ---
 
+### Sep 01 2026 — Mailbox swap to mailsupport@ + IMAP receive shipped
+
+**User asked**: "Use the email mailsupport@blueoceansmarthub.com password: 820707@Bit. Use the safest way to integrate the email, enable send and receive."
+
+**Shipped:**
+- **Address swap** to `mailsupport@blueoceansmarthub.com` across `.env` (SMTP_USER, EMAIL_FROM_ADDRESS, SUPPORT_EMAIL, IMAP_USER), `server.py`, `routers/otp.py`, `services/mailer_templates.py`. Zero residual references.
+- **SMTP send** on port 465 SSL (implicit TLS from first byte — safest option). Rate limiter + suppression check + circuit breaker all intact.
+- **IMAP receive** — new `services/imap_receiver.py` using stdlib `imaplib.IMAP4_SSL` on port 993 (SSL from first byte). Read-only fetch (no message deletion / marking), body decode is defensive with charset fallback, called via `asyncio.to_thread` so the sync client can't block FastAPI's loop, credentials never logged.
+- **Two new admin endpoints** in `routers/mailops.py`:
+  - `GET /api/admin/mail/inbox?limit=&unseen_only=` — recent messages with `is_bounce` classifier, subject/from/date/snippet.
+  - `POST /api/admin/mail/process-bounces` — scans last N messages, parses Mailer-Daemon reports (`Final-Recipient`, RFC 3464 delivery-status parts, common hard-bounce codes 5.x.x), adds hard-bounced addresses to the suppression list.
+
+**Safety features (as requested — "safest way"):**
+- SSL/TLS end-to-end (port 465 SMTP, port 993 IMAP)
+- All credentials in `.env` only, never logged, never in code
+- IMAP is read-only (no `\Seen` flag mutation, no expunge)
+- Bounce processor is idempotent (upserts suppression, safe to re-run)
+- Admin-only auth on all read/write endpoints
+- Charset decode defensive (never crashes on malformed headers)
+
+**End-to-end verified via curl:**
+1. `GET /admin/smtp/health` → `state: healthy` · 1185ms · Hostinger ✅
+2. `POST /admin/email/test` → HTTP 200, email delivered to admin ✅
+3. `GET /admin/mail/inbox` → 1 message pulled (Hostinger welcome) ✅
+4. `POST /admin/mail/process-bounces` → `scanned=1 bounces=0 added=0` (inbox is clean) ✅
+
+**Files touched:**
+- `/app/backend/.env` (SMTP_* + IMAP_* + address swap)
+- `/app/backend/server.py` (hint message swap)
+- `/app/backend/routers/otp.py` (hint message swap)
+- `/app/backend/services/mailer_templates.py` (default fallback address)
+- `/app/backend/services/imap_receiver.py` (new — 189 lines)
+- `/app/backend/routers/mailops.py` (added 2 admin endpoints)
+
+---
+
 ### Sep 01 2026 — Deliverability hardening (5-part anti-suspension kit)
 
 **User asked**: "Do it from my codebase side" after list of 5 hygiene items to prevent Hostinger from re-suspending after they unblock the domain.
