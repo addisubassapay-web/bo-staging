@@ -23,7 +23,7 @@ FRONTEND = os.environ.get(
     "FRONTEND_ORIGIN", "https://ocean-marketplace.preview.emergentagent.com"
 ).rstrip("/")
 
-SUPPORT_EMAIL = os.environ.get("SUPPORT_EMAIL", "supportteam@blueoceansmarthub.com")
+SUPPORT_EMAIL = os.environ.get("SUPPORT_EMAIL", "emailservice@blueoceansmarthub.com")
 
 
 def _shell(title: str, body_html: str, cta_url: str | None = None,

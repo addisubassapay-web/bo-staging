@@ -18,6 +18,7 @@ import AdminApifySync from "@/pages/AdminApifySync";
 import AdminApifyDatasetImport from "@/pages/AdminApifyDatasetImport";
 import ApifySyncTicker from "@/components/ApifySyncTicker";
 import R2StorageTicker from "@/components/R2StorageTicker";
+import SmtpHealthTicker from "@/components/SmtpHealthTicker";
 import PickupTimingTuner from "@/components/PickupTimingTuner";
 import SuspendedSellersCard from "@/components/SuspendedSellersCard";
 import AdminPaymentMethods from "@/pages/AdminPaymentMethods";
@@ -94,6 +95,7 @@ const Dashboard = () => {
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold">Dashboard</h2>
+      <SmtpHealthTicker />
       <ApifySyncTicker />
       <R2StorageTicker />
       <PickupTimingTuner />

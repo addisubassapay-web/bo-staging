@@ -2542,6 +2542,160 @@ async def admin_stats(_admin: dict = Depends(require_admin)):
         "platform_fees": total_fees,
     }
 
+
+# ---------------------------------------------------------------------------
+# SMTP health probe — admin-only, cached 60s.
+# ---------------------------------------------------------------------------
+_SMTP_HEALTH_CACHE: dict = {"at": None, "result": None}
+_SMTP_HEALTH_TTL_SECONDS = 60
+
+
+async def _smtp_probe() -> dict:
+    """Open a real SMTP session and issue `MAIL FROM` + `RCPT TO` + `RSET`
+    (no DATA — no email actually sent). Returns
+    {ok, state, provider, host, error?, latency_ms, checked_at}.
+    Distinguishes:
+      - unconfigured: SMTP env vars missing
+      - unreachable:  can't connect
+      - auth_failed:  login rejected
+      - blocked:      Hostinger 5.7.1 outbound-disabled fires at MAIL FROM
+                      even though login succeeded (this is the real
+                      failure mode; login-only probes falsely pass)
+      - healthy:      MAIL FROM/RCPT TO accepted, session RSET cleanly
+    """
+    import time
+    from services import mailer as _mailer
+    started = time.time()
+    now = datetime.now(timezone.utc)
+    cfg = _mailer._cfg()
+    if not _mailer.is_configured():
+        return {
+            "ok": False,
+            "state": "unconfigured",
+            "provider": cfg["provider"] or None,
+            "host": cfg["host"] or None,
+            "error": "SMTP env vars missing (SMTP_HOST/USER/PASSWORD/EMAIL_FROM_ADDRESS/EMAIL_PROVIDER)",
+            "latency_ms": 0,
+            "checked_at": now.isoformat(),
+        }
+    try:
+        import aiosmtplib
+        secure = cfg["secure"]
+        use_tls = secure and cfg["port"] == 465
+        start_tls = secure and cfg["port"] in (587, 25)
+        client = aiosmtplib.SMTP(
+            hostname=cfg["host"],
+            port=cfg["port"],
+            use_tls=use_tls,
+            start_tls=False,
+            timeout=10,
+        )
+        await client.connect()
+        try:
+            if start_tls:
+                await client.starttls()
+            await client.login(cfg["user"], cfg["password"])
+            # Login accepted — now confirm outbound MAIL FROM/RCPT TO also
+            # works. Hostinger blocks with 554 5.7.1 here when the mailbox
+            # has outbound disabled, even though login just succeeded.
+            probe_to = cfg["from_addr"]  # loopback to self — never delivered
+            await client.mail(cfg["from_addr"])
+            await client.rcpt(probe_to)
+            # Abort before DATA — no email ever leaves the server.
+            await client.rset()
+        finally:
+            try:
+                await client.quit()
+            except Exception:
+                pass
+        return {
+            "ok": True,
+            "state": "healthy",
+            "provider": cfg["provider"],
+            "host": cfg["host"],
+            "latency_ms": int((time.time() - started) * 1000),
+            "checked_at": now.isoformat(),
+        }
+    except Exception as e:  # noqa: BLE001
+        err_str = str(e)
+        state = "unreachable"
+        if "Outbound sending is disabled" in err_str or "5.7.1" in err_str:
+            state = "blocked"
+        elif "authentication" in err_str.lower() or "5.7.8" in err_str:
+            state = "auth_failed"
+        elif "5.7." in err_str or "554" in err_str:
+            # Any other 5.7.x policy rejection = still a blocked mailbox
+            state = "blocked"
+        return {
+            "ok": False,
+            "state": state,
+            "provider": cfg["provider"],
+            "host": cfg["host"],
+            "error": err_str[:400],
+            "latency_ms": int((time.time() - started) * 1000),
+            "checked_at": now.isoformat(),
+        }
+
+
+@api_router.get("/admin/smtp/health")
+async def admin_smtp_health(_admin: dict = Depends(require_admin), force: bool = False):
+    """Cached SMTP health probe. Runs a real login handshake against the
+    configured SMTP provider (no email is sent). Cached for 60 seconds so
+    the admin ticker can poll every minute without hammering Hostinger.
+    Pass `?force=1` to bypass the cache.
+
+    Correctness note: the handshake alone is not enough — Hostinger and
+    some other providers enforce outbound blocks only at the DATA stage.
+    So we also consult the recent real send-outcome history from
+    services.mailer; if we've seen a 5.7.1 rejection in the last 15
+    minutes, we override a `healthy` handshake with `blocked` and surface
+    the real error text."""
+    cached = _SMTP_HEALTH_CACHE.get("result")
+    at = _SMTP_HEALTH_CACHE.get("at")
+    now = datetime.now(timezone.utc)
+    if not force and cached and at:
+        age = (now - at).total_seconds()
+        if age < _SMTP_HEALTH_TTL_SECONDS:
+            return {**cached, "cached": True, "cache_age_seconds": int(age)}
+    result = await _smtp_probe()
+
+    # Consult the real send outcome history — a handshake-only pass can
+    # be a false positive on Hostinger.
+    try:
+        from services import mailer as _mailer
+        recent = _mailer.recent_send_outcomes(within_seconds=900)
+        failures = [o for o in recent if not o["ok"]]
+        if failures and result.get("state") == "healthy":
+            # Look for the well-known blocking codes in the recent errors
+            last_err = failures[-1].get("error", "")
+            override_state = None
+            if "Outbound sending is disabled" in last_err or "5.7.1" in last_err:
+                override_state = "blocked"
+            elif "5.7.8" in last_err or "authentication" in last_err.lower():
+                override_state = "auth_failed"
+            elif "5.7." in last_err or "554" in last_err:
+                override_state = "blocked"
+            if override_state:
+                result = {
+                    **result,
+                    "ok": False,
+                    "state": override_state,
+                    "error": last_err[:400],
+                    "handshake_passed": True,
+                    "recent_failures": len(failures),
+                    "recent_send_window_seconds": 900,
+                }
+        # Always attach the counts so the UI can show "X of Y recent sends failed".
+        result.setdefault("recent_failures", len(failures))
+        result.setdefault("recent_successes", len(recent) - len(failures))
+    except Exception:  # noqa: BLE001
+        pass
+
+    _SMTP_HEALTH_CACHE["result"] = result
+    _SMTP_HEALTH_CACHE["at"] = now
+    return {**result, "cached": False, "cache_age_seconds": 0}
+
+
 @api_router.get("/admin/users", response_model=List[UserPublic])
 async def admin_list_users(_admin: dict = Depends(require_admin)):
     docs = await db.users.find({}, {"_id": 0, "password_hash": 0}).sort("created_at", -1).to_list(1000)
@@ -5303,7 +5457,7 @@ async def verify_email_send(payload: EmailSendRequest, user: dict = Depends(get_
             friendly = (
                 "Email sending is disabled on the server's mailbox. "
                 "The site admin needs to re-enable outbound SMTP on "
-                "supportteam@blueoceansmarthub.com in Hostinger before "
+                "emailservice@blueoceansmarthub.com in Hostinger before "
                 "verification emails will send."
             )
         raise HTTPException(503, friendly)

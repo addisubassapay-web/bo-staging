@@ -98,10 +98,45 @@ async def send_email(
             start_tls=start_tls if not use_tls else False,
             timeout=20,
         )
+        _record_send_outcome(True, None)
         return {"ok": True, "provider": c["provider"], "to": to}
     except Exception as e:
         logger.error(f"email send failed to={to} subject={subject!r}: {e}")
+        _record_send_outcome(False, str(e))
         if _allow_mock():
             # Dev-only escape hatch — never in prod
             return {"ok": False, "provider": c["provider"], "error": str(e)}
         raise MailerError(f"SMTP delivery to {to} failed: {e}") from e
+
+
+# ---------------------------------------------------------------------------
+# In-memory outcome tracker for the /admin/smtp/health probe. Handshake-only
+# probes (login + MAIL FROM + RCPT TO) can be fooled by servers that enforce
+# outbound blocks only at DATA time — Hostinger is one such server. Keep the
+# last N real send outcomes so the health endpoint can catch this false-pass
+# case and report `blocked` when real DATA transmissions have been rejected
+# recently.
+# ---------------------------------------------------------------------------
+from collections import deque as _deque  # noqa: E402
+from datetime import datetime as _dt, timezone as _tz  # noqa: E402
+
+_SEND_HISTORY_MAX = 25
+_SEND_HISTORY: "_deque[dict]" = _deque(maxlen=_SEND_HISTORY_MAX)
+
+
+def _record_send_outcome(ok: bool, error: str | None) -> None:
+    _SEND_HISTORY.append({
+        "ok": ok,
+        "error": (error or "")[:400],
+        "at": _dt.now(_tz.utc),
+    })
+
+
+def recent_send_outcomes(within_seconds: int = 900) -> list[dict]:
+    """Return the last N send outcomes newer than `within_seconds` ago."""
+    cutoff = _dt.now(_tz.utc).timestamp() - within_seconds
+    return [
+        {**o, "at": o["at"].isoformat()}
+        for o in list(_SEND_HISTORY)
+        if o["at"].timestamp() >= cutoff
+    ]

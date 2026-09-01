@@ -24,6 +24,38 @@ Full-stack ecommerce marketplace **Mercari-Global** — same color scheme (`#FF2
 
 ---
 
+### Sep 01 2026 — SMTP Health Ticker + email address swap to emailservice@
+
+**User asked:** wire SMTP fallback + add red/green health dot in Admin, then swap the sender address to `emailservice@blueoceansmarthub.com` (was `supportteam@`, briefly `support101@`).
+
+**Delivered — SMTP Health Ticker (P1):**
+- Backend: `GET /api/admin/smtp/health` — admin-only, 60s cached. Runs a real login + MAIL FROM + RCPT TO + RSET handshake (no DATA), classifies state as `healthy | blocked | auth_failed | unreachable | unconfigured`, returns latency and checked_at.
+- **False-pass correction**: after the first version reported `healthy` even while every real send was 554'ing, added an in-memory `_SEND_HISTORY` ring buffer in `mailer.py` (last 25 outcomes). If any recent send failed with 5.7.1 in the last 15 min, the health endpoint overrides a `healthy` handshake with `blocked` and surfaces the real error text — no more false green dots.
+- Frontend: `<SmtpHealthTicker />` polls every 60s from the Admin dashboard header. Shows a pulsing green/red/amber dot, exact host, latency, checked_at, "Retest" button, and a red "Open hPanel" shortcut that deep-links to Hostinger when state=blocked.
+
+**Delivered — Email address swap:**
+- Replaced `supportteam@blueoceansmarthub.com` → `emailservice@blueoceansmarthub.com` across:
+  - `/app/backend/.env` (SMTP_USER, EMAIL_FROM_ADDRESS, SUPPORT_EMAIL)
+  - `/app/backend/server.py` (Hostinger-blocked error hint)
+  - `/app/backend/routers/otp.py` (OTP 503 error hint)
+  - `/app/backend/services/mailer_templates.py` (default fallback in template footers)
+- Verified: 0 residual `supportteam@` or `support101@` references in backend/frontend source. Backend restarted cleanly, /api/categories → 200.
+
+**Critical finding for user:** Hostinger's `5.7.1 Outbound sending is disabled` block is **NOT mailbox-specific** — the new `emailservice@` mailbox hits the identical error. This is domain-wide or account-wide at Hostinger. Creating more mailboxes won't work. User must:
+1. Open a Hostinger support ticket referencing `554 5.7.1 Outbound sending is disabled for this account` and the domain `blueoceansmarthub.com`, OR
+2. Wire the SendGrid/Resend fallback (ask_human pending user's provider choice).
+
+**Files touched:**
+- `/app/backend/.env`
+- `/app/backend/server.py` (SMTP health endpoint + probe + address swap)
+- `/app/backend/routers/otp.py`
+- `/app/backend/services/mailer.py` (send-outcome ring buffer)
+- `/app/backend/services/mailer_templates.py`
+- `/app/frontend/src/components/SmtpHealthTicker.jsx` (new)
+- `/app/frontend/src/pages/Admin.jsx` (import + mount ticker)
+
+---
+
 ### Aug 31 2026 — Seller-apply "please log in" logout bug + Hostinger SMTP block UX
 
 **User report** (with screenshot): On `/apply-seller`, clicking "Send verification code" showed a red toast: *"Couldn't send code — The origin web server returned an invalid or incomplete response to Cloudflare…"*, and immediately after the user was booted out with *"Please log in to apply"*.
