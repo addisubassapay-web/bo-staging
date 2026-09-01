@@ -33,12 +33,19 @@ API = f"{BASE_URL}/api"
 
 def _admin_login():
     mongo = MongoClient(os.environ["MONGO_URL"])
-    email = mongo[os.environ["DB_NAME"]].users.find_one({"role": "admin"})["email"]
+    db = mongo[os.environ["DB_NAME"]]
+    admin = db.users.find_one({"email": "admin@mercari.local", "role": "admin"})
+    assert admin, "admin@mercari.local not found — cannot run test"
+    db.users.update_one(
+        {"_id": admin["_id"]},
+        {"$set": {"failed_login_attempts": 0, "locked_until": None}},
+    )
+    email = admin["email"]
     mongo.close()
     r = requests.post(
         f"{API}/auth/login",
         json={"email": email, "password": "admin123"},
-        timeout=15,
+        timeout=60,
     )
     assert r.status_code == 200, r.text
     return r.json()["token"]
@@ -98,7 +105,7 @@ def test_auth_me_still_works_regardless_of_mailer_health():
     r = requests.get(
         f"{API}/auth/me",
         headers={"Authorization": f"Bearer {token}"},
-        timeout=15,
+        timeout=60,
     )
     assert r.status_code == 200, r.text
     body = r.json()

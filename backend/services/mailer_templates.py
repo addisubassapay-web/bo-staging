@@ -24,12 +24,43 @@ FRONTEND = os.environ.get(
 ).rstrip("/")
 
 SUPPORT_EMAIL = os.environ.get("SUPPORT_EMAIL", "emailservice@blueoceansmarthub.com")
+BUSINESS_ADDRESS = os.environ.get(
+    "EMAIL_BUSINESS_ADDRESS",
+    "BlueOcean Smarthub · reply to this email for our mailing address",
+)
+
+
+def _footer(is_transactional: bool = True, unsubscribe_url: str | None = None) -> str:
+    """Standard footer. Non-transactional emails include a physical
+    address and a one-click unsubscribe link (required by Gmail/Yahoo
+    bulk-sender policy and by US CAN-SPAM). Transactional emails skip
+    both to avoid tripping false-positive spam filters."""
+    base = (
+        f"You&apos;re receiving this because of activity on your {BRAND_NAME} account.<br/>"
+        f'Questions? Reply to this email or write to '
+        f'<a href="mailto:{SUPPORT_EMAIL}" style="color:{INDIGO};text-decoration:none;">{SUPPORT_EMAIL}</a>.'
+    )
+    if is_transactional:
+        return base
+    unsub = ""
+    if unsubscribe_url:
+        unsub = (
+            f'<br/><br/><a href="{unsubscribe_url}" '
+            f'style="color:#94A3B8;text-decoration:underline;">Unsubscribe</a> '
+            "or update your email preferences at any time."
+        )
+    address = f'<br/><br/><span style="color:#CBD5E1;">{BUSINESS_ADDRESS}</span>'
+    return base + unsub + address
 
 
 def _shell(title: str, body_html: str, cta_url: str | None = None,
-           cta_label: str | None = None, accent: str = "indigo") -> str:
+           cta_label: str | None = None, accent: str = "indigo",
+           is_transactional: bool = True,
+           unsubscribe_url: str | None = None) -> str:
     """Branded envelope. `accent` picks the CTA colour — 'indigo' for
-    routine flows, 'red' for time-sensitive nudges."""
+    routine flows, 'red' for time-sensitive nudges. `is_transactional`
+    strips the marketing footer (unsubscribe + physical address) to keep
+    verification / password-reset / receipt emails spam-filter clean."""
     bg = INDIGO if accent == "indigo" else RED
     cta = ""
     if cta_url and cta_label:
@@ -39,6 +70,7 @@ def _shell(title: str, body_html: str, cta_url: str | None = None,
             'padding:14px 26px;border-radius:999px;text-decoration:none;">'
             f"{cta_label}</a>"
         )
+    footer_html = _footer(is_transactional=is_transactional, unsubscribe_url=unsubscribe_url)
     return f"""<!doctype html>
 <html><body style="margin:0;background:#F8FAFC;font-family:Arial,Helvetica,sans-serif;color:{INK};">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="padding:24px 12px;">
@@ -57,8 +89,7 @@ def _shell(title: str, body_html: str, cta_url: str | None = None,
           <div style="margin:24px 0;">{cta}</div>
         </td></tr>
         <tr><td style="padding:16px 28px;border-top:1px solid #F1F5F9;color:#94A3B8;font-size:11px;">
-          You&apos;re receiving this because of activity on your {BRAND_NAME} account.<br/>
-          Questions? Reply to this email or write to <a href="mailto:{SUPPORT_EMAIL}" style="color:{INDIGO};text-decoration:none;">{SUPPORT_EMAIL}</a>.
+          {footer_html}
         </td></tr>
       </table>
     </td></tr>
@@ -129,7 +160,7 @@ def password_reset(username: str, reset_url: str):
 # ---------------------------------------------------------------------------
 # Onboarding nudges
 # ---------------------------------------------------------------------------
-def onboarding_payout_nudge(username: str, payout_url: str):
+def onboarding_payout_nudge(username: str, payout_url: str, unsubscribe_url: str | None = None):
     subject = "Finish setting up your BlueOcean store (60 sec)"
     who = f"Hi {username}," if username else "Hi there,"
     body = (
@@ -141,10 +172,13 @@ def onboarding_payout_nudge(username: str, payout_url: str):
         "Hi! Your BlueOcean store is live but no payout method is on file yet.\n"
         f"Connect one in 60 seconds: {payout_url}\n"
     )
-    return subject, _shell("One tap to start earning", body, payout_url, "Connect payout method", accent="indigo"), text
+    return subject, _shell(
+        "One tap to start earning", body, payout_url, "Connect payout method",
+        accent="indigo", is_transactional=False, unsubscribe_url=unsubscribe_url,
+    ), text
 
 
-def onboarding_zero_listing_nudge(username: str, sell_url: str):
+def onboarding_zero_listing_nudge(username: str, sell_url: str, unsubscribe_url: str | None = None):
     subject = "Your BlueOcean store is empty — list your first item"
     who = f"Hi {username}," if username else "Hi there,"
     body = (
@@ -156,7 +190,11 @@ def onboarding_zero_listing_nudge(username: str, sell_url: str):
         "Hi! Your BlueOcean store is empty — list one item to unlock your first sale.\n"
         f"Start here: {sell_url}\n"
     )
-    return subject, _shell("Your store is empty — let&apos;s fix that", body, sell_url, "List your first item", accent="red"), text
+    return subject, _shell(
+        "Your store is empty — let&apos;s fix that", body, sell_url,
+        "List your first item", accent="red", is_transactional=False,
+        unsubscribe_url=unsubscribe_url,
+    ), text
 
 
 # ---------------------------------------------------------------------------

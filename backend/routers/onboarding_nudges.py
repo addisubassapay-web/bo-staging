@@ -91,13 +91,17 @@ async def _run_nudge_job() -> dict:
 
         try:
             from services import mailer_templates
+            from routers.mailops import unsubscribe_url
+            unsub = unsubscribe_url(user["email"])
             subject, html, text = mailer_templates.onboarding_payout_nudge(
-                user.get("username", ""), payout_link
+                user.get("username", ""), payout_link, unsubscribe_url=unsub,
             )
             await mailer.send_email(
                 to=user["email"],
                 subject=subject, html=html, text=text,
                 tags=["onboarding_nudge", NUDGE_KIND],
+                is_transactional=False,
+                unsubscribe_url=unsub,
             )
             await db.onboarding_nudges.insert_one({
                 "user_id": user_id,
@@ -185,13 +189,17 @@ async def _run_zero_listing_nudge_job() -> dict:
 
         try:
             from services import mailer_templates
+            from routers.mailops import unsubscribe_url
+            unsub = unsubscribe_url(user["email"])
             subject, html, text = mailer_templates.onboarding_zero_listing_nudge(
-                user.get("username", ""), sell_url
+                user.get("username", ""), sell_url, unsubscribe_url=unsub,
             )
             await mailer.send_email(
                 to=user["email"],
                 subject=subject, html=html, text=text,
                 tags=["onboarding_nudge", ZERO_LISTING_KIND],
+                is_transactional=False,
+                unsubscribe_url=unsub,
             )
             await db.onboarding_nudges.insert_one({
                 "user_id": user_id,

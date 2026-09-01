@@ -24,6 +24,57 @@ Full-stack ecommerce marketplace **Mercari-Global** — same color scheme (`#FF2
 
 ---
 
+### Sep 01 2026 — Deliverability hardening (5-part anti-suspension kit)
+
+**User asked**: "Do it from my codebase side" after list of 5 hygiene items to prevent Hostinger from re-suspending after they unblock the domain.
+
+**Shipped (all 5):**
+
+1. **Split From vs Reply-To** — `mailer.py` reads `EMAIL_REPLY_TO` and sets it on every outbound msg. `From: BlueOcean <emailservice@…>`, `Reply-To: support@blueoceansmarthub.com`. Prevents "all outbound from one address" spam pattern.
+
+2. **List-Unsubscribe on non-transactional only** — `send_email(is_transactional=False, unsubscribe_url=…)` adds the `List-Unsubscribe: <mailto:…>, <https://…>` and `List-Unsubscribe-Post: List-Unsubscribe=One-Click` headers (required by Gmail/Yahoo bulk-sender policy since Feb 2024) plus `Precedence: bulk`. Onboarding-payout-nudge and zero-listing-nudge callers updated to pass these; verification/OTP/password-reset/receipt emails stay header-clean.
+
+3. **Global rate limiter** — Token-bucket in `mailer.py._rate_gate()` gated on `EMAIL_RATE_LIMIT_PER_SECOND` (default `0.5` = 1 email / 2s). Shared across the process so background workers can't dodge it. Ramp up manually only after clean history. Verified via pytest: two back-to-back gate calls span >=1.7s.
+
+4. **Suppression list + bounce webhook** — new `routers/mailops.py`:
+   - `POST /webhooks/mail/bounce` (secret-protected) — hard bounces / complaints → immediate suppression; 3 soft bounces in 14 days → auto-promoted.
+   - `GET/POST /unsubscribe` — HMAC-signed token (SHA256 over email using JWT_SECRET), renders a branded HTML page, RFC-8058 One-Click POST target for List-Unsubscribe-Post.
+   - `GET/POST /admin/suppression-list[/add|/remove]` — admin-gated read/write.
+   - `services.mailer.register_suppression_check()` wired at startup — every `send_email` calls it BEFORE touching SMTP; hit raises `SuppressedRecipient` and never contacts the server. Protects sender reputation.
+
+5. **Physical address + visible unsubscribe** — `mailer_templates._footer()` splits into transactional (compact, no unsub) and marketing (adds physical address `EMAIL_BUSINESS_ADDRESS` env var + underline unsubscribe link). `_shell(is_transactional, unsubscribe_url)` threads both through.
+
+**Bonus: circuit breaker.** After the mailer was slammed by the escrow-digest loop retrying against the now-auth-failing new mailbox, added a fast-fail circuit in `mailer.py._circuit_open()`: if the last 5 real send outcomes within 60s are all failures, subsequent sends skip SMTP entirely and raise `MailerError` in microseconds instead of waiting the 5-20s aiosmtplib timeout. This keeps the API's connection pool healthy during an SMTP outage and auto-recovers the moment any send succeeds (or old failures age out).
+
+**Environment vars added to `/app/backend/.env`:**
+- `EMAIL_REPLY_TO=support@blueoceansmarthub.com`
+- `EMAIL_BUSINESS_ADDRESS="BlueOcean Smarthub · reply to this email for our mailing address"` (replace with real address once user provides one)
+- `EMAIL_RATE_LIMIT_PER_SECOND=0.5`
+- `EMAIL_DAILY_CAP=500` (recorded, not yet enforced)
+
+**Curl E2E verified:**
+- Signed unsubscribe link → 200 branded HTML page, address inserted into `db.suppression_list` with `reason=unsubscribe source=link_click`
+- `send_email` to that address → immediately raises `SuppressedRecipient` without touching SMTP
+- Cleanup removal returns `{ok:true, removed:1}`
+
+**Pytest (`tests/test_deliverability_hardening.py`):** 5 tests cover token round-trip, unsubscribe endpoint, bounce webhook auth, suppression-check blocks pre-SMTP, and the rate limiter timing. All green.
+
+**Files touched:**
+- `/app/backend/services/mailer.py` (fully rewritten — 216 lines)
+- `/app/backend/services/mailer_templates.py` (`_footer` helper + `_shell` signature + nudge fns take `unsubscribe_url`)
+- `/app/backend/routers/mailops.py` (new — 189 lines)
+- `/app/backend/routers/onboarding_nudges.py` (both nudge callers pass `is_transactional=False` + `unsubscribe_url`)
+- `/app/backend/server.py` (registers mailops router + wires suppression check into mailer at startup)
+- `/app/backend/.env` (4 new env vars)
+- `/app/backend/tests/test_deliverability_hardening.py` (new — 5 tests)
+
+**Follow-ups for user (not code):**
+- Confirm SMTP password for the new `emailservice@` mailbox — current probe is now `auth_failed` because the old password no longer authenticates.
+- Set a real physical address in `EMAIL_BUSINESS_ADDRESS` (US CAN-SPAM requires one visible in every marketing email).
+- Configure DNS: SPF, DKIM (via Hostinger's DKIM tab), DMARC `p=none` for 2 weeks then `p=quarantine`.
+
+---
+
 ### Sep 01 2026 — SMTP Health Ticker + email address swap to emailservice@
 
 **User asked:** wire SMTP fallback + add red/green health dot in Admin, then swap the sender address to `emailservice@blueoceansmarthub.com` (was `supportteam@`, briefly `support101@`).

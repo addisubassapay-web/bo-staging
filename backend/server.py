@@ -8008,6 +8008,13 @@ app.include_router(products_router, prefix="/api")
 app.include_router(apify_runs_router, prefix="/api")
 app.include_router(support_router, prefix="/api")
 app.include_router(otp_router, prefix="/api")
+# Deliverability plumbing: bounce webhook, one-click unsubscribe,
+# suppression-list admin. Also wires services.mailer to consult
+# suppression_list before every send.
+from routers.mailops import router as _mailops_router, is_suppressed as _is_suppressed
+from services import mailer as _mailer_module
+_mailer_module.register_suppression_check(_is_suppressed)
+app.include_router(_mailops_router, prefix="/api")
 app.include_router(reviews_router, prefix="/api")
 app.include_router(messaging_router, prefix="/api")
 app.include_router(notifications_router, prefix="/api")

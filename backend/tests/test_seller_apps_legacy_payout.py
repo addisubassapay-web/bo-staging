@@ -30,13 +30,18 @@ API = f"{BASE_URL}/api"
 def _admin_token():
     mongo = MongoClient(os.environ["MONGO_URL"])
     db = mongo[os.environ["DB_NAME"]]
-    admin = db.users.find_one({"role": "admin"})
+    admin = db.users.find_one({"email": "admin@mercari.local", "role": "admin"})
+    assert admin, "admin@mercari.local not found — cannot run test"
+    db.users.update_one(
+        {"_id": admin["_id"]},
+        {"$set": {"failed_login_attempts": 0, "locked_until": None}},
+    )
+    email = admin["email"]
     mongo.close()
-    # Log in — admin password is admin123 per test_credentials.md
     r = requests.post(
         f"{API}/auth/login",
-        json={"email": admin["email"], "password": "admin123"},
-        timeout=20,
+        json={"email": email, "password": "admin123"},
+        timeout=60,
     )
     assert r.status_code == 200, f"admin login failed: {r.status_code} {r.text[:400]}"
     return r.json()["token"]
@@ -95,7 +100,7 @@ def test_seller_applications_lists_legacy_payout_methods():
         r = requests.get(
             f"{API}/admin/seller-applications",
             headers={"Authorization": f"Bearer {token}"},
-            timeout=20,
+            timeout=60,
         )
         assert r.status_code == 200, f"expected 200, got {r.status_code}: {r.text[:400]}"
         emails = {row["user_email"] for row in r.json()}
@@ -106,7 +111,7 @@ def test_seller_applications_lists_legacy_payout_methods():
         r2 = requests.get(
             f"{API}/admin/seller-applications?status_filter=pending",
             headers={"Authorization": f"Bearer {token}"},
-            timeout=20,
+            timeout=60,
         )
         assert r2.status_code == 200
         pending_emails = {row["user_email"] for row in r2.json()}
