@@ -1177,7 +1177,7 @@ agent_communication:
       7. ✅ Affiliate link generation
          - "Share as affiliate" button visible on listing detail
          - Dialog opens correctly
-         - Affiliate link generated: https://ocean-marketplace.preview.emergentagent.com/r/0c74e704fa
+         - Affiliate link generated: https://bo-staging.preview.emergentagent.com/r/0c74e704fa
          - Copy button working
          - Link format correct (/r/{code})
       

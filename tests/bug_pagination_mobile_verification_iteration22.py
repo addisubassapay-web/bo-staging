@@ -6,7 +6,7 @@ the testing agent in iteration 22.
 Run inside an async Playwright context with an existing `page` object.
 """
 
-LIVE_URL = "https://ocean-marketplace.preview.emergentagent.com/search"
+LIVE_URL = "https://bo-staging.preview.emergentagent.com/search"
 
 
 async def run(page):

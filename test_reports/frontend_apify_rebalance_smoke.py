@@ -6,11 +6,11 @@ try:
     print("PASS - viewport configured")
 
     page.on("dialog", lambda dialog: asyncio.create_task(dialog.accept()))
-    await page.goto("https://ocean-marketplace.preview.emergentagent.com", wait_until="domcontentloaded")
+    await page.goto("https://bo-staging.preview.emergentagent.com", wait_until="domcontentloaded")
     await page.evaluate("localStorage.removeItem('merchari-global_token'); localStorage.removeItem('merchari-global_username');")
     print("PASS - cleared existing auth state")
 
-    await page.goto("https://ocean-marketplace.preview.emergentagent.com/login", wait_until="domcontentloaded")
+    await page.goto("https://bo-staging.preview.emergentagent.com/login", wait_until="domcontentloaded")
     await page.wait_for_selector('[data-testid="login-email"]', timeout=30000)
     await page.fill('[data-testid="login-email"]', "admin@mercari.local")
     await page.fill('[data-testid="login-password"] input, [data-testid="login-password"]', "admin123")
@@ -20,7 +20,7 @@ try:
     print(f"PASS - submitted admin login (HTTP {resp.status})")
     await page.wait_for_timeout(1500)
 
-    await page.goto("https://ocean-marketplace.preview.emergentagent.com/admin", wait_until="domcontentloaded")
+    await page.goto("https://bo-staging.preview.emergentagent.com/admin", wait_until="domcontentloaded")
     await page.wait_for_selector('[data-testid="apify-ticker-rebalance-btn"]', timeout=45000)
     print("PASS - admin dashboard rebalance button visible")
 

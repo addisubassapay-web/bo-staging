@@ -11,7 +11,7 @@ from typing import Dict, Optional
 import time
 
 # Base URL from frontend/.env
-BASE_URL = "https://ocean-marketplace.preview.emergentagent.com/api"
+BASE_URL = "https://bo-staging.preview.emergentagent.com/api"
 
 # Test credentials
 ADMIN_EMAIL = "admin@mercari.local"

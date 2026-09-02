@@ -8,7 +8,7 @@ import time
 import json
 from typing import Dict, Any
 
-BASE_URL = "https://ocean-marketplace.preview.emergentagent.com/api"
+BASE_URL = "https://bo-staging.preview.emergentagent.com/api"
 ADMIN_EMAIL = "admin@mercari.local"
 ADMIN_PASSWORD = "admin123"
 

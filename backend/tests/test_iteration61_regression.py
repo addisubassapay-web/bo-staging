@@ -10,7 +10,7 @@ import re
 import requests
 import pytest
 
-BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://ocean-marketplace.preview.emergentagent.com").rstrip("/")
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://bo-staging.preview.emergentagent.com").rstrip("/")
 
 # Read from frontend .env if os env not set
 if "preview.emergentagent" not in BASE_URL:

@@ -1,5 +1,5 @@
 {
-  "api_base": "https://ocean-marketplace.preview.emergentagent.com/api",
+  "api_base": "https://bo-staging.preview.emergentagent.com/api",
   "results": [
     {
       "name": "scraper_GET_/scraper/anything",

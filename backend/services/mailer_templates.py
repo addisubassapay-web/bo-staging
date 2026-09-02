@@ -20,7 +20,7 @@ RED_LIGHT = "#FF5B6B"
 INK = "#0F172A"
 
 FRONTEND = os.environ.get(
-    "FRONTEND_ORIGIN", "https://ocean-marketplace.preview.emergentagent.com"
+    "FRONTEND_ORIGIN", "https://bo-staging.preview.emergentagent.com"
 ).rstrip("/")
 
 SUPPORT_EMAIL = os.environ.get("SUPPORT_EMAIL", "mailsupport@blueoceansmarthub.com")

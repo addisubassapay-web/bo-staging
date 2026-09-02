@@ -1,5 +1,5 @@
 {
-  "backend_url": "https://ocean-marketplace.preview.emergentagent.com",
+  "backend_url": "https://bo-staging.preview.emergentagent.com",
   "frontend_url": "http://localhost:3000",
   "counts": {
     "active": 239,

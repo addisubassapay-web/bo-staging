@@ -5,7 +5,7 @@
     "email": "admin@mercari.local",
     "role": "admin"
   },
-  "base": "https://ocean-marketplace.preview.emergentagent.com/api",
+  "base": "https://bo-staging.preview.emergentagent.com/api",
   "categories": [
     {
       "id": "82a68761-a263-4f63-837f-5dd1362c2cd9",
