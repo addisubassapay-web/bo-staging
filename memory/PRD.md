@@ -2662,3 +2662,9 @@ User asked to verify their exact env keys land in backend/.env.
 - Admin UI at `/admin/master-pass-override` intentionally skipped per user's "assuming defaults" reply; toggle can be operated via cURL or Postman until the UI lands.
 
 **Testing agent NOT dispatched** per user's explicit "Skipped, assuming defaults for now" on the pytest+testing step. Manual curl end-to-end validated all three endpoints.
+
+### Feb 2026 — Deploy Health Probe Fix
+- **Issue**: Emergent Deploy build logs showed thousands of `GET /health HTTP/1.0 404 Not Found` from `127.0.0.1` — Kubernetes liveness/readiness probes were hitting root `/health` on the backend pod but all routes lived under the `/api` prefix.
+- **Fix**: Added root-level `GET/HEAD /health` and `GET/HEAD /api/health` in `/app/backend/server.py` immediately after `app = FastAPI(...)` (lines ~88-105). Both return `{"status":"ok"}`.
+- **Also fixed**: JS linter engine crash blocking pre-completion checks. Added `/app/frontend/eslint.config.js` (ESLint 9 flat config, react-hooks plugin loaded, permissive rules). `npx eslint src` now clean.
+- **Verified**: testing_agent run `/app/test_reports/iteration_health_probe.json` — 100% backend pass, no regressions on `/api/wallet/ticker` or `/api/categories`.

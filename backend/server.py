@@ -86,6 +86,25 @@ _UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
 app.mount("/api/uploads", StaticFiles(directory=str(_UPLOADS_DIR)), name="uploads")
 
 
+# ---------------------------------------------------------------------------
+# Liveness / readiness probes
+# ---------------------------------------------------------------------------
+# Kubernetes hits `GET /health` (no `/api` prefix) at ~1Hz for liveness /
+# readiness. Answer with a cheap 200 so the pod is never marked unhealthy.
+# We also expose `/api/health` for the ingress-routed variant that the
+# frontend + platform monitors sometimes probe.
+@app.get("/health", include_in_schema=False)
+@app.head("/health", include_in_schema=False)
+async def _root_health():
+    return {"status": "ok"}
+
+
+@app.get("/api/health", include_in_schema=False)
+@app.head("/api/health", include_in_schema=False)
+async def _api_health():
+    return {"status": "ok"}
+
+
 # =========================
 # Models
 # =========================
