@@ -251,6 +251,43 @@ async def admin_remove_suppression(payload: dict = Body(...), _admin: dict = Dep
     return {"ok": True, "removed": n}
 
 
+@router.get("/admin/mail/delivery-log")
+async def admin_mail_delivery_log(
+    limit: int = 100,
+    kind: str = "",
+    status: str = "",
+    q: str = "",
+    _admin: dict = Depends(require_admin),
+):
+    """Return the most recent email sends with provider, status, kind,
+    and message_id. Filter by kind (auth/receipts/marketing/…), by
+    status (sent/failed), or by recipient/subject substring."""
+    query: dict = {}
+    if kind:
+        query["kind"] = kind
+    if status:
+        query["status"] = status
+    if q:
+        query["$or"] = [
+            {"to": {"$regex": q, "$options": "i"}},
+            {"subject": {"$regex": q, "$options": "i"}},
+        ]
+    rows = await get_db().email_delivery_log.find(query, {"_id": 0}).sort("at", -1).to_list(max(1, min(500, limit)))
+    # Aggregate a small stat summary so the admin UI can show totals.
+    from datetime import datetime as _dt, timezone as _tz, timedelta as _td
+    since_24h = _dt.now(_tz.utc) - _td(hours=24)
+    agg = await get_db().email_delivery_log.aggregate([
+        {"$match": {"at": {"$gte": since_24h}}},
+        {"$group": {"_id": {"provider": "$provider", "status": "$status"}, "n": {"$sum": 1}}},
+    ]).to_list(50)
+    breakdown = {}
+    for row in agg:
+        prov = row["_id"].get("provider") or "?"
+        stat = row["_id"].get("status") or "?"
+        breakdown.setdefault(prov, {})[stat] = row["n"]
+    return {"items": rows, "count": len(rows), "last_24h_breakdown": breakdown}
+
+
 # ---------------------------------------------------------------------------
 # IMAP receive endpoints — read-only inbox view + one-shot bounce processor.
 # Both admin-only so the mailbox contents never leak to unauthenticated users.

@@ -8143,10 +8143,31 @@ app.include_router(support_router, prefix="/api")
 app.include_router(otp_router, prefix="/api")
 # Deliverability plumbing: bounce webhook, one-click unsubscribe,
 # suppression-list admin. Also wires services.mailer to consult
-# suppression_list before every send.
+# suppression_list before every send and persists every send to
+# email_delivery_log for admin audit.
 from routers.mailops import router as _mailops_router, is_suppressed as _is_suppressed
 from services import mailer as _mailer_module
 _mailer_module.register_suppression_check(_is_suppressed)
+
+# Professional-grade email delivery log — every send + failure recorded
+async def _email_delivery_writer(entry: dict) -> None:
+    try:
+        await db.email_delivery_log.insert_one(entry)
+    except Exception:
+        pass
+
+async def _email_idempotency_lookup(key: str):
+    if not key:
+        return None
+    from datetime import datetime as _dt, timezone as _tz, timedelta as _td
+    cutoff = _dt.now(_tz.utc) - _td(seconds=60)
+    return await db.email_delivery_log.find_one(
+        {"idempotency_key": key, "status": "sent", "at": {"$gte": cutoff}},
+        {"_id": 0},
+    )
+
+_mailer_module.register_delivery_writer(_email_delivery_writer)
+_mailer_module.register_idempotency_lookup(_email_idempotency_lookup)
 app.include_router(_mailops_router, prefix="/api")
 app.include_router(reviews_router, prefix="/api")
 app.include_router(messaging_router, prefix="/api")
