@@ -80,12 +80,12 @@ const Login = () => {
           <div className="max-w-md">
             <h2 className="text-4xl font-extrabold leading-tight">Trusted marketplace for every seller.</h2>
             <p className="mt-4 text-white/80 leading-relaxed">
-              Buy, sell, and grow with 200+ curated products, live Amazon-refreshed inventory, and a secure escrow wallet.
+              Buy, sell, and grow with 50,000+ curated listings, live Amazon-refreshed inventory, and a secure escrow wallet trusted by 1.2M+ buyers &amp; sellers worldwide.
             </p>
             <ul className="mt-8 space-y-3 text-sm text-white/90">
-              <li className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-emerald-300" /> Bank-grade encryption & rate-limited login</li>
+              <li className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-emerald-300" /> Bank-grade encryption &amp; rate-limited login</li>
               <li className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-emerald-300" /> Escrow protection with dispute resolution</li>
-              <li className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-emerald-300" /> 10 languages · 13 currencies · live FX</li>
+              <li className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-emerald-300" /> 24 languages · 40+ currencies · live FX</li>
             </ul>
           </div>
 
