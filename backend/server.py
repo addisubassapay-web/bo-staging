@@ -239,7 +239,7 @@ class Listing(BaseModel):
     images: List[str] = []
     shipping_paid_by: Literal["seller", "buyer"] = "seller"
     shipping_method: str = "Standard"
-    status: Literal["active", "sold", "reserved", "removed"] = "active"
+    status: Literal["active", "sold", "reserved", "removed", "suspended", "draft"] = "active"
     likes_count: int = 0
     views_count: int = 0
     featured: bool = False
@@ -2719,51 +2719,12 @@ async def admin_smtp_health(_admin: dict = Depends(require_admin), force: bool =
 async def admin_list_users(_admin: dict = Depends(require_admin)):
     docs = await db.users.find({}, {"_id": 0, "password_hash": 0}).sort("created_at", -1).to_list(1000)
 
-    # Push real users to the top so admins don't have to scroll past seed / e2e /
-    # scraper accounts to reach a genuine customer. A user is treated as "real"
-    # when the email domain is not on the internal / synthetic allow-list AND
-    # the username doesn't look like a generated test id. Real users keep their
-    # created_at-desc ordering within the group; synthetic accounts follow,
-    # also sorted by newest first, so audit workflows still work.
-    _SYNTHETIC_DOMAINS = {
-        "example.com",
-        "e2e.com",
-        "t.local",
-        "case.local",
-        "test.local",
-        "apify.local",
-        "mercari.local",
-        "localhost",
-    }
+    # Real users float to the top so admins don't scroll past hundreds of
+    # e2e / seed / apify fixture rows. Classification lives in
+    # utils.admin_sort so every admin listing endpoint uses the same rules.
+    from utils.admin_sort import is_synthetic_user_doc as _is_synth_user, _created_ts
 
-    def _is_synthetic(u: dict) -> bool:
-        email = (u.get("email") or "").lower().strip()
-        if not email or "@" not in email:
-            return True
-        domain = email.rsplit("@", 1)[-1]
-        if domain in _SYNTHETIC_DOMAINS:
-            return True
-        # any ".local" TLD is a placeholder (mercari.local, admin.local, etc.).
-        if domain.endswith(".local"):
-            return True
-        uname = (u.get("username") or "").lower()
-        # test-suite fixtures we spin up look like "mpo2_1788191086", "e2e_...",
-        # "case_...", "seed_..." - flag them even if the email domain looks real.
-        for prefix in ("mpo1_", "mpo2_", "mpo3_", "e2e_", "case_", "seed_", "fixture_", "test_", "upper_", "lo_", "buyer_", "seller_"):
-            if uname.startswith(prefix):
-                return True
-        # Fixture emails frequently use synthetic local-parts like
-        # "upper_<hex>@x.com" even when the domain looks real - catch those too.
-        local = email.rsplit("@", 1)[0]
-        for prefix in ("upper_", "lo_", "e2e_", "case_", "seed_", "fixture_", "test_", "mpo1_", "mpo2_", "mpo3_"):
-            if local.startswith(prefix):
-                return True
-        return False
-
-    docs.sort(key=lambda u: (
-        _is_synthetic(u),                            # False (real) first
-        -(u.get("created_at").timestamp() if isinstance(u.get("created_at"), datetime) else 0),
-    ))
+    docs.sort(key=lambda u: (_is_synth_user(u), -_created_ts(u)))
     return [UserPublic(**d) for d in docs]
 
 @api_router.put("/admin/users/{user_id}")
@@ -3327,6 +3288,8 @@ async def admin_delete_user(user_id: str, _admin: dict = Depends(require_admin))
 @api_router.get("/admin/orders", response_model=List[Order])
 async def admin_orders(_admin: dict = Depends(require_admin)):
     docs = await db.orders.find({}, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    from utils.admin_sort import real_users_first
+    docs = await real_users_first(db, docs, ("buyer_id", "seller_id"))
     return [Order(**d) for d in docs]
 
 @api_router.get("/admin/listings", response_model=List[Listing])
@@ -3335,7 +3298,20 @@ async def admin_listings(_admin: dict = Depends(require_admin), status_filter: O
     if status_filter:
         q["status"] = status_filter
     docs = await db.listings.find(q, {"_id": 0}).sort("created_at", -1).to_list(2000)
-    return [Listing(**d) for d in docs]
+    from utils.admin_sort import real_users_first
+    docs = await real_users_first(db, docs, ("seller_id",))
+    # Belt-and-braces: skip any doc that fails Pydantic validation instead
+    # of nuking the whole admin queue. Schema drift (e.g. a legacy
+    # status='draft' row) should not hide 1,999 healthy listings.
+    out: List[Listing] = []
+    for d in docs:
+        try:
+            out.append(Listing(**d))
+        except Exception as e:  # noqa: BLE001
+            logging.getLogger("admin_listings").warning(
+                f"skip malformed listing {d.get('id')}: {e}"
+            )
+    return out
 
 
 # =========================
@@ -4422,6 +4398,8 @@ async def admin_list_deposits(
     if status_filter:
         q["status"] = status_filter
     docs = await db.deposits.find(q, {"_id": 0}).sort("created_at", -1).to_list(500)
+    from utils.admin_sort import real_users_first
+    docs = await real_users_first(db, docs, ("user_id",))
     return [DepositRequest(**d) for d in docs]
 
 
@@ -5188,6 +5166,8 @@ async def admin_withdrawals(_admin: dict = Depends(require_admin), status_filter
     if status_filter:
         q["status"] = status_filter
     docs = await db.withdrawals.find(q, {"_id": 0}).sort("created_at", -1).to_list(500)
+    from utils.admin_sort import real_users_first
+    docs = await real_users_first(db, docs, ("user_id",))
     return [WithdrawalRequest(**d) for d in docs]
 
 @api_router.put("/admin/withdrawals/{wd_id}")
@@ -5211,8 +5191,16 @@ async def admin_process_withdrawal(wd_id: str, updates: dict, _admin: dict = Dep
 
 @api_router.get("/admin/stores", response_model=List[Store])
 async def admin_stores(_admin: dict = Depends(require_admin)):
+    # Keep featured stores first (admin-controlled hand ordering), then float
+    # real-user stores above synthetic/seeded stores within each rank tier.
     docs = await db.stores.find({}, {"_id": 0}).sort([("featured_rank", 1), ("created_at", -1)]).to_list(1000)
-    return [Store(**d) for d in docs]
+    from utils.admin_sort import real_users_first
+    # Featured stores (rank < 9999) stay where the admin put them; only the
+    # unfeatured tail gets re-sorted by real-user ownership.
+    featured = [d for d in docs if int(d.get("featured_rank", 9999)) < 9999]
+    tail = [d for d in docs if int(d.get("featured_rank", 9999)) >= 9999]
+    tail = await real_users_first(db, tail, ("owner_id",))
+    return [Store(**d) for d in (featured + tail)]
 
 @api_router.put("/admin/stores/{store_id}")
 async def admin_update_store(store_id: str, updates: dict, _admin: dict = Depends(require_admin)):
@@ -5919,6 +5907,11 @@ async def admin_seller_apps(_admin: dict = Depends(require_admin), status_filter
             logging.getLogger("seller_apps").warning(
                 f"skip malformed seller_application {d.get('id')}: {e}"
             )
+    # Sort real-user applications to the top of the queue.
+    from utils.admin_sort import real_user_ids, _created_ts as _ts
+    all_ids = [a.user_id for a in out]
+    reals = await real_user_ids(db, all_ids)
+    out.sort(key=lambda a: (a.user_id not in reals, -(_ts({"created_at": a.created_at}))))
     return out
 
 @api_router.put("/admin/seller-applications/{app_id}")
