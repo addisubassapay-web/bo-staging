@@ -250,6 +250,30 @@ const UsersMgr = () => {
   const load = () => api.get("/admin/users").then((r) => setUsers(r.data));
   useEffect(() => { load(); }, []);
 
+  // "Real" user detection mirrors backend admin_list_users(): a user is
+  // synthetic when the email domain is on the internal allow-list or the
+  // username/local-part starts with fixture prefixes. Everyone else earns a
+  // green "Real" chip so admins can eyeball authenticity without opening
+  // each row.
+  const SYNTHETIC_DOMAINS = React.useMemo(() => new Set([
+    "example.com", "e2e.com", "t.local", "case.local", "test.local",
+    "apify.local", "mercari.local", "localhost",
+  ]), []);
+  const FIXTURE_PREFIXES = React.useMemo(() => [
+    "mpo1_", "mpo2_", "mpo3_", "e2e_", "case_", "seed_", "fixture_",
+    "test_", "upper_", "lo_", "buyer_", "seller_",
+  ], []);
+  const isRealUser = (u) => {
+    const email = (u?.email || "").toLowerCase().trim();
+    if (!email || !email.includes("@")) return false;
+    const [local, domain] = email.split("@");
+    if (SYNTHETIC_DOMAINS.has(domain)) return false;
+    if (domain.endsWith(".local")) return false;
+    const uname = (u?.username || "").toLowerCase();
+    if (FIXTURE_PREFIXES.some((p) => uname.startsWith(p) || local.startsWith(p))) return false;
+    return true;
+  };
+
   const toggleActive = async (u) => {
     await api.put(`/admin/users/${u.id}`, { is_active: !u.is_active });
     toast({ title: `User ${u.is_active ? "disabled" : "enabled"}` });
@@ -392,6 +416,15 @@ const UsersMgr = () => {
                   <div className="flex items-center gap-2">
                     <div className="h-8 w-8 rounded-full bg-neutral-200 grid place-items-center text-xs font-semibold">{u.username[0].toUpperCase()}</div>
                     <span className="font-medium">{u.username}</span>
+                    {isRealUser(u) && (
+                      <span
+                        className="inline-flex items-center gap-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide"
+                        title="Real user (non-synthetic email domain)"
+                        data-testid={`user-real-chip-${u.id}`}
+                      >
+                        <CheckCircle2 className="h-2.5 w-2.5" /> Real
+                      </span>
+                    )}
                   </div>
                 </td>
                 <td className="p-3 text-neutral-600">{u.email}</td>

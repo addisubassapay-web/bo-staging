@@ -121,13 +121,13 @@ const Register = () => {
           <div className="max-w-md">
             <h2 className="text-4xl font-extrabold leading-tight">Start selling in minutes.</h2>
             <p className="mt-4 text-white/80 leading-relaxed">
-              Your storefront is auto-provisioned the moment you register. List real Amazon-sourced inventory, earn instant escrow releases, and keep 90%+ of every sale.
+              Join 1.2M+ buyers &amp; sellers on a marketplace with 50,000+ curated listings and secure escrow across 40+ currencies. Your storefront is auto-provisioned the moment you register.
             </p>
             <ul className="mt-8 space-y-3 text-sm text-white/90">
               <li className="flex items-center gap-2"><Check className="h-4 w-4 text-emerald-300" /> Auto-provisioned storefront + subdomain</li>
               <li className="flex items-center gap-2"><Check className="h-4 w-4 text-emerald-300" /> Reinvest frozen escrow into new orders</li>
               <li className="flex items-center gap-2"><Check className="h-4 w-4 text-emerald-300" /> 3-tier bulk discounts drive bigger baskets</li>
-              <li className="flex items-center gap-2"><Check className="h-4 w-4 text-emerald-300" /> Real-time analytics for every category filter</li>
+              <li className="flex items-center gap-2"><Check className="h-4 w-4 text-emerald-300" /> 24 languages · 40+ currencies · live FX</li>
             </ul>
           </div>
 
