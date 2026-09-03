@@ -2718,6 +2718,52 @@ async def admin_smtp_health(_admin: dict = Depends(require_admin), force: bool =
 @api_router.get("/admin/users", response_model=List[UserPublic])
 async def admin_list_users(_admin: dict = Depends(require_admin)):
     docs = await db.users.find({}, {"_id": 0, "password_hash": 0}).sort("created_at", -1).to_list(1000)
+
+    # Push real users to the top so admins don't have to scroll past seed / e2e /
+    # scraper accounts to reach a genuine customer. A user is treated as "real"
+    # when the email domain is not on the internal / synthetic allow-list AND
+    # the username doesn't look like a generated test id. Real users keep their
+    # created_at-desc ordering within the group; synthetic accounts follow,
+    # also sorted by newest first, so audit workflows still work.
+    _SYNTHETIC_DOMAINS = {
+        "example.com",
+        "e2e.com",
+        "t.local",
+        "case.local",
+        "test.local",
+        "apify.local",
+        "mercari.local",
+        "localhost",
+    }
+
+    def _is_synthetic(u: dict) -> bool:
+        email = (u.get("email") or "").lower().strip()
+        if not email or "@" not in email:
+            return True
+        domain = email.rsplit("@", 1)[-1]
+        if domain in _SYNTHETIC_DOMAINS:
+            return True
+        # any ".local" TLD is a placeholder (mercari.local, admin.local, etc.).
+        if domain.endswith(".local"):
+            return True
+        uname = (u.get("username") or "").lower()
+        # test-suite fixtures we spin up look like "mpo2_1788191086", "e2e_...",
+        # "case_...", "seed_..." - flag them even if the email domain looks real.
+        for prefix in ("mpo1_", "mpo2_", "mpo3_", "e2e_", "case_", "seed_", "fixture_", "test_", "upper_", "lo_", "buyer_", "seller_"):
+            if uname.startswith(prefix):
+                return True
+        # Fixture emails frequently use synthetic local-parts like
+        # "upper_<hex>@x.com" even when the domain looks real - catch those too.
+        local = email.rsplit("@", 1)[0]
+        for prefix in ("upper_", "lo_", "e2e_", "case_", "seed_", "fixture_", "test_", "mpo1_", "mpo2_", "mpo3_"):
+            if local.startswith(prefix):
+                return True
+        return False
+
+    docs.sort(key=lambda u: (
+        _is_synthetic(u),                            # False (real) first
+        -(u.get("created_at").timestamp() if isinstance(u.get("created_at"), datetime) else 0),
+    ))
     return [UserPublic(**d) for d in docs]
 
 @api_router.put("/admin/users/{user_id}")
