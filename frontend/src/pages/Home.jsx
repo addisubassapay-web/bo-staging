@@ -9,6 +9,7 @@ import { useCurrency } from "@/context/CurrencyContext";
 import {
   ArrowRight, ShieldCheck, Truck, Headphones, RotateCcw, Flame, Zap,
   CheckCircle2, Lock, Globe, Heart, Sparkles, Store as StoreIcon, BadgeCheck,
+  Package, Users,
 } from "lucide-react";
 import AuroraBackdrop from "@/components/ui/AuroraBackdrop";
 import RibbonBadge from "@/components/ui/RibbonBadge";
@@ -16,6 +17,49 @@ import StickerChip from "@/components/ui/StickerChip";
 import WaveDivider from "@/components/ui/WaveDivider";
 
 const money = (n) => `$${Number(n).toFixed(2)}`;
+
+// -------------------- TRUST STATS BAR --------------------
+const TRUST_STATS = [
+  { icon: Package, value: "50,000+", label: "Curated listings", accent: "from-[#5459E8] to-[#818CF8]" },
+  { icon: Users, value: "1.2M+", label: "Buyers & sellers", accent: "from-[#FF0515] to-[#FF5B6B]" },
+  { icon: Globe, value: "40+", label: "Currencies · live FX", accent: "from-[#22C55E] to-[#4ADE80]" },
+  { icon: ShieldCheck, value: "100%", label: "Escrow protected", accent: "from-[#F59E0B] to-[#FBBF24]" },
+];
+
+const TrustStatsBar = () => (
+  <section
+    className="max-w-7xl mx-auto px-4 mt-6 sm:mt-8"
+    data-testid="home-trust-stats"
+    aria-label="BlueOcean marketplace at a glance"
+  >
+    <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-[#0B1220]/95 via-[#111832]/95 to-[#0B1220]/95 backdrop-blur-md shadow-[0_10px_40px_-20px_rgba(84,89,232,0.55)]">
+      <div className="pointer-events-none absolute -top-16 -right-10 h-40 w-40 rounded-full bg-[#5459E8]/25 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-20 -left-10 h-40 w-40 rounded-full bg-[#FF0515]/20 blur-3xl" />
+      <div className="relative grid grid-cols-2 md:grid-cols-4 divide-y md:divide-y-0 md:divide-x divide-white/10">
+        {TRUST_STATS.map((s, i) => {
+          const Icon = s.icon;
+          return (
+            <div
+              key={s.label}
+              className="flex items-center gap-3 px-4 sm:px-6 py-4 sm:py-5"
+              data-testid={`trust-stat-${i}`}
+            >
+              <div className={`shrink-0 h-10 w-10 rounded-xl bg-gradient-to-br ${s.accent} flex items-center justify-center shadow-lg shadow-black/20`}>
+                <Icon className="h-5 w-5 text-white" strokeWidth={2.25} />
+              </div>
+              <div className="min-w-0">
+                <div className="text-white text-xl sm:text-2xl font-extrabold leading-none tracking-tight" data-testid={`trust-stat-${i}-value`}>
+                  {s.value}
+                </div>
+                <div className="text-[11px] sm:text-xs text-white/70 mt-1 truncate">{s.label}</div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  </section>
+);
 
 // -------------------- HERO CAROUSEL --------------------
 const HERO_SLIDES = [
@@ -524,6 +568,8 @@ const Home = () => {
       <AuroraBackdrop variant="warm" className="h-[900px] -top-8" data-testid="home-aurora" />
       <div className="relative z-10">
       <HeroCarousel />
+
+      <TrustStatsBar />
 
       <WaveDivider fill="#5459E8" height="h-10 sm:h-14" className="mt-6 opacity-70" data-testid="hero-wave-divider" />
 
