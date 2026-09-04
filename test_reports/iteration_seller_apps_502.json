@@ -1,0 +1,22 @@
+{
+  "summary": "Verified fix for /api/admin/seller-applications 502 error. Ran 12 pytest cases including 10 back-to-back calls to the endpoint, status filter variants (pending/approved/rejected), real-user-first ordering, and regression on other admin endpoints (users/stores/orders with and without ?real_only=1). All 12 tests passed.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_seller_apps_502.py",
+    "/app/test_reports/pytest/seller_apps_502.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Escrow digest fix looks correct: short-circuit when mailer breaker open + persisted last_run_at in db.settings prevents hot-reload re-triggers. Consider adding a metric/log line for how many digest runs were skipped due to breaker to aid future observability.",
+    "server.py is very large (~7000+ lines) - consider splitting admin routes and background loops into separate modules."
+  ],
+  "updated_files": ["/app/backend/tests/test_seller_apps_502.py"],
+  "success_rate": {"backend": "100%", "frontend": "skipped"},
+  "test_credentials": "admin@mercari.local / admin123 (from /app/memory/test_credentials.md, works)",
+  "seed_data_creation": "none",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Backend fix for 502 on /api/admin/seller-applications verified. Endpoint returns 200 across 10 consecutive calls; filters and regressions clean. Test file /app/backend/tests/test_seller_apps_502.py can be reused as regression suite.",
+  "rca of the issue": "escrow_digest_loop scanned ~224 orders on each restart and attempted SMTP send for every one; Hostinger SMTP is offline in this env so each attempt hit the mailer circuit-breaker but the loop still blocked the event loop for 30-60s, causing intermittent 502s on admin endpoints. Fix: (1) _dispatch_escrow_digest short-circuits when mailer._circuit_open() is True; (2) last_run_at persisted in db.settings so hot reloads don't retrigger. Verified by 10 back-to-back requests all returning 200."
+}

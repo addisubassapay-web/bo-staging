@@ -6931,6 +6931,25 @@ async def _dispatch_escrow_digest(threshold_days: int = 3, dry_run: bool = False
     stuck orders. Returns counters for the admin trigger endpoint."""
     from services import mailer
 
+    # If the mailer circuit-breaker is already open there is no point in
+    # scanning 200+ orders and trying (and failing) to send an email for
+    # each — that burns 30–60s of DB work on the event loop and can starve
+    # concurrent admin API requests (users saw the seller-applications page
+    # returning 502 during exactly these windows). Bail out immediately;
+    # the next scheduled tick will retry once the breaker closes.
+    if not dry_run and mailer._circuit_open():
+        logger.warning(
+            "[escrow-digest] mailer circuit-breaker is open — skipping this run"
+        )
+        return {
+            "scanned": 0,
+            "sent": 0,
+            "skipped_opt_out": 0,
+            "skipped_no_stuck": 0,
+            "skipped_circuit_open": True,
+            "dry_run": dry_run,
+        }
+
     seller_ids: set = set()
     async for o in db.orders.find(
         {"funds_released": False, "seller_earnings": {"$gt": 0}},
@@ -7029,12 +7048,41 @@ async def escrow_digest_loop():
     """Weekly loop that dispatches escrow alert digests to sellers with orders
     past their delivery ETA. Interval controlled by ESCROW_DIGEST_INTERVAL_SEC
     (default 7 days). Threshold controlled by ESCROW_DIGEST_THRESHOLD_DAYS
-    (default 3 — only orders ≥3d overdue trigger a digest email)."""
+    (default 3 — only orders ≥3d overdue trigger a digest email).
+
+    Persists last_run_at in db.settings so hot-reloads / restarts don't
+    re-blast every ~20s — a huge event-loop hog that caused 502s on
+    admin endpoints during rapid dev iteration."""
     await asyncio.sleep(20)
     while True:
         try:
+            interval = int(os.environ.get("ESCROW_DIGEST_INTERVAL_SEC", str(7 * 24 * 3600)))
             threshold = int(os.environ.get("ESCROW_DIGEST_THRESHOLD_DAYS", "3"))
+            # Skip if we already ran within the interval on a previous
+            # process (hot reload / redeploy / pod restart).
+            state = await db.settings.find_one({"key": "escrow_digest_state"}, {"_id": 0})
+            last_ts = None
+            if state and state.get("last_run_at"):
+                last = state["last_run_at"]
+                if isinstance(last, str):
+                    try:
+                        last_ts = datetime.fromisoformat(last.replace("Z", "+00:00")).timestamp()
+                    except Exception:
+                        last_ts = None
+                elif isinstance(last, datetime):
+                    last_ts = last.timestamp()
+            now_ts = datetime.now(timezone.utc).timestamp()
+            if last_ts and (now_ts - last_ts) < max(60, interval):
+                # Not yet due — wait for the remaining window instead of running.
+                wait_left = max(60.0, interval - (now_ts - last_ts))
+                await asyncio.sleep(wait_left)
+                continue
             await _dispatch_escrow_digest(threshold_days=threshold, dry_run=False)
+            await db.settings.update_one(
+                {"key": "escrow_digest_state"},
+                {"$set": {"key": "escrow_digest_state", "last_run_at": datetime.now(timezone.utc)}},
+                upsert=True,
+            )
         except Exception as e:
             logger.warning(f"escrow_digest_loop error: {e}")
         interval = int(os.environ.get("ESCROW_DIGEST_INTERVAL_SEC", str(7 * 24 * 3600)))
