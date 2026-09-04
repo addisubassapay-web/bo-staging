@@ -147,3 +147,27 @@ async def real_users_first(
 
     docs.sort(key=lambda d: (not _is_doc_real(d), -_created_ts(d, created_field)))
     return docs
+
+
+async def filter_real_only(
+    db,
+    docs: List[dict],
+    id_fields: Iterable[str],
+) -> List[dict]:
+    """Drop synthetic docs entirely. Real = ANY referenced user id is real."""
+    if not docs:
+        return docs
+    id_fields = tuple(id_fields)
+    all_ids: Set[str] = set()
+    for d in docs:
+        for f in id_fields:
+            v = d.get(f)
+            if v:
+                all_ids.add(v)
+    real_ids = await real_user_ids(db, all_ids)
+
+    def keep(d: dict) -> bool:
+        vals = [d.get(f) for f in id_fields if d.get(f)]
+        return any(v in real_ids for v in vals) if vals else False
+
+    return [d for d in docs if keep(d)]

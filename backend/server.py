@@ -2716,7 +2716,7 @@ async def admin_smtp_health(_admin: dict = Depends(require_admin), force: bool =
 
 
 @api_router.get("/admin/users", response_model=List[UserPublic])
-async def admin_list_users(_admin: dict = Depends(require_admin)):
+async def admin_list_users(_admin: dict = Depends(require_admin), real_only: bool = False):
     docs = await db.users.find({}, {"_id": 0, "password_hash": 0}).sort("created_at", -1).to_list(1000)
 
     # Real users float to the top so admins don't scroll past hundreds of
@@ -2724,6 +2724,8 @@ async def admin_list_users(_admin: dict = Depends(require_admin)):
     # utils.admin_sort so every admin listing endpoint uses the same rules.
     from utils.admin_sort import is_synthetic_user_doc as _is_synth_user, _created_ts
 
+    if real_only:
+        docs = [u for u in docs if not _is_synth_user(u)]
     docs.sort(key=lambda u: (_is_synth_user(u), -_created_ts(u)))
     return [UserPublic(**d) for d in docs]
 
@@ -3286,9 +3288,11 @@ async def admin_delete_user(user_id: str, _admin: dict = Depends(require_admin))
     return {"ok": True}
 
 @api_router.get("/admin/orders", response_model=List[Order])
-async def admin_orders(_admin: dict = Depends(require_admin)):
+async def admin_orders(_admin: dict = Depends(require_admin), real_only: bool = False):
     docs = await db.orders.find({}, {"_id": 0}).sort("created_at", -1).to_list(1000)
-    from utils.admin_sort import real_users_first
+    from utils.admin_sort import real_users_first, filter_real_only
+    if real_only:
+        docs = await filter_real_only(db, docs, ("buyer_id", "seller_id"))
     docs = await real_users_first(db, docs, ("buyer_id", "seller_id"))
     return [Order(**d) for d in docs]
 
@@ -5190,11 +5194,14 @@ async def admin_process_withdrawal(wd_id: str, updates: dict, _admin: dict = Dep
     return {"ok": True, "status": new_status}
 
 @api_router.get("/admin/stores", response_model=List[Store])
-async def admin_stores(_admin: dict = Depends(require_admin)):
+async def admin_stores(_admin: dict = Depends(require_admin), real_only: bool = False):
     # Keep featured stores first (admin-controlled hand ordering), then float
     # real-user stores above synthetic/seeded stores within each rank tier.
     docs = await db.stores.find({}, {"_id": 0}).sort([("featured_rank", 1), ("created_at", -1)]).to_list(1000)
-    from utils.admin_sort import real_users_first
+    from utils.admin_sort import real_users_first, filter_real_only
+    if real_only:
+        docs = await filter_real_only(db, docs, ("owner_id",))
+        return [Store(**d) for d in docs]
     # Featured stores (rank < 9999) stay where the admin put them; only the
     # unfeatured tail gets re-sorted by real-user ownership.
     featured = [d for d in docs if int(d.get("featured_rank", 9999)) < 9999]

@@ -245,10 +245,11 @@ const WalletAdjustDialog = ({ user, onClose, onDone }) => {
 const UsersMgr = () => {
   const [users, setUsers] = useState([]);
   const [lockedOnly, setLockedOnly] = useState(false);
+  const [realOnly, setRealOnly] = useState(false);
   const [walletTarget, setWalletTarget] = useState(null);
   const { toast } = useToast();
-  const load = () => api.get("/admin/users").then((r) => setUsers(r.data));
-  useEffect(() => { load(); }, []);
+  const load = () => api.get("/admin/users", { params: realOnly ? { real_only: 1 } : {} }).then((r) => setUsers(r.data));
+  useEffect(() => { load(); }, [realOnly]);
 
   // "Real" user detection mirrors backend admin_list_users(): a user is
   // synthetic when the email domain is on the internal allow-list or the
@@ -385,6 +386,15 @@ const UsersMgr = () => {
             className={`h-8 px-3 rounded-full text-xs font-semibold transition border inline-flex items-center gap-1 ${lockedOnly ? "bg-red-600 text-white border-transparent" : "bg-white text-red-700 border-red-200 hover:bg-red-50"}`}
             data-testid="users-filter-locked"
           >🔒 Locked only ({users.filter(isLocked).length})</button>
+          <button
+            type="button"
+            onClick={() => setRealOnly((v) => !v)}
+            className={`h-8 px-3 rounded-full text-xs font-semibold transition border inline-flex items-center gap-1 ${realOnly ? "bg-emerald-600 text-white border-transparent" : "bg-white text-emerald-700 border-emerald-200 hover:bg-emerald-50"}`}
+            title="Hide synthetic / e2e / seed accounts. Only shows accounts with a real email domain."
+            data-testid="users-filter-real-only"
+          >
+            <CheckCircle2 className="h-3.5 w-3.5" /> Real users only
+          </button>
           <button
             type="button"
             onClick={bulkResetLegacy}
@@ -652,15 +662,16 @@ const OrdersMgr = () => {
   const [undoBatch, setUndoBatch] = useState(null);
   const [undoBusy, setUndoBusy] = useState(false);
   const [undoSecondsLeft, setUndoSecondsLeft] = useState(0);
+  const [realOnly, setRealOnly] = useState(false);
   const { toast } = useToast();
 
-  const load = () => api.get("/admin/orders").then((r) => setOrders(r.data));
+  const load = () => api.get("/admin/orders", { params: realOnly ? { real_only: 1 } : {} }).then((r) => setOrders(r.data));
   const loadUndo = () => {
     api.get("/admin/orders/last-bulk-confirm-batch").then((r) => {
       setUndoBatch(r.data?.batch || null);
     }).catch(() => setUndoBatch(null));
   };
-  useEffect(() => { load(); loadUndo(); }, []);
+  useEffect(() => { load(); loadUndo(); }, [realOnly]);
 
   // Live countdown to undo-window expiry
   useEffect(() => {
@@ -767,7 +778,18 @@ const OrdersMgr = () => {
 
   return (
     <div data-testid="admin-orders-page">
-      <h2 className="text-2xl font-bold mb-2">Orders</h2>
+      <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
+        <h2 className="text-2xl font-bold">Orders</h2>
+        <button
+          type="button"
+          onClick={() => setRealOnly((v) => !v)}
+          className={`h-8 px-3 rounded-full text-xs font-semibold transition border inline-flex items-center gap-1 ${realOnly ? "bg-emerald-600 text-white border-transparent" : "bg-white text-emerald-700 border-emerald-200 hover:bg-emerald-50"}`}
+          title="Hide orders where both buyer and seller are synthetic / e2e fixtures."
+          data-testid="orders-filter-real-only"
+        >
+          <CheckCircle2 className="h-3.5 w-3.5" /> Real users only
+        </button>
+      </div>
       <p className="text-sm text-neutral-500 mb-3">
         Click any row to expand and take over shipping — or select many and use the bulk bar to buy labels or advance delivery in one click.
       </p>
@@ -1387,9 +1409,10 @@ const StoresMgr = () => {
   const [stores, setStores] = useState([]);
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [realOnly, setRealOnly] = useState(false);
   const { toast } = useToast();
-  const load = () => api.get("/admin/stores").then((r) => setStores(r.data));
-  useEffect(() => { load(); }, []);
+  const load = () => api.get("/admin/stores", { params: realOnly ? { real_only: 1 } : {} }).then((r) => setStores(r.data));
+  useEffect(() => { load(); }, [realOnly]);
 
   const setTier = async (s, verified_tier) => {
     setStores((prev) => prev.map((x) => (x.id === s.id ? { ...x, verified_tier } : x)));
@@ -1426,19 +1449,30 @@ const StoresMgr = () => {
 
   return (
     <div data-testid="admin-stores">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
         <div>
           <h2 className="text-2xl font-bold">Stores</h2>
           <p className="text-sm text-neutral-500">Drag to reorder featured storefronts. Top of the list shows first everywhere.</p>
         </div>
-        <Button
-          onClick={saveOrder}
-          disabled={saving || !dirty}
-          className="bg-[#DC2626] hover:bg-[#e01d1b] gap-1.5 disabled:opacity-40"
-          data-testid="save-store-order"
-        >
-          <Save className="h-4 w-4" /> {saving ? "Saving…" : dirty ? "Save order" : "Saved"}
-        </Button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            type="button"
+            onClick={() => setRealOnly((v) => !v)}
+            className={`h-8 px-3 rounded-full text-xs font-semibold transition border inline-flex items-center gap-1 ${realOnly ? "bg-emerald-600 text-white border-transparent" : "bg-white text-emerald-700 border-emerald-200 hover:bg-emerald-50"}`}
+            title="Hide synthetic / seeded / e2e stores. Only shows stores whose owner has a real email domain."
+            data-testid="stores-filter-real-only"
+          >
+            <CheckCircle2 className="h-3.5 w-3.5" /> Real users only
+          </button>
+          <Button
+            onClick={saveOrder}
+            disabled={saving || !dirty}
+            className="bg-[#DC2626] hover:bg-[#e01d1b] gap-1.5 disabled:opacity-40"
+            data-testid="save-store-order"
+          >
+            <Save className="h-4 w-4" /> {saving ? "Saving…" : dirty ? "Save order" : "Saved"}
+          </Button>
+        </div>
       </div>
 
       {stores.length === 0 ? (
