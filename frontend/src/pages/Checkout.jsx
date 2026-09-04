@@ -242,8 +242,11 @@ const Checkout = () => {
                 <Lock className="h-4 w-4" />
               </div>
               <h2 className="font-bold text-lg text-neutral-900 dark:text-neutral-100">{t("checkout.payment")}</h2>
-              <span className="ml-auto text-[10px] uppercase tracking-wider font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-500/15 border border-emerald-200 dark:border-emerald-500/30 rounded-full px-2 py-0.5">
-                {t("checkout.demo")}
+              <span
+                className="ml-auto text-[10px] uppercase tracking-wider font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-500/15 border border-emerald-200 dark:border-emerald-500/30 rounded-full px-2 py-0.5"
+                data-testid="checkout-payment-badge"
+              >
+                Escrow-Protected
               </span>
             </div>
 
