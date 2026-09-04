@@ -108,7 +108,7 @@ async def _api_health():
 
 # ---------------------------------------------------------------------------
 # Self-pinging keep-alive so the preview environment never sleeps.
-# Fires an HTTPS GET at ${PREVIEW_URL}/api/health every 10 minutes. Falls back
+# Fires an HTTPS GET at ${PREVIEW_URL}/api/health every 5 minutes. Falls back
 # to http://localhost:${PORT}/api/health when PREVIEW_URL isn't configured.
 # ---------------------------------------------------------------------------
 _PROCESS_START_TS = time.monotonic()
@@ -119,7 +119,7 @@ def _process_uptime_seconds() -> float:
 
 
 async def _self_ping_loop():
-    """Every 10 min, GET ${PREVIEW_URL}/api/health so the pod stays warm.
+    """Every 5 min, GET ${PREVIEW_URL}/api/health so the pod stays warm.
 
     - Uses HTTPS when PREVIEW_URL is https://... (the emergent preview domain
       is TLS-terminated at the ingress).
@@ -128,7 +128,7 @@ async def _self_ping_loop():
     """
     import httpx  # local import so unit tests can patch it if needed.
 
-    interval = int(os.environ.get("SELF_PING_INTERVAL_SEC", str(10 * 60)))
+    interval = int(os.environ.get("SELF_PING_INTERVAL_SEC", str(5 * 60)))
     # Wait a bit before first ping so the app has finished starting.
     await asyncio.sleep(15)
 
