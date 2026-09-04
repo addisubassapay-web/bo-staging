@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
+import time
 import logging
 import base64
 import secrets
@@ -96,13 +97,56 @@ app.mount("/api/uploads", StaticFiles(directory=str(_UPLOADS_DIR)), name="upload
 @app.get("/health", include_in_schema=False)
 @app.head("/health", include_in_schema=False)
 async def _root_health():
-    return {"status": "ok"}
+    return {"status": "ok", "uptime": _process_uptime_seconds()}
 
 
 @app.get("/api/health", include_in_schema=False)
 @app.head("/api/health", include_in_schema=False)
 async def _api_health():
-    return {"status": "ok"}
+    return {"status": "ok", "uptime": _process_uptime_seconds()}
+
+
+# ---------------------------------------------------------------------------
+# Self-pinging keep-alive so the preview environment never sleeps.
+# Fires an HTTPS GET at ${PREVIEW_URL}/api/health every 10 minutes. Falls back
+# to http://localhost:${PORT}/api/health when PREVIEW_URL isn't configured.
+# ---------------------------------------------------------------------------
+_PROCESS_START_TS = time.monotonic()
+
+
+def _process_uptime_seconds() -> float:
+    return round(time.monotonic() - _PROCESS_START_TS, 3)
+
+
+async def _self_ping_loop():
+    """Every 10 min, GET ${PREVIEW_URL}/api/health so the pod stays warm.
+
+    - Uses HTTPS when PREVIEW_URL is https://... (the emergent preview domain
+      is TLS-terminated at the ingress).
+    - Gracefully falls back to http://localhost:${PORT}/api/health for local
+      non-SSL environments (or when PREVIEW_URL is unset).
+    """
+    import httpx  # local import so unit tests can patch it if needed.
+
+    interval = int(os.environ.get("SELF_PING_INTERVAL_SEC", str(10 * 60)))
+    # Wait a bit before first ping so the app has finished starting.
+    await asyncio.sleep(15)
+
+    while True:
+        preview_url = (os.environ.get("PREVIEW_URL") or "").rstrip("/")
+        if not preview_url:
+            port = os.environ.get("PORT") or "8001"
+            preview_url = f"http://localhost:{port}"
+        target = f"{preview_url}/api/health"
+
+        try:
+            async with httpx.AsyncClient(timeout=10.0, follow_redirects=True) as client:
+                r = await client.get(target)
+            logger.info(f"[self-ping] Heartbeat ping status: {r.status_code} → {target}")
+        except Exception as e:  # noqa: BLE001 — best-effort keep-alive
+            logger.error(f"[self-ping] Heartbeat request failed for {target}: {e}")
+
+        await asyncio.sleep(max(60, interval))
 
 
 # =========================
@@ -8531,6 +8575,7 @@ async def startup():
     asyncio.create_task(pickup_reminder_loop())
     asyncio.create_task(store_health_sweep_loop())
     asyncio.create_task(sitemap_ping_sweeper())
+    asyncio.create_task(_self_ping_loop())
 
 
 @app.on_event("shutdown")
