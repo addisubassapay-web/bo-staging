@@ -165,16 +165,32 @@ const StorePage = () => {
         </div>
       )}
 
-      {/* Hero — vibrant animated gradient */}
+      {/* Hero — natural banner colors when uploaded, animated gradient fallback otherwise. */}
       <div className="relative h-48 sm:h-64 md:h-80 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-[#5459E8] via-[#FF3D66] to-[#7C3AED] animate-[gradient_10s_ease_infinite]" style={{ backgroundSize: "200% 200%" }} />
-        {store.banner && (
-          <img src={store.banner} alt="" className="absolute inset-0 h-full w-full object-cover opacity-60 mix-blend-multiply" />
+        {store.banner ? (
+          <>
+            {/* Real banner: render at its natural color. No opacity, no blend
+                mode, no tint gradient — the uploaded image is the hero. */}
+            <img
+              src={store.banner}
+              alt=""
+              className="absolute inset-0 h-full w-full object-cover"
+              data-testid="store-banner-img"
+            />
+            {/* Subtle bottom fade only, so the profile card that overlaps the
+                hero has legibility without recoloring the picture. */}
+            <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-neutral-50 dark:from-neutral-950 to-transparent" />
+          </>
+        ) : (
+          <>
+            {/* Fallback for stores with no cover uploaded yet. */}
+            <div className="absolute inset-0 bg-gradient-to-br from-[#5459E8] via-[#FF3D66] to-[#7C3AED] animate-[gradient_10s_ease_infinite]" style={{ backgroundSize: "200% 200%" }} />
+            <div className="absolute inset-0 bg-gradient-to-t from-neutral-50 dark:from-neutral-950 via-black/10 to-transparent" />
+            <div className="pointer-events-none absolute -top-10 -right-10 h-64 w-64 rounded-full bg-white/25 blur-3xl animate-pulse" />
+            <div className="pointer-events-none absolute -bottom-16 left-1/3 h-56 w-56 rounded-full bg-purple-500/40 blur-3xl" />
+            <div className="pointer-events-none absolute top-1/3 left-1/4 h-40 w-40 rounded-full bg-amber-300/40 blur-3xl" />
+          </>
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-neutral-50 dark:from-neutral-950 via-black/10 to-transparent" />
-        <div className="pointer-events-none absolute -top-10 -right-10 h-64 w-64 rounded-full bg-white/25 blur-3xl animate-pulse" />
-        <div className="pointer-events-none absolute -bottom-16 left-1/3 h-56 w-56 rounded-full bg-purple-500/40 blur-3xl" />
-        <div className="pointer-events-none absolute top-1/3 left-1/4 h-40 w-40 rounded-full bg-amber-300/40 blur-3xl" />
         <style>{`@keyframes gradient {0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}`}</style>
       </div>
 

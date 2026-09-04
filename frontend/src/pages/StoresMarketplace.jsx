@@ -61,7 +61,7 @@ const StoreCard = ({ store, categoryMap = {}, currentCategoryId }) => {
     >
       <div className="relative h-28 bg-gradient-to-br from-[#5459E8] via-[#FF5722] to-[#DC2626]">
         {store.banner && (
-          <img src={store.banner} alt="" className="w-full h-full object-cover opacity-90" />
+          <img src={store.banner} alt="" className="w-full h-full object-cover" />
         )}
         {store.verified_tier && store.verified_tier !== "none" && TIER_STYLES[store.verified_tier] && (
           <span className={`absolute top-2 right-2 text-[10px] uppercase tracking-widest px-2 py-0.5 rounded-full bg-gradient-to-r ${TIER_STYLES[store.verified_tier]} font-semibold shadow`}>

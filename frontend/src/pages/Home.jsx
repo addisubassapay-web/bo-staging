@@ -484,7 +484,7 @@ const FeaturedStoresStrip = ({ stores }) => {
               <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 overflow-hidden card-lift hover:border-[#5459E8] h-full">
                 <div className="h-24 bg-gradient-to-br from-[#5459E8] via-[#818CF8] to-[#FF0515] relative">
                   {s.banner && (
-                    <img src={s.banner} alt="" className="absolute inset-0 h-full w-full object-cover opacity-70" />
+                    <img src={s.banner} alt="" className="absolute inset-0 h-full w-full object-cover" />
                   )}
                 </div>
                 <div className="p-4 -mt-8">
