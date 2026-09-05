@@ -1,0 +1,23 @@
+{
+  "summary": "Backend-only regression after self-ping interval was shortened to 90s default and KEEPALIVE.md was added. Ran the full test_self_ping.py suite (12 tests) and full test_force_degraded.py suite (10 tests) against the live preview URL. All 22 tests passed. Verified GET /api/health returns the enriched payload {status, uptime, db.ok, db.latency_ms, mailer.breaker_open}. Live smoke test found 9 recent '[self-ping] Heartbeat ping status:' lines in supervisor stderr, confirming the loop is firing inside the pod. Admin listing regressions (/api/admin/users, /stores, /orders, /seller-applications) all return HTTP 200. Force-degraded query-param single-shot and admin flip/state/clear/cap cycles all green.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_self_ping.py",
+    "/app/backend/tests/test_force_degraded.py",
+    "/app/test_reports/pytest/self_ping_interval.xml",
+    "/app/test_reports/pytest/force_degraded_regression.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Minor doc/code drift: review_request states 'sleep min changed to max(30, interval)' but server.py line 268 still reads `await asyncio.sleep(max(60, interval))`. With the new default interval=90 this is a no-op (effective sleep = 90s), but if the operator ever sets SELF_PING_INTERVAL_SEC below 60 they'll silently be floored at 60, not 30. Consider aligning code with the stated intent (max(30, interval)) or updating the review-request wording."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (22/22)", "frontend": "n/a (skipped per request)"},
+  "test_credentials": "admin@mercari.local / admin123 (from /app/memory/test_credentials.md)",
+  "seed_data_creation": "none",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "test_self_ping.py includes a live smoke test (test_live_pod_recent_heartbeat_in_log) that reads /var/log/supervisor/backend.err.log; it currently passes because supervisor is producing heartbeat lines. test_force_degraded.py requires REACT_APP_BACKEND_URL exported in shell before invoking pytest (module-scope assert). Command that works: `export $(grep REACT_APP_BACKEND_URL /app/frontend/.env) && pytest backend/tests/test_force_degraded.py`. Fixture always clears admin force-degraded state pre+post so no cleanup needed.",
+  "rca of the issue": "n/a — no bugs found in this iteration. Original 'server sleeping' user report is a platform idle-scale-down (documented in /app/KEEPALIVE.md); an internal self-ping cannot wake a pod that is already at zero replicas, so the mitigation is (a) faster in-pod ping to fight the idle timer (90s default, done) and (b) an EXTERNAL uptime monitor (UptimeRobot / Cron-Job.org / GitHub Actions cron) which is documented but not yet configured — this remains a manual/ops step."
+}

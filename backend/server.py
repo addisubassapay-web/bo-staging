@@ -250,7 +250,12 @@ async def _self_ping_loop():
     See ``_self_ping_tick`` for the per-iteration logic (extracted so
     tests can call it directly without waiting on ``asyncio.sleep``).
     """
-    interval = int(os.environ.get("SELF_PING_INTERVAL_SEC", str(5 * 60)))
+    # 90s default — aggressive enough to fend off most preview idle timers
+    # (~5-10 min). Setting SELF_PING_INTERVAL_SEC overrides this. NOTE: a
+    # self-ping from INSIDE the pod cannot wake a pod that has already been
+    # scaled to zero — for that, wire an external monitor (UptimeRobot,
+    # Cron-Job.org, GitHub Actions cron) at the URL in ${PREVIEW_URL}.
+    interval = int(os.environ.get("SELF_PING_INTERVAL_SEC", "90"))
     # Wait a bit before first ping so the app has finished starting.
     await asyncio.sleep(15)
 
@@ -260,7 +265,7 @@ async def _self_ping_loop():
             await _self_ping_tick(state)
         except Exception as e:  # noqa: BLE001 — never let the loop die
             logger.error(f"[self-ping] loop iteration crashed: {e}")
-        await asyncio.sleep(max(60, interval))
+        await asyncio.sleep(max(30, interval))
 
 
 async def _post_health_alert(target: str, data: dict, *, kind: str) -> bool:
