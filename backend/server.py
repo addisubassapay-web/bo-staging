@@ -185,74 +185,81 @@ def _process_uptime_seconds() -> float:
     return round(time.monotonic() - _PROCESS_START_TS, 3)
 
 
-async def _self_ping_loop():
-    """Every 5 min, GET ${PREVIEW_URL}/api/health so the pod stays warm.
+async def _self_ping_tick(state: dict) -> dict:
+    """One iteration of the self-ping cadence.
 
-    - Uses HTTPS when PREVIEW_URL is https://... (the emergent preview domain
-      is TLS-terminated at the ingress).
-    - Gracefully falls back to http://localhost:${PORT}/api/health for local
-      non-SSL environments (or when PREVIEW_URL is unset).
-    - When ``status=degraded`` is seen **twice in a row**, POSTs an alert to
-      the Slack/Discord webhook at ``HEALTH_ALERT_WEBHOOK_URL`` so ops get
-      paged without opening the admin panel. Recovery to ``ok`` posts a
-      one-shot resolution message and resets the counter.
+    ``state`` carries ``consecutive_degraded`` (int) and ``alert_state``
+    ("healthy" | "alerting") across ticks. Split out from
+    ``_self_ping_loop`` so unit tests can drive individual heartbeats
+    without spinning up an asyncio task or waiting minutes.
     """
     import httpx  # local import so unit tests can patch it if needed.
 
+    preview_url = (os.environ.get("PREVIEW_URL") or "").rstrip("/")
+    if not preview_url:
+        port = os.environ.get("PORT") or "8001"
+        preview_url = f"http://localhost:{port}"
+    target = f"{preview_url}/api/health"
+
+    current_status = "unknown"
+    data: dict = {}
+    try:
+        async with httpx.AsyncClient(timeout=10.0, follow_redirects=True) as client:
+            r = await client.get(target)
+        body = ""
+        try:
+            data = r.json() or {}
+            current_status = data.get("status", "unknown")
+            body = (
+                f" db_ok={data.get('db',{}).get('ok')} "
+                f"db_ms={data.get('db',{}).get('latency_ms')} "
+                f"breaker_open={data.get('mailer',{}).get('breaker_open')}"
+            )
+        except Exception:  # noqa: BLE001
+            pass
+        logger.info(
+            f"[self-ping] Heartbeat ping status: {r.status_code} → {target}{body}"
+        )
+        if r.status_code >= 500:
+            current_status = "degraded"
+    except Exception as e:  # noqa: BLE001 — best-effort keep-alive
+        logger.error(f"[self-ping] Heartbeat request failed for {target}: {e}")
+        current_status = "degraded"
+        data = {"error": str(e)}
+
+    fired: Optional[str] = None
+    if current_status == "degraded":
+        state["consecutive_degraded"] = state.get("consecutive_degraded", 0) + 1
+        if state["consecutive_degraded"] >= 2 and state.get("alert_state") == "healthy":
+            if await _post_health_alert(target, data, kind="degraded"):
+                state["alert_state"] = "alerting"
+                fired = "degraded"
+    else:
+        if state.get("alert_state") == "alerting":
+            await _post_health_alert(target, data, kind="recovered")
+            state["alert_state"] = "healthy"
+            fired = "recovered"
+        state["consecutive_degraded"] = 0
+
+    return {"status": current_status, "target": target, "fired": fired, "data": data}
+
+
+async def _self_ping_loop():
+    """Every 5 min, GET ${PREVIEW_URL}/api/health so the pod stays warm.
+
+    See ``_self_ping_tick`` for the per-iteration logic (extracted so
+    tests can call it directly without waiting on ``asyncio.sleep``).
+    """
     interval = int(os.environ.get("SELF_PING_INTERVAL_SEC", str(5 * 60)))
     # Wait a bit before first ping so the app has finished starting.
     await asyncio.sleep(15)
 
-    consecutive_degraded = 0
-    alert_state = "healthy"  # "healthy" | "alerting"
-    last_alert_ts = 0.0
-
+    state = {"consecutive_degraded": 0, "alert_state": "healthy"}
     while True:
-        preview_url = (os.environ.get("PREVIEW_URL") or "").rstrip("/")
-        if not preview_url:
-            port = os.environ.get("PORT") or "8001"
-            preview_url = f"http://localhost:{port}"
-        target = f"{preview_url}/api/health"
-
-        current_status = "unknown"
-        data: dict = {}
         try:
-            async with httpx.AsyncClient(timeout=10.0, follow_redirects=True) as client:
-                r = await client.get(target)
-            body = ""
-            try:
-                data = r.json() or {}
-                current_status = data.get("status", "unknown")
-                body = (
-                    f" db_ok={data.get('db',{}).get('ok')} "
-                    f"db_ms={data.get('db',{}).get('latency_ms')} "
-                    f"breaker_open={data.get('mailer',{}).get('breaker_open')}"
-                )
-            except Exception:  # noqa: BLE001
-                pass
-            logger.info(
-                f"[self-ping] Heartbeat ping status: {r.status_code} → {target}{body}"
-            )
-            if r.status_code >= 500:
-                current_status = "degraded"
-        except Exception as e:  # noqa: BLE001 — best-effort keep-alive
-            logger.error(f"[self-ping] Heartbeat request failed for {target}: {e}")
-            current_status = "degraded"
-            data = {"error": str(e)}
-
-        # ---- Degraded-twice-in-a-row alerting ----
-        if current_status == "degraded":
-            consecutive_degraded += 1
-            if consecutive_degraded >= 2 and alert_state == "healthy":
-                if await _post_health_alert(target, data, kind="degraded"):
-                    alert_state = "alerting"
-                    last_alert_ts = time.monotonic()
-        else:
-            if alert_state == "alerting":
-                await _post_health_alert(target, data, kind="recovered")
-                alert_state = "healthy"
-            consecutive_degraded = 0
-
+            await _self_ping_tick(state)
+        except Exception as e:  # noqa: BLE001 — never let the loop die
+            logger.error(f"[self-ping] loop iteration crashed: {e}")
         await asyncio.sleep(max(60, interval))
 
 
