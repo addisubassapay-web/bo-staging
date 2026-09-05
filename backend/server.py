@@ -165,12 +165,20 @@ async def _self_ping_loop():
       is TLS-terminated at the ingress).
     - Gracefully falls back to http://localhost:${PORT}/api/health for local
       non-SSL environments (or when PREVIEW_URL is unset).
+    - When ``status=degraded`` is seen **twice in a row**, POSTs an alert to
+      the Slack/Discord webhook at ``HEALTH_ALERT_WEBHOOK_URL`` so ops get
+      paged without opening the admin panel. Recovery to ``ok`` posts a
+      one-shot resolution message and resets the counter.
     """
     import httpx  # local import so unit tests can patch it if needed.
 
     interval = int(os.environ.get("SELF_PING_INTERVAL_SEC", str(5 * 60)))
     # Wait a bit before first ping so the app has finished starting.
     await asyncio.sleep(15)
+
+    consecutive_degraded = 0
+    alert_state = "healthy"  # "healthy" | "alerting"
+    last_alert_ts = 0.0
 
     while True:
         preview_url = (os.environ.get("PREVIEW_URL") or "").rstrip("/")
@@ -179,13 +187,15 @@ async def _self_ping_loop():
             preview_url = f"http://localhost:{port}"
         target = f"{preview_url}/api/health"
 
+        current_status = "unknown"
+        data: dict = {}
         try:
             async with httpx.AsyncClient(timeout=10.0, follow_redirects=True) as client:
                 r = await client.get(target)
             body = ""
             try:
-                data = r.json()
-                # Compact one-liner so recurring outages are obvious in logs.
+                data = r.json() or {}
+                current_status = data.get("status", "unknown")
                 body = (
                     f" db_ok={data.get('db',{}).get('ok')} "
                     f"db_ms={data.get('db',{}).get('latency_ms')} "
@@ -193,11 +203,80 @@ async def _self_ping_loop():
                 )
             except Exception:  # noqa: BLE001
                 pass
-            logger.info(f"[self-ping] Heartbeat ping status: {r.status_code} → {target}{body}")
+            logger.info(
+                f"[self-ping] Heartbeat ping status: {r.status_code} → {target}{body}"
+            )
+            if r.status_code >= 500:
+                current_status = "degraded"
         except Exception as e:  # noqa: BLE001 — best-effort keep-alive
             logger.error(f"[self-ping] Heartbeat request failed for {target}: {e}")
+            current_status = "degraded"
+            data = {"error": str(e)}
+
+        # ---- Degraded-twice-in-a-row alerting ----
+        if current_status == "degraded":
+            consecutive_degraded += 1
+            if consecutive_degraded >= 2 and alert_state == "healthy":
+                if await _post_health_alert(target, data, kind="degraded"):
+                    alert_state = "alerting"
+                    last_alert_ts = time.monotonic()
+        else:
+            if alert_state == "alerting":
+                await _post_health_alert(target, data, kind="recovered")
+                alert_state = "healthy"
+            consecutive_degraded = 0
 
         await asyncio.sleep(max(60, interval))
+
+
+async def _post_health_alert(target: str, data: dict, *, kind: str) -> bool:
+    """POST a Slack/Discord-flavoured alert message.
+
+    Returns True on any 2xx response; False when the webhook is unset or the
+    POST failed. Autodetects Slack (``hooks.slack.com``) vs Discord
+    (``discord.com/api/webhooks``) by hostname and shapes the payload
+    accordingly.
+    """
+    webhook = (os.environ.get("HEALTH_ALERT_WEBHOOK_URL") or "").strip()
+    if not webhook:
+        logger.warning(
+            "[self-ping] status=degraded twice in a row but "
+            "HEALTH_ALERT_WEBHOOK_URL is unset — not paging ops"
+        )
+        return False
+
+    db_ok = data.get("db", {}).get("ok")
+    db_ms = data.get("db", {}).get("latency_ms")
+    breaker = data.get("mailer", {}).get("breaker_open")
+    err = data.get("error")
+    if kind == "degraded":
+        title = f":rotating_light: BlueOcean heartbeat DEGRADED (2× in a row) — {target}"
+    else:
+        title = f":white_check_mark: BlueOcean heartbeat RECOVERED — {target}"
+    lines = [
+        title,
+        f"• db.ok={db_ok}",
+        f"• db.latency_ms={db_ms}",
+        f"• mailer.breaker_open={breaker}",
+    ]
+    if err:
+        lines.append(f"• error={err}")
+    text = "\n".join(lines)
+
+    try:
+        import httpx
+        if "discord.com" in webhook:
+            payload = {"content": text[:1900]}
+        else:  # Slack (or Slack-compatible)
+            payload = {"text": text}
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            r = await client.post(webhook, json=payload)
+        ok = 200 <= r.status_code < 300
+        logger.info(f"[self-ping] alert kind={kind} → webhook status={r.status_code}")
+        return ok
+    except Exception as e:  # noqa: BLE001
+        logger.error(f"[self-ping] alert webhook POST failed: {e}")
+        return False
 
 
 # =========================
