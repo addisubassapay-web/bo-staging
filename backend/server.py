@@ -97,13 +97,53 @@ app.mount("/api/uploads", StaticFiles(directory=str(_UPLOADS_DIR)), name="upload
 @app.get("/health", include_in_schema=False)
 @app.head("/health", include_in_schema=False)
 async def _root_health():
-    return {"status": "ok", "uptime": _process_uptime_seconds()}
+    return await _build_health_payload()
 
 
 @app.get("/api/health", include_in_schema=False)
 @app.head("/api/health", include_in_schema=False)
 async def _api_health():
-    return {"status": "ok", "uptime": _process_uptime_seconds()}
+    return await _build_health_payload()
+
+
+async def _build_health_payload() -> dict:
+    """Assemble the enriched heartbeat body.
+
+    - ``db.latency_ms``: round-trip time for a Mongo `ping` command, or
+      ``None`` when the ping fails / times out (2s cap).
+    - ``mailer.breaker_open``: True when the mailer circuit-breaker is
+      currently tripped (5 recent failures). Ops can watch this in the
+      self-ping log to spot SMTP outages without opening the admin panel.
+    - Overall ``status``: ``ok`` when the DB ping succeeds, otherwise
+      ``degraded`` so external monitors can alert.
+    """
+    # ---- Mongo latency ----
+    db_latency_ms: float | None = None
+    db_ok = False
+    try:
+        _t0 = time.monotonic()
+        await asyncio.wait_for(db.command("ping"), timeout=2.0)
+        db_latency_ms = round((time.monotonic() - _t0) * 1000, 2)
+        db_ok = True
+    except Exception as e:  # noqa: BLE001
+        logger.warning(f"[health] mongo ping failed: {e}")
+
+    # ---- Mailer circuit breaker ----
+    breaker_open = False
+    try:
+        from services import mailer as _mailer
+        breaker_open = bool(_mailer._circuit_open())
+    except Exception as e:  # noqa: BLE001 — best-effort observability
+        logger.warning(f"[health] mailer breaker probe failed: {e}")
+
+    overall = "ok" if db_ok else "degraded"
+
+    return {
+        "status": overall,
+        "uptime": _process_uptime_seconds(),
+        "db": {"ok": db_ok, "latency_ms": db_latency_ms},
+        "mailer": {"breaker_open": breaker_open},
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -142,7 +182,18 @@ async def _self_ping_loop():
         try:
             async with httpx.AsyncClient(timeout=10.0, follow_redirects=True) as client:
                 r = await client.get(target)
-            logger.info(f"[self-ping] Heartbeat ping status: {r.status_code} → {target}")
+            body = ""
+            try:
+                data = r.json()
+                # Compact one-liner so recurring outages are obvious in logs.
+                body = (
+                    f" db_ok={data.get('db',{}).get('ok')} "
+                    f"db_ms={data.get('db',{}).get('latency_ms')} "
+                    f"breaker_open={data.get('mailer',{}).get('breaker_open')}"
+                )
+            except Exception:  # noqa: BLE001
+                pass
+            logger.info(f"[self-ping] Heartbeat ping status: {r.status_code} → {target}{body}")
         except Exception as e:  # noqa: BLE001 — best-effort keep-alive
             logger.error(f"[self-ping] Heartbeat request failed for {target}: {e}")
 
