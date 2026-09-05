@@ -96,17 +96,25 @@ app.mount("/api/uploads", StaticFiles(directory=str(_UPLOADS_DIR)), name="upload
 # frontend + platform monitors sometimes probe.
 @app.get("/health", include_in_schema=False)
 @app.head("/health", include_in_schema=False)
-async def _root_health():
-    return await _build_health_payload()
+async def _root_health(force_degraded: int = 0):
+    return await _build_health_payload(force_degraded=bool(force_degraded))
 
 
 @app.get("/api/health", include_in_schema=False)
 @app.head("/api/health", include_in_schema=False)
-async def _api_health():
-    return await _build_health_payload()
+async def _api_health(force_degraded: int = 0):
+    return await _build_health_payload(force_degraded=bool(force_degraded))
 
 
-async def _build_health_payload() -> dict:
+# ---- Simulated-degraded state ----
+# Persists in memory only. Set via POST /api/admin/health/force-degraded so
+# operators can prove the Slack-paging pipeline end-to-end without needing to
+# actually break Mongo or SMTP. Auto-clears after `duration_sec`.
+_FORCE_DEGRADED_UNTIL_TS: float = 0.0
+_FORCE_DEGRADED_REASON: str = ""
+
+
+async def _build_health_payload(*, force_degraded: bool = False) -> dict:
     """Assemble the enriched heartbeat body.
 
     - ``db.latency_ms``: round-trip time for a Mongo `ping` command, or
@@ -114,8 +122,12 @@ async def _build_health_payload() -> dict:
     - ``mailer.breaker_open``: True when the mailer circuit-breaker is
       currently tripped (5 recent failures). Ops can watch this in the
       self-ping log to spot SMTP outages without opening the admin panel.
-    - Overall ``status``: ``ok`` when the DB ping succeeds, otherwise
-      ``degraded`` so external monitors can alert.
+    - Overall ``status``: ``ok`` when the DB ping succeeds AND the
+      admin-simulated ``_FORCE_DEGRADED_UNTIL_TS`` window has expired.
+      Otherwise ``degraded`` so external monitors can alert.
+    - ``force_degraded`` (query param, dev-only) — returns ``degraded`` for
+      this single response without touching the shared timer. Handy for
+      one-off Postman probes.
     """
     # ---- Mongo latency ----
     db_latency_ms: float | None = None
@@ -136,14 +148,29 @@ async def _build_health_payload() -> dict:
     except Exception as e:  # noqa: BLE001 — best-effort observability
         logger.warning(f"[health] mailer breaker probe failed: {e}")
 
-    overall = "ok" if db_ok else "degraded"
+    # ---- Admin-simulated / query-forced degrade ----
+    simulated = False
+    now = time.monotonic()
+    if _FORCE_DEGRADED_UNTIL_TS > now:
+        simulated = True
+    if force_degraded:
+        simulated = True
 
-    return {
+    overall = "degraded" if (simulated or not db_ok) else "ok"
+
+    payload = {
         "status": overall,
         "uptime": _process_uptime_seconds(),
         "db": {"ok": db_ok, "latency_ms": db_latency_ms},
         "mailer": {"breaker_open": breaker_open},
     }
+    if simulated:
+        payload["simulated_degraded"] = {
+            "active": True,
+            "seconds_left": max(0.0, round(_FORCE_DEGRADED_UNTIL_TS - now, 1)) if _FORCE_DEGRADED_UNTIL_TS > now else 0.0,
+            "reason": _FORCE_DEGRADED_REASON or ("query-param force_degraded=1" if force_degraded else "admin-simulated"),
+        }
+    return payload
 
 
 # ---------------------------------------------------------------------------
@@ -2902,6 +2929,57 @@ async def admin_list_users(_admin: dict = Depends(require_admin), real_only: boo
         docs = [u for u in docs if not _is_synth_user(u)]
     docs.sort(key=lambda u: (_is_synth_user(u), -_created_ts(u)))
     return [UserPublic(**d) for d in docs]
+
+
+# ---------------------------------------------------------------------------
+# Force-degraded simulator — admin can flip `/api/health` into `degraded`
+# state for N seconds so the self-ping loop sees it twice and fires a real
+# Slack alert end-to-end. Perfect for Postman-driven pipeline validation.
+# ---------------------------------------------------------------------------
+class _ForceDegradedRequest(BaseModel):
+    duration_sec: int = 900  # default 15 min — enough for 3 self-pings @ 5m
+    reason: Optional[str] = None
+
+
+@api_router.post("/admin/health/force-degraded")
+async def admin_health_force_degraded(
+    body: _ForceDegradedRequest,
+    _admin: dict = Depends(require_admin),
+):
+    """Simulate a degraded state so the Slack paging pipeline can be tested
+    without breaking Mongo or SMTP. The self-ping loop hits `/api/health`
+    every 5 min; two consecutive `degraded` reads trigger the alert. Set
+    ``duration_sec >= 600`` to guarantee both pings land inside the window.
+    """
+    global _FORCE_DEGRADED_UNTIL_TS, _FORCE_DEGRADED_REASON  # noqa: PLW0603
+    duration = max(0, min(int(body.duration_sec or 0), 3600))  # cap at 1h
+    if duration == 0:
+        _FORCE_DEGRADED_UNTIL_TS = 0.0
+        _FORCE_DEGRADED_REASON = ""
+        logger.info("[health] force-degraded cleared by admin")
+        return {"ok": True, "cleared": True}
+    _FORCE_DEGRADED_UNTIL_TS = time.monotonic() + duration
+    _FORCE_DEGRADED_REASON = (body.reason or "admin-simulated")[:200]
+    logger.warning(
+        f"[health] admin forced status=degraded for {duration}s "
+        f"(reason: {_FORCE_DEGRADED_REASON})"
+    )
+    return {
+        "ok": True,
+        "seconds_left": duration,
+        "reason": _FORCE_DEGRADED_REASON,
+    }
+
+
+@api_router.get("/admin/health/force-degraded")
+async def admin_health_force_degraded_state(_admin: dict = Depends(require_admin)):
+    now = time.monotonic()
+    active = _FORCE_DEGRADED_UNTIL_TS > now
+    return {
+        "active": active,
+        "seconds_left": max(0.0, round(_FORCE_DEGRADED_UNTIL_TS - now, 1)) if active else 0.0,
+        "reason": _FORCE_DEGRADED_REASON if active else "",
+    }
 
 @api_router.put("/admin/users/{user_id}")
 async def admin_update_user(user_id: str, updates: dict, _admin: dict = Depends(require_admin)):

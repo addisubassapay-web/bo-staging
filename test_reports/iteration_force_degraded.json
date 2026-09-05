@@ -1,0 +1,32 @@
+{
+  "summary": "Backend-only testing of the new force_degraded health simulator. All 10 pytest cases pass against the live preview URL. Query-param single-shot behavior, admin flip/state/clear flow, non-admin rejection (403), 3600s cap, and regression on 4 admin endpoints all verified. State cleared after run; self-ping loop confirmed still emitting healthy 200 heartbeats.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_force_degraded.py",
+    "/app/test_reports/pytest/force_degraded_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "_FORCE_DEGRADED_UNTIL_TS uses time.monotonic() which is process-local — in a multi-worker/uvicorn setup with >1 worker, the admin flip would only affect the worker that handled the POST; other workers would still report ok. Not currently an issue on this pod (single worker) but worth noting if scaled out.",
+    "Admin POST body is required (Pydantic model). Sending an empty body returns 422 rather than defaulting to duration_sec=900. Minor UX / doc note — the code comment says default 15 min but you can't hit it via an empty POST.",
+    "Ideal: add a test that asserts self-ping alerting path (mock httpx to feed 2 consecutive degraded); currently out of scope but would round out coverage."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_force_degraded.py"
+  ],
+  "success_rate": {"backend": "100%", "frontend": "N/A"},
+  "test_credentials": "admin@mercari.local / admin123 (from /app/memory/test_credentials.md)",
+  "seed_data_creation": "None. Every test both pre- and post-clears the global force-degraded timer via the admin endpoint (autouse fixture) so the pod is left in a clean status=ok state — no risk of a real Slack alert firing after the run.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Test file /app/backend/tests/test_force_degraded.py is a reusable regression for the force-degraded pipeline. 10 cases, 7.5s runtime, uses REACT_APP_BACKEND_URL. If retesting, note the autouse cleanup fixture clears the timer before AND after every test so ordering does not matter. Baseline /api/health returned {status:ok, uptime>0, db.ok:true, mailer.breaker_open:false} and self-ping logs show `[self-ping] Heartbeat ping status: 200` every ~5 min.",
+  "rca of the issue": "N/A — feature works as specified."
+}
