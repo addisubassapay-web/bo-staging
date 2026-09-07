@@ -283,7 +283,9 @@ const StoreAnalytics = () => {
                     await api.put("/seller/goal", { weekly_earnings_goal: num });
                     const r = await api.get("/seller/dashboard");
                     setData(r.data);
-                  } catch { /* ignore */ }
+                  } catch (err) {
+                    console.error("[analytics] weekly-goal update failed", err);
+                  }
                 }}
                 className="text-lg font-bold underline decoration-white/30 hover:decoration-white"
                 data-testid="edit-weekly-goal"

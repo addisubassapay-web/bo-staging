@@ -155,7 +155,7 @@ const NewDisputeDialog = ({ open, onOpenChange, orders, onCreated }) => {
             {photos.length > 0 && (
               <div className="mt-2 grid grid-cols-4 gap-2">
                 {photos.map((url, i) => (
-                  <div key={i} className="relative aspect-square rounded-lg overflow-hidden bg-neutral-100 dark:bg-neutral-800 group">
+                  <div key={`${url}-${i}`} className="relative aspect-square rounded-lg overflow-hidden bg-neutral-100 dark:bg-neutral-800 group">
                     <img src={url.startsWith("http") ? url : `${process.env.REACT_APP_BACKEND_URL}${url}?auth=${localStorage.getItem("blueocean_token") || ""}`} alt="" className="h-full w-full object-cover" />
                     <button
                       onClick={() => setPhotos((p) => p.filter((_, idx) => idx !== i))}
@@ -327,7 +327,7 @@ const DisputeChat = ({ disputeId, currentUserId, currentUserRole, closed }) => {
           {photos.length > 0 && (
             <div className="grid grid-cols-4 gap-2 px-1">
               {photos.map((url, i) => (
-                <div key={i} className="relative aspect-square rounded-lg overflow-hidden bg-neutral-100 dark:bg-neutral-800 group">
+                <div key={`${url}-${i}`} className="relative aspect-square rounded-lg overflow-hidden bg-neutral-100 dark:bg-neutral-800 group">
                   <img src={fileUrl(url)} alt="" className="h-full w-full object-cover" />
                   <button
                     onClick={() => setPhotos((p) => p.filter((_, idx) => idx !== i))}
@@ -409,7 +409,7 @@ const DisputeCard = ({ d, currentUserId }) => {
         <div className="mt-3 grid grid-cols-4 sm:grid-cols-6 gap-2">
           {d.photos.map((url, i) => (
             <a
-              key={i}
+              key={`${d.id}-${url}-${i}`}
               href={url.startsWith("http") ? url : `${process.env.REACT_APP_BACKEND_URL}${url}?auth=${localStorage.getItem("blueocean_token") || ""}`}
               target="_blank" rel="noreferrer"
               className="block aspect-square rounded-lg overflow-hidden bg-neutral-100 dark:bg-neutral-800 hover:ring-2 hover:ring-[#5459E8]"

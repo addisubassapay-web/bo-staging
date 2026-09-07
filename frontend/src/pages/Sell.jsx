@@ -113,8 +113,10 @@ const Sell = () => {
         const { data } = await api.post("/ai/photo-enhance", body);
         nextImages[i] = `${process.env.REACT_APP_BACKEND_URL}${data.url}?auth=${encodeURIComponent(token || "")}`;
         setImages([...nextImages]);
-      } catch {
-        // keep original if enhancement fails
+      } catch (err) {
+        // keep original photo if enhancement fails, but log so ops can
+        // spot recurring AI outages in the console.
+        console.error("[sell] photo-enhance failed", err);
       }
     }
     setEnhanceAllBusy(false);

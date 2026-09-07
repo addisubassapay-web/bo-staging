@@ -64,7 +64,9 @@ const CopyBtn = ({ text, testid }) => {
       await navigator.clipboard.writeText(text);
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
-    } catch (e) { /* ignored */ }
+    } catch (e) {
+      console.error("[wallet] clipboard copy failed", e);
+    }
   };
   return (
     <button
