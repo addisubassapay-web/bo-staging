@@ -1741,7 +1741,7 @@ export const LanguageProvider = ({ children }) => {
       if (urlLang && SEO_LANGS.some((l) => l.code === urlLang)) return urlLang;
     } catch { /* ignore */ }
     const geo = detectGeo();
-    return chooseInitial("mercari-global_lang", "en", geo.lang);
+    return chooseInitial("blueocean_lang", "en", geo.lang);
   });
 
   // Apply direction + hreflang alternates so search engines index each
@@ -1758,7 +1758,7 @@ export const LanguageProvider = ({ children }) => {
 
   const setLang = useCallback((l) => {
     setLangState(l);
-    localStorage.setItem("mercari-global_lang", l);
+    localStorage.setItem("blueocean_lang", l);
     try {
       document.documentElement.setAttribute("lang", l);
       // RTL for Arabic — flip layout direction so headers, cart, forms mirror correctly.

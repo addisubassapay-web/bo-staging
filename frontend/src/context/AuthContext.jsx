@@ -7,8 +7,26 @@ const AuthContext = createContext(null);
 // When the user unchecks "Keep me signed in" on Login, we store it in
 // sessionStorage instead — so closing the tab clears the session, matching
 // the checkbox contract.
-const TOKEN_KEY = "mercari-global_token";
-const USERNAME_KEY = "mercari-global_username";
+const TOKEN_KEY = "blueocean_token";
+const USERNAME_KEY = "blueocean_username";
+
+// One-shot migration for anyone who signed in before the rebrand — read the
+// legacy `mercari-global_*` keys and copy them into the new names so users
+// don't get silently signed out on their next visit. Safe to remove after a
+// few months.
+try {
+  for (const [oldK, newK] of [
+    ["mercari-global_token", TOKEN_KEY],
+    ["mercari-global_username", USERNAME_KEY],
+  ]) {
+    for (const store of [localStorage, sessionStorage]) {
+      if (!store.getItem(newK) && store.getItem(oldK)) {
+        store.setItem(newK, store.getItem(oldK));
+      }
+      store.removeItem(oldK);
+    }
+  }
+} catch { /* storage disabled — ignore */ }
 
 const readToken = () => {
   try { return sessionStorage.getItem(TOKEN_KEY) || localStorage.getItem(TOKEN_KEY) || null; }

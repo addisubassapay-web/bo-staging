@@ -40,7 +40,9 @@ async def run_saved_seed(db, seed: dict) -> dict | None:
     tmpl_map = {
         "amazon_search":      "https://www.amazon.com/s?k={q}&page={p}",
         "amazon_bestsellers": "https://www.amazon.com/gp/bestsellers/{q}?pg={p}",
-        "mercari-global_search":     "https://www.mercari-global.com/search/?keyword={q}&page={p}",
+        # NOTE: legacy `mercari-global_search` provider retired during
+        # rebrand — the template pointed at an external brand-owned domain
+        # and served no critical flow. Amazon-search is the surviving default.
     }
     tmpl = tmpl_map.get(seed.get("provider") or "amazon_search")
     if not tmpl:

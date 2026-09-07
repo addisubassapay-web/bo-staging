@@ -67,7 +67,6 @@ def _seller_country_from_url(url: Optional[str]) -> Optional[str]:
     if "amazon.fr" in u:    return "FR"
     if "amazon.ca" in u:    return "CA"
     if "amazon.com.au" in u:return "AU"
-    if "jp.mercari" in u:   return "JP"
     if "amazon.com" in u:   return "US"
     return None
 

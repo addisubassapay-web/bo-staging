@@ -12,7 +12,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback } fr
  * "lg" = 18px  → ~112.5% larger for accessibility / small text needs.
  */
 const STORAGE_KEY = "ocean-fontsize";
-const LEGACY_KEYS = ["mercarie-global_fontsize", "mercari-global_fontsize"];  // migration of pre-rebrand pref
+const LEGACY_KEYS = ["mercarie-global_fontsize", "blueocean_fontsize"];  // migration of pre-rebrand pref
 const PX_BY_SIZE = { sm: 14, md: 16, lg: 18 };
 
 const FontSizeContext = createContext({ size: "md", setSize: () => {} });

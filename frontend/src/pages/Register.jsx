@@ -39,10 +39,10 @@ const Register = () => {
     const ref = searchParams.get("ref");
     if (ref) {
       setForm((f) => ({ ...f, referral_code: ref.toUpperCase() }));
-      try { localStorage.setItem("mercari-global_pending_referral", ref.toUpperCase()); } catch { /* ignore */ }
+      try { localStorage.setItem("blueocean_pending_referral", ref.toUpperCase()); } catch { /* ignore */ }
     } else {
       try {
-        const pending = localStorage.getItem("mercari-global_pending_referral");
+        const pending = localStorage.getItem("blueocean_pending_referral");
         if (pending) setForm((f) => ({ ...f, referral_code: pending }));
       } catch { /* ignore */ }
     }
@@ -87,8 +87,8 @@ const Register = () => {
         password: form.password,
         referral_code: form.referral_code || null,
       });
-      localStorage.setItem("mercari-global_token", data.token);
-      try { localStorage.removeItem("mercari-global_pending_referral"); } catch { /* ignore */ }
+      localStorage.setItem("blueocean_token", data.token);
+      try { localStorage.removeItem("blueocean_pending_referral"); } catch { /* ignore */ }
       toast({ title: `Welcome, ${data.user.username}!`, description: "Your account is ready." });
       window.location.href = "/";
     } catch (err) {

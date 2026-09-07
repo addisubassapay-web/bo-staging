@@ -156,7 +156,7 @@ const NewDisputeDialog = ({ open, onOpenChange, orders, onCreated }) => {
               <div className="mt-2 grid grid-cols-4 gap-2">
                 {photos.map((url, i) => (
                   <div key={i} className="relative aspect-square rounded-lg overflow-hidden bg-neutral-100 dark:bg-neutral-800 group">
-                    <img src={url.startsWith("http") ? url : `${process.env.REACT_APP_BACKEND_URL}${url}?auth=${localStorage.getItem("mercari-global_token") || ""}`} alt="" className="h-full w-full object-cover" />
+                    <img src={url.startsWith("http") ? url : `${process.env.REACT_APP_BACKEND_URL}${url}?auth=${localStorage.getItem("blueocean_token") || ""}`} alt="" className="h-full w-full object-cover" />
                     <button
                       onClick={() => setPhotos((p) => p.filter((_, idx) => idx !== i))}
                       className="absolute top-1 right-1 h-6 w-6 rounded-full bg-black/60 text-white grid place-items-center opacity-0 group-hover:opacity-100 transition"
@@ -195,7 +195,7 @@ const ROLE_META = {
 const fileUrl = (url) => {
   if (!url) return "";
   if (url.startsWith("http")) return url;
-  const t = localStorage.getItem("mercari-global_token") || "";
+  const t = localStorage.getItem("blueocean_token") || "";
   return `${process.env.REACT_APP_BACKEND_URL}${url}?auth=${encodeURIComponent(t)}`;
 };
 
@@ -410,13 +410,13 @@ const DisputeCard = ({ d, currentUserId }) => {
           {d.photos.map((url, i) => (
             <a
               key={i}
-              href={url.startsWith("http") ? url : `${process.env.REACT_APP_BACKEND_URL}${url}?auth=${localStorage.getItem("mercari-global_token") || ""}`}
+              href={url.startsWith("http") ? url : `${process.env.REACT_APP_BACKEND_URL}${url}?auth=${localStorage.getItem("blueocean_token") || ""}`}
               target="_blank" rel="noreferrer"
               className="block aspect-square rounded-lg overflow-hidden bg-neutral-100 dark:bg-neutral-800 hover:ring-2 hover:ring-[#5459E8]"
               data-testid={`dispute-photo-${d.id}-${i}`}
             >
               <img
-                src={url.startsWith("http") ? url : `${process.env.REACT_APP_BACKEND_URL}${url}?auth=${localStorage.getItem("mercari-global_token") || ""}`}
+                src={url.startsWith("http") ? url : `${process.env.REACT_APP_BACKEND_URL}${url}?auth=${localStorage.getItem("blueocean_token") || ""}`}
                 alt="evidence" className="h-full w-full object-cover"
               />
             </a>

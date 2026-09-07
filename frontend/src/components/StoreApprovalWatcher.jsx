@@ -20,7 +20,7 @@ const StoreApprovalWatcher = () => {
       prevStatus.current = null;
       return;
     }
-    const flagKey = `mercari-global_store_approved_shown_${user.id}`;
+    const flagKey = `blueocean_store_approved_shown_${user.id}`;
     const alreadyShown = localStorage.getItem(flagKey);
     const isApproved = user.seller_status === "approved";
 

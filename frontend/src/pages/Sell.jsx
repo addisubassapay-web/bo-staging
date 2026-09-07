@@ -104,7 +104,7 @@ const Sell = () => {
   const enhanceAll = async () => {
     if (images.length === 0) return;
     setEnhanceAllBusy(true);
-    const token = localStorage.getItem("mercari-global_token");
+    const token = localStorage.getItem("blueocean_token");
     const nextImages = [...images];
     for (let i = 0; i < nextImages.length; i++) {
       const src = nextImages[i];
@@ -129,7 +129,7 @@ const Sell = () => {
       const body = src.startsWith("data:") ? { image_base64: src } : { image_url: src };
       const { data } = await api.post("/ai/photo-enhance", body);
       // Use the enhanced URL directly — replace the photo at the same index
-      const token = localStorage.getItem("mercari-global_token");
+      const token = localStorage.getItem("blueocean_token");
       const enhancedUrl = `${process.env.REACT_APP_BACKEND_URL}${data.url}?auth=${encodeURIComponent(token || "")}`;
       setImages((prev) => prev.map((v, i) => (i === idx ? enhancedUrl : v)));
       toast({ title: "Photo enhanced", description: "Background removed & polished by AI" });

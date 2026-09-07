@@ -16,7 +16,7 @@ from typing import Dict, List
 
 from pymongo import UpdateOne
 
-MERCHARI_SELLER_USERNAME = "mercari_store"
+MERCHARI_SELLER_USERNAME = "blueocean_store"
 MERCHARI_SELLER_DISPLAY = "BlueOcean Store"
 
 
@@ -29,7 +29,7 @@ async def _ensure_merchari_seller(db) -> dict:
         "id": str(uuid.uuid4()),
         "username": MERCHARI_SELLER_USERNAME,
         "display_name": MERCHARI_SELLER_DISPLAY,
-        "email": "store@mercari.local",
+        "email": "store@blueocean.local",
         "role": "seller",
         "seller_status": "active",
         "email_verified": True,
@@ -55,8 +55,8 @@ async def _category_lookup(db) -> Dict[str, dict]:
 def _country_from_source_url(url: str) -> str:
     """Best-effort ISO-2 country guess from an Apify source URL host.
 
-    Amazon US and jp.mercari.com (external Japanese supplier surface) — extend; extend
-    the mapping as new suppliers come online.
+    Amazon US and Japanese supplier surfaces — extend the mapping as new
+    suppliers come online.
     """
     if not url:
         return "US"
@@ -67,7 +67,6 @@ def _country_from_source_url(url: str) -> str:
     if "amazon.fr" in u:    return "FR"
     if "amazon.ca" in u:    return "CA"
     if "amazon.com.au" in u:return "AU"
-    if "jp.mercari" in u:   return "JP"
     if "amazon.com" in u:   return "US"
     return "US"
 

@@ -11,7 +11,7 @@ import api from "@/lib/api";
  * The checklist self-dismisses via localStorage once all four steps
  * are checked so it doesn't clutter power-sellers' dashboards.
  */
-const STORAGE_KEY = "mercari-global_seller_onboarding_dismissed";
+const STORAGE_KEY = "blueocean_seller_onboarding_dismissed";
 
 const useChecklistState = () => {
   const [state, setState] = useState({
@@ -37,7 +37,7 @@ const useChecklistState = () => {
           hasListing: (listings?.data?.length || 0) > 0,
           hasPayout: !!(s.payout_method || s.crypto_addresses),
           hasLogo: !!s.logo,
-          hasShared: localStorage.getItem("mercari-global_seller_shared_v1") === "1",
+          hasShared: localStorage.getItem("blueocean_seller_shared_v1") === "1",
         });
       } catch {
         if (!cancelled) setState((p) => ({ ...p, loading: false }));
@@ -105,7 +105,7 @@ export const SellerOnboardingChecklist = ({ storeSlug }) => {
     } else {
       navigator.clipboard?.writeText(url).catch(() => {});
     }
-    try { localStorage.setItem("mercari-global_seller_shared_v1", "1"); } catch { /* ignore */ }
+    try { localStorage.setItem("blueocean_seller_shared_v1", "1"); } catch { /* ignore */ }
     window.location.reload();
   };
 

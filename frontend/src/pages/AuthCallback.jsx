@@ -39,16 +39,16 @@ const AuthCallback = () => {
       try {
         // Optional referral code carried over from the /register?ref=CODE flow
         const referralCode = (() => {
-          try { return localStorage.getItem("mercari-global_pending_referral") || null; } catch { return null; }
+          try { return localStorage.getItem("blueocean_pending_referral") || null; } catch { return null; }
         })();
         const { data } = await api.post("/auth/google/session", {
           session_id: sessionId,
           referral_code: referralCode,
         });
         try {
-          localStorage.setItem("mercari-global_token", data.token);
-          if (data.user?.username) localStorage.setItem("mercari-global_username", data.user.username);
-          localStorage.removeItem("mercari-global_pending_referral");
+          localStorage.setItem("blueocean_token", data.token);
+          if (data.user?.username) localStorage.setItem("blueocean_username", data.user.username);
+          localStorage.removeItem("blueocean_pending_referral");
         } catch { /* ignore storage errors */ }
         // Clear the hash so back-nav doesn't re-run this
         window.history.replaceState(null, "", "/");

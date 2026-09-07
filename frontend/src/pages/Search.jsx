@@ -35,7 +35,7 @@ const Search = () => {
 
   useEffect(() => {
     api.get("/categories").then((r) => setCategories(r.data)).catch(() => {});
-    const token = localStorage.getItem("mercari-global_token");
+    const token = localStorage.getItem("blueocean_token");
     if (token) api.get("/favorites").then((r) => setFavIds(new Set(r.data.map((l) => l.id)))).catch(() => {});
   }, []);
 

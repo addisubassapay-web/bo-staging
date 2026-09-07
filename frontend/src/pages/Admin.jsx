@@ -258,7 +258,7 @@ const UsersMgr = () => {
   // each row.
   const SYNTHETIC_DOMAINS = React.useMemo(() => new Set([
     "example.com", "e2e.com", "t.local", "case.local", "test.local",
-    "apify.local", "mercari.local", "localhost",
+    "apify.local", "blueocean.local", "mercari.local", "localhost",
   ]), []);
   const FIXTURE_PREFIXES = React.useMemo(() => [
     "mpo1_", "mpo2_", "mpo3_", "e2e_", "case_", "seed_", "fixture_",
@@ -1893,13 +1893,13 @@ const DisputesMgr = () => {
                     {d.photos.map((url, i) => (
                       <a
                         key={i}
-                        href={url.startsWith("http") ? url : `${process.env.REACT_APP_BACKEND_URL}${url}?auth=${localStorage.getItem("mercari-global_token") || ""}`}
+                        href={url.startsWith("http") ? url : `${process.env.REACT_APP_BACKEND_URL}${url}?auth=${localStorage.getItem("blueocean_token") || ""}`}
                         target="_blank" rel="noreferrer"
                         className="block aspect-square rounded-lg overflow-hidden bg-neutral-100 hover:ring-2 hover:ring-[#5459E8]"
                         data-testid={`admin-dispute-photo-${d.id}-${i}`}
                       >
                         <img
-                          src={url.startsWith("http") ? url : `${process.env.REACT_APP_BACKEND_URL}${url}?auth=${localStorage.getItem("mercari-global_token") || ""}`}
+                          src={url.startsWith("http") ? url : `${process.env.REACT_APP_BACKEND_URL}${url}?auth=${localStorage.getItem("blueocean_token") || ""}`}
                           alt="evidence" className="h-full w-full object-cover"
                         />
                       </a>
@@ -2036,8 +2036,8 @@ const AdminDisputeThread = ({ disputeId, closed }) => {
                     {m.photos?.length > 0 && (
                       <div className="mt-1.5 grid grid-cols-2 gap-1">
                         {m.photos.map((url, i) => (
-                          <a key={i} href={url.startsWith("http") ? url : `${process.env.REACT_APP_BACKEND_URL}${url}?auth=${localStorage.getItem("mercari-global_token") || ""}`} target="_blank" rel="noreferrer" className="block aspect-square rounded-md overflow-hidden">
-                            <img src={url.startsWith("http") ? url : `${process.env.REACT_APP_BACKEND_URL}${url}?auth=${localStorage.getItem("mercari-global_token") || ""}`} alt="" className="h-full w-full object-cover" />
+                          <a key={i} href={url.startsWith("http") ? url : `${process.env.REACT_APP_BACKEND_URL}${url}?auth=${localStorage.getItem("blueocean_token") || ""}`} target="_blank" rel="noreferrer" className="block aspect-square rounded-md overflow-hidden">
+                            <img src={url.startsWith("http") ? url : `${process.env.REACT_APP_BACKEND_URL}${url}?auth=${localStorage.getItem("blueocean_token") || ""}`} alt="" className="h-full w-full object-cover" />
                           </a>
                         ))}
                       </div>

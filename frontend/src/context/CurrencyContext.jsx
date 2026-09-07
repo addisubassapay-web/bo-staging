@@ -37,7 +37,7 @@ export const CurrencyProvider = ({ children }) => {
     // to Y?" banner on the very first visit and let the user confirm. Once
     // they accept or dismiss, the choice is persisted.
     try {
-      const existing = localStorage.getItem("mercari-global_currency");
+      const existing = localStorage.getItem("blueocean_currency");
       if (existing) return existing;
     } catch { /* ignore */ }
     return "USD";
@@ -46,7 +46,7 @@ export const CurrencyProvider = ({ children }) => {
     // Warm-start from cached rates so first paint uses the freshest known
     // rate (avoids a flash of stale fallback numbers on subsequent visits).
     try {
-      const cached = localStorage.getItem("mercari-global_rates");
+      const cached = localStorage.getItem("blueocean_rates");
       if (cached) {
         const parsed = JSON.parse(cached);
         if (parsed && parsed.rates) return parsed;
@@ -60,13 +60,13 @@ export const CurrencyProvider = ({ children }) => {
       setRateData(r.data);
       // Cache to localStorage so `formatPrice` in api.js (and any other
       // non-context call site) can format with live rates too.
-      try { localStorage.setItem("mercari-global_rates", JSON.stringify(r.data)); } catch { /* ignore */ }
+      try { localStorage.setItem("blueocean_rates", JSON.stringify(r.data)); } catch { /* ignore */ }
     }).catch(() => {});
   }, []);
 
   const setCurrency = useCallback((c) => {
     setCurrencyState(c);
-    localStorage.setItem("mercari-global_currency", c);
+    localStorage.setItem("blueocean_currency", c);
   }, []);
 
   const convert = useCallback(

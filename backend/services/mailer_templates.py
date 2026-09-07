@@ -312,7 +312,6 @@ def catalog_seed_complete(username: str, provider: str, query: str, pages: int,
     friendly_provider = {
         "amazon_search": "Amazon search",
         "amazon_bestsellers": "Amazon bestsellers",
-        "mercari-global_search": "BlueOcean search",
     }.get(provider, provider)
     minutes = max(1, duration_seconds // 60)
     body = (

@@ -11,7 +11,7 @@ api.interceptors.request.use((config) => {
   // "Keep me signed in" checkbox honest.
   let token = null;
   try {
-    token = sessionStorage.getItem("mercari-global_token") || localStorage.getItem("mercari-global_token");
+    token = sessionStorage.getItem("blueocean_token") || localStorage.getItem("blueocean_token");
   } catch { /* storage disabled */ }
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
@@ -64,7 +64,7 @@ export const errorText = (err, fallback = "Something went wrong. Please try agai
 
 // --- Currency-aware price formatter (used by non-context call sites) ---
 // Fallback rates match CurrencyContext.FALLBACK_RATES. Live rates fetched
-// by CurrencyContext are cached to `mercari-global_rates` in localStorage and
+// by CurrencyContext are cached to `blueocean_rates` in localStorage and
 // win over these static values.
 const STATIC_RATES = {
   USD: 1, EUR: 0.92, GBP: 0.78, JPY: 155, INR: 83.2, CAD: 1.36,
@@ -78,7 +78,7 @@ const CURRENCY_LOCALES = {
 const readLiveRate = (currency) => {
   if (typeof localStorage === "undefined") return null;
   try {
-    const raw = localStorage.getItem("mercari-global_rates");
+    const raw = localStorage.getItem("blueocean_rates");
     if (!raw) return null;
     const parsed = JSON.parse(raw);
     const rate = parsed?.rates?.[currency];
@@ -87,7 +87,7 @@ const readLiveRate = (currency) => {
 };
 
 export const formatPrice = (usd) => {
-  const currency = (typeof localStorage !== "undefined" && localStorage.getItem("mercari-global_currency")) || "USD";
+  const currency = (typeof localStorage !== "undefined" && localStorage.getItem("blueocean_currency")) || "USD";
   const rate = readLiveRate(currency) ?? STATIC_RATES[currency] ?? 1;
   const value = Number(usd || 0) * rate;
   const locale = CURRENCY_LOCALES[currency] || "en-US";

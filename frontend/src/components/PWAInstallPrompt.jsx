@@ -16,9 +16,9 @@ import { Download, Share, Plus, X as XIcon } from "lucide-react";
  *   • This is the visitor's first-ever session (returning visitors only)
  *   • Viewport is desktop-wide
  */
-const VISITS_KEY = "mercari-global_pwa_visit_count";
-const DISMISS_KEY = "mercari-global_pwa_prompt_dismissed";
-const INSTALLED_KEY = "mercari-global_pwa_installed";
+const VISITS_KEY = "blueocean_pwa_visit_count";
+const DISMISS_KEY = "blueocean_pwa_prompt_dismissed";
+const INSTALLED_KEY = "blueocean_pwa_installed";
 
 const isStandalone = () => {
   if (typeof window === "undefined") return false;

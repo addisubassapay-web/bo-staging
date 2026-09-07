@@ -13,7 +13,7 @@ import { Rocket, Loader2, ArrowRight, Sparkles, ExternalLink } from "lucide-reac
 const PROVIDERS = [
   { id: "amazon_search",       label: "Amazon — search results", example: "wireless headphones" },
   { id: "amazon_bestsellers",  label: "Amazon — bestsellers category", example: "electronics" },
-  { id: "mercari-global_search",      label: "BlueOcean — search results", example: "vintage denim" },
+  { id: "blueocean_search",      label: "BlueOcean — search results", example: "vintage denim" },
 ];
 
 const PaginatedSeedScrape = () => {

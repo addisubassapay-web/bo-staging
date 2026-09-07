@@ -18,7 +18,7 @@ const ProductCard = ({ listing, isFavorite = false, onFavoriteChange }) => {
   useEffect(() => {
     // Cheap client cache to avoid re-fetching seller info repeatedly
     if (!listing?.seller_id) return;
-    const key = `mercari-global_seller_${listing.seller_id}`;
+    const key = `blueocean_seller_${listing.seller_id}`;
     const cached = sessionStorage.getItem(key);
     if (cached !== null) {
       setSellerVerified(cached === "1");

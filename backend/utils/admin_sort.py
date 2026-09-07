@@ -28,7 +28,8 @@ _SYNTHETIC_DOMAINS = frozenset({
     "case.local",
     "test.local",
     "apify.local",
-    "mercari.local",
+    "blueocean.local",
+    "mercari.local",  # legacy — kept so the seeded admin@mercari.local still classifies as internal
     "localhost",
 })
 

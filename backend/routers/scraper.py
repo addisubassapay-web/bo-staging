@@ -426,13 +426,15 @@ async def scraper_status(_admin: dict = Depends(require_admin)):
 # =========================================================================
 _SEED_TEMPLATES = {
     "amazon_search":  "https://www.amazon.com/s?k={q}&page={p}",
-    "mercari-global_search": "https://www.mercari-global.com/search/?keyword={q}&page={p}",
     "amazon_bestsellers": "https://www.amazon.com/gp/bestsellers/{q}?pg={p}",
+    # Legacy `mercari-global_search` provider retired during the rebrand.
+    # The template pointed at a brand-owned external domain and served no
+    # critical flow. Amazon-search / -bestsellers cover every live seed.
 }
 
 
 class PaginatedSeedCreate(BaseModel):
-    provider: str = Field(..., description="amazon_search | mercari-global_search | amazon_bestsellers")
+    provider: str = Field(..., description="amazon_search | amazon_bestsellers")
     query: str = Field(..., min_length=1, max_length=200)
     pages: int = Field(5, ge=1, le=50, description="How many pages to walk")
     category_id: Optional[str] = None
@@ -782,7 +784,7 @@ async def suggest_keywords(user: dict = Depends(get_current_user)):
 # Saved Seeds — persist favorite keywords + nightly auto-run
 # =========================================================================
 class SavedSeedCreate(BaseModel):
-    provider: str = Field(..., description="amazon_search | mercari-global_search | amazon_bestsellers")
+    provider: str = Field(..., description="amazon_search | amazon_bestsellers")
     query: str = Field(..., min_length=1, max_length=200)
     pages: int = Field(20, ge=1, le=50)
     category_id: str

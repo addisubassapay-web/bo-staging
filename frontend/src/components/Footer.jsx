@@ -19,7 +19,7 @@ const NewsletterStrip = () => {
       const { data } = await api.post("/newsletter/subscribe", { email, source: "footer" });
       setStatus("ok");
       setMessage(data.already ? "You're already on the list ✓" : "You're in ✓");
-      try { localStorage.setItem("mercari-global_newsletter_email", email); } catch { /* ignore */ }
+      try { localStorage.setItem("blueocean_newsletter_email", email); } catch { /* ignore */ }
       setTimeout(() => { setStatus("idle"); setEmail(""); setMessage(""); }, 3500);
     } catch (err) {
       setStatus("error");

@@ -7,7 +7,7 @@ import {
   Search, ChevronDown, Clock, TrendingUp, X, Tag, Folder, Mic, Camera, Sparkles, Loader2, Store as StoreIcon,
 } from "lucide-react";
 
-const RECENT_KEY = "mercari-global_recent_searches";
+const RECENT_KEY = "blueocean_recent_searches";
 const MAX_RECENT = 8;
 
 const readRecent = () => { try { return JSON.parse(localStorage.getItem(RECENT_KEY) || "[]"); } catch { return []; } };
